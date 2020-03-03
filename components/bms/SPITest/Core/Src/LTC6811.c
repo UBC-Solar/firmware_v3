@@ -161,7 +161,7 @@ int8_t LTC_readBatt(SPI_HandleTypeDef SPI_handle, float voltages[][12]) {
     	for(int reg_group = 0; reg_group < 4; reg_group++) {
     		for(int i = 0; i < 3; i++) {
     			 cell_voltage_raw =  ((uint16_t)(ADC_data[reg_group][ic_num][2*i + 1]) << 8)
-									& (uint16_t)(ADC_data[reg_group][ic_num][2*i]);
+									| (uint16_t)(ADC_data[reg_group][ic_num][2*i]);
     			 voltages[ic_num][3*reg_group + i] = cell_voltage_raw * 0.0001;
     		}
     	}

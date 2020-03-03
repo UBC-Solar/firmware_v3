@@ -99,7 +99,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	// The Board LED is on when PA13 is LOW, so set pin high at beginning
 	HAL_GPIO_WritePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin, GPIO_PIN_SET);
-
+	printf("LTC TEST\n\n");
 	LTC_wakeup();
   /* USER CODE END 2 */
 
@@ -121,7 +121,7 @@ int main(void)
 				printf("PEC OK\n");
 		}
 #endif
-		HAL_Delay(250);
+		HAL_Delay(1000);
 
     /* USER CODE END WHILE */
 
