@@ -1,2 +1,4 @@
-/Debug/
-/.settings/
+# Files and folders to be left untracked, ignored and left out by git
+/Drivers/ # HAL and CMSIS libraries
+/Debug/ # Compiled binaries, etc.
+/.settings/ # Eclipse project metadata
