@@ -32,7 +32,6 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "LTC6811.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

@@ -26,7 +26,11 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#define PRINTF_DEBUG
+#ifdef PRINTF_DEBUG
+#include <stdio.h>
+#endif
+#include "LTC6811.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -41,7 +45,6 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -71,9 +74,9 @@ static void MX_SPI1_Init(void);
 int main(void)
 {
 	/* USER CODE BEGIN 1 */
-
+	float battVoltages[NUM_LTC][12];
+	int8_t pecStatus;
 	/* USER CODE END 1 */
-
 
 	/* MCU Configuration--------------------------------------------------------*/
 
@@ -97,17 +100,34 @@ int main(void)
 	/* USER CODE BEGIN 2 */
 	// The Board LED is on when PA13 is LOW, so set pin high at beginning
 	HAL_GPIO_WritePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin, GPIO_PIN_SET);
+	printf("LTC TEST\n\n");
+	LTC_wakeup();
 	/* USER CODE END 2 */
-
-
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
-
 	while (1)
 	{
-		LTC_readADC(hspi1);
-		HAL_Delay(250);
+		pecStatus = LTC_readBatt(&hspi1, battVoltages);
+#ifdef PRINTF_DEBUG
+		for (int ic_num = 0; ic_num < NUM_LTC; ic_num++)
+		{
+			printf("IC #%d\n", ic_num);
+			printf(
+					"C0\t\tC1\t\tC2\t\tC3\t\tC4\t\tC5\t\tC6\t\tC7\t\tC8\t\tC9\t\tC10\t\tC11\n");
+			for (int cell = 0; cell < 12; cell++)
+			{
+				printf("%.4f\t", battVoltages[ic_num][cell]);
+			}
+			printf("\n");
+			if (pecStatus)
+				printf("PEC ERROR\n");
+			else
+				printf("PEC OK\n");
+		}
+#endif
+
+		HAL_Delay(1000);
 
 		/* USER CODE END WHILE */
 
@@ -122,8 +142,10 @@ int main(void)
  */
 void SystemClock_Config(void)
 {
-	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-	RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+	RCC_OscInitTypeDef RCC_OscInitStruct =
+	{ 0 };
+	RCC_ClkInitTypeDef RCC_ClkInitStruct =
+	{ 0 };
 
 	/** Initializes the CPU, AHB and APB busses clocks
 	 */
@@ -137,8 +159,8 @@ void SystemClock_Config(void)
 	}
 	/** Initializes the CPU, AHB and APB busses clocks
 	 */
-	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-			|RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+			| RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
 	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSE;
 	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
 	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -200,12 +222,14 @@ static void MX_SPI1_Init(void)
  */
 static void MX_GPIO_Init(void)
 {
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
+	GPIO_InitTypeDef GPIO_InitStruct =
+	{ 0 };
 
 	/* GPIO Ports Clock Enable */
 	__HAL_RCC_GPIOC_CLK_ENABLE();
 	__HAL_RCC_GPIOF_CLK_ENABLE();
 	__HAL_RCC_GPIOA_CLK_ENABLE();
+	__HAL_RCC_GPIOB_CLK_ENABLE();
 
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin, GPIO_PIN_RESET);
@@ -230,7 +254,13 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+#ifdef PRINTF_DEBUG
+int __io_putchar(int ch)
+{
+	ITM_SendChar(ch);
+	return (ch);
+}
+#endif
 /* USER CODE END 4 */
 
 /**
@@ -247,18 +277,18 @@ void Error_Handler(void)
 
 #ifdef  USE_FULL_ASSERT
 /**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
-void assert_failed(char *file, uint32_t line)
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line)
 { 
-	/* USER CODE BEGIN 6 */
+  /* USER CODE BEGIN 6 */
 	/* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-	/* USER CODE END 6 */
+  /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
 
