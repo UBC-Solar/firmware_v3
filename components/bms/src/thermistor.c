@@ -13,8 +13,8 @@ void thermistor_mux(){
   // }
 }
 
-void thermistor_reading() {
-    //MAYBE RENAME TO "groupAvoltages"
+
+void thermistor_reading(uint8_t GPIO1voltages[2]) {
   uint8_t GPIO123voltages[NUM_LTC][6];
   unit8_t RX_message[1] = {0};
 
@@ -24,18 +24,24 @@ void thermistor_reading() {
 
   //wait for Conversion to be ready.
   do {
-    HAL_SPI_Receive(&RX_message, 1, 250);
-  } while (!RX_message)
+      HAL_SPI_Receive(LTC_SPI_handle, &RX_message, 1, 250);
+  } while (!RX_message);
 
-  //retrieve register
+  //retrieve register readings
   //RDAUXA
-  LTC_readRegisterGroup(SPI_handle, LTC_CMD_RDAUXA, GPIO123voltages[0]);
+  LTC_readRegisterGroup(LTC_CMD_RDAUXA, GPIO123voltages[0]);
 
 
   //volts2temp(GPIO123voltages[PLACEHOLDER]);
   //there will probably be a better placement for the above func
 
-  //output reading
+  //output reading by assigning to pointed array the first two bytes of GPIO123voltages
+  for(int board = 1; board <= NUM_LTC; board++) {
+    for(int i = 0; i < 2; i++) {
+      GPIO1voltages[i] = GPIO123voltages[board][i];
+    }
+  }
+
 }
 
 
