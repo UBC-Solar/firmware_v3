@@ -31,7 +31,7 @@ uint8_t COMM2;
 uint8_t COMM3;
 
 
-  /* Algorithm of function
+  /* Algorithm of function (INCOMPLETE, NEEDS TO DISABLE SECOND MUX)
   steps:
     0) known reset state: send to mux the enable signal?????
 
@@ -68,7 +68,7 @@ uint8_t COMM3;
   //1.1.3) D0[3:0] = address stuff (it's MSB)
   //1.1.4) FCOMn[3:0] = I2C_ACK (note that we assume ACK instead of NACK because NACK would tell the slave that is the end of the transmission)
   //      D[3:0]_FCOMM[3:0]
-  COMM1 = 0b0000_0000; // A0A1 = 01 for mux1
+  COMM1 = 0b0000_0000; // A0A1 = 00 for mux0, A0A1 = 01 for mux1
   MUX_message[0][0] = COMM0;
   MUX_message[0][1] = COMM1;
 
@@ -87,7 +87,8 @@ uint8_t COMM3;
 
   //1.2) STCOMM: send the COMM register content
   LTC_sendCmd(LTC_CMD_STCOMM);
-  HAL_SPI_Transmit(BTM_SPI_handle);
+
+  //HAL_SPI_Transmit(BTM_SPI_handle);
   }
 /*
 COMM0 = 0b76543210
@@ -95,12 +96,6 @@ COMM1 = 0b76543210
 COMM2 = 0b76543210
 COMM3 = 0b76543210
 */
-
-
-  //a loop that reads for each of the 12 thermistors to the mux
-
-  //   thermistor_reading(i)
-  // }
 }
 
 /*
