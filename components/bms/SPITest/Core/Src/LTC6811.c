@@ -12,7 +12,7 @@
 
 // Lookup table for PEC (Packet Error Code) CRC calculation
 // See note in LTC6811.h for details of its origin
-const unsigned short int pec15Table[256] =
+const uint16_t pec15Table[256] =
 {
 	0x0000, 0xC599, 0xCEAB, 0x0B32, 0xD8CF, 0x1D56, 0x1664, 0xD3FD, 0xF407,
 	0x319E, 0x3AAC, 0xFF35, 0x2CC8, 0xE951, 0xE263, 0x27FA, 0xAD97, 0x680E,
@@ -76,7 +76,7 @@ void LTC_wakeup()
 
 // LTC_sendCmd: sends a 2-byte command followed by the 2-byte PEC for that command over SPI
 // The caller must ensure the CS line is pulled low prior to calling this function
-void LTC_sendCmd(SPI_HandleTypeDef * SPI_handle, uint16_t command)
+void LTC_sendCmd(uint16_t command)
 {
 	uint16_t pecValue;
 	uint8_t TX_message[4];
@@ -88,19 +88,19 @@ void LTC_sendCmd(SPI_HandleTypeDef * SPI_handle, uint16_t command)
 	TX_message[3] = (uint8_t) pecValue;
 
 	// size parameter is number of bytes to transmit - here it's 4 8bit frames
-	HAL_SPI_Transmit(SPI_handle, TX_message, 4, 250);
+	HAL_SPI_Transmit(LTC_SPI_handle, TX_message, 4, 250);
 	return;
 }
 
 // LTC_writeRegisterGroup: writes the 6 bytes of a configuration register group in the LTC6811
 // Which register group is written to depends on the command provided (should be a WRxxxx command)
-void LTC_writeRegisterGroup(SPI_HandleTypeDef * SPI_handle, uint16_t command, uint8_t TX_data[][6])
+void LTC_writeRegisterGroup(uint16_t command, uint8_t TX_data[][6])
 {
 	uint16_t pecValue;
 	uint8_t TX_message[8];
 
 	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 0); // pull CS line low
-	LTC_sendCmd(SPI_handle, command);
+	LTC_sendCmd(command);
 	for (int i = 0; i < NUM_LTC; i++)
 	{
 		for (int j = 0; j < 6; j++)
@@ -108,7 +108,7 @@ void LTC_writeRegisterGroup(SPI_HandleTypeDef * SPI_handle, uint16_t command, ui
 		pecValue = LTC_pec15(TX_message, 6);
 		TX_message[6] = (uint8_t) (pecValue >> 8);
 		TX_message[7] = (uint8_t) pecValue;
-		HAL_SPI_Transmit(SPI_handle, TX_message, 8, 250);
+		HAL_SPI_Transmit(LTC_SPI_handle, TX_message, 8, 250);
 	}
 	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 1); // pull CS line back high
 	return;
@@ -116,23 +116,22 @@ void LTC_writeRegisterGroup(SPI_HandleTypeDef * SPI_handle, uint16_t command, ui
 
 // LTC_readRegisterGroup: reads the 6 bytes of a configuration register group in the LTC6811
 // Which register group is read depends on the command provided (should be a RDxxxx command)
-int8_t LTC_readRegisterGroup(SPI_HandleTypeDef * SPI_handle, uint16_t command, uint8_t RX_data[][6])
+int8_t LTC_readRegisterGroup(uint16_t command, uint8_t RX_data[][6])
 {
 	uint16_t pecValue;
 	int8_t pecStatus = 0;
 	// Initialize this buffer before using it, or the garbage it contains will be
 	// sent as dummy data - see definition of HAL_SPI_Receive
-	uint8_t RX_message[8] =
-	{ 0 };
+	uint8_t RX_message[8] = { 0 };
 
 	// Send command to read register group
 	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 0); // pull CS line low
-	LTC_sendCmd(SPI_handle, command);
+	LTC_sendCmd(command);
 
 	// Read back the data
 	for (int i = 0; i < NUM_LTC; i++)
 	{
-		HAL_SPI_Receive(SPI_handle, RX_message, 8, 250); // 6 data bytes and 2 PEC bytes
+		HAL_SPI_Receive(LTC_SPI_handle, RX_message, 8, 250); // 6 data bytes and 2 PEC bytes
 		pecValue = LTC_pec15(RX_message, 8); // Should be 0 if transfer was clean
 		if (pecValue)
 			pecStatus = -1; // Set the pecStatus to -1 to signal a bad PEC if pec != 0
@@ -147,7 +146,7 @@ int8_t LTC_readRegisterGroup(SPI_HandleTypeDef * SPI_handle, uint16_t command, u
 // Returns -1 if there is a PEC mismatch, 0 otherwise
 // voltages is a 2 dimensional array of size NUM_LTC by 12 containing the cell voltages C1-C12 of
 // of each LTC6811 in the chain (nearest to MCU first)
-int8_t LTC_readBatt(SPI_HandleTypeDef * SPI_handle, float voltages[][12])
+int8_t LTC_readBatt(LTC_SPI_handleTypeDef * LTC_SPI_handle, float voltages[][12])
 {
 	uint8_t RX_message = 0;
 	// 6-byte sets (each from a different register group of the LTC6811)
@@ -156,22 +155,21 @@ int8_t LTC_readBatt(SPI_HandleTypeDef * SPI_handle, float voltages[][12])
 	int8_t pecStatus = 0;
 
 	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 0); // pull CS line low
-	LTC_sendCmd(SPI_handle, LTC_CMD_ADCV);
+	LTC_sendCmd(LTC_SPI_handle, LTC_CMD_ADCV);
 
 	// wait until the MISO line goes high - this signifies that the LTC6811 is done
 	// reading its ADCs
-	HAL_SPI_Receive(SPI_handle, &RX_message, 1, 250);
-	while (!RX_message)
+	do
 	{
-		HAL_SPI_Receive(SPI_handle, &RX_message, 1, 250);
-	}
-	// Cycle the Chip-select line before the next command is sent
+		HAL_SPI_Receive(LTC_SPI_handle, &RX_message, 1, 250);
+	} while (!RX_message);
+
 	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 1); // pull CS line back high
 
-	pecStatus |= LTC_readRegisterGroup(SPI_handle, LTC_CMD_RDCVA, ADC_data[0]);
-	pecStatus |= LTC_readRegisterGroup(SPI_handle, LTC_CMD_RDCVB, ADC_data[1]);
-	pecStatus |= LTC_readRegisterGroup(SPI_handle, LTC_CMD_RDCVC, ADC_data[2]);
-	pecStatus |= LTC_readRegisterGroup(SPI_handle, LTC_CMD_RDCVD, ADC_data[3]);
+	pecStatus |= LTC_readRegisterGroup(LTC_CMD_RDCVA, ADC_data[0]);
+	pecStatus |= LTC_readRegisterGroup(LTC_CMD_RDCVB, ADC_data[1]);
+	pecStatus |= LTC_readRegisterGroup(LTC_CMD_RDCVC, ADC_data[2]);
+	pecStatus |= LTC_readRegisterGroup(LTC_CMD_RDCVD, ADC_data[3]);
 
 	// Each cell voltage is provided as a 16-bit value where voltage = 0.0001V * raw value
 	// Each Cell Voltage Register Group holds 3 cell voltages
@@ -183,9 +181,9 @@ int8_t LTC_readBatt(SPI_HandleTypeDef * SPI_handle, float voltages[][12])
 		{
 			for (int i = 0; i < 3; i++)
 			{
-				cell_voltage_raw = ((uint16_t) (ADC_data[reg_group][ic_num][2
-						* i + 1]) << 8)
-						| (uint16_t) (ADC_data[reg_group][ic_num][2 * i]);
+				cell_voltage_raw =
+					((uint16_t) (ADC_data[reg_group][ic_num][2 * i + 1]) << 8)
+					| (uint16_t) (ADC_data[reg_group][ic_num][2 * i]);
 				voltages[ic_num][3 * reg_group + i] = cell_voltage_raw * 0.0001;
 			}
 		}

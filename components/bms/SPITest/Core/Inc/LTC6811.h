@@ -23,14 +23,19 @@
 #define LTC_CMD_RDCVD 0x000A // Read Cell Voltage Register Group D
 #define LTC_CMD_PLADC 0x0714 // Poll ADC Conversion Status
 
+// Public variables
+// LTC_SPI_handle - must set this variable to the HAL SPI handle corresponding to
+// the SPI peripheral to which the LTC devices are connected
+SPI_HandleTypeDef * LTC_SPI_handle = NULL;
+
 // Function prototypes
 // LTC_pec15: returns the 2-byte CRC PEC generated from len bytes of data
 uint16_t LTC_pec15(uint8_t* data, int len);
 
 void LTC_wakeup(void);
-void LTC_sendCmd(SPI_HandleTypeDef* SPI_handle, uint16_t command);
-void LTC_writeRegisterGroup(SPI_HandleTypeDef* SPI_handle, uint16_t command, uint8_t TX_data[][6]);
-int8_t LTC_readRegisterGroup(SPI_HandleTypeDef* SPI_handle, uint16_t command, uint8_t RX_data[][6]);
-int8_t LTC_readBatt(SPI_HandleTypeDef* SPI_handle, float voltages[][12]);
+void LTC_sendCmd(uint16_t command);
+void LTC_writeRegisterGroup(uint16_t command, uint8_t TX_data[][6]);
+int8_t LTC_readRegisterGroup(uint16_t command, uint8_t RX_data[][6]);
+int8_t LTC_readBatt(float voltages[][12]);
 
 #endif /* SRC_LTC6811_H_ */
