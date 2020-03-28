@@ -13,12 +13,15 @@
 
 //for I2C communication
 //Table 19: Write Codes for ICOMn[3:0] and FCOMn[3:0] on I2C Master
-//DOUBLE CHECK if cubeMX generates these already
+//ICOMn[3:0]
 #define I2C_START       0b0110
 #define I2C_STOP        0b0001
 #define I2C_BLANK       0b0000
 #define I2C_NO_TRANSMIT 0b1111
-
+//FCOMn[3:0]
+#define I2C_MASTER_ACK        0b0000
+#define I2C_MASTER_NACK       0b1000
+#define I2C_MASTER_NACK_STOP  0b1001
 //MUX Control Codes for I2C control of multiplexer
 //Table 2. Multiplexer Control Bits Truth Table
 //sidenote: could drop 4th bit (first from left) of MUX_Sn,
