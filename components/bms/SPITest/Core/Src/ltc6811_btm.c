@@ -1,14 +1,20 @@
-/*
- * LTC6811_SPI.c
+/**
+ * 	@file ltc6811_btm.c
+ *  @brief Driver for the LTC6811-1 battery monitor IC.
+ *
+ *  All functions associated with this driver are prefixed with "BTM"
+ *
  *
  *  Created on: Feb. 14, 2020
- *      Author: Andrew Hanlon
+ *  @author Andrew Hanlon (a2k-hanlon)
+ *	@author Laila Khan (lailakhankhan)
  *
- * Note that the "char" type is really just an unsigned integer byte
  */
 
 #include "main.h"
-#include "LTC6811.h"
+#include "LTC6811_btm.h"
+
+#define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
 
 // Lookup table for PEC (Packet Error Code) CRC calculation
 // See note in LTC6811.h for details of its origin
@@ -45,155 +51,264 @@ const uint16_t pec15Table[256] =
 	0x8BA7, 0x4E3E, 0x450C, 0x8095
 };
 
-// pec15 Function:
-// Calculates the PEC for "len" bytes of data
-// Function adapted from code on pg. 76 of LTC6811 Datasheet
-uint16_t LTC_pec15(uint8_t *data, int len)
+/**
+ * @brief Calculates the PEC for "len" bytes of data (as a group).
+ * Function adapted from code on pg. 76 of LTC6811 Datasheet.
+ *
+ * @param data The bytes to calculate a PEC for
+ * @param len The number of bytes of data to calculate the PEC for
+ * @return Returns the 2-byte CRC PEC generated
+ */
+uint16_t BTM_calculatePec15(uint8_t *data, int len)
 {
 	uint16_t remainder, address;
-	remainder = 16; // PEC seed (initial value for calculation (16 = 0x10)
+	remainder = 16; // initial value for PEC computation
 	for (int i = 0; i < len; i++)
 	{
-		address = ((remainder >> 7) ^ data[i]) & 0xff; // calculate PEC table address
+		address = ((remainder >> 7) ^ data[i]) & 0xff; // lookup table address
 		remainder = (remainder << 8) ^ pec15Table[address];
 	}
-	return (remainder * 2); // The CRC15 has a 0 in the LSB so the final value must be multiplied by 2
+	return (remainder << 1); // The CRC15 has a 0 in the LSB so the final value
+							 // must be leftshifted 1 bit
 }
 
-// LTC_wakeup: toggles the CS line to wake up the entire chain of LTC6811's
-// Wakes up the daisy chain as per method described on pg. 52 of datasheet (method 2)
-void LTC_wakeup()
+/**
+ * @brief Toggles the CS line to wake up the entire chain of LTC6811's.
+ * Wakes up the daisy chain as per method described on pg. 52 of datasheet
+ * (method 2)
+ */
+void BTM_wakeup()
 {
-	for (int i = 0; i < NUM_LTC; i++)
+	for (int i = 0; i < BTM_NUM_DEVICES; i++)
 	{
 		HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 0); // pull CS line low
 		HAL_Delay(1); // wait 1ms
 		HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 1); // pull CS line high
-		// Then delay at least 10us - there is intrinsic slight delay in using the HAL functions so that should suffice
+		// Then delay at least 10us - there is intrinsic slight delay in using
+		// the HAL functions so that should suffice
 	}
 	return;
 }
 
-// LTC_sendCmd: sends a 2-byte command followed by the 2-byte PEC for that command over SPI
-// The caller must ensure the CS line is pulled low prior to calling this function
-void LTC_sendCmd(uint16_t command)
+/**
+ * @brief sends a 2-byte command followed by the 2-byte PEC for that command
+ * over SPI.
+ * @attention The caller must ensure the CS line is pulled low prior to calling
+ * this function.
+ *
+ * @param command The 2-byte command to send
+ */
+void BTM_sendCmd(BTM_command_t command)
 {
 	uint16_t pecValue;
-	uint8_t TX_message[4];
+	uint8_t tx_message[4];
 
-	TX_message[0] = (uint8_t) (command >> 8);
-	TX_message[1] = (uint8_t) command;
-	pecValue = LTC_pec15(TX_message, 2);
-	TX_message[2] = (uint8_t) (pecValue >> 8);
-	TX_message[3] = (uint8_t) pecValue;
+	tx_message[0] = (uint8_t) (command >> 8);
+	tx_message[1] = (uint8_t) command;
+	pecValue = BTM_pec15(tx_message, 2);
+	tx_message[2] = (uint8_t) (pecValue >> 8);
+	tx_message[3] = (uint8_t) pecValue;
 
 	// size parameter is number of bytes to transmit - here it's 4 8bit frames
-	HAL_SPI_Transmit(LTC_SPI_handle, TX_message, 4, 250);
+	HAL_SPI_Transmit(BTM_SPI_handle, tx_message, 4, BTM_TIMEOUT_VAL);
 	return;
 }
 
-// LTC_writeRegisterGroup: writes the 6 bytes of a configuration register group in the LTC6811
-// Which register group is written to depends on the command provided (should be a WRxxxx command)
-void LTC_writeRegisterGroup(uint16_t command, uint8_t TX_data[][6])
+/**
+ * @brief sends a polling-type command (eg. ADCV) and then polls the LTC6811
+ * This function is blocking. It will wait for the LTC6811 to signal it is
+ * finished; however, there is a timeout feature in case something goes wrong.
+ * The timeout threshold is BTM_TIMEOUT_VAL.
+ *
+ * @param command The 2-byte (polling) command to send
+ * @return 	Returns BTM_OK once LTC6811s have completed their conversions,
+ 			or BTM_ERROR_TIMEOUT upon timeout.
+ */
+BTM_status_t BTM_sendCmdAndPoll(BTM_command_t command)
 {
-	uint16_t pecValue;
-	uint8_t TX_message[8];
+	uint8_t rx_buffer;
+	uint32_t start_tick;
 
-	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 0); // pull CS line low
-	LTC_sendCmd(command);
-	for (int i = 0; i < NUM_LTC; i++)
-	{
-		for (int j = 0; j < 6; j++)
-			TX_message[j] = TX_data[i][j];
-		pecValue = LTC_pec15(TX_message, 6);
-		TX_message[6] = (uint8_t) (pecValue >> 8);
-		TX_message[7] = (uint8_t) pecValue;
-		HAL_SPI_Transmit(LTC_SPI_handle, TX_message, 8, 250);
-	}
-	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 1); // pull CS line back high
-	return;
-}
+	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 0); // Pull CS low
 
-// LTC_readRegisterGroup: reads the 6 bytes of a configuration register group in the LTC6811
-// Which register group is read depends on the command provided (should be a RDxxxx command)
-int8_t LTC_readRegisterGroup(uint16_t command, uint8_t RX_data[][6])
-{
-	uint16_t pecValue;
-	int8_t pecStatus = 0;
-	// Initialize this buffer before using it, or the garbage it contains will be
-	// sent as dummy data - see definition of HAL_SPI_Receive
-	uint8_t RX_message[8] = { 0 };
+	BTM_sendCmd(command);
 
-	// Send command to read register group
-	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 0); // pull CS line low
-	LTC_sendCmd(command);
-
-	// Read back the data
-	for (int i = 0; i < NUM_LTC; i++)
-	{
-		HAL_SPI_Receive(LTC_SPI_handle, RX_message, 8, 250); // 6 data bytes and 2 PEC bytes
-		pecValue = LTC_pec15(RX_message, 8); // Should be 0 if transfer was clean
-		if (pecValue)
-			pecStatus = -1; // Set the pecStatus to -1 to signal a bad PEC if pec != 0
-		for (int j = 0; j < 6; j++)
-			RX_data[i][j] = RX_message[j]; // Copy the data (no PEC)
-	}
-	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 1); // pull CS line back high
-	return pecStatus;
-}
-
-// LTC_readBatt: Poll ADCs and read registers for cell voltages
-// Returns -1 if there is a PEC mismatch, 0 otherwise
-// voltages is a 2 dimensional array of size NUM_LTC by 12 containing the cell voltages C1-C12 of
-// of each LTC6811 in the chain (nearest to MCU first)
-int8_t LTC_readBatt(LTC_SPI_handleTypeDef * LTC_SPI_handle, float voltages[][12])
-{
-	uint8_t RX_message = 0;
-	// 6-byte sets (each from a different register group of the LTC6811)
-	uint8_t ADC_data[4][NUM_LTC][6];
-	uint16_t cell_voltage_raw;
-	int8_t pecStatus = 0;
-
-	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 0); // pull CS line low
-	LTC_sendCmd(LTC_SPI_handle, LTC_CMD_ADCV);
-
-	// wait until the MISO line goes high - this signifies that the LTC6811 is done
-	// reading its ADCs
+	start_tick = HAL_GetTick(); // Start timeout timer
+	// wait until the MISO line goes high;
+	// this signifies that the LTC6811s are done reading their ADCs.
+	// Must send at least BTM_NUM_DEVICES clock pulses before response is valid
+	// (see "Polling Methods" in datasheet pg. 55-57)
+	HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
 	do
 	{
-		HAL_SPI_Receive(LTC_SPI_handle, &RX_message, 1, 250);
-	} while (!RX_message);
+		if (HAL_GetTick() - start_tick > BTM_TIMEOUT_VAL)
+		{
+			return BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
+		}
+		HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
+	} while (!rx_buffer);
 
+	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 1); // pull CS back high
+
+	return BTM_OK;
+}
+
+/**
+ * @brief Writes the 6 bytes of a configuration register group in the LTC6811
+ *
+ * @param command 	A write command to specify which register group to write.
+ * 					Write commands start with "WR"
+ * @param tx_data 	Pointer to a 2-dimensional array of size
+ *					BTM_NUM_DEVICES x 6 containing the data to write
+ */
+void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][6])
+{
+	uint16_t pecValue;
+	uint8_t tx_message[8];
+
+	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 0); // pull CS line low
+	BTM_sendCmd(command);
+	for (int i = 0; i < BTM_NUM_DEVICES; i++)
+	{
+		for (int j = 0; j < 6; j++)
+		{
+			tx_message[j] = tx_data[i][j];
+		}
+		pecValue = BTM_pec15(tx_message, 6);
+		tx_message[6] = (uint8_t) (pecValue >> 8);
+		tx_message[7] = (uint8_t) pecValue;
+		HAL_SPI_Transmit(BTM_SPI_handle, tx_message, 8, BTM_TIMEOUT_VAL);
+	}
 	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 1); // pull CS line back high
+	return;
+}
 
-	pecStatus |= LTC_readRegisterGroup(LTC_CMD_RDCVA, ADC_data[0]);
-	pecStatus |= LTC_readRegisterGroup(LTC_CMD_RDCVB, ADC_data[1]);
-	pecStatus |= LTC_readRegisterGroup(LTC_CMD_RDCVC, ADC_data[2]);
-	pecStatus |= LTC_readRegisterGroup(LTC_CMD_RDCVD, ADC_data[3]);
+/**
+ * @brief Writes the 6 bytes of a configuration register group in the LTC6811
+ *
+ * @param command 	A read command to specify which register group to read.
+ * 					Read commands start with "RD"
+ * @param rx_data 	Pointer to a 2-dimensional array of size
+ *					BTM_NUM_DEVICES x 6 to copy received data to
+ * @return 	Returns BTM_OK if the received PEC is valid, or BTM_ERROR_PEC if
+ 			a full set of valid data could not be obtained after
+			BTM_MAX_READ_ATTEMPTS tries
+ */
+BTM_status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][6])
+{
+	uint16_t pecValue;
+	BTM_status_t status = BTM_OK;
+	// Initialize rx_message before using it, or the garbage it contains will be
+	// sent as dummy data - see definition of HAL_SPI_Receive
+	uint8_t rx_message[8] = {0};
+	int error_counter;
 
-	// Each cell voltage is provided as a 16-bit value where voltage = 0.0001V * raw value
-	// Each Cell Voltage Register Group holds 3 cell voltages
+	// Try a maximum of BTM_MAX_READ_ATTEMPTS times to read register group
+	do
+	{
+		// Send command to read register group
+		HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 0); // pull CS line low
+		BTM_sendCmd(command);
+
+		// Read back the data, but stop between device data groups on error
+		int i = 0;
+		while ((i < BTM_NUM_DEVICES) && (status = BTM_OK))
+		{
+			// 6 data bytes + 2 PEC bytes = 8 bytes
+			HAL_SPI_Receive(BTM_SPI_handle, rx_message, 8, BTM_TIMEOUT_VAL);
+			pecValue = BTM_pec15(rx_message, 8); // 0 if transfer was clean
+			if (pecValue)
+			{
+				status = BTM_ERROR_PEC;
+			}
+			for (int j = 0; j < 8; j++)
+			{
+				if (j < 6)
+				{
+					rx_data[i][j] = rx_message[j]; // Copy the data (no PEC)
+				}
+				rx_message[j] = 0; // Clear rx_message for next loop
+			}
+			i++;
+		}
+		// pull CS line back high
+		HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 1);
+		error_counter++;
+	} while ((status != BTM_OK) && (error_counter <= BTM_MAX_READ_ATTEMPTS));
+
+	return status;
+}
+
+/**
+ * @brief Poll ADCs and read registers of LTC6811 for cell voltages
+ *
+ * @param voltages 	Pointer to a 2-dimensional array of size
+ *					BTM_NUM_DEVICES x 12 to fill with cell voltages C1-C12 of
+ * 					of each LTC6811 in the chain (nearest to MCU first)
+ * @return 	Returns BTM_OK if all the received PECs are correct,
+ * 			BTM_ERROR_PEC if any PEC doesn't match, or BTM_ERROR_TIMEOUT
+ *			if a timeout occurs while polling.
+ */
+BTM_status_t BTM_readBatt(uint16_t voltages[][12])
+{
+	// 6-byte sets (each from a different register group of the LTC6811)
+	uint8_t ADC_data[4][BTM_NUM_DEVICES][6];
+	uint16_t cell_voltage_raw;
+	BTM_status_t status = BTM_OK;
+
+	BTM_sendCmdAndPoll(CMD_ADCV);
+
+	status = BTM_readRegisterGroup(CMD_RDCVA, ADC_data[0]));
+	if (status != HAL_OK) return status;
+
+	status = BTM_readRegisterGroup(CMD_RDCVB, ADC_data[1]));
+	if (status != HAL_OK) return status;
+
+	status = BTM_readRegisterGroup(CMD_RDCVC, ADC_data[2]));
+	if (status != HAL_OK) return status;
+
+	status = BTM_readRegisterGroup(CMD_RDCVD, ADC_data[3]));
+	if (status != HAL_OK) return status;
+
+	// Each cell voltage is provided as a 16-bit value where
+	// voltage = 0.0001V * raw value
+	// Each 6-byte Cell Voltage Register Group holds 3 cell voltages
 	// 1st 2 bytes of Cell Voltage Register Group A is C1V
 	// Last 2 bytes of Cell Voltage Register Group D is C12V
-	for (int ic_num = 0; ic_num < NUM_LTC; ic_num++)
+	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
 	{
 		for (int reg_group = 0; reg_group < 4; reg_group++)
 		{
 			for (int i = 0; i < 3; i++)
 			{
+				// Combine the 2 bytes of each cell voltage together
 				cell_voltage_raw =
 					((uint16_t) (ADC_data[reg_group][ic_num][2 * i + 1]) << 8)
 					| (uint16_t) (ADC_data[reg_group][ic_num][2 * i]);
-				voltages[ic_num][3 * reg_group + i] = cell_voltage_raw * 0.0001;
+				// Store in given array
+				voltages[ic_num][3 * reg_group + i] = cell_voltage_raw;
 			}
 		}
 	}
-	return pecStatus;
+	return status;
+}
+
+/**
+ * @brief Converts a voltage reading from a register in the LTC6811 to a float
+ * Each cell voltage is provided as a 16-bit value where
+ * voltage = 0.0001V * raw value
+ *
+ * @param raw_reading The 16-bit reading from an LTC6811
+ * @return Returns a properly scaled floating-point version of raw_reading
+ */
+float BTM_regValToVoltage(uint16_t raw_reading)
+{
+	return raw_reading * BTM_VOLTAGE_CONVERSION_FACTOR;
 }
 
 /*
-The pec15Table lookup table was generated using the following code, modified from the example code
-on pg. 76 of the LTC6811 Datasheet:
+The pec15Table lookup table was generated using the following code, modified
+from the example code on pg. 76 of the LTC6811 Datasheet:
 
 #define CRC15_POLY 0x4599
 

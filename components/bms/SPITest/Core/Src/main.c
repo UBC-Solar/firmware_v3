@@ -17,8 +17,9 @@
  ******************************************************************************
  */
 
-// LTC6811 uses SPI in mode 4 (1,1)
-// MSB first???, max baud 1Mb/s
+// LTC6811 uses SPI in mode 3 (CPOL 1, CPHA 1)
+// MSB first, max baud 1Mb/s
+
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -30,7 +31,7 @@
 #ifdef PRINTF_DEBUG
 #include <stdio.h>
 #endif
-#include "LTC6811.h"
+#include "ltc6811_btm.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -74,8 +75,8 @@ static void MX_SPI1_Init(void);
 int main(void)
 {
 	/* USER CODE BEGIN 1 */
-	float battVoltages[NUM_LTC][12];
-	int8_t pecStatus;
+	uint16_t battVoltages[NUM_LTC][12];
+	BTM_status_t BTM_status;
 	/* USER CODE END 1 */
 
 	/* MCU Configuration--------------------------------------------------------*/
@@ -101,26 +102,26 @@ int main(void)
 	// The Board LED is on when PA13 is LOW, so set pin high at beginning
 	HAL_GPIO_WritePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin, GPIO_PIN_SET);
 	printf("LTC TEST\n\n");
-	LTC_wakeup();
+	BTM_wakeup();
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		pecStatus = LTC_readBatt(&hspi1, battVoltages);
+		BTM_status = BTM_readBatt(&hspi1, battVoltages);
 #ifdef PRINTF_DEBUG
-		for (int ic_num = 0; ic_num < NUM_LTC; ic_num++)
+		for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
 		{
 			printf("IC #%d\n", ic_num);
 			printf(
 					"C0\t\tC1\t\tC2\t\tC3\t\tC4\t\tC5\t\tC6\t\tC7\t\tC8\t\tC9\t\tC10\t\tC11\n");
 			for (int cell = 0; cell < 12; cell++)
 			{
-				printf("%.4f\t", battVoltages[ic_num][cell]);
+				printf("%.4f\t", BTM_regValToVoltage(battVoltages[ic_num][cell]));
 			}
 			printf("\n");
-			if (pecStatus)
+			if (BTM_status)
 				printf("PEC ERROR\n");
 			else
 				printf("PEC OK\n");
@@ -284,7 +285,7 @@ void Error_Handler(void)
   * @retval None
   */
 void assert_failed(uint8_t *file, uint32_t line)
-{ 
+{
   /* USER CODE BEGIN 6 */
 	/* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
