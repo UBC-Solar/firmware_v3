@@ -75,7 +75,7 @@ static void MX_SPI1_Init(void);
 int main(void)
 {
 	/* USER CODE BEGIN 1 */
-	uint16_t battVoltages[NUM_LTC][12];
+	uint16_t battVoltages[BTM_NUM_DEVICES][12];
 	BTM_status_t BTM_status;
 	/* USER CODE END 1 */
 
@@ -99,17 +99,21 @@ int main(void)
 	MX_GPIO_Init();
 	MX_SPI1_Init();
 	/* USER CODE BEGIN 2 */
+
+	// Point the BTM SPI handle to the correct HAL SPI handle
+
 	// The Board LED is on when PA13 is LOW, so set pin high at beginning
 	HAL_GPIO_WritePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin, GPIO_PIN_SET);
 	printf("LTC TEST\n\n");
 	BTM_wakeup();
+
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		BTM_status = BTM_readBatt(&hspi1, battVoltages);
+		BTM_status = BTM_readBatt(battVoltages);
 #ifdef PRINTF_DEBUG
 		for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
 		{

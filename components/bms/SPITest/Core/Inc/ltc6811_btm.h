@@ -1,13 +1,14 @@
 /**
- * 	@file ltc6811_btm.H
+ * 	@file ltc6811_btm.h
  *  @brief Header file for driver for the LTC6811-1 battery monitor IC.
  *
  *  All functions and many symbolic constants associated with this driver are
  *  prefixed with "BTM"
  *
  *  Created on: Feb. 14, 2020
- *  @author Andrew Hanlon
- *	@author Laila Khan
+ *  @author Andrew Hanlon (a2k-hanlon)
+ *	@author Laila Khan (lailakhankhan)
+ *
  */
 
 #ifndef SRC_LTC6811_BTM_H_
@@ -22,6 +23,13 @@
 #define BTM_TIMEOUT_VAL 100 // ms safety timeout threshold for BTM functions
 #define BTM_MAX_READ_ATTEMPTS 3 // maximum number of times to try to perform a
                                 // read operation from the LTC6811's
+
+typedef enum {                           // These are named assuming ADCOPT(CFGR0[0]) = 0
+    ADC_MODE_422HZ = 0x0,
+    ADC_MODE_27KHZ = 0x1,   // fast
+    ADC_MODE_7KHZ = 0x2,    // normal
+    ADC_MODE_26HZ = 0x3     // filtered
+} BTM_ADC_Mode_t;
 
 /* Cell Selection for ADC Conversion */
 #define CH 0 // set to 0 = all cells // TODO: Could add enumeration
@@ -58,9 +66,9 @@
 #define ADCVSC_VAL  0x0467 | (MD << 7) | (DCP << 4)
 
 typedef enum {
-    BTM_OK = 0;
-    BTM_ERROR_PEC = 1;
-    BTM_ERROR_TIMEOUT = 2;
+    BTM_OK = 0,
+    BTM_ERROR_PEC = 1,
+    BTM_ERROR_TIMEOUT = 2
 } BTM_status_t;
 
 typedef enum {
@@ -102,25 +110,18 @@ typedef enum {
     CMD_STCOMM  = 0x0723        // Start I2C /SPI Communication
 } BTM_command_t;
 
-typedef enum {                           // These are named assuming ADCOPT(CFGR0[0]) = 0
-    ADC_MODE_422HZ = 0x0,
-    ADC_MODE_27KHZ = 0x1,   // fast
-    ADC_MODE_7KHZ = 0x2,    // normal
-    ADC_MODE_26HZ = 0x3     // filtered
-} BTM_ADC_Mode_t;
-
 // Public variables
 // BTM_SPI_handle - must set this variable to the HAL SPI handle corresponding to
 // the SPI peripheral to which the LTC devices are connected
-SPI_HandleTypeDef* BTM_SPI_handle = NULL;
+SPI_HandleTypeDef* BTM_SPI_handle;
 
 // Function prototypes
-// BTM_pec15: returns the 2-byte CRC PEC generated from len bytes of data
 uint16_t BTM_calculatePec15(uint8_t* data, int len);
 void BTM_wakeup(void);
 void BTM_sendCmd(BTM_command_t command);
 void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][6]);
 BTM_status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][6]);
-BTM_status_t BTM_readBatt(float voltages[][12]);
+BTM_status_t BTM_readBatt(uint16_t voltages[][12]);
+float BTM_regValToVoltage(uint16_t raw_reading);
 
 #endif /* SRC_LTC6811_BTM_H_ */

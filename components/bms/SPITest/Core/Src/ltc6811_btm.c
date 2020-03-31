@@ -105,7 +105,7 @@ void BTM_sendCmd(BTM_command_t command)
 
 	tx_message[0] = (uint8_t) (command >> 8);
 	tx_message[1] = (uint8_t) command;
-	pecValue = BTM_pec15(tx_message, 2);
+	pecValue = BTM_calculatePec15(tx_message, 2);
 	tx_message[2] = (uint8_t) (pecValue >> 8);
 	tx_message[3] = (uint8_t) pecValue;
 
@@ -174,7 +174,7 @@ void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][6])
 		{
 			tx_message[j] = tx_data[i][j];
 		}
-		pecValue = BTM_pec15(tx_message, 6);
+		pecValue = BTM_calculatePec15(tx_message, 6);
 		tx_message[6] = (uint8_t) (pecValue >> 8);
 		tx_message[7] = (uint8_t) pecValue;
 		HAL_SPI_Transmit(BTM_SPI_handle, tx_message, 8, BTM_TIMEOUT_VAL);
@@ -216,7 +216,7 @@ BTM_status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][6])
 		{
 			// 6 data bytes + 2 PEC bytes = 8 bytes
 			HAL_SPI_Receive(BTM_SPI_handle, rx_message, 8, BTM_TIMEOUT_VAL);
-			pecValue = BTM_pec15(rx_message, 8); // 0 if transfer was clean
+			pecValue = BTM_calculatePec15(rx_message, 8); // 0 if transfer was clean
 			if (pecValue)
 			{
 				status = BTM_ERROR_PEC;
@@ -258,17 +258,17 @@ BTM_status_t BTM_readBatt(uint16_t voltages[][12])
 
 	BTM_sendCmdAndPoll(CMD_ADCV);
 
-	status = BTM_readRegisterGroup(CMD_RDCVA, ADC_data[0]));
-	if (status != HAL_OK) return status;
+	status = BTM_readRegisterGroup(CMD_RDCVA, ADC_data[0]);
+if (status != BTM_OK) return status;
 
-	status = BTM_readRegisterGroup(CMD_RDCVB, ADC_data[1]));
-	if (status != HAL_OK) return status;
+	status = BTM_readRegisterGroup(CMD_RDCVB, ADC_data[1]);
+	if (status != BTM_OK) return status;
 
-	status = BTM_readRegisterGroup(CMD_RDCVC, ADC_data[2]));
-	if (status != HAL_OK) return status;
+	status = BTM_readRegisterGroup(CMD_RDCVC, ADC_data[2]);
+	if (status != BTM_OK) return status;
 
-	status = BTM_readRegisterGroup(CMD_RDCVD, ADC_data[3]));
-	if (status != HAL_OK) return status;
+	status = BTM_readRegisterGroup(CMD_RDCVD, ADC_data[3]);
+	if (status != BTM_OK) return status;
 
 	// Each cell voltage is provided as a 16-bit value where
 	// voltage = 0.0001V * raw value
