@@ -75,8 +75,18 @@ static void MX_SPI1_Init(void);
 int main(void)
 {
 	/* USER CODE BEGIN 1 */
-	uint16_t battVoltages[BTM_NUM_DEVICES][12];
-	BTM_status_t BTM_status;
+	uint16_t battVoltages[BTM_NUM_DEVICES][12] = {{0}};
+	BTM_status_t BTM_status = BTM_OK;
+	uint8_t config_val[BTM_NUM_DEVICES][6] =
+	{{
+		0xEC, // GPIO 1,3-5 = 1, GPIO2 = 0, REFON = 1
+		0x70, // VUV[7:0] (Under voltage = 1V / (16 * 0.0001V) - 1 = 0x270
+		0x22, // VOV[4:0], VUV[11:8]
+		0x75, // VOV[11:5] (Over voltage threshold = 3V / (16 * 0.0001V) - 1 = 0x752
+		0x00, // Discharge off for cells 1 through 8
+		0x00  // Discharge off for cells 9 through 12, Discharge timer disabled
+	}};
+	uint8_t register_readout[BTM_NUM_DEVICES][6] = {{0}};
 	/* USER CODE END 1 */
 
 	/* MCU Configuration--------------------------------------------------------*/
@@ -101,19 +111,34 @@ int main(void)
 	/* USER CODE BEGIN 2 */
 
 	// Point the BTM SPI handle to the correct HAL SPI handle
-
+	BTM_SPI_handle = &hspi1;
 	// The Board LED is on when PA13 is LOW, so set pin high at beginning
 	HAL_GPIO_WritePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin, GPIO_PIN_SET);
-	printf("LTC TEST\n\n");
+	printf("LTC TEST\n");
 	BTM_wakeup();
+	BTM_writeRegisterGroup(CMD_WRCFGA, config_val);
 
+	BTM_status = BTM_readRegisterGroup(CMD_RDCFGA, register_readout);
+	if (BTM_OK == BTM_status)
+		printf("Read config register success\n");
+	else
+		printf("Read config register failed\n");
+
+	// compare read config to set config
+	printf("Configuration:\nWritten\tRead\n");
+	for(int i = 0; i < 6; i++) {
+		printf("%X\t\t%X\n", config_val[0][i], register_readout[0][i]);
+	}
+	putchar('\n');
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1)
 	{
+		HAL_GPIO_WritePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin, GPIO_PIN_RESET);
 		BTM_status = BTM_readBatt(battVoltages);
+		HAL_GPIO_WritePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin, GPIO_PIN_SET);
 #ifdef PRINTF_DEBUG
 		for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
 		{
@@ -125,11 +150,22 @@ int main(void)
 				printf("%.4f\t", BTM_regValToVoltage(battVoltages[ic_num][cell]));
 			}
 			printf("\n");
-			if (BTM_status)
+			switch (BTM_status)
+			{
+			case BTM_OK:
+				printf("BTM OK\n");
+				break;
+			case BTM_ERROR_TIMEOUT:
+				printf("TIMEOUT ERROR\n");
+				break;
+			case BTM_ERROR_PEC:
 				printf("PEC ERROR\n");
-			else
-				printf("PEC OK\n");
+				break;
+			default:
+				break;
+			}
 		}
+		putchar('\n');
 #endif
 
 		HAL_Delay(1000);

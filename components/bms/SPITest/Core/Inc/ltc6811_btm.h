@@ -20,11 +20,16 @@
 #define BTM_NUM_MODULES 36U
 #define BTM_NUM_STACKS 3U
 
-#define BTM_TIMEOUT_VAL 100 // ms safety timeout threshold for BTM functions
+// Set these according to the pin assignment for the SPI CS Pin.
+// It must be controlled by software, not hardware.
+#define BTM_CS_GPIO_PORT CS_LTC_GPIO_Port
+#define BTM_CS_GPIO_PIN CS_LTC_Pin
+
+#define BTM_TIMEOUT_VAL 30 // ms - safety timeout threshold for BTM functions
 #define BTM_MAX_READ_ATTEMPTS 3 // maximum number of times to try to perform a
                                 // read operation from the LTC6811's
 
-typedef enum {                           // These are named assuming ADCOPT(CFGR0[0]) = 0
+typedef enum {              // These are named assuming ADCOPT(CFGR0[0]) = 0
     ADC_MODE_422HZ = 0x0,
     ADC_MODE_27KHZ = 0x1,   // fast
     ADC_MODE_7KHZ = 0x2,    // normal

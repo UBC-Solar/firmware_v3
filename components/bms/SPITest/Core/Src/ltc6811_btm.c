@@ -76,16 +76,18 @@ uint16_t BTM_calculatePec15(uint8_t *data, int len)
  * @brief Toggles the CS line to wake up the entire chain of LTC6811's.
  * Wakes up the daisy chain as per method described on pg. 52 of datasheet
  * (method 2)
+ * Using HAL_Delay() for this is not particularly ideal, since the minimum delay
+ * is 1ms and the delays required are 300us and 10us or something (shorter than 1 ms)
  */
 void BTM_wakeup()
 {
 	for (int i = 0; i < BTM_NUM_DEVICES; i++)
 	{
-		HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 0); // pull CS line low
+		HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 0); // pull CS line low
 		HAL_Delay(1); // wait 1ms
-		HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 1); // pull CS line high
-		// Then delay at least 10us - there is intrinsic slight delay in using
-		// the HAL functions so that should suffice
+		HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 1); // pull CS line high
+		// Then delay at least 10us
+		HAL_Delay(1); // wait 1ms - the minimum with this timer setup
 	}
 	return;
 }
@@ -126,19 +128,17 @@ void BTM_sendCmd(BTM_command_t command)
  */
 BTM_status_t BTM_sendCmdAndPoll(BTM_command_t command)
 {
-	uint8_t rx_buffer;
+	uint8_t rx_buffer = 0;
 	uint32_t start_tick;
 
-	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 0); // Pull CS low
+	HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 0); // Pull CS low
 
 	BTM_sendCmd(command);
 
 	start_tick = HAL_GetTick(); // Start timeout timer
-	// wait until the MISO line goes high;
-	// this signifies that the LTC6811s are done reading their ADCs.
-	// Must send at least BTM_NUM_DEVICES clock pulses before response is valid
-	// (see "Polling Methods" in datasheet pg. 55-57)
-	HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
+
+	// Poll for conversion completion; see "Polling Methods" in datasheet pg. 55-57)
+	// Make sure MISO goes low...
 	do
 	{
 		if (HAL_GetTick() - start_tick > BTM_TIMEOUT_VAL)
@@ -146,9 +146,26 @@ BTM_status_t BTM_sendCmdAndPoll(BTM_command_t command)
 			return BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
 		}
 		HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
+	} while (0xff == rx_buffer);
+
+	// ... then wait for MISO to go high;
+	// this signifies that the LTC6811s are done reading their ADCs.
+
+	// Must send at least BTM_NUM_DEVICES clock pulses before response is valid
+	// That's why there's an extra read initially - it's slight overkill but that's ok
+	rx_buffer = 0;
+	HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
+	do
+	{
+		if (HAL_GetTick() - start_tick > BTM_TIMEOUT_VAL)
+		{
+			return BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
+		}
+		rx_buffer = 0;
+		HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
 	} while (!rx_buffer);
 
-	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 1); // pull CS back high
+	HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 1); // pull CS back high
 
 	return BTM_OK;
 }
@@ -163,10 +180,10 @@ BTM_status_t BTM_sendCmdAndPoll(BTM_command_t command)
  */
 void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][6])
 {
-	uint16_t pecValue;
+	uint16_t pecValue = 0;
 	uint8_t tx_message[8];
 
-	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 0); // pull CS line low
+	HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 0); // pull CS line low
 	BTM_sendCmd(command);
 	for (int i = 0; i < BTM_NUM_DEVICES; i++)
 	{
@@ -179,7 +196,7 @@ void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][6])
 		tx_message[7] = (uint8_t) pecValue;
 		HAL_SPI_Transmit(BTM_SPI_handle, tx_message, 8, BTM_TIMEOUT_VAL);
 	}
-	HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 1); // pull CS line back high
+	HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 1); // pull CS line back high
 	return;
 }
 
@@ -196,45 +213,56 @@ void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][6])
  */
 BTM_status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][6])
 {
-	uint16_t pecValue;
+	uint16_t pecValue = 0;
 	BTM_status_t status = BTM_OK;
 	// Initialize rx_message before using it, or the garbage it contains will be
 	// sent as dummy data - see definition of HAL_SPI_Receive
 	uint8_t rx_message[8] = {0};
-	int error_counter;
+	int ic_num = 0;
+	int error_counter = 0;
 
 	// Try a maximum of BTM_MAX_READ_ATTEMPTS times to read register group
 	do
 	{
 		// Send command to read register group
-		HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 0); // pull CS line low
+		HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 0); // pull CS line low
 		BTM_sendCmd(command);
 
 		// Read back the data, but stop between device data groups on error
-		int i = 0;
-		while ((i < BTM_NUM_DEVICES) && (status = BTM_OK))
+		ic_num = 0;
+		status = BTM_OK; // reset status before a new try
+		while ((ic_num < BTM_NUM_DEVICES) && (BTM_OK == status))
 		{
 			// 6 data bytes + 2 PEC bytes = 8 bytes
 			HAL_SPI_Receive(BTM_SPI_handle, rx_message, 8, BTM_TIMEOUT_VAL);
+
 			pecValue = BTM_calculatePec15(rx_message, 8); // 0 if transfer was clean
 			if (pecValue)
 			{
 				status = BTM_ERROR_PEC;
-			}
-			for (int j = 0; j < 8; j++)
-			{
-				if (j < 6)
+				for(int i = 0; i < 8; i++)
 				{
-					rx_data[i][j] = rx_message[j]; // Copy the data (no PEC)
+					rx_message[i] = 0; // Clear buffer for next try
 				}
-				rx_message[j] = 0; // Clear rx_message for next loop
 			}
-			i++;
+			else
+			{
+				for (int j = 0; j < 8; j++)
+				{
+					if (j < 6)
+					{
+						rx_data[ic_num][j] = rx_message[j]; // Copy the data (no PEC)
+					}
+					rx_message[j] = 0; // Clear rx_message for next loop
+				}
+			}
+			ic_num++;
 		}
+
 		// pull CS line back high
-		HAL_GPIO_WritePin(CS_LTC_GPIO_Port, CS_LTC_Pin, 1);
+		HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 1);
 		error_counter++;
-	} while ((status != BTM_OK) && (error_counter <= BTM_MAX_READ_ATTEMPTS));
+	} while ((BTM_OK != status) && (error_counter < BTM_MAX_READ_ATTEMPTS));
 
 	return status;
 }
@@ -256,10 +284,11 @@ BTM_status_t BTM_readBatt(uint16_t voltages[][12])
 	uint16_t cell_voltage_raw;
 	BTM_status_t status = BTM_OK;
 
-	BTM_sendCmdAndPoll(CMD_ADCV);
+	status = BTM_sendCmdAndPoll(CMD_ADCV);
+	if (status != BTM_OK) return status;
 
 	status = BTM_readRegisterGroup(CMD_RDCVA, ADC_data[0]);
-if (status != BTM_OK) return status;
+	if (status != BTM_OK) return status;
 
 	status = BTM_readRegisterGroup(CMD_RDCVB, ADC_data[1]);
 	if (status != BTM_OK) return status;
