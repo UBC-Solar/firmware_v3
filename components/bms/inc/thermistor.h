@@ -36,6 +36,9 @@
 #define MUX_S6      0b1110
 #define MUX_S7      0b1111
 
+#define MUX_CHANNELS 6
+#define NUMBER_OF_MUX 2
+#define ONE_THIRD_OF_COMM 2
 //function prototypes
 void thermistor_reading(uint8_t GPIO1voltages[2]);
 
