@@ -75,8 +75,10 @@ static void MX_SPI1_Init(void);
 int main(void)
 {
 	/* USER CODE BEGIN 1 */
-	uint16_t battVoltages[BTM_NUM_DEVICES][12] = {{0}};
+	BTM_PackData_t pack;
+	//uint16_t battVoltages[BTM_NUM_DEVICES][12] = {{0}};
 	BTM_status_t BTM_status = BTM_OK;
+
 	uint8_t config_val[BTM_NUM_DEVICES][6] =
 	{{
 		0xEC, // GPIO 1,3-5 = 1, GPIO2 = 0, REFON = 1
@@ -86,7 +88,9 @@ int main(void)
 		0x00, // Discharge off for cells 1 through 8
 		0x00  // Discharge off for cells 9 through 12, Discharge timer disabled
 	}};
+
 	uint8_t register_readout[BTM_NUM_DEVICES][6] = {{0}};
+
 	/* USER CODE END 1 */
 
 	/* MCU Configuration--------------------------------------------------------*/
@@ -110,10 +114,23 @@ int main(void)
 	MX_SPI1_Init();
 	/* USER CODE BEGIN 2 */
 
-	// Point the BTM SPI handle to the correct HAL SPI handle
+	// Initialize battery pack data structure
+	for(int i = 0; i < BTM_NUM_DEVICES; i++) {
+		pack.stack[i].stack_voltage = 0;
+		pack.stack[i].module_bitmask = 0xfff;
+
+		for(int j = 0; j < 12; j++) {
+			pack.stack[i].module_voltage[j] = 0;
+			pack.stack[i].module_temperature[j] = 0;
+		}
+	}
+
+	// Specify the SPI and GPIO resources for the BTM library
 	BTM_SPI_handle = &hspi1;
+
 	// The Board LED is on when PA13 is LOW, so set pin high at beginning
 	HAL_GPIO_WritePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin, GPIO_PIN_SET);
+
 	printf("LTC TEST\n");
 	BTM_wakeup();
 	BTM_writeRegisterGroup(CMD_WRCFGA, config_val);
@@ -137,7 +154,8 @@ int main(void)
 	while (1)
 	{
 		HAL_GPIO_WritePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin, GPIO_PIN_RESET);
-		BTM_status = BTM_readBatt(battVoltages);
+		//BTM_status = BTM_readBatt(battVoltages);
+		BTM_status = BTM_readBatt(&pack);
 		HAL_GPIO_WritePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin, GPIO_PIN_SET);
 #ifdef PRINTF_DEBUG
 		for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
@@ -147,7 +165,8 @@ int main(void)
 					"C0\t\tC1\t\tC2\t\tC3\t\tC4\t\tC5\t\tC6\t\tC7\t\tC8\t\tC9\t\tC10\t\tC11\n");
 			for (int cell = 0; cell < 12; cell++)
 			{
-				printf("%.4f\t", BTM_regValToVoltage(battVoltages[ic_num][cell]));
+				//printf("%.4f\t", BTM_regValToVoltage(battVoltages[ic_num][cell]));
+				printf("%.4f\t", BTM_regValToVoltage(pack.stack[ic_num].module_voltage[cell]));
 			}
 			printf("\n");
 			switch (BTM_status)

@@ -11,7 +11,6 @@
  *
  */
 
-#include "main.h"
 #include "LTC6811_btm.h"
 
 #define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
@@ -203,6 +202,8 @@ void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][6])
 /**
  * @brief Writes the 6 bytes of a configuration register group in the LTC6811
  *
+ * The data received will only be written to rx_data if the PEC matches.
+ *
  * @param command 	A read command to specify which register group to read.
  * 					Read commands start with "RD"
  * @param rx_data 	Pointer to a 2-dimensional array of size
@@ -277,11 +278,12 @@ BTM_status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][6])
  * 			BTM_ERROR_PEC if any PEC doesn't match, or BTM_ERROR_TIMEOUT
  *			if a timeout occurs while polling.
  */
-BTM_status_t BTM_readBatt(uint16_t voltages[][12])
+BTM_status_t BTM_readBatt(BTM_PackData_t * packData)
 {
 	// 6-byte sets (each from a different register group of the LTC6811)
 	uint8_t ADC_data[4][BTM_NUM_DEVICES][6];
-	uint16_t cell_voltage_raw;
+	uint16_t cell_voltage_raw = 0;
+	int cell_num = 0;
 	BTM_status_t status = BTM_OK;
 
 	status = BTM_sendCmdAndPoll(CMD_ADCV);
@@ -308,14 +310,16 @@ BTM_status_t BTM_readBatt(uint16_t voltages[][12])
 	{
 		for (int reg_group = 0; reg_group < 4; reg_group++)
 		{
-			for (int i = 0; i < 3; i++)
+			for (int reading_num = 0; reading_num < 3; reading_num++)
 			{
 				// Combine the 2 bytes of each cell voltage together
 				cell_voltage_raw =
-					((uint16_t) (ADC_data[reg_group][ic_num][2 * i + 1]) << 8)
-					| (uint16_t) (ADC_data[reg_group][ic_num][2 * i]);
-				// Store in given array
-				voltages[ic_num][3 * reg_group + i] = cell_voltage_raw;
+					((uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num + 1]) << 8)
+					| (uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num]);
+				// Store in pack data structure
+				cell_num = 3 * reg_group + reading_num;
+				//voltages[ic_num][cell_num] = cell_voltage_raw;
+				packData->stack[ic_num].module_voltage[cell_num] = cell_voltage_raw;
 			}
 		}
 	}
