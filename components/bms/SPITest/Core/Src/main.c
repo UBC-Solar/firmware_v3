@@ -27,10 +27,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#define PRINTF_DEBUG
-#ifdef PRINTF_DEBUG
 #include <stdio.h>
-#endif
 #include "ltc6811_btm.h"
 /* USER CODE END Includes */
 
@@ -76,8 +73,7 @@ int main(void)
 {
 	/* USER CODE BEGIN 1 */
 	BTM_PackData_t pack;
-	//uint16_t battVoltages[BTM_NUM_DEVICES][12] = {{0}};
-	BTM_status_t BTM_status = BTM_OK;
+	BTM_Status_t BTM_status = BTM_OK;
 
 	uint8_t config_val[BTM_NUM_DEVICES][6] =
 	{{
@@ -117,15 +113,14 @@ int main(void)
 	// Initialize battery pack data structure
 	for(int i = 0; i < BTM_NUM_DEVICES; i++) {
 		pack.stack[i].stack_voltage = 0;
-		pack.stack[i].module_bitmask = 0xfff;
-
 		for(int j = 0; j < 12; j++) {
-			pack.stack[i].module_voltage[j] = 0;
-			pack.stack[i].module_temperature[j] = 0;
+		    pack.stack[i].module[j].enable = MODULE_ENABLED;
+			pack.stack[i].module[j].voltage = 0;
+			pack.stack[i].module[j].temperature = 0;
 		}
 	}
 
-	// Specify the SPI and GPIO resources for the BTM library
+	// Specify the SPI resources for the BTM library
 	BTM_SPI_handle = &hspi1;
 
 	// The Board LED is on when PA13 is LOW, so set pin high at beginning
@@ -154,10 +149,9 @@ int main(void)
 	while (1)
 	{
 		HAL_GPIO_WritePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin, GPIO_PIN_RESET);
-		//BTM_status = BTM_readBatt(battVoltages);
 		BTM_status = BTM_readBatt(&pack);
 		HAL_GPIO_WritePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin, GPIO_PIN_SET);
-#ifdef PRINTF_DEBUG
+
 		for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
 		{
 			printf("IC #%d\n", ic_num);
@@ -165,8 +159,7 @@ int main(void)
 					"C0\t\tC1\t\tC2\t\tC3\t\tC4\t\tC5\t\tC6\t\tC7\t\tC8\t\tC9\t\tC10\t\tC11\n");
 			for (int cell = 0; cell < 12; cell++)
 			{
-				//printf("%.4f\t", BTM_regValToVoltage(battVoltages[ic_num][cell]));
-				printf("%.4f\t", BTM_regValToVoltage(pack.stack[ic_num].module_voltage[cell]));
+				printf("%.4f\t", BTM_regValToVoltage(pack.stack[ic_num].module[cell].voltage));
 			}
 			printf("\n");
 			switch (BTM_status)
@@ -185,7 +178,6 @@ int main(void)
 			}
 		}
 		putchar('\n');
-#endif
 
 		HAL_Delay(1000);
 
@@ -314,13 +306,11 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-#ifdef PRINTF_DEBUG
 int __io_putchar(int ch)
 {
 	ITM_SendChar(ch);
 	return (ch);
 }
-#endif
 /* USER CODE END 4 */
 
 /**

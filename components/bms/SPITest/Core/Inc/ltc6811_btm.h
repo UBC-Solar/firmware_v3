@@ -13,6 +13,11 @@
  *		set the BTM_SPI_handle pointer to the HAL SPI handle
  *		eg. BTM_SPI_handle = &hspi1;
  *
+ *  NOTE: "Cell" and "Module," as they appear in this code, should be treated
+ *  as synonymous. The inconsistency in the use of the 2 terms is due to
+ *  conflicting nomenclature of the team's battery pack architecture and the
+ *  LTC6811 documentation.
+ *
  *  NOTE: The "Self Test" (ST) diagnostic functions and associated values have
  *  been commented out since the command variations have not yet been implemented
  *  Just to be clear, in some cases "ST" refers to "start" not "self test"
@@ -33,12 +38,10 @@ typedef enum {
     BTM_OK            = 0,
     BTM_ERROR_PEC     = 1,
     BTM_ERROR_TIMEOUT = 2
-} BTM_status_t;
-
-#define BTM_NUM_CELLS 12 // Do not change
+} BTM_Status_t;
 
 /*============================================================================*/
-/* COMMAND OPTION ENUMERATIONS */
+/* ENUMERATIONS */
 
 // LTC6811 ADC mode options
 // First freq applies when ADCOPT == 0, second when ADCOPT == 1
@@ -69,6 +72,11 @@ typedef enum {
     CHST_VA  = 0x3, // Analog Power Supply
     CHST_VD  = 0x4  // Digital Power Supply
 } BTM_CHST_t;
+
+typedef enum {
+    MODULE_DISABLED = 0,
+    MODULE_ENABLED = 1
+} BTM_module_enable_t;
 
 /*============================================================================*/
 /* CONFIGURABLE PARAMETERS */
@@ -200,24 +208,39 @@ typedef enum {
     CMD_CLRSTAT = 0x0713,       // Clear Status Register Groups
     CMD_PLADC   = 0x0714,       // Poll ADC Conversion Status
     CMD_DIAGN   = 0x0715,       // Diagnose MUX and Poll Status
-    CMD_WRCOMM  = 0x07211,      // Write COMM Register Group
+    CMD_WRCOMM  = 0x0721,      // Write COMM Register Group
     CMD_RDCOMM  = 0x0722,       // Read COMM Register Group
     CMD_STCOMM  = 0x0723        // Start I2C /SPI Communication
 } BTM_command_t;
 
 /*============================================================================*/
+/* PUBLIC CONSTANTS */
+
+#define BTM_NUM_MODULES 12 // Do not change
+
+/*============================================================================*/
 /* STRUCTURES FOR GATHERED DATA */
 
-// To ignore particular modules in the string (for checking functions),
-// modify the module bit mask. A zero in the bit position corresponding to
-// the "empty" cell will cause that cell to be ignored when checking for faults, etc.
-// eg. to ignore only the 6th module, set module_bitmask to 0xfdf
+/*
+ * NOTE: the BTM_module entity would be considered a "cell" by the LTC6811
+ * datasheet's naming conventions. Here it's called a module due to the fact
+ * that we arrange physical battery cells in parallel to create modules.
+ * (the cells in a module are in parallel - they're all at the same voltage
+ * and their voltage is measured at the module, not cell level).
+ */
+struct BTM_module {
+    // To ignore particular modules in the string (for checking functions),
+    // the enable parameter has been included. A zero means
+    // the module will be ignored when checking for faults, etc.
+    BTM_module_enable_t enable;
+    uint16_t voltage;
+    uint16_t temperature;
+};
+
 struct BTM_stack {
     unsigned int stack_voltage;
-    uint16_t module_bitmask;
-    uint16_t module_voltage[BTM_NUM_CELLS];
-    uint16_t module_temperature[BTM_NUM_CELLS];
-    // TODO: balancing settings
+    struct BTM_module module[BTM_NUM_MODULES];
+    // TODO: balancing settings, other stack-level (IC-level) parameters
 };
 
 typedef struct {
@@ -238,10 +261,10 @@ uint16_t BTM_calculatePec15(uint8_t* data, int len);
 void BTM_init(void);
 void BTM_wakeup(void);
 void BTM_sendCmd(BTM_command_t command);
-BTM_status_t BTM_sendCmdAndPoll(BTM_command_t command);
+BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command);
 void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][6]);
-BTM_status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][6]);
-BTM_status_t BTM_readBatt(BTM_PackData_t * packData);
+BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][6]);
+BTM_Status_t BTM_readBatt(BTM_PackData_t * packData);
 float BTM_regValToVoltage(uint16_t raw_reading);
 
 #endif /* LTC6811_BTM_H_ */
