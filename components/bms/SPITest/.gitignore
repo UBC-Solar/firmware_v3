@@ -6,7 +6,7 @@
 /Debug/
 # Eclipse project metadata
 /.settings/
-
+*.launch
 
 # Github C .gitignore template below
 # Prerequisites
