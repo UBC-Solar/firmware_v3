@@ -83,11 +83,23 @@ typedef enum {
 
 #define BTM_NUM_DEVICES 1U // Number of LTC6811-1 ICs daisy chained
 
-#define BTM_TIMEOUT_VAL 30 // ms - safety timeout threshold for BTM functions
-#define BTM_MAX_READ_ATTEMPTS 3 // maximum number of times to try to perform a
+#define BTM_TIMEOUT_VAL 30U // ms - safety timeout threshold for BTM functions
+#define BTM_MAX_READ_ATTEMPTS 3U // maximum number of times to try to perform a
                                 // read operation from the LTC6811's
 #define BTM_CS_GPIO_PORT GPIOA
 #define BTM_CS_GPIO_PIN GPIO_PIN_4
+
+/* Configuration Register Group Parameters */
+// Keep voltage references on between ADC reads (significantly speeds up reads,
+//   increases power consumption)
+#define REFON 1
+// Over-voltage threshold for LTC6811
+#define VUV 1687U // (2.7V / (16 * 0.0001V)) - 1 = 1687
+// Under-voltage threshold for LTC6811
+#define VOV 2624U // (4.2V / (16 * 0.0001V)) - 1 = 2624
+// ADCOPT selects the ADC mode together with MD, but is in the CFG register
+#define ADCOPT 0
+/* End Configuration Register Group Parameter */
 
 // Discharge Permitted during cell measurement
 #define DCP 0 // 0 = Discharge Not Permitted, 1 = Discharge Permitted
@@ -215,8 +227,10 @@ typedef enum {
 
 /*============================================================================*/
 /* PUBLIC CONSTANTS */
+// Do not change
 
-#define BTM_NUM_MODULES 12 // Do not change
+#define BTM_NUM_MODULES 12
+#define BTM_REG_GROUP_SIZE 6 // All of the LTC6811 register groups consist of 6 bytes
 
 /*============================================================================*/
 /* STRUCTURES FOR GATHERED DATA */
@@ -238,9 +252,11 @@ struct BTM_module {
 };
 
 struct BTM_stack {
+    uint8_t cfgr[BTM_REG_GROUP_SIZE]; // Configuration Register Group setting
     unsigned int stack_voltage;
     struct BTM_module module[BTM_NUM_MODULES];
     // TODO: balancing settings, other stack-level (IC-level) parameters
+    // Don't forget to add any new parameters to BTM_init()
 };
 
 typedef struct {
@@ -258,12 +274,12 @@ SPI_HandleTypeDef * BTM_SPI_handle;
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 uint16_t BTM_calculatePec15(uint8_t* data, int len);
-void BTM_init(void);
+void BTM_init(BTM_PackData_t * pack);
 void BTM_wakeup(void);
 void BTM_sendCmd(BTM_command_t command);
 BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command);
-void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][6]);
-BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][6]);
+void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][BTM_REG_GROUP_SIZE]);
+BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_REG_GROUP_SIZE]);
 BTM_Status_t BTM_readBatt(BTM_PackData_t * packData);
 float BTM_regValToVoltage(uint16_t raw_reading);
 

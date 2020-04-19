@@ -91,6 +91,44 @@ void BTM_wakeup()
 	return;
 }
 
+void BTM_init(BTM_PackData_t * pack)
+{
+    uint8_t cfgr_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
+    uint8_t config_val[BTM_REG_GROUP_SIZE] =
+    {
+        0xF8 | (REFON << 2) | ADCOPT, // GPIO 1-5 = 1, REFON, ADCOPT
+        (VUV & 0xFF), // VUV[7:0]
+        ((uint8_t) (VOV << 4)) | (((uint8_t) (VUV >> 8)) & 0x0F), // VOV[4:0] | VUV[11:8]
+        (VOV >> 4), // VOV[11:5]
+        0x00, // Discharge off for cells 1 through 8
+        0x00  // Discharge off for cells 9 through 12, Discharge timer disabled
+    };
+
+    // Initialize given PackData structure
+    pack->packVoltage = 0;
+    for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+    {
+        for(int reg_num = 0; reg_num > BTM_REG_GROUP_SIZE; reg_num++)
+        {
+            pack->stack[ic_num].cfgr[reg_num] = config_val[reg_num];
+            cfgr_to_write[ic_num][reg_num] = config_val[reg_num]; // prepare tx data
+        }
+
+        pack->stack[ic_num].stack_voltage = 0;
+        for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+        {
+            pack->stack[ic_num].module[module_num].enable = MODULE_ENABLED;
+            pack->stack[ic_num].module[module_num].voltage = 0;
+            pack->stack[ic_num].module[module_num].temperature = 0;
+        }
+
+    }
+
+    BTM_wakeup(); // Wake up all LTC6811's in the chain
+    BTM_writeRegisterGroup(CMD_WRCFGA, cfgr_to_write); // Write to Config. Reg. Group
+    return;
+}
+
 /**
  * @brief sends a 2-byte command followed by the 2-byte PEC for that command
  * over SPI.
@@ -176,9 +214,9 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
  * @param command 	A write command to specify which register group to write.
  * 					Write commands start with "WR"
  * @param tx_data 	Pointer to a 2-dimensional array of size
- *					BTM_NUM_DEVICES x 6 containing the data to write
+ *					BTM_NUM_DEVICES x BTM_REG_GROUP_SIZE containing the data to write
  */
-void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][6])
+void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][BTM_REG_GROUP_SIZE])
 {
 	uint16_t pecValue = 0;
 	uint8_t tx_message[8];
@@ -187,11 +225,11 @@ void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][6])
 	BTM_sendCmd(command);
 	for (int i = 0; i < BTM_NUM_DEVICES; i++)
 	{
-		for (int j = 0; j < 6; j++)
+		for (int j = 0; j < BTM_REG_GROUP_SIZE; j++)
 		{
 			tx_message[j] = tx_data[i][j];
 		}
-		pecValue = BTM_calculatePec15(tx_message, 6);
+		pecValue = BTM_calculatePec15(tx_message, BTM_REG_GROUP_SIZE);
 		tx_message[6] = (uint8_t) (pecValue >> 8);
 		tx_message[7] = (uint8_t) pecValue;
 		HAL_SPI_Transmit(BTM_SPI_handle, tx_message, 8, BTM_TIMEOUT_VAL);
@@ -213,7 +251,7 @@ void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][6])
  			a full set of valid data could not be obtained after
 			BTM_MAX_READ_ATTEMPTS tries
  */
-BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][6])
+BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_REG_GROUP_SIZE])
 {
 	uint16_t pecValue = 0;
 	BTM_Status_t status = BTM_OK;
@@ -251,7 +289,7 @@ BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][6])
 			{
 				for (int j = 0; j < 8; j++)
 				{
-					if (j < 6)
+					if (j < BTM_REG_GROUP_SIZE)
 					{
 						rx_data[ic_num][j] = rx_message[j]; // Copy the data (no PEC)
 					}
@@ -282,7 +320,7 @@ BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][6])
 BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 {
 	// 6-byte sets (each from a different register group of the LTC6811)
-	uint8_t ADC_data[4][BTM_NUM_DEVICES][6];
+	uint8_t ADC_data[4][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 	uint16_t cell_voltage_raw = 0;
 	int cell_num = 0;
 	BTM_Status_t status = BTM_OK;

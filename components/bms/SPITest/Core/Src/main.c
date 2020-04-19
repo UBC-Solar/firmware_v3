@@ -74,16 +74,15 @@ int main(void)
 	/* USER CODE BEGIN 1 */
 	BTM_PackData_t pack;
 	BTM_Status_t BTM_status = BTM_OK;
-
-	uint8_t config_val[BTM_NUM_DEVICES][6] =
-	{{
-		0xEC, // GPIO 1,3-5 = 1, GPIO2 = 0, REFON = 1
-		0x70, // VUV[7:0] (Under voltage = 1V / (16 * 0.0001V) - 1 = 0x270
-		0x22, // VOV[4:0], VUV[11:8]
-		0x75, // VOV[11:5] (Over voltage threshold = 3V / (16 * 0.0001V) - 1 = 0x752
-		0x00, // Discharge off for cells 1 through 8
-		0x00  // Discharge off for cells 9 through 12, Discharge timer disabled
-	}};
+	uint8_t config_val[BTM_REG_GROUP_SIZE] =
+	    {
+	        0xF8 | (REFON << 2) | ADCOPT, // GPIO 1-5 = 1, REFON, ADCOPT
+	        (VUV & 0xFF), // VUV[7:0]
+	        ((uint8_t) (VOV << 4)) | (((uint8_t) (VUV >> 8)) & 0x0F), // VOV[4:0] | VUV[11:8]
+	        (VOV >> 4), // VOV[11:5]
+	        0x00, // Discharge off for cells 1 through 8
+	        0x00  // Discharge off for cells 9 through 12, Discharge timer disabled
+	    };
 
 	uint8_t register_readout[BTM_NUM_DEVICES][6] = {{0}};
 
@@ -110,16 +109,6 @@ int main(void)
 	MX_SPI1_Init();
 	/* USER CODE BEGIN 2 */
 
-	// Initialize battery pack data structure
-	for(int i = 0; i < BTM_NUM_DEVICES; i++) {
-		pack.stack[i].stack_voltage = 0;
-		for(int j = 0; j < 12; j++) {
-		    pack.stack[i].module[j].enable = MODULE_ENABLED;
-			pack.stack[i].module[j].voltage = 0;
-			pack.stack[i].module[j].temperature = 0;
-		}
-	}
-
 	// Specify the SPI resources for the BTM library
 	BTM_SPI_handle = &hspi1;
 
@@ -127,8 +116,7 @@ int main(void)
 	HAL_GPIO_WritePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin, GPIO_PIN_SET);
 
 	printf("LTC TEST\n");
-	BTM_wakeup();
-	BTM_writeRegisterGroup(CMD_WRCFGA, config_val);
+	BTM_init(&pack);
 
 	BTM_status = BTM_readRegisterGroup(CMD_RDCFGA, register_readout);
 	if (BTM_OK == BTM_status)
@@ -139,7 +127,7 @@ int main(void)
 	// compare read config to set config
 	printf("Configuration:\nWritten\tRead\n");
 	for(int i = 0; i < 6; i++) {
-		printf("%X\t\t%X\n", config_val[0][i], register_readout[0][i]);
+		printf("%X\t\t%X\n", config_val[i], register_readout[0][i]);
 	}
 	putchar('\n');
 	/* USER CODE END 2 */
