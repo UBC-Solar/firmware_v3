@@ -162,7 +162,15 @@ void thermistor_reading(uint16_t GPIO1voltages[BTM_NUM_DEVICES])
 	}
 }
 
-// Perhaps you should return something...
+/*
+Comment on function volts2temp()
+This function does not conform to the actual format of the input values it will likely get.
+The format of the measured values from the LTC6811 are 16-bit unsigned integer values,
+but are not raw ADC readings in the range 0 to (2^16 - 1). Instead, they are actual voltages
+with unit 10ths of a mV. In other words, to get the voltage in volts from the reading value,
+you just have to multiply it by 0.0001.
+
+Also, perhaps you should return something... */
 void volts2temp(int ADC_val)
 {
 	const double beta = 3435.0;
