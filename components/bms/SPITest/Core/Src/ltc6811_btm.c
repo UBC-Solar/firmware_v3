@@ -5,7 +5,7 @@
  *  All functions associated with this driver are prefixed with "BTM"
  *
  *
- *  Created on: Feb. 14, 2020
+ *  @date 2020/02/14
  *  @author Andrew Hanlon (a2k-hanlon)
  *	@author Laila Khan (lailakhankhan)
  *
@@ -74,9 +74,9 @@ uint16_t BTM_calculatePec15(uint8_t *data, int len)
 /**
  * @brief Toggles the CS line to wake up the entire chain of LTC6811's.
  * Wakes up the daisy chain as per method described on pg. 52 of datasheet
- * (method 2)
+ *  (method 2)
  * Using HAL_Delay() for this is not particularly ideal, since the minimum delay
- * is 1ms and the delays required are 300us and 10us or something (shorter than 1 ms)
+ * is 1ms and the delays required are 300us and 10us-ish (shorter than 1 ms)
  */
 void BTM_wakeup()
 {
@@ -91,9 +91,16 @@ void BTM_wakeup()
 	return;
 }
 
+/**
+ * @brief Initializes the LTC6811s and the data structures used for monitoring the battery
+ *
+ * @param pack A pointer to the PackData structure in use
+ */
 void BTM_init(BTM_PackData_t * pack)
 {
     uint8_t cfgr_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
+
+    // Refer to the LTC6811 datasheet pages 62 and 65 for format and content of config_val
     uint8_t config_val[BTM_REG_GROUP_SIZE] =
     {
         0xF8 | (REFON << 2) | ADCOPT, // GPIO 1-5 = 1, REFON, ADCOPT

@@ -5,7 +5,7 @@
  *  All functions and many symbolic constants associated with this driver are
  *  prefixed with "BTM"
  *
- *	STEPS TO SETUP THIS DRIVER:
+ *	STEPS TO SET UP THIS DRIVER:
  *	1.	Ensure that BTM_NUM_DEVICES is set correctly for the hardware setup
  *	2. 	Make sure BTM_CS_GPIO_PORT and BTM_CS_GPIO_PIN correspond to the correct
  *		port and pin for the "Chip Select" (CS) SPI output
@@ -22,7 +22,7 @@
  *  been commented out since the command variations have not yet been implemented
  *  Just to be clear, in some cases "ST" refers to "start" not "self test"
  *
- *  Created on: Feb. 14, 2020
+ *  @date 2020/02/14
  *  @author Andrew Hanlon (a2k-hanlon)
  *	@author Laila Khan (lailakhankhan)
  *
@@ -99,7 +99,7 @@ typedef enum {
 #define VOV 2624U // (4.2V / (16 * 0.0001V)) - 1 = 2624
 // ADCOPT selects the ADC mode together with MD, but is in the CFG register
 #define ADCOPT 0
-/* End Configuration Register Group Parameter */
+/* End Configuration Register Group Parameters */
 
 // Discharge Permitted during cell measurement
 #define DCP 0 // 0 = Discharge Not Permitted, 1 = Discharge Permitted
