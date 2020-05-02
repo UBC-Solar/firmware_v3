@@ -13,7 +13,7 @@
  *  @author Andrew Hanlon (a2k-hanlon)
  */
 
-#include "contactors.h"
+#include <control.h>
 
 void CONT_init()
 {

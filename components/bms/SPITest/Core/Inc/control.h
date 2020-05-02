@@ -13,8 +13,8 @@
  *  @author Andrew Hanlon (a2k-hanlon)
  */
 
-#ifndef INC_CONTACTORS_H_
-#define INC_CONTACTORS_H_
+#ifndef INC_CONTROL_H_
+#define INC_CONTROL_H_
 
 #include "stm32f3xx_hal.h"
 
@@ -68,4 +68,4 @@ void CONT_PCH_switch(CONT_contactor_state_t new_state);
 void CONT_HLIM_switch(CONT_contactor_state_t new_state);
 void CONT_LLIM_switch(CONT_contactor_state_t new_state);
 
-#endif /* INC_CONTACTORS_H_ */
+#endif /* INC_CONTROL_H_ */
