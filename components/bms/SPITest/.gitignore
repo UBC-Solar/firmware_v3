@@ -4,6 +4,9 @@
 /Debug/
 # Eclipse project metadata
 /.settings/
+.project
+.cproject
+.mxproject
 *.launch
 
 # Github C .gitignore template below
