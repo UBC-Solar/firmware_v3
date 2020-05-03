@@ -1,7 +1,5 @@
 # Files and folders to be left untracked, ignored and left out by git
 
-# HAL and CMSIS libraries
-/Drivers/
 # Compiled binaries, etc.
 /Debug/
 # Eclipse project metadata
