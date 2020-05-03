@@ -117,6 +117,8 @@ int main(void)
 
 	// Specify the SPI resources for the BTM library
 	BTM_SPI_handle = &hspi1;
+	// Specify the TIM resources for the CONT driver
+	CONT_timer_handle = &htim3;
 
 	// The Board LED is on when PA13 is LOW, so set pin high at beginning
 	HAL_GPIO_WritePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin, GPIO_PIN_SET);

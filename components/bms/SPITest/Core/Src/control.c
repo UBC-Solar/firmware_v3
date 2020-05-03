@@ -17,7 +17,7 @@
  *  @author Andrew Hanlon (a2k-hanlon)
  */
 
-#include <control.h>
+#include "control.h"
 
 void CONT_init()
 {
@@ -82,7 +82,7 @@ void CONT_OT_switch(CONT_signal_state_t new_state)
  */
 void CONT_FAN_PWM_set(unsigned int pwm_val)
 {
-    unsigned int CONT_FAN_PWM_percent = pwm_val;
+    CONT_FAN_PWM_percent = pwm_val;
     pwm_val = (pwm_val * PWM_DIVISIONS) / 100;
     __HAL_TIM_SET_COMPARE(CONT_timer_handle, CONT_TIM_CHANNEL, pwm_val);
 }
