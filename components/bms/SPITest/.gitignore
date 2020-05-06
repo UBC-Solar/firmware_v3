@@ -2,11 +2,10 @@
 
 # Compiled binaries, etc.
 /Debug/
+/Release/
 # Eclipse project metadata
 /.settings/
-.project
-.cproject
-.mxproject
+# Debug and Run Configuration
 *.launch
 
 # Github C .gitignore template below
