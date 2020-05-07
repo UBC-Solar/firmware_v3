@@ -4,6 +4,10 @@
  *
  *  All functions associated with this driver are prefixed with "BTM"
  *
+ *  Note on configuring the SPI peripheral:
+ *  The LTC6811 uses SPI in mode 3 (CPOL 1, CPHA 1)
+ *  The format is MSB first, max baud rate 1Mb/s (but run it slower if there
+ *  are problems with noise, etc.)
  *
  *  @date 2020/02/14
  *  @author Andrew Hanlon (a2k-hanlon)
@@ -14,6 +18,11 @@
 #include "LTC6811_btm.h"
 
 #define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
+
+typedef enum {
+    CS_LOW = 0,
+    CS_HIGH = 1
+} CS_state_t;
 
 // Lookup table for PEC (Packet Error Code) CRC calculation
 // See note at end of file for details of its origin
@@ -50,6 +59,9 @@ const uint16_t pec15Table[256] =
     0x8BA7, 0x4E3E, 0x450C, 0x8095
 };
 
+// Private function prototype
+void writeCS(CS_state_t new_state);
+
 /**
  * @brief Calculates the PEC for "len" bytes of data (as a group).
  * Function adapted from code on pg. 76 of LTC6811 Datasheet.
@@ -82,9 +94,9 @@ void BTM_wakeup()
 {
 	for (int i = 0; i < BTM_NUM_DEVICES; i++)
 	{
-		HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 0); // pull CS line low
+		writeCS(CS_LOW);
 		HAL_Delay(1); // wait 1ms
-		HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 1); // pull CS line high
+		writeCS(CS_HIGH);
 		// Then delay at least 10us
 		HAL_Delay(1); // wait 1ms - the minimum with this timer setup
 	}
@@ -175,7 +187,7 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 	uint8_t rx_buffer = 0;
 	uint32_t start_tick;
 
-	HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 0); // Pull CS low
+	writeCS(CS_LOW);
 
 	BTM_sendCmd(command);
 
@@ -210,7 +222,7 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 		HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
 	} while (!rx_buffer);
 
-	HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 1); // pull CS back high
+	writeCS(CS_HIGH);
 
 	return BTM_OK;
 }
@@ -228,7 +240,7 @@ void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][BTM_REG_GRO
 	uint16_t pecValue = 0;
 	uint8_t tx_message[8];
 
-	HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 0); // pull CS line low
+	writeCS(CS_LOW);
 	BTM_sendCmd(command);
 	for (int i = 0; i < BTM_NUM_DEVICES; i++)
 	{
@@ -241,7 +253,7 @@ void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][BTM_REG_GRO
 		tx_message[7] = (uint8_t) pecValue;
 		HAL_SPI_Transmit(BTM_SPI_handle, tx_message, 8, BTM_TIMEOUT_VAL);
 	}
-	HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 1); // pull CS line back high
+	writeCS(CS_HIGH);
 	return;
 }
 
@@ -272,7 +284,7 @@ BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_
 	do
 	{
 		// Send command to read register group
-		HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 0); // pull CS line low
+		writeCS(CS_LOW);
 		BTM_sendCmd(command);
 
 		// Read back the data, but stop between device data groups on error
@@ -306,8 +318,7 @@ BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_
 			ic_num++;
 		}
 
-		// pull CS line back high
-		HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 1);
+		writeCS(CS_HIGH);
 		error_counter++;
 	} while ((BTM_OK != status) && (error_counter < BTM_MAX_READ_ATTEMPTS));
 
@@ -383,6 +394,12 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 float BTM_regValToVoltage(uint16_t raw_reading)
 {
 	return raw_reading * BTM_VOLTAGE_CONVERSION_FACTOR;
+}
+
+// writeCS is a helper function for the functions in this file only.
+void writeCS(CS_state_t new_state)
+{
+    HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, new_state);
 }
 
 /*
