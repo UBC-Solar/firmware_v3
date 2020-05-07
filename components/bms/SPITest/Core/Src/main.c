@@ -17,9 +17,6 @@
  ******************************************************************************
  */
 
-// LTC6811 uses SPI in mode 3 (CPOL 1, CPHA 1)
-// MSB first, max baud 1Mb/s
-
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -176,7 +173,34 @@ int main(void)
 		}
 		putchar('\n');
 
-		HAL_Delay(1000);
+		// Test CONT functions
+		HAL_Delay(50);
+		CONT_BAL_switch(CONT_ACTIVE);
+		CONT_FAN_PWM_set(17);
+		HAL_Delay(50);
+        CONT_BAL_switch(CONT_INACTIVE);
+        CONT_COM_switch(CONT_ACTIVE);
+        CONT_FAN_PWM_set(34);
+        HAL_Delay(50);
+        CONT_COM_switch(CONT_INACTIVE);
+        CONT_FLT_switch(CONT_ACTIVE);
+        CONT_FAN_PWM_set(51);
+        HAL_Delay(50);
+        CONT_FLT_switch(CONT_INACTIVE);
+        CONT_HLIM_switch(CONT_ACTIVE);
+        CONT_FAN_PWM_set(68);
+        HAL_Delay(50);
+        CONT_HLIM_switch(CONT_INACTIVE);
+        CONT_LLIM_switch(CONT_ACTIVE);
+        CONT_FAN_PWM_set(85);
+        HAL_Delay(50);
+        CONT_LLIM_switch(CONT_INACTIVE);
+        CONT_OT_switch(CONT_ACTIVE);
+        CONT_FAN_PWM_set(100);
+        HAL_Delay(50);
+        CONT_OT_switch(CONT_INACTIVE);
+        CONT_FAN_PWM_set(0);
+		HAL_Delay(650);
 
     /* USER CODE END WHILE */
 

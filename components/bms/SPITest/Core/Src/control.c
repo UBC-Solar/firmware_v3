@@ -78,6 +78,11 @@ void CONT_OT_switch(CONT_signal_state_t new_state)
 /**
  * @brief Sets the PWM duty cycle of the FAN_PWM output.
  *
+ * Note that depending on the timer configuration, the duty cycle may not be perfect.
+ * Perfect agreement between the integer percentage given and the actual duty cycle
+ * output is possible, but not really necessary for driving fans.
+ * A "correct" timer setup is at least pretty close (within +-0.5%)
+ *
  * @param pwm_val The duty cycle of the PWM. Must be in range [0,100].
  */
 void CONT_FAN_PWM_set(unsigned int pwm_val)
