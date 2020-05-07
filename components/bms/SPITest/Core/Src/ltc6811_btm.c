@@ -199,6 +199,7 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 	{
 		if (HAL_GetTick() - start_tick > BTM_TIMEOUT_VAL)
 		{
+		    writeCS(CS_HIGH);
 			return BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
 		}
 		rx_buffer = 0;
@@ -216,6 +217,7 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 	{
 		if (HAL_GetTick() - start_tick > BTM_TIMEOUT_VAL)
 		{
+		    writeCS(CS_HIGH);
 			return BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
 		}
 		rx_buffer = 0;
