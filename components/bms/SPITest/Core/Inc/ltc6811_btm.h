@@ -33,15 +33,14 @@
 
 #include "stm32f3xx_hal.h"
 
-// BTM status enumerated type
+/*============================================================================*/
+/* ENUMERATIONS */
+
 typedef enum {
     BTM_OK            = 0,
     BTM_ERROR_PEC     = 1,
     BTM_ERROR_TIMEOUT = 2
 } BTM_Status_t;
-
-/*============================================================================*/
-/* ENUMERATIONS */
 
 // LTC6811 ADC mode options
 // First freq applies when ADCOPT == 0, second when ADCOPT == 1
@@ -77,6 +76,11 @@ typedef enum {
     MODULE_DISABLED = 0,
     MODULE_ENABLED = 1
 } BTM_module_enable_t;
+
+typedef enum {
+    DISCHARGE_OFF = 0,
+    DISCHARGE_ON = 1
+} BTM_module_bal_status_t;
 
 typedef enum {
     CS_LOW = 0,
@@ -254,6 +258,7 @@ struct BTM_module {
     BTM_module_enable_t enable;
     uint16_t voltage;
     uint16_t temperature;
+    BTM_module_bal_status_t bal_status;
 };
 
 struct BTM_stack {
