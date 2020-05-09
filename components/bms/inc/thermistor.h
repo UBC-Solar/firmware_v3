@@ -43,8 +43,8 @@ typedef enum {
 #define ONE_THIRD_OF_COMM 2
 
 // Function prototypes
-void thermistor_series(void);
-void thermistor_mux(
+void BTM_TEMP_measure_state(void);
+void read_and_switch_mux_channels(
 	uint8_t mux_address,
 	uint16_t thermistor_volt_series[MUX_CHANNELS][BTM_NUM_DEVICES]
 );

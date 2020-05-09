@@ -5,41 +5,58 @@
 // ^ That's not what you're doing here... is this an old note?
 
 /*
-Function name: thermistor_series
+Function name: BTM_TEMP_measure_state
 Purpose: Algorithm for reading thermistors across multiple mux (2 mux's)
+
 input:
 No user defined input.
 Internal functions pull readings from hardware registers
-Output:
-uint8_t thermistor_volt_series[2][6], 2 sets of 6 voltages
-Internal functions:
-thermistor_mux()
-thermistor_reading()
-*/
-void thermistor_series()
-{
-	uint16_t thermistor_volt_series[ONE_THIRD_OF_COMM][MUX_CHANNELS][BTM_NUM_DEVICES] = { 0 };
-	/*
-	Algorithm:
-	0) Initialize
-	1) read mux1
-	1.1) set mux_address or COMM1 bits for mux1
-	1.2) call thermistor_mux()
-	1.3) call thermistor_reading() SIX TIMES
-	2) read mux2
-	1.1) set mux_address or COMM1 bits for mux2
-	1.2) call thermistor_mux()
-	1.3) call thermistor_reading() SIX TIMES
-	3) done
-	*/
 
-	// TODO: disable inactive mux before using the active one
-	thermistor_mux(MUX1_ADDRESS, thermistor_volt_series[0]);
-	thermistor_mux(MUX2_ADDRESS, thermistor_volt_series[1]);
+Output:
+uint8_t MUX_thermistor_readings[ONE_THIRD_OF_COMM][MUX_CHANNELS][BTM_NUM_DEVICES]
+    ONE_THIRD_OF_COMM - first two bytes of 6 bytes of LTC6811 COMM register
+    MUX_CHANNELS      - LTC1380 MUX have 8 channels
+    BTM_NUM_DEVICES   - Number of LTC6811 connected to STM32F3 mcu.
+
+Internal functions:
+read_and_switch_mux_channels()
+disableMux()
+read_thermistorVoltage()
+
+Algorithm:
+0) Initialize
+0.1) disable all mux for known reset state
+
+1) read mux1
+1.1) set mux_address or COMM1 bits for mux1
+1.2) call read_and_switch_mux_channels()
+1.2.1) call read_thermistorVoltage() six times
+1.2.2) disable mux1
+
+2) read mux2
+2.1) set mux_address or COMM1 bits for mux2
+2.2) call read_and_switch_mux_channels()
+2.2.1) call read_thermistorVoltage() six times
+2.2.2) disable mux2
+
+3) done
+*/
+void BTM_TEMP_measure_state()
+{
+	uint16_t MUX_thermistor_readings[ONE_THIRD_OF_COMM][MUX_CHANNELS][BTM_NUM_DEVICES] = { 0 };
+
+
+	//known reset state
+	disableMux(MUX1_ADDRESS);
+	disableMux(MUX2_ADDRESS);
+
+	//mux channel-switching per mux
+	read_and_switch_mux_channels(MUX1_ADDRESS, MUX_thermistor_readings[0]);
+	read_and_switch_mux_channels(MUX2_ADDRESS, MUX_thermistor_readings[1]);
 }
 
 /*
-Function name: thermistor_mux
+Function name: read_and_switch_mux_channels
 Purpose:
 switch between all 12 channels OF A SINGLE MUX
 and gather the associated themistor reading
@@ -73,8 +90,8 @@ Command half:
 2) read GPIO1 for thermistor reading FOR each mux channel
 3) repeat until n = MUX_CHANNELS
 */
-void thermistor_mux(uint8_t mux_address,
-	uint16_t thermistor_volt_series[MUX_CHANNELS][BTM_NUM_DEVICES])
+void read_and_switch_mux_channels(uint8_t mux_address,
+	uint16_t MUX_thermistor_readings[MUX_CHANNELS][BTM_NUM_DEVICES])
 {
 	uint8_t MUX_S[8] = { MUX_S0, MUX_S1, MUX_S2, MUX_S3, MUX_S4, MUX_S5, MUX_S6, MUX_S7 };
 	uint8_t NULL_message[6] = { 0 };
@@ -129,19 +146,27 @@ void thermistor_mux(uint8_t mux_address,
 		BTM_writeCS(CS_HIGH);
 
 		//gather thermistor readings
-		thermistor_reading(thermistor_volt_series[n]);
+		read_thermistorVoltage(MUX_thermistor_readings[n]);
 	}
+
+	disableMux(mux_address);
 }
 
 /*
-Function name: thermistor_reading
+Function name: read_thermistorVoltage
 Purpose: get voltage readings of thermistors and output into a register
 input: internal functions pull readings from hardware registers
-output: uint16_t GPIO1voltages, two bytes long because that's how long it is.
+output: uint16_t GPIO1_voltage, two bytes long because that's how long it is.
 */
-void thermistor_reading(uint16_t GPIO1voltages[BTM_NUM_DEVICES])
+
+/** EXAMPLE OF DOXYGEN
+ * @brief Get voltage reading of thermistor GPIO pin on LTC6811
+ *
+ * @param GPIO1_voltage array to store voltages in
+ */
+void read_thermistorVoltage(uint16_t GPIO1_voltage[BTM_NUM_DEVICES])
 {
-	uint8_t GPIO123voltages[BTM_NUM_DEVICES][6];
+	uint8_t registerAUXA_voltages[BTM_NUM_DEVICES][6];
 	uint16_t voltage_reading = 0;
 
 	//start conversion
@@ -149,17 +174,64 @@ void thermistor_reading(uint16_t GPIO1voltages[BTM_NUM_DEVICES])
 	BTM_sendCmdAndPoll(CMD_ADAX_GPIO1);
 
 	//retrieve register readings
-	BTM_readRegisterGroup(CMD_RDAUXA, GPIO123voltages);
+	BTM_readRegisterGroup(CMD_RDAUXA, registerAUXA_voltages);
 
-	//output reading by assigning to pointed array the first two bytes of GPIO123voltages
+	//output reading by assigning to pointed array the first two bytes of registerAUXA_voltages
 	for (int board = 0; board < BTM_NUM_DEVICES; board++)
 	{
 		// Combine 2 bytes of voltage reading
-		voltage_reading = ( ((uint16_t) GPIO123voltages[board][1]) << 8)
-			| GPIO123voltages[board][0];
+		voltage_reading = ( ((uint16_t) registerAUXA_voltages[board][1]) << 8)
+			| registerAUXA_voltages[board][0];
 		// Store in given array
-		GPIO1voltages[board] = voltage_reading;
+		GPIO1_voltage[board] = voltage_reading;
 	}
+}
+
+/*
+*Function Name: disableMux
+*Input: mux_address - address of MUX to disable
+*NOTE: this takes code from another function, read_and_switch_mux_channels().
+*
+*/
+void disableMux(uint8_t mux_address)
+{
+	uint8_t comm_val[6] =
+	{
+		(I2C_START << 4) | (mux_address >> 4), // 1.1.1) - 1.1.2)
+		(mux_address << 4) | I2C_MASTER_NACK,
+		0, // ((I2C_BLANK << 4) | 0x00) = 0, First nibble of mux command is 0
+		I2C_MASTER_NACK_STOP, // mux command in upper nibble is set in loop
+		0, // There's no 3rd byte to transmit
+		0
+	};
+
+	uint8_t mux_message[BTM_NUM_DEVICES][6] = { 0 };
+
+
+	//setting disable command in the correct byte
+	comm_val[3] = MUX_DISABLE << 4;
+	comm_val[3] |= I2C_MASTER_NACK_STOP;
+
+	// Make enough copies of this data to send to all the LTC6811's
+	for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+	{
+		for(int byte_num = 0; byte_num < 6; byte_num++)
+		{
+			mux_message[ic_num][byte_num] = comm_val[byte_num];
+		}
+	}
+	//sends from STM32 to 6811 for 6811 to send to MUX the I2C command
+	BTM_writeRegisterGroup(CMD_WRCOMM, mux_message);
+
+	// 1.2) STCOMM: send the COMM register content
+	BTM_writeCS(CS_LOW);
+	BTM_sendCmd(CMD_STCOMM);
+	// driving SPI clock needed for I2C, 3 clock cycles per bit sent
+	// can be done by sending null data
+	// BTM_SPI_handle is a global variable,
+	// 	and BTM_TIMEOUT_VAL is a symbolic constant
+	HAL_SPI_Transmit(BTM_SPI_handle, NULL_message, 6, BTM_TIMEOUT_VAL);
+	BTM_writeCS(CS_HIGH);
 }
 
 /*
