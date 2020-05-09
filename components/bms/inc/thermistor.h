@@ -44,11 +44,7 @@ typedef enum {
 
 // Function prototypes
 void BTM_TEMP_measure_state(void);
-void read_and_switch_mux_channels(
-	uint8_t mux_address,
-	uint16_t thermistor_volt_series[MUX_CHANNELS][BTM_NUM_DEVICES]
-);
-void thermistor_reading(uint16_t GPIO1voltages[BTM_NUM_DEVICES]);
+
 void volts2temp(int ADC_val);
 
 #endif /* THERMISTOR_H_ */
