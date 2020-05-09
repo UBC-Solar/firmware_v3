@@ -119,14 +119,14 @@ void thermistor_mux(uint8_t mux_address,
 		BTM_writeRegisterGroup(CMD_WRCOMM, mux_message);
 
 		// 1.2) STCOMM: send the COMM register content
-		HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 0); // pull CS low
+		BTM_writeCS(CS_LOW);
 		BTM_sendCmd(CMD_STCOMM);
 		// driving SPI clock needed for I2C, 3 clock cycles per bit sent
 		// can be done by sending null data
 		// BTM_SPI_handle is a global variable,
 		// 	and BTM_TIMEOUT_VAL is a symbolic constant
 		HAL_SPI_Transmit(BTM_SPI_handle, NULL_message, 6, BTM_TIMEOUT_VAL);
-		HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, 1); // pull CS high
+		BTM_writeCS(CS_HIGH);
 
 		//gather thermistor readings
 		thermistor_reading(thermistor_volt_series[n]);
