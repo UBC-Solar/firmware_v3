@@ -59,9 +59,6 @@ const uint16_t pec15Table[256] =
     0x8BA7, 0x4E3E, 0x450C, 0x8095
 };
 
-// Private function prototype
-void writeCS(CS_state_t new_state);
-
 /**
  * @brief Calculates the PEC for "len" bytes of data (as a group).
  * Function adapted from code on pg. 76 of LTC6811 Datasheet.
@@ -94,9 +91,9 @@ void BTM_wakeup()
 {
 	for (int i = 0; i < BTM_NUM_DEVICES; i++)
 	{
-		writeCS(CS_LOW);
+		BTM_writeCS(CS_LOW);
 		HAL_Delay(1); // wait 1ms
-		writeCS(CS_HIGH);
+		BTM_writeCS(CS_HIGH);
 		// Then delay at least 10us
 		HAL_Delay(1); // wait 1ms - the minimum with this timer setup
 	}
@@ -187,7 +184,7 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 	uint8_t rx_buffer = 0;
 	uint32_t start_tick;
 
-	writeCS(CS_LOW);
+	BTM_writeCS(CS_LOW);
 
 	BTM_sendCmd(command);
 
@@ -199,7 +196,7 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 	{
 		if (HAL_GetTick() - start_tick > BTM_TIMEOUT_VAL)
 		{
-		    writeCS(CS_HIGH);
+		    BTM_writeCS(CS_HIGH);
 			return BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
 		}
 		rx_buffer = 0;
@@ -217,14 +214,14 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 	{
 		if (HAL_GetTick() - start_tick > BTM_TIMEOUT_VAL)
 		{
-		    writeCS(CS_HIGH);
+		    BTM_writeCS(CS_HIGH);
 			return BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
 		}
 		rx_buffer = 0;
 		HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
 	} while (!rx_buffer);
 
-	writeCS(CS_HIGH);
+	BTM_writeCS(CS_HIGH);
 
 	return BTM_OK;
 }
@@ -242,7 +239,7 @@ void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][BTM_REG_GRO
 	uint16_t pecValue = 0;
 	uint8_t tx_message[8];
 
-	writeCS(CS_LOW);
+	BTM_writeCS(CS_LOW);
 	BTM_sendCmd(command);
 	for (int i = 0; i < BTM_NUM_DEVICES; i++)
 	{
@@ -255,7 +252,7 @@ void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][BTM_REG_GRO
 		tx_message[7] = (uint8_t) pecValue;
 		HAL_SPI_Transmit(BTM_SPI_handle, tx_message, 8, BTM_TIMEOUT_VAL);
 	}
-	writeCS(CS_HIGH);
+	BTM_writeCS(CS_HIGH);
 	return;
 }
 
@@ -286,7 +283,7 @@ BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_
 	do
 	{
 		// Send command to read register group
-		writeCS(CS_LOW);
+		BTM_writeCS(CS_LOW);
 		BTM_sendCmd(command);
 
 		// Read back the data, but stop between device data groups on error
@@ -320,7 +317,7 @@ BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_
 			ic_num++;
 		}
 
-		writeCS(CS_HIGH);
+		BTM_writeCS(CS_HIGH);
 		error_counter++;
 	} while ((BTM_OK != status) && (error_counter < BTM_MAX_READ_ATTEMPTS));
 
@@ -398,8 +395,12 @@ float BTM_regValToVoltage(uint16_t raw_reading)
 	return raw_reading * BTM_VOLTAGE_CONVERSION_FACTOR;
 }
 
-// writeCS is a helper function for the functions in this file only.
-void writeCS(CS_state_t new_state)
+/**
+ * @brief
+ *
+ * @param
+ */
+void BTM_BTM_writeCS(CS_state_t new_state)
 {
     HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, new_state);
 }
