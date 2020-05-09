@@ -19,11 +19,6 @@
 
 #define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
 
-typedef enum {
-    CS_LOW = 0,
-    CS_HIGH = 1
-} CS_state_t;
-
 // Lookup table for PEC (Packet Error Code) CRC calculation
 // See note at end of file for details of its origin
 const uint16_t pec15Table[256] =
@@ -396,11 +391,11 @@ float BTM_regValToVoltage(uint16_t raw_reading)
 }
 
 /**
- * @brief
+ * @brief Toggles the SPI Chip Select (CS) pin
  *
- * @param
+ * @param new_state The state (CS_HIGH or CS_LOW) to write to the CS pin
  */
-void BTM_BTM_writeCS(CS_state_t new_state)
+void BTM_writeCS(CS_state_t new_state)
 {
     HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, new_state);
 }

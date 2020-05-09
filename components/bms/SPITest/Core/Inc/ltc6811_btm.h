@@ -78,6 +78,11 @@ typedef enum {
     MODULE_ENABLED = 1
 } BTM_module_enable_t;
 
+typedef enum {
+    CS_LOW = 0,
+    CS_HIGH = 1
+} CS_state_t;
+
 /*============================================================================*/
 /* CONFIGURABLE PARAMETERS */
 
