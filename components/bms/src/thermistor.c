@@ -82,7 +82,7 @@ Algorithm:
 1) Define comm_val array of 6 bytes to be copied to COMM register of LTC6811.
     The LTC1380 MUX needs 2 bytes for a single Send Byte protocol.
     The two bytes are enveloped by I2C commands for LTC6811.
-		The full message totals to 4 bytes.
+    The full message totals to 4 bytes.
     Last two bytes of COMM are not needed.
 2) In a loop for MUX_CHANNELS cycles, set the MUX channel and measure its voltage:
 2.1) Set the appropriate comm_val bits to the mux channel to switch to.
@@ -184,16 +184,15 @@ void read_and_switch_mux_channels(uint8_t mux_address,
 
 /*
 Function name: read_thermistorVoltage
-Purpose: get voltage readings of thermistors and output into a register
-input: internal functions pull readings from hardware registers
-output: uint16_t GPIO1_voltage, two bytes long because that's how long it is.
-*/
+Purpose: get voltage reading of thermistors directly from GPIO pin per LTC6811, and output into a register
 
-/** EXAMPLE OF DOXYGEN
- * @brief Get voltage reading of thermistor GPIO pin on LTC6811
- *
- * @param GPIO1_voltage array to store voltages in
- */
+input:
+uint16_t GPIO1_voltage[BTM_NUM_DEVICES] - two bytes long as it is the concatenation of two register bytes.
+For each LTC6811 device, internal functions pull voltage readings of GPIO pin from hardware registers.
+
+output:
+None. Readings stored in array. See input.
+*/
 void read_thermistorVoltage(uint16_t GPIO1_voltage[BTM_NUM_DEVICES])
 {
 	uint8_t registerAUXA_voltages[BTM_NUM_DEVICES][6];
@@ -218,10 +217,9 @@ void read_thermistorVoltage(uint16_t GPIO1_voltage[BTM_NUM_DEVICES])
 }
 
 /*
-*Function Name: disableMux
-*Input: mux_address - address of MUX to disable
-*NOTE: this takes code from another function, read_and_switch_mux_channels().
-*
+Function Name: disableMux
+Input: mux_address - address of MUX to disable
+NOTE: this takes code directly from another function, read_and_switch_mux_channels().
 */
 void disableMux(uint8_t mux_address)
 {
@@ -253,8 +251,9 @@ void disableMux(uint8_t mux_address)
 	//sends from STM32 to 6811 for 6811 to send to MUX the I2C command
 	BTM_writeRegisterGroup(CMD_WRCOMM, mux_message);
 
-	// 1.2) STCOMM: send the COMM register content
+
 	BTM_writeCS(CS_LOW);
+	//STCOMM: send the COMM register content
 	BTM_sendCmd(CMD_STCOMM);
 	// driving SPI clock needed for I2C, 3 clock cycles per bit sent
 	// can be done by sending null data
