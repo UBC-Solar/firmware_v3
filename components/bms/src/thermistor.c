@@ -1,18 +1,18 @@
 #include "thermistor.h"
+#include "stm32f3xx_hal.h"
 #include <math.h>
 
-
+// Function prototypes:
 void read_and_switch_mux_channels(
 	uint8_t mux_address,
 	uint16_t thermistor_volt_series[MUX_CHANNELS][BTM_NUM_DEVICES]
 );
-void thermistor_reading(uint16_t GPIO1voltages[BTM_NUM_DEVICES]);
+void readThermistorVoltage(uint16_t GPIO1_voltage[BTM_NUM_DEVICES]);
+void disableMux(uint8_t mux_address);
 
-//assumption: a single reading from each slave board's LTC6811
-// ^ That's not what you're doing here... is this an old note?
 
 /*
-Function name: BTM_TEMP_measure_state
+Function name: BTM_TEMP_measureState
 Purpose: Algorithm for reading thermistors across multiple mux (2 mux's)
 
 input:
@@ -28,7 +28,7 @@ uint8_t MUX_thermistor_readings[ONE_THIRD_OF_COMM][MUX_CHANNELS][BTM_NUM_DEVICES
 Internal functions:
 read_and_switch_mux_channels()
 disableMux()
-read_thermistorVoltage()
+readThermistorVoltage()
 
 Algorithm:
 0) Initialize
@@ -37,21 +37,21 @@ Algorithm:
 1) read mux1
 1.1) set mux_address or COMM1 bits for mux1
 1.2) call read_and_switch_mux_channels()
-1.2.1) call read_thermistorVoltage() six times
+1.2.1) call readThermistorVoltage() six times
 1.2.2) disable mux1
 
 2) read mux2
 2.1) set mux_address or COMM1 bits for mux2
 2.2) call read_and_switch_mux_channels()
-2.2.1) call read_thermistorVoltage() six times
+2.2.1) call readThermistorVoltage() six times
 2.2.2) disable mux2
 
 3) done
 */
-void BTM_TEMP_measure_state()
+void BTM_TEMP_measureState(BTM_Packdata_t* pack)
 {
-	uint16_t MUX_thermistor_readings[ONE_THIRD_OF_COMM][MUX_CHANNELS][BTM_NUM_DEVICES] = { 0 };
-
+	uint16_t MUX_thermistor_readings[NUMBER_OF_MUX][MUX_CHANNELS][BTM_NUM_DEVICES] = { 0 };
+	int module_num = 0;
 
 	//known reset state
 	disableMux(MUX1_ADDRESS);
@@ -60,6 +60,22 @@ void BTM_TEMP_measure_state()
 	//mux channel-switching per mux
 	read_and_switch_mux_channels(MUX1_ADDRESS, MUX_thermistor_readings[0]);
 	read_and_switch_mux_channels(MUX2_ADDRESS, MUX_thermistor_readings[1]);
+
+	// Copy gathered temperature data to pack data structure
+	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+	{
+		for(int mux_num = 0; mux_num < NUMBER_OF_MUX; mux_num++)
+		{
+			for(int mux_channel = 0; mux_channel < MUX_CHANNELS; mux_channel++)
+			{
+				module_num = 6 * mux_num + mux_channel;
+				pack->stack[ic_num].module[module_num].temperature =
+					MUX_thermistor_readings[mux_num][mux_channel][ic_num];
+			}
+		}
+	}
+
+	return;
 }
 
 /*
@@ -128,7 +144,7 @@ void read_and_switch_mux_channels(uint8_t mux_address,
 {
 	uint8_t MUX_S[8] = { MUX_S0, MUX_S1, MUX_S2, MUX_S3, MUX_S4, MUX_S5, MUX_S6, MUX_S7 };
 	uint8_t NULL_message[6] = { 0 };
-	uint8_t comm_val[6] =
+	uint8_t comm_val[BTM_REG_GROUP_SIZE] =
 	{
 		(I2C_START << 4) | (mux_address >> 4), // 1.1.1) - 1.1.2)
 		(mux_address << 4) | I2C_MASTER_NACK,
@@ -137,7 +153,7 @@ void read_and_switch_mux_channels(uint8_t mux_address,
 		0, // There's no 3rd byte to transmit
 		0
 	};
-	uint8_t mux_message[BTM_NUM_DEVICES][6] = { 0 };
+	uint8_t mux_message[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = { 0 };
 
 	//2)
 	for (int n = 0; n < MUX_CHANNELS; n++)
@@ -152,7 +168,7 @@ void read_and_switch_mux_channels(uint8_t mux_address,
 		// Make enough copies of this data to send to all the LTC6811's
 		for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
 		{
-			for(int byte_num = 0; byte_num < 6; byte_num++)
+			for(int byte_num = 0; byte_num < BTM_REG_GROUP_SIZE; byte_num++)
 			{
 				mux_message[ic_num][byte_num] = comm_val[byte_num];
 			}
@@ -176,14 +192,14 @@ void read_and_switch_mux_channels(uint8_t mux_address,
 		BTM_writeCS(CS_HIGH);
 
 		//2.8) gather thermistor readings
-		read_thermistorVoltage(MUX_thermistor_readings[n]);
+		readThermistorVoltage(MUX_thermistor_readings[n]);
 	}
 
 	disableMux(mux_address);
 }
 
 /*
-Function name: read_thermistorVoltage
+Function name: readThermistorVoltage
 Purpose: get voltage reading of thermistors directly from GPIO pin per LTC6811, and output into a register
 
 input:
@@ -193,9 +209,9 @@ For each LTC6811 device, internal functions pull voltage readings of GPIO pin fr
 output:
 None. Readings stored in array. See input.
 */
-void read_thermistorVoltage(uint16_t GPIO1_voltage[BTM_NUM_DEVICES])
+void readThermistorVoltage(uint16_t GPIO1_voltage[BTM_NUM_DEVICES])
 {
-	uint8_t registerAUXA_voltages[BTM_NUM_DEVICES][6];
+	uint8_t registerAUXA_voltages[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 	uint16_t voltage_reading = 0;
 
 	//start conversion
@@ -223,27 +239,22 @@ NOTE: this takes code directly from another function, read_and_switch_mux_channe
 */
 void disableMux(uint8_t mux_address)
 {
-	uint8_t comm_val[6] =
+	uint8_t comm_val[BTM_REG_GROUP_SIZE] =
 	{
 		(I2C_START << 4) | (mux_address >> 4), // 1.1.1) - 1.1.2)
 		(mux_address << 4) | I2C_MASTER_NACK,
 		0, // ((I2C_BLANK << 4) | 0x00) = 0, First nibble of mux command is 0
-		I2C_MASTER_NACK_STOP, // mux command in upper nibble is set in loop
+		(MUX_DISABLE << 4) | I2C_MASTER_NACK_STOP,
 		0, // There's no 3rd byte to transmit
 		0
 	};
 
-	uint8_t mux_message[BTM_NUM_DEVICES][6] = { 0 };
-
-
-	//setting disable command in the correct byte
-	comm_val[3] = MUX_DISABLE << 4;
-	comm_val[3] |= I2C_MASTER_NACK_STOP;
+	uint8_t mux_message[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = { 0 };
 
 	// Make enough copies of this data to send to all the LTC6811's
 	for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
 	{
-		for(int byte_num = 0; byte_num < 6; byte_num++)
+		for(int byte_num = 0; byte_num < BTM_REG_GROUP_SIZE; byte_num++)
 		{
 			mux_message[ic_num][byte_num] = comm_val[byte_num];
 		}
