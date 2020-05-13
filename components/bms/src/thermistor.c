@@ -171,22 +171,19 @@ with unit 10ths of a mV. In other words, to get the voltage in volts from the re
 you just have to multiply it by 0.0001.
 
 Also, perhaps you should return something... */
-void volts2temp(int ADC_val)
+double volts2temp(double Vout)
 {
+	const double Vs = 5.0; // assuming the supply is 5V
 	const double beta = 3435.0;
-	const double max_ADC = 65535.0; //assuming ADC @ 16 bit
 	const double room_temp = 298.15;
 	const double R_balance = 10000.0; //from LTC6811 datasheet p.85. note: this doesn't account for tolerance. to be exact, measure the 10k resistor with a multimeter
 	const double R_room_temp = 10000.0; //resistance at room temperature (25C)
-	//const int sample_num = 10;
 	double R_therm = 0;
 	double temp_kelvin = 0;
 	double temp_celsius = 0;
-	//double adc_average = 0; // we will do multiple measurements and average them to eliminate errors
-	//int adc_samples[sample_num];
 
-	R_therm = R_balance * ((max_ADC / ADC_val) - 1);
+	R_therm = R_balance * ((Vs / (Vout * 0.0001)) - 1);
 	temp_kelvin = (beta * room_temp)
 		/ (beta + (room_temp * log(R_therm / R_room_temp)));
-	temp_celsius = temp_kelvin - 273.15;
+	return temp_celsius = temp_kelvin - 273.15;
 }
