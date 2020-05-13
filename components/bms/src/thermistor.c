@@ -274,18 +274,15 @@ void disableMux(uint8_t mux_address)
 	BTM_writeCS(CS_HIGH);
 }
 
-/*
-Comment on function volts2temp()
-This function does not conform to the actual format of the input values it will likely get.
-The format of the measured values from the LTC6811 are 16-bit unsigned integer values,
-but are not raw ADC readings in the range 0 to (2^16 - 1). Instead, they are actual voltages
-with unit 10ths of a mV. In other words, to get the voltage in volts from the reading value,
-you just have to multiply it by 0.0001.
-
-Also, perhaps you should return something... */
-double volts2temp(double Vout)
+/**
+ * @brief Converts a raw thermistor voltage reading from an LTC6811 into a temperature
+ *
+ * @param[in] Vout the thermistor voltage reading to convert
+ * @return the temperature of the thermistor in degrees celcius
+ */
+double BTM_TEMP_volts2temp(double Vout)
 {
-	const double Vs = 5.0; // assuming the supply is 5V
+	const double Vs = 5.0; // assuming the supply is 5V - measure Vref2 to check
 	const double beta = 3435.0;
 	const double room_temp = 298.15;
 	const double R_balance = 10000.0; //from LTC6811 datasheet p.85. note: this doesn't account for tolerance. to be exact, measure the 10k resistor with a multimeter
@@ -294,6 +291,8 @@ double volts2temp(double Vout)
 	double temp_kelvin = 0;
 	double temp_celsius = 0;
 
+	// to get the voltage in volts from the LTC6811's value,
+	// multiply it by 0.0001 as below.
 	R_therm = R_balance * ((Vs / (Vout * 0.0001)) - 1);
 	temp_kelvin = (beta * room_temp)
 		/ (beta + (room_temp * log(R_therm / R_room_temp)));

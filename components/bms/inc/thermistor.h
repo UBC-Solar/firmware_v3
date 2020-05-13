@@ -44,7 +44,6 @@ typedef enum {
 
 // Function prototypes
 void BTM_TEMP_measureState(BTM_Packdata_t* pack);
-
-void volts2temp(int ADC_val);
+double BTM_TEMP_volts2temp(double Vout);
 
 #endif /* THERMISTOR_H_ */
