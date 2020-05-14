@@ -29,6 +29,7 @@ typedef struct {
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
+void BTM_BAL_initDchPack(BTM_BAL_dch_setting_pack_t* dch_pack);
 void BTM_BAL_copyDchPack(
     BTM_BAL_dch_setting_pack_t* dch_pack_source,
     BTM_BAL_dch_setting_pack_t* dch_pack_target
