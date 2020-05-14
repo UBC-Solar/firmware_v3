@@ -270,7 +270,7 @@ struct BTM_stack {
 };
 
 typedef struct {
-    unsigned int packVoltage;
+    unsigned int pack_voltage;
     struct BTM_stack stack[BTM_NUM_DEVICES];
 } BTM_PackData_t;
 

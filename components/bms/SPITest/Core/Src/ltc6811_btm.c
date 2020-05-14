@@ -54,6 +54,11 @@ const uint16_t pec15Table[256] =
     0x8BA7, 0x4E3E, 0x450C, 0x8095
 };
 
+// Private function prototypes
+void calculateStackVolts(BTM_PackData_t* pack, int stack_num);
+void calculatePackVolts(BTM_PackData_t* pack);
+
+
 /**
  * @brief Calculates the PEC for "len" bytes of data (as a group).
  * Function adapted from code on pg. 76 of LTC6811 Datasheet.
@@ -118,7 +123,7 @@ void BTM_init(BTM_PackData_t * pack)
     };
 
     // Initialize given PackData structure
-    pack->packVoltage = 0;
+    pack->pack_voltage = 0;
     for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
     {
         for(int reg_num = 0; reg_num < BTM_REG_GROUP_SIZE; reg_num++)
@@ -329,12 +334,13 @@ BTM_Status_t BTM_readRegisterGroup(
 /**
  * @brief Poll ADCs and read registers of LTC6811 for cell voltages
  *
- * @param voltages 	Pointer to a 2-dimensional array of size
- *					BTM_NUM_DEVICES x 12 to fill with cell voltages C1-C12 of
- * 					of each LTC6811 in the chain (nearest to MCU first)
+ * @attention If function returns BTM_OK, packData was updated. If function
+ *  returns something else, packData was not updated.
+ *
+ * @param packData Battery pack data structure to store read voltages into
  * @return 	Returns BTM_OK if all the received PECs are correct,
- * 			BTM_ERROR_PEC if any PEC doesn't match, or BTM_ERROR_TIMEOUT
- *			if a timeout occurs while polling.
+ *          BTM_ERROR_PEC if any PEC doesn't match, or BTM_ERROR_TIMEOUT
+ *	        if a timeout occurs while polling.
  */
 BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 {
@@ -380,7 +386,10 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 				packData->stack[ic_num].module[cell_num].voltage = cell_voltage_raw;
 			}
 		}
+		calculateStackVolts(packData, ic_num);
 	}
+	calculatePackVolts(packData);
+
 	return status;
 }
 
@@ -405,6 +414,42 @@ float BTM_regValToVoltage(uint16_t raw_reading)
 void BTM_writeCS(CS_state_t new_state)
 {
     HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, new_state);
+}
+
+/**
+ * @brief Adds up all the module voltages in a stack of a pack and writes the stack voltage for each
+ *
+ * @param[in/out] pack Battery pack data structure to perform sum for
+ * @param[in] stack_num Index of the stack to calculate the total voltage of
+ */
+void calculateStackVolts(BTM_PackData_t* pack, int stack_num)
+{
+    unsigned int sum = 0;
+
+    for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+    {
+        sum += pack->stack[stack_num].module[module_num].voltage;
+    }
+    pack->stack[stack_num].stack_voltage = sum;
+    return;
+}
+
+/**
+ * @brief Adds up all the stack voltages in a pack and writes the pack voltage
+ *
+ * @attention Each stack in the pack must have a valid stack voltage
+ *  prior to calling this function
+ * @param[in/out] pack Battery pack data structure to perform sums on
+ */
+void calculatePackVolts(BTM_PackData_t* pack)
+{
+    unsigned int sum = 0;
+    for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
+    {
+        sum += pack->stack[stack_num].stack_voltage;
+    }
+    pack->pack_voltage = sum;
+    return;
 }
 
 /*
