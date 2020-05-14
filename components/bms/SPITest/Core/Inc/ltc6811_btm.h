@@ -99,9 +99,13 @@ typedef enum {
 #define BTM_CS_GPIO_PIN GPIO_PIN_4
 
 /* Configuration Register Group Parameters */
+
 // Keep voltage references on between ADC reads (significantly speeds up reads,
 //   increases power consumption)
 #define REFON 1
+// 0 = References Shut Down After Conversions,
+// 1 = References Remain Powered Up Until Watchdog Timeout
+
 // Over-voltage threshold for LTC6811
 #define VUV 1687U // (2.7V / (16 * 0.0001V)) - 1 = 1687
 // Under-voltage threshold for LTC6811
@@ -115,51 +119,12 @@ typedef enum {
 // ADC Mode (speed)
 #define MD MD_7KHZ_3KHZ // Normal mode
 // Self Test Mode Selection
-// #define ST 1 // TODO: Add enumeration
+// #define ST 1 // TODO: Add enumeration if ST commands are needed
 /* Pull-Up/Pull-Down Current for Open Wire Conversions */
-#define PUP 0 // TODO: Add enumeration
+#define PUP 0 // 0 = Pull down, 1 = Pull up
 
 /*============================================================================*/
-/* VARIABLE PARAMETER COMMAND DEFINITIONS */
-
-#define ADCV_VAL    0x0260 | (MD << 7) | (DCP << 4)	// CH set to 0 = all cells
-#define ADOW_VAL    0x0228 | (MD << 7) | (PUP << 6) | (DCP << 4) // CH set to 0
-#define CVST_VAL    0x0207 | (MD << 7) | (ST << 5)
-#define ADOL_VAL    0x0201 | (MD << 7) | (DCP << 4)
-
-#define ADAX_ALL_VAL    0x0460 | (MD << 7) | CHG_ALL
-#define ADAX_GPIO1_VAL  0x0460 | (MD << 7) | CHG_GPIO1
-#define ADAX_GPIO2_VAL  0x0460 | (MD << 7) | CHG_GPIO2
-#define ADAX_GPIO3_VAL  0x0460 | (MD << 7) | CHG_GPIO3
-#define ADAX_GPIO4_VAL  0x0460 | (MD << 7) | CHG_GPIO4
-#define ADAX_GPIO5_VAL  0x0460 | (MD << 7) | CHG_GPIO4
-#define ADAX_VREF2_VAL  0x0460 | (MD << 7) | CHG_GPIO5
-
-#define ADAXD_ALL_VAL    0x0400 | (MD << 7) | CHG_ALL
-#define ADAXD_GPIO1_VAL  0x0400 | (MD << 7) | CHG_GPIO1
-#define ADAXD_GPIO2_VAL  0x0400 | (MD << 7) | CHG_GPIO2
-#define ADAXD_GPIO3_VAL  0x0400 | (MD << 7) | CHG_GPIO3
-#define ADAXD_GPIO4_VAL  0x0400 | (MD << 7) | CHG_GPIO4
-#define ADAXD_GPIO5_VAL  0x0400 | (MD << 7) | CHG_GPIO4
-#define ADAXD_VREF2_VAL  0x0400 | (MD << 7) | CHG_GPIO5
-
-//#define AXST_VAL    0x0407 | (MD << 7) | (ST << 5)
-
-#define ADSTAT_ALL_VAL  0x0468 | (MD << 7) | CHST_ALL
-#define ADSTAT_SC_VAL   0x0468 | (MD << 7) | CHST_SC
-#define ADSTAT_ITMP_VAL 0x0468 | (MD << 7) | CHST_ITMP
-#define ADSTAT_VA_VAL   0x0468 | (MD << 7) | CHST_VA
-#define ADSTAT_VD_VAL   0x0468 | (MD << 7) | CHST_VD
-
-#define ADSTATD_ALL_VAL     0x0408 | (MD << 7) | CHST_ALL
-#define ADSTATD_SC_VAL      0x0408 | (MD << 7) | CHST_SC
-#define ADSTATD_ITMP_VAL    0x0408 | (MD << 7) | CHST_ITMP
-#define ADSTATD_VA_VAL      0x0408 | (MD << 7) | CHST_VA
-#define ADSTATD_VD_VAL      0x0408 | (MD << 7) | CHST_VD
-
-//#define STATST_VAL  0x040F | (MD << 7) | (ST << 5)
-#define ADCVAX_VAL  0x046F | (MD << 7) | (DCP << 4)
-#define ADCVSC_VAL  0x0467 | (MD << 7) | (DCP << 4)
+/* COMMAND DEFINITIONS */
 
 // LTC6811 commands enumeration
 // note: not all of these have been checked for correctness
@@ -181,55 +146,64 @@ typedef enum {
     CMD_STSCTRL = 0x0019,       // Start S Control Pulsing and Poll Status
     CMD_CLRSCTRL= 0x0018,       // Clear S Control Register Group
 
-    CMD_ADCV    = ADCV_VAL,     // Start Cell Voltage ADC Conversion and Poll Status
-    CMD_ADOW    = ADOW_VAL,     // Start Open Wire ADC Conversion and Poll Status
+    // Start Cell Voltage ADC Conversion and Poll Status
+    CMD_ADCV    = 0x0260 | (MD << 7) | (DCP << 4), // CH set to 0 = all cells
+    // Start Open Wire ADC Conversion and Poll Status
+    CMD_ADOW    = 0x0228 | (MD << 7) | (PUP << 6) | (DCP << 4), // CH set to 0
 
-    //CMD_CVST    = CVST_VAL,     // Start Self Test Cell Voltage Conversion and Poll Status
+    // Start Self Test Cell Voltage Conversion and Poll Status
+    //CMD_CVST    = 0x0207 | (MD << 7) | (ST << 5),
 
-    CMD_ADOL    = ADOL_VAL,     // Start Overlap Measurement of Cell 7 Voltage
+    // Start Overlap Measurement of Cell 7 Voltage
+    CMD_ADOL    = 0x0201 | (MD << 7) | (DCP << 4),
 
     // Start GPIOs ADC Conversion and Poll Status
-    CMD_ADAX_ALL    = ADAX_ALL_VAL,
-    CMD_ADAX_GPIO1  = ADAX_GPIO1_VAL,
-    CMD_ADAX_GPIO2  = ADAX_GPIO2_VAL,
-    CMD_ADAX_GPIO3  = ADAX_GPIO3_VAL,
-    CMD_ADAX_GPIO4  = ADAX_GPIO4_VAL,
-    CMD_ADAX_GPIO5  = ADAX_GPIO5_VAL,
-    CMD_ADAX_VREF2  = ADAX_VREF2_VAL,
+    CMD_ADAX_ALL   =  0x0460 | (MD << 7) | CHG_ALL,
+    CMD_ADAX_GPIO1 =  0x0460 | (MD << 7) | CHG_GPIO1,
+    CMD_ADAX_GPIO2 =  0x0460 | (MD << 7) | CHG_GPIO2,
+    CMD_ADAX_GPIO3 =  0x0460 | (MD << 7) | CHG_GPIO3,
+    CMD_ADAX_GPIO4 =  0x0460 | (MD << 7) | CHG_GPIO4,
+    CMD_ADAX_GPIO5 =  0x0460 | (MD << 7) | CHG_GPIO5,
+    CMD_ADAX_VREF2 =  0x0460 | (MD << 7) | CHG_VREF2,
     // Start GPIOs ADC Conversion With Digital Redundancy and Poll Status
-    CMD_ADAXD_ALL    = ADAXD_ALL_VAL,
-    CMD_ADAXD_GPIO1  = ADAXD_GPIO1_VAL,
-    CMD_ADAXD_GPIO2  = ADAXD_GPIO2_VAL,
-    CMD_ADAXD_GPIO3  = ADAXD_GPIO3_VAL,
-    CMD_ADAXD_GPIO4  = ADAXD_GPIO4_VAL,
-    CMD_ADAXD_GPIO5  = ADAXD_GPIO5_VAL,
-    CMD_ADAXD_VREF2  = ADAXD_VREF2_VAL,
+    CMD_ADAXD_ALL   =  0x0400 | (MD << 7) | CHG_ALL,
+    CMD_ADAXD_GPIO1 =  0x0400 | (MD << 7) | CHG_GPIO1,
+    CMD_ADAXD_GPIO2 =  0x0400 | (MD << 7) | CHG_GPIO2,
+    CMD_ADAXD_GPIO3 =  0x0400 | (MD << 7) | CHG_GPIO3,
+    CMD_ADAXD_GPIO4 =  0x0400 | (MD << 7) | CHG_GPIO4,
+    CMD_ADAXD_GPIO5 =  0x0400 | (MD << 7) | CHG_GPIO5,
+    CMD_ADAXD_VREF2 =  0x0400 | (MD << 7) | CHG_VREF2,
 
-    //CMD_AXST    = AXST_VAL,     // Start Self Test GPIOs Conversion and Poll Status
+    // Start Self Test GPIOs Conversion and Poll Status
+    //CMD_AXST = 0x0407 | (MD << 7) | (ST << 5),
 
     // Start Status Group ADC Conversion and Poll Status
-    CMD_ADSTAT_ALL  = ADSTAT_ALL_VAL,
-    CMD_ADSTAT_SC   = ADSTAT_SC_VAL,
-    CMD_ADSTAT_ITMP = ADSTAT_ITMP_VAL,
-    CMD_ADSTAT_VA   = ADSTAT_VA_VAL,
-    CMD_ADSTAT_VD   = ADSTAT_VD_VAL,
+    CMD_ADSTAT_ALL  = 0x0468 | (MD << 7) | CHST_ALL,
+    CMD_ADSTAT_SC   = 0x0468 | (MD << 7) | CHST_SC,
+    CMD_ADSTAT_ITMP = 0x0468 | (MD << 7) | CHST_ITMP,
+    CMD_ADSTAT_VA   = 0x0468 | (MD << 7) | CHST_VA,
+    CMD_ADSTAT_VD   = 0x0468 | (MD << 7) | CHST_VD,
     // Start Status Group ADC Conversion With Digital Redundancy and Poll Status
-    CMD_ADSTATD_ALL  = ADSTATD_ALL_VAL,
-    CMD_ADSTATD_SC   = ADSTATD_SC_VAL,
-    CMD_ADSTATD_ITMP = ADSTATD_ITMP_VAL,
-    CMD_ADSTATD_VA   = ADSTATD_VA_VAL,
-    CMD_ADSTATD_VD   = ADSTATD_VD_VAL,
+    CMD_ADSTATD_ALL = 0x0408 | (MD << 7) | CHST_ALL,
+    CMD_ADSTATD_SC  = 0x0408 | (MD << 7) | CHST_SC,
+    CMD_ADSTATD_ITMP= 0x0408 | (MD << 7) | CHST_ITMP,
+    CMD_ADSTATD_VA  = 0x0408 | (MD << 7) | CHST_VA,
+    CMD_ADSTATD_VD  = 0x0408 | (MD << 7) | CHST_VD,
 
-    //CMD_STATST  = STATST_VAL,   // Start Self Test Status Group Conversion and Poll Status
-    CMD_ADCVAX  = ADCVAX_VAL,   // Start Combined Cell Voltage and GPIO1, GPIO2 Conversion and Poll Status
-    CMD_ADCVSC  = ADCVSC_VAL,   // Start Combined Cell Voltage and SC Conversion and Poll Status
+    // Start Self Test Status Group Conversion and Poll Status
+    //CMD_STATST  = 0x040F | (MD << 7) | (ST << 5),
+
+    // Start Combined Cell Voltage and GPIO1, GPIO2 Conversion and Poll Status
+    CMD_ADCVAX  = 0x046F | (MD << 7) | (DCP << 4),
+    // Start Combined Cell Voltage and SC Conversion and Poll Status
+    CMD_ADCVSC  = 0x0467 | (MD << 7) | (DCP << 4),
 
     CMD_CLRCELL = 0x0711,       // Clear Cell Voltage Register Groups
     CMD_CLRAUX  = 0x0712,       // Clear Auxiliary Register Groups
     CMD_CLRSTAT = 0x0713,       // Clear Status Register Groups
     CMD_PLADC   = 0x0714,       // Poll ADC Conversion Status
     CMD_DIAGN   = 0x0715,       // Diagnose MUX and Poll Status
-    CMD_WRCOMM  = 0x0721,      // Write COMM Register Group
+    CMD_WRCOMM  = 0x0721,       // Write COMM Register Group
     CMD_RDCOMM  = 0x0722,       // Read COMM Register Group
     CMD_STCOMM  = 0x0723        // Start I2C /SPI Communication
 } BTM_command_t;
@@ -270,7 +244,7 @@ struct BTM_stack {
 };
 
 typedef struct {
-    unsigned int packVoltage;
+    unsigned int pack_voltage;
     struct BTM_stack stack[BTM_NUM_DEVICES];
 } BTM_PackData_t;
 

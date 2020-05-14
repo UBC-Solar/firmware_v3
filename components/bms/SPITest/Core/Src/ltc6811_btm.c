@@ -15,7 +15,7 @@
  *
  */
 
-#include "LTC6811_btm.h"
+#include "ltc6811_btm.h"
 
 #define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
 
@@ -54,6 +54,11 @@ const uint16_t pec15Table[256] =
     0x8BA7, 0x4E3E, 0x450C, 0x8095
 };
 
+// Private function prototypes
+void calculateStackVolts(BTM_PackData_t* pack, int stack_num);
+void calculatePackVolts(BTM_PackData_t* pack);
+
+
 /**
  * @brief Calculates the PEC for "len" bytes of data (as a group).
  * Function adapted from code on pg. 76 of LTC6811 Datasheet.
@@ -77,13 +82,15 @@ uint16_t BTM_calculatePec15(uint8_t *data, int len)
 
 /**
  * @brief Toggles the CS line to wake up the entire chain of LTC6811's.
+ *
  * Wakes up the daisy chain as per method described on pg. 52 of datasheet
- *  (method 2)
- * Using HAL_Delay() for this is not particularly ideal, since the minimum delay
- * is 1ms and the delays required are 300us and 10us-ish (shorter than 1 ms)
+ * (method 2)
  */
 void BTM_wakeup()
 {
+    // Using HAL_Delay() for this is not particularly ideal, since the
+    // minimum delay is 1ms and the delays required are 300us and
+    // 10us -ish (shorter than 1 ms)
 	for (int i = 0; i < BTM_NUM_DEVICES; i++)
 	{
 		BTM_writeCS(CS_LOW);
@@ -110,16 +117,16 @@ void BTM_init(BTM_PackData_t * pack)
         0xF8 | (REFON << 2) | ADCOPT, // GPIO 1-5 = 1, REFON, ADCOPT
         (VUV & 0xFF), // VUV[7:0]
         ((uint8_t) (VOV << 4)) | (((uint8_t) (VUV >> 8)) & 0x0F), // VOV[4:0] | VUV[11:8]
-        (VOV >> 4), // VOV[11:5]
+        (VOV >> 4), // VOV[11:4]
         0x00, // Discharge off for cells 1 through 8
         0x00  // Discharge off for cells 9 through 12, Discharge timer disabled
     };
 
     // Initialize given PackData structure
-    pack->packVoltage = 0;
+    pack->pack_voltage = 0;
     for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
     {
-        for(int reg_num = 0; reg_num > BTM_REG_GROUP_SIZE; reg_num++)
+        for(int reg_num = 0; reg_num < BTM_REG_GROUP_SIZE; reg_num++)
         {
             pack->stack[ic_num].cfgr[reg_num] = config_val[reg_num];
             cfgr_to_write[ic_num][reg_num] = config_val[reg_num]; // prepare tx data
@@ -230,7 +237,9 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
  * @param tx_data 	Pointer to a 2-dimensional array of size
  *					BTM_NUM_DEVICES x BTM_REG_GROUP_SIZE containing the data to write
  */
-void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][BTM_REG_GROUP_SIZE])
+void BTM_writeRegisterGroup(
+        BTM_command_t command,
+        uint8_t tx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
 {
 	uint16_t pecValue = 0;
 	uint8_t tx_message[8];
@@ -265,7 +274,9 @@ void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][BTM_REG_GRO
  			a full set of valid data could not be obtained after
 			BTM_MAX_READ_ATTEMPTS tries
  */
-BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_REG_GROUP_SIZE])
+BTM_Status_t BTM_readRegisterGroup(
+        BTM_command_t command,
+        uint8_t rx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
 {
 	uint16_t pecValue = 0;
 	BTM_Status_t status = BTM_OK;
@@ -323,16 +334,17 @@ BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_
 /**
  * @brief Poll ADCs and read registers of LTC6811 for cell voltages
  *
- * @param voltages 	Pointer to a 2-dimensional array of size
- *					BTM_NUM_DEVICES x 12 to fill with cell voltages C1-C12 of
- * 					of each LTC6811 in the chain (nearest to MCU first)
+ * @attention If function returns BTM_OK, packData was updated. If function
+ *  returns something else, packData was not updated.
+ *
+ * @param packData Battery pack data structure to store read voltages into
  * @return 	Returns BTM_OK if all the received PECs are correct,
- * 			BTM_ERROR_PEC if any PEC doesn't match, or BTM_ERROR_TIMEOUT
- *			if a timeout occurs while polling.
+ *          BTM_ERROR_PEC if any PEC doesn't match, or BTM_ERROR_TIMEOUT
+ *	        if a timeout occurs while polling.
  */
 BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 {
-	// 6-byte sets (each from a different register group of the LTC6811)
+	// 4x 6-byte sets (each from a different register group of the LTC6811)
 	uint8_t ADC_data[4][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 	uint16_t cell_voltage_raw = 0;
 	int cell_num = 0;
@@ -356,7 +368,7 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 	// Each cell voltage is provided as a 16-bit value where
 	// voltage = 0.0001V * raw value
 	// Each 6-byte Cell Voltage Register Group holds 3 cell voltages
-	// 1st 2 bytes of Cell Voltage Register Group A is C1V
+	// First 2 bytes of Cell Voltage Register Group A is C1V
 	// Last 2 bytes of Cell Voltage Register Group D is C12V
 	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
 	{
@@ -374,7 +386,10 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 				packData->stack[ic_num].module[cell_num].voltage = cell_voltage_raw;
 			}
 		}
+		calculateStackVolts(packData, ic_num);
 	}
+	calculatePackVolts(packData);
+
 	return status;
 }
 
@@ -399,6 +414,42 @@ float BTM_regValToVoltage(uint16_t raw_reading)
 void BTM_writeCS(CS_state_t new_state)
 {
     HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, new_state);
+}
+
+/**
+ * @brief Adds up all the module voltages in a stack of a pack and writes the stack voltage for each
+ *
+ * @param[in/out] pack Battery pack data structure to perform sum for
+ * @param[in] stack_num Index of the stack to calculate the total voltage of
+ */
+void calculateStackVolts(BTM_PackData_t* pack, int stack_num)
+{
+    unsigned int sum = 0;
+
+    for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+    {
+        sum += pack->stack[stack_num].module[module_num].voltage;
+    }
+    pack->stack[stack_num].stack_voltage = sum;
+    return;
+}
+
+/**
+ * @brief Adds up all the stack voltages in a pack and writes the pack voltage
+ *
+ * @attention Each stack in the pack must have a valid stack voltage
+ *  prior to calling this function
+ * @param[in/out] pack Battery pack data structure to perform sums on
+ */
+void calculatePackVolts(BTM_PackData_t* pack)
+{
+    unsigned int sum = 0;
+    for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
+    {
+        sum += pack->stack[stack_num].stack_voltage;
+    }
+    pack->pack_voltage = sum;
+    return;
 }
 
 /*
