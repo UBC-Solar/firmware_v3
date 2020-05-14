@@ -15,7 +15,7 @@
  *
  */
 
-#include "LTC6811_btm.h"
+#include "ltc6811_btm.h"
 
 #define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
 
@@ -77,13 +77,15 @@ uint16_t BTM_calculatePec15(uint8_t *data, int len)
 
 /**
  * @brief Toggles the CS line to wake up the entire chain of LTC6811's.
+ *
  * Wakes up the daisy chain as per method described on pg. 52 of datasheet
- *  (method 2)
- * Using HAL_Delay() for this is not particularly ideal, since the minimum delay
- * is 1ms and the delays required are 300us and 10us-ish (shorter than 1 ms)
+ * (method 2)
  */
 void BTM_wakeup()
 {
+    // Using HAL_Delay() for this is not particularly ideal, since the
+    // minimum delay is 1ms and the delays required are 300us and
+    // 10us -ish (shorter than 1 ms)
 	for (int i = 0; i < BTM_NUM_DEVICES; i++)
 	{
 		BTM_writeCS(CS_LOW);
@@ -110,7 +112,7 @@ void BTM_init(BTM_PackData_t * pack)
         0xF8 | (REFON << 2) | ADCOPT, // GPIO 1-5 = 1, REFON, ADCOPT
         (VUV & 0xFF), // VUV[7:0]
         ((uint8_t) (VOV << 4)) | (((uint8_t) (VUV >> 8)) & 0x0F), // VOV[4:0] | VUV[11:8]
-        (VOV >> 4), // VOV[11:5]
+        (VOV >> 4), // VOV[11:4]
         0x00, // Discharge off for cells 1 through 8
         0x00  // Discharge off for cells 9 through 12, Discharge timer disabled
     };
@@ -119,7 +121,7 @@ void BTM_init(BTM_PackData_t * pack)
     pack->packVoltage = 0;
     for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
     {
-        for(int reg_num = 0; reg_num > BTM_REG_GROUP_SIZE; reg_num++)
+        for(int reg_num = 0; reg_num < BTM_REG_GROUP_SIZE; reg_num++)
         {
             pack->stack[ic_num].cfgr[reg_num] = config_val[reg_num];
             cfgr_to_write[ic_num][reg_num] = config_val[reg_num]; // prepare tx data
@@ -230,7 +232,9 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
  * @param tx_data 	Pointer to a 2-dimensional array of size
  *					BTM_NUM_DEVICES x BTM_REG_GROUP_SIZE containing the data to write
  */
-void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][BTM_REG_GROUP_SIZE])
+void BTM_writeRegisterGroup(
+        BTM_command_t command,
+        uint8_t tx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
 {
 	uint16_t pecValue = 0;
 	uint8_t tx_message[8];
@@ -265,7 +269,9 @@ void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][BTM_REG_GRO
  			a full set of valid data could not be obtained after
 			BTM_MAX_READ_ATTEMPTS tries
  */
-BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_REG_GROUP_SIZE])
+BTM_Status_t BTM_readRegisterGroup(
+        BTM_command_t command,
+        uint8_t rx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
 {
 	uint16_t pecValue = 0;
 	BTM_Status_t status = BTM_OK;
@@ -332,7 +338,7 @@ BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_
  */
 BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 {
-	// 6-byte sets (each from a different register group of the LTC6811)
+	// 4x 6-byte sets (each from a different register group of the LTC6811)
 	uint8_t ADC_data[4][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 	uint16_t cell_voltage_raw = 0;
 	int cell_num = 0;
@@ -356,7 +362,7 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 	// Each cell voltage is provided as a 16-bit value where
 	// voltage = 0.0001V * raw value
 	// Each 6-byte Cell Voltage Register Group holds 3 cell voltages
-	// 1st 2 bytes of Cell Voltage Register Group A is C1V
+	// First 2 bytes of Cell Voltage Register Group A is C1V
 	// Last 2 bytes of Cell Voltage Register Group D is C12V
 	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
 	{
