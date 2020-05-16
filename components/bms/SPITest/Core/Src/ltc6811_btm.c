@@ -6,8 +6,9 @@
  *
  *  Note on configuring the SPI peripheral:
  *  The LTC6811 uses SPI in mode 3 (CPOL 1, CPHA 1)
- *  The format is MSB first, max baud rate 1Mb/s (but run it slower if there
- *  are problems with noise, etc.)
+ *  The format is most significant bit (MSB) first.
+ *  Max baud rate for LTC6811 is 1Mb/s, but run it slower if there
+ *  are problems with noise, etc.
  *
  *  @date 2020/02/14
  *  @author Andrew Hanlon (a2k-hanlon)
