@@ -141,7 +141,7 @@ int main(void)
 	// Test BTM_BAL functions written so far
     BTM_BAL_initDchPack(&dch_pack1);
     BTM_BAL_initDchPack(&dch_pack2);
-    pack.stack[2].module[4].enable = MODULE_DISABLED;
+    pack.stack[2].module[4].enable = MODULE_DISABLED; // for 3 stack test w/o 6811 dev board
     for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
     {
         for(int mod_num = 0; mod_num < BTM_NUM_MODULES; mod_num++)
@@ -161,7 +161,7 @@ int main(void)
         }
     }
 
-    BTM_BAL_setDischarge(&pack, &dch_pack1);
+    BTM_BAL_setDischarge(&pack, &dch_pack1); // Don't run with dev board on
     BTM_BAL_copyDchPack(&dch_pack1, &dch_pack2);
   /* USER CODE END 2 */
 
