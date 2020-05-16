@@ -43,7 +43,7 @@ typedef enum {
 #define ONE_THIRD_OF_COMM 2
 
 // Function prototypes
-void BTM_TEMP_measureState(BTM_Packdata_t* pack);
+BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack);
 double BTM_TEMP_volts2temp(double Vout);
 
 #endif /* THERMISTOR_H_ */

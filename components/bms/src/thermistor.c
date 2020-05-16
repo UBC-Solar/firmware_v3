@@ -1,13 +1,13 @@
-#include "thermistor.h"
+#include "ltc6811_btm_temp.h"
 #include "stm32f3xx_hal.h"
 #include <math.h>
 
 // Function prototypes:
-void read_and_switch_mux_channels(
+BTM_Status_t read_and_switch_mux_channels(
 	uint8_t mux_address,
-	uint16_t thermistor_volt_series[MUX_CHANNELS][BTM_NUM_DEVICES]
+	uint16_t MUX_thermistor_readings[MUX_CHANNELS][BTM_NUM_DEVICES]
 );
-void readThermistorVoltage(uint16_t GPIO1_voltage[BTM_NUM_DEVICES]);
+BTM_Status_t readThermistorVoltage(uint16_t GPIO1_voltage[BTM_NUM_DEVICES]);
 void disableMux(uint8_t mux_address);
 
 
@@ -20,10 +20,12 @@ No user defined input.
 Internal functions pull readings from hardware registers
 
 Output:
-uint8_t MUX_thermistor_readings[ONE_THIRD_OF_COMM][MUX_CHANNELS][BTM_NUM_DEVICES]
-    ONE_THIRD_OF_COMM - first two bytes of 6 bytes of LTC6811 COMM register
-    MUX_CHANNELS      - LTC1380 MUX have 8 channels
-    BTM_NUM_DEVICES   - Number of LTC6811 connected to STM32F3 mcu.
+Voltages of thermistors stored in the given pack data structure
+ie. pack.stack[].module[].temperature attribute filled for all modules.
+
+Returns:
+BTM_Status_t Status from communication functions.
+Note: nothing new written to pack if return value != BTM_OK
 
 Internal functions:
 read_and_switch_mux_channels()
@@ -48,18 +50,22 @@ Algorithm:
 
 3) done
 */
-void BTM_TEMP_measureState(BTM_Packdata_t* pack)
+BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 {
 	uint16_t MUX_thermistor_readings[NUMBER_OF_MUX][MUX_CHANNELS][BTM_NUM_DEVICES] = { 0 };
 	int module_num = 0;
+	BTM_Status_t status = BTM_OK;
 
 	//known reset state
 	disableMux(MUX1_ADDRESS);
 	disableMux(MUX2_ADDRESS);
 
 	//mux channel-switching per mux
-	read_and_switch_mux_channels(MUX1_ADDRESS, MUX_thermistor_readings[0]);
-	read_and_switch_mux_channels(MUX2_ADDRESS, MUX_thermistor_readings[1]);
+	status = read_and_switch_mux_channels(MUX1_ADDRESS, MUX_thermistor_readings[0]);
+	if (status != BTM_OK) return status; // There was a communication problem at some point.
+
+	status = read_and_switch_mux_channels(MUX2_ADDRESS, MUX_thermistor_readings[1]);
+	if (status != BTM_OK) return status; // There was a communication problem at some point.
 
 	// Copy gathered temperature data to pack data structure
 	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
@@ -75,7 +81,7 @@ void BTM_TEMP_measureState(BTM_Packdata_t* pack)
 		}
 	}
 
-	return;
+	return status;
 }
 
 /*
@@ -86,9 +92,9 @@ and gather the associated themistor readings per LTC6811
 
 input:
 uint8_t mux_address
-    - the exact address bits
+	- the exact address bits
 uint16_t MUX_thermistor_readings[MUX_CHANNELS][BTM_NUM_DEVICES]
-    - the array of all thermistor voltage readings from all mux channels from all LTC6811 devices
+	- the array of all thermistor voltage readings from all mux channels from all LTC6811 devices
 internal functions pull readings from hardware registers
 
 output: None. Readings are put into an array. See above.
@@ -96,10 +102,10 @@ output: None. Readings are put into an array. See above.
 
 Algorithm:
 1) Define comm_val array of 6 bytes to be copied to COMM register of LTC6811.
-    The LTC1380 MUX needs 2 bytes for a single Send Byte protocol.
-    The two bytes are enveloped by I2C commands for LTC6811.
-    The full message totals to 4 bytes.
-    Last two bytes of COMM are not needed.
+	The LTC1380 MUX needs 2 bytes for a single Send Byte protocol.
+	The two bytes are enveloped by I2C commands for LTC6811.
+	The full message totals to 4 bytes.
+	Last two bytes of COMM are not needed.
 2) In a loop for MUX_CHANNELS cycles, set the MUX channel and measure its voltage:
 2.1) Set the appropriate comm_val bits to the mux channel to switch to.
 2.2) Copy comm_val to mux_message. Mux message has additional dimension for LTC6811 device specified.
@@ -107,8 +113,8 @@ Algorithm:
 2.4) Chip Select is pulled Low (it signals to allow SPI communication from the STM32 to the 6811)
 2.5) STCOMM: LTC6811 is sent the command to send an I2C message to the MUX. The message is stored in COMM register.
 2.6) the STM32 is purposefully stalled with a NULL_message SPI transmission going from STM32 to LTC6811
-     for exactly 3 clock cycles per bit of I2C transmission going from LTC6811 to MUX.
-		     (needs testing but we suspect the I2C output of the 6811 uses SPI as a clock input)
+	 for exactly 3 clock cycles per bit of I2C transmission going from LTC6811 to MUX.
+			 (needs testing but we suspect the I2C output of the 6811 uses SPI as a clock input)
 2.7) Chip Select is pulled high (it signals to block SPI communication from the STM32 to the 6811)
 2.8) Measure the voltage.
 
@@ -139,11 +145,12 @@ Debugging uncertainty:
 there is uncertainty about if the acknowledge bits (detailed in LTC1380 data sheet) has to be processed by our code. I assume not,
 but in the case where I2C is not working, this is a potential cause.
 */
-void read_and_switch_mux_channels(uint8_t mux_address,
+BTM_Status_t read_and_switch_mux_channels(uint8_t mux_address,
 	uint16_t MUX_thermistor_readings[MUX_CHANNELS][BTM_NUM_DEVICES])
 {
 	uint8_t MUX_S[8] = { MUX_S0, MUX_S1, MUX_S2, MUX_S3, MUX_S4, MUX_S5, MUX_S6, MUX_S7 };
 	uint8_t NULL_message[6] = { 0 };
+
 	uint8_t comm_val[BTM_REG_GROUP_SIZE] =
 	{
 		(I2C_START << 4) | (mux_address >> 4), // 1.1.1) - 1.1.2)
@@ -153,7 +160,9 @@ void read_and_switch_mux_channels(uint8_t mux_address,
 		0, // There's no 3rd byte to transmit
 		0
 	};
+
 	uint8_t mux_message[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = { 0 };
+	BTM_Status_t status = BTM_OK;
 
 	//2)
 	for (int n = 0; n < MUX_CHANNELS; n++)
@@ -192,10 +201,17 @@ void read_and_switch_mux_channels(uint8_t mux_address,
 		BTM_writeCS(CS_HIGH);
 
 		//2.8) gather thermistor readings
-		readThermistorVoltage(MUX_thermistor_readings[n]);
+		status = readThermistorVoltage(MUX_thermistor_readings[n]);
+		if (status != BTM_OK)
+		{
+			// There's a communication problem
+			disableMux(mux_address); // Just to be safe. May not do anything if communication is down.
+			return status;
+		}
 	}
 
 	disableMux(mux_address);
+	return status;
 }
 
 /*
@@ -207,19 +223,21 @@ uint16_t GPIO1_voltage[BTM_NUM_DEVICES] - two bytes long as it is the concatenat
 For each LTC6811 device, internal functions pull voltage readings of GPIO pin from hardware registers.
 
 output:
-None. Readings stored in array. See input.
+- Returns status value indicating success of register read.
+- Readings stored in array. See input.
 */
-void readThermistorVoltage(uint16_t GPIO1_voltage[BTM_NUM_DEVICES])
+BTM_Status_t readThermistorVoltage(uint16_t GPIO1_voltage[BTM_NUM_DEVICES])
 {
 	uint8_t registerAUXA_voltages[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 	uint16_t voltage_reading = 0;
-
+	BTM_Status_t status = BTM_OK;
 	//start conversion
 	//ADAX, ADc AuXillary start-conversion command
 	BTM_sendCmdAndPoll(CMD_ADAX_GPIO1);
 
 	//retrieve register readings
-	BTM_readRegisterGroup(CMD_RDAUXA, registerAUXA_voltages);
+	status = BTM_readRegisterGroup(CMD_RDAUXA, registerAUXA_voltages);
+	if (status != BTM_OK) return status; // There's a communication problem
 
 	//output reading by assigning to pointed array the first two bytes of registerAUXA_voltages
 	for (int board = 0; board < BTM_NUM_DEVICES; board++)
@@ -230,6 +248,8 @@ void readThermistorVoltage(uint16_t GPIO1_voltage[BTM_NUM_DEVICES])
 		// Store in given array
 		GPIO1_voltage[board] = voltage_reading;
 	}
+
+	return status;
 }
 
 /*
@@ -250,6 +270,7 @@ void disableMux(uint8_t mux_address)
 	};
 
 	uint8_t mux_message[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = { 0 };
+	uint8_t null_message[6] = { 0 };
 
 	// Make enough copies of this data to send to all the LTC6811's
 	for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
@@ -269,8 +290,8 @@ void disableMux(uint8_t mux_address)
 	// driving SPI clock needed for I2C, 3 clock cycles per bit sent
 	// can be done by sending null data
 	// BTM_SPI_handle is a global variable,
-	// 	and BTM_TIMEOUT_VAL is a symbolic constant
-	HAL_SPI_Transmit(BTM_SPI_handle, NULL_message, 6, BTM_TIMEOUT_VAL);
+	//  and BTM_TIMEOUT_VAL is a symbolic constant
+	HAL_SPI_Transmit(BTM_SPI_handle, null_message, 6, BTM_TIMEOUT_VAL);
 	BTM_writeCS(CS_HIGH);
 }
 
