@@ -92,6 +92,8 @@ void BTM_wakeup()
     // Using HAL_Delay() for this is not particularly ideal, since the
     // minimum delay is 1ms and the delays required are 300us and
     // 10us -ish (shorter than 1 ms)
+    // TODO: test with daisy chain of 3 LTC6811's to verify this timing works
+    // If it doens't, add another faster timer for more precise delays
 	for (int i = 0; i < BTM_NUM_DEVICES; i++)
 	{
 		BTM_writeCS(CS_LOW);
@@ -295,6 +297,7 @@ BTM_Status_t BTM_readRegisterGroup(
 		BTM_sendCmd(command);
 
 		// Read back the data, but stop between device data groups on error
+		// TODO: Indicate to caller which LTC6811 is having problems, if problems are encountered
 		ic_num = 0;
 		status = BTM_OK; // reset status before a new try
 		while ((ic_num < BTM_NUM_DEVICES) && (BTM_OK == status))
