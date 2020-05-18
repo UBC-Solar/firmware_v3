@@ -106,9 +106,9 @@ typedef enum {
 // 0 = References Shut Down After Conversions,
 // 1 = References Remain Powered Up Until Watchdog Timeout
 
-// Over-voltage threshold for LTC6811
-#define VUV 1687U // (2.7V / (16 * 0.0001V)) - 1 = 1687
 // Under-voltage threshold for LTC6811
+#define VUV 1687U // (2.7V / (16 * 0.0001V)) - 1 = 1687
+// Over-voltage threshold for LTC6811
 #define VOV 2624U // (4.2V / (16 * 0.0001V)) - 1 = 2624
 // ADCOPT selects the ADC mode together with MD, but is in the CFG register
 #define ADCOPT 0
