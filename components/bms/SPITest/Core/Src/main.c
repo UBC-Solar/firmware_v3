@@ -75,7 +75,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 	BTM_PackData_t pack;
-	BTM_Status_t BTM_status = BTM_OK;
+	BTM_Status_t BTM_status = {BTM_OK, 0};
 	uint8_t config_val[BTM_REG_GROUP_SIZE] =
 	    {
 	        0xF8 | (REFON << 2) | ADCOPT, // GPIO 1-5 = 1, REFON, ADCOPT
@@ -125,10 +125,10 @@ int main(void)
 	CONT_init();
 
 	BTM_status = BTM_readRegisterGroup(CMD_RDCFGA, register_readout);
-	if (BTM_OK == BTM_status)
+	if (BTM_status.error == BTM_OK)
 		printf("Read config register success\n");
 	else
-		printf("Read config register failed\n");
+		printf("Read config register failed at device %d\n", BTM_status.device_num);
 
 	// compare read config to set config
 	printf("Configuration:\nWritten\tRead\n");
@@ -156,16 +156,16 @@ int main(void)
 				printf("%.4f\t", BTM_regValToVoltage(pack.stack[ic_num].module[cell].voltage));
 			}
 			printf("\n");
-			switch (BTM_status)
+			switch (BTM_status.error)
 			{
 			case BTM_OK:
 				printf("BTM OK\n");
 				break;
 			case BTM_ERROR_TIMEOUT:
-				printf("TIMEOUT ERROR\n");
+				printf("TIMEOUT ERROR at device %d\n", BTM_status.device_num);
 				break;
 			case BTM_ERROR_PEC:
-				printf("PEC ERROR\n");
+				printf("PEC ERROR at device %d\n", BTM_status.device_num);
 				break;
 			default:
 				break;

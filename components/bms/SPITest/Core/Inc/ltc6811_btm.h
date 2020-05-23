@@ -36,11 +36,15 @@
 /*============================================================================*/
 /* ENUMERATIONS */
 
-typedef enum {
-    BTM_OK            = 0,
-    BTM_ERROR_PEC     = 1,
-    BTM_ERROR_TIMEOUT = 2
-} BTM_Status_t;
+enum BTM_Error {
+    BTM_OK                  = 0,
+    BTM_ERROR_PEC           = 1,
+    BTM_ERROR_TIMEOUT       = 2,
+    BTM_ERROR_HAL           = 3,
+    BTM_ERROR_HAL_BUSY      = 4,
+    BTM_ERROR_HAL_TIMEOUT   = 5
+};
+#define BTM_HAL_ERROR_OFFSET 2 // BTM_ERROR_HAL - HAL_ERROR
 
 // LTC6811 ADC mode options
 // First freq applies when ADCOPT == 0, second when ADCOPT == 1
@@ -247,6 +251,17 @@ typedef struct {
     unsigned int pack_voltage;
     struct BTM_stack stack[BTM_NUM_DEVICES];
 } BTM_PackData_t;
+
+// Status type for error reporting
+typedef struct {
+    enum BTM_Error error;
+    unsigned int device_num; // Device at which error occurred, if applicable.
+    // 0 = N/A, 1 = first device in chain, 2 = second device...
+    // If there is no error (error == BTM_OK), device_num should be 0
+} BTM_Status_t;
+
+#define BTM_STATUS_DEVICE_NA 0  // device number not applicable value
+                                // for device_num attribute of BTM_Status_t
 
 /*============================================================================*/
 /* PUBLIC VARAIBLES */

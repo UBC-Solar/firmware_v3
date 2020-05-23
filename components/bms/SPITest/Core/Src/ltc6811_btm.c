@@ -58,6 +58,7 @@ const uint16_t pec15Table[256] =
 // Private function prototypes
 void calculateStackVolts(BTM_PackData_t* pack, int stack_num);
 void calculatePackVolts(BTM_PackData_t* pack);
+BTM_Status_t processHALStatus(HAL_StatusTypeDef status_HAL, unsigned int device_num);
 
 
 /**
@@ -187,8 +188,10 @@ void BTM_sendCmd(BTM_command_t command)
  */
 BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 {
-	uint8_t rx_buffer = 0;
+    uint8_t rx_buffer = 0;
 	uint32_t start_tick;
+	HAL_StatusTypeDef status_HAL = HAL_OK;
+	BTM_Status_t status_BTM = {BTM_OK, 0};
 
 	BTM_writeCS(CS_LOW);
 
@@ -203,10 +206,15 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 		if (HAL_GetTick() - start_tick > BTM_TIMEOUT_VAL)
 		{
 		    BTM_writeCS(CS_HIGH);
-			return BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
+		    status_BTM.error = BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
+			return status_BTM;
 		}
+
 		rx_buffer = 0;
-		HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
+		status_HAL = HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
+		status_BTM = processHALStatus(status_HAL, BTM_STATUS_DEVICE_NA);
+		if (status_BTM.error != BTM_OK) return status_BTM;
+
 	} while (0xff == rx_buffer);
 
 	// ... then wait for MISO to go high;
@@ -215,21 +223,29 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 	// Must send at least BTM_NUM_DEVICES clock pulses before response is valid
 	// That's why there's an extra read initially - it's slight overkill but that's ok
 	rx_buffer = 0;
-	HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
+	status_HAL = HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
+	status_BTM = processHALStatus(status_HAL, BTM_STATUS_DEVICE_NA);
+    if (status_BTM.error != BTM_OK) return status_BTM;
+
 	do
 	{
-		if (HAL_GetTick() - start_tick > BTM_TIMEOUT_VAL)
-		{
-		    BTM_writeCS(CS_HIGH);
-			return BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
-		}
+	    if (HAL_GetTick() - start_tick > BTM_TIMEOUT_VAL)
+        {
+            BTM_writeCS(CS_HIGH);
+            status_BTM.error = BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
+            return status_BTM;
+        }
+
 		rx_buffer = 0;
-		HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
+		status_HAL = HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
+		status_BTM = processHALStatus(status_HAL, BTM_STATUS_DEVICE_NA);
+		if (status_BTM.error != BTM_OK) return status_BTM;
+
 	} while (!rx_buffer);
 
 	BTM_writeCS(CS_HIGH);
 
-	return BTM_OK;
+	return status_BTM;
 }
 
 /**
@@ -282,7 +298,8 @@ BTM_Status_t BTM_readRegisterGroup(
         uint8_t rx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
 {
 	uint16_t pecValue = 0;
-	BTM_Status_t status = BTM_OK;
+	BTM_Status_t status = {BTM_OK, 0};
+	HAL_StatusTypeDef status_HAL = HAL_OK;
 	// Initialize rx_message before using it, or the garbage it contains will be
 	// sent as dummy data - see definition of HAL_SPI_Receive
 	uint8_t rx_message[8] = {0};
@@ -299,16 +316,21 @@ BTM_Status_t BTM_readRegisterGroup(
 		// Read back the data, but stop between device data groups on error
 		// TODO: Indicate to caller which LTC6811 is having problems, if problems are encountered
 		ic_num = 0;
-		status = BTM_OK; // reset status before a new try
-		while ((ic_num < BTM_NUM_DEVICES) && (BTM_OK == status))
+		// reset status before a new try
+		status.error = BTM_OK;
+		status.device_num = 0;
+		while ((ic_num < BTM_NUM_DEVICES) && (status.error == BTM_OK))
 		{
 			// 6 data bytes + 2 PEC bytes = 8 bytes
-			HAL_SPI_Receive(BTM_SPI_handle, rx_message, 8, BTM_TIMEOUT_VAL);
+		    status_HAL = HAL_SPI_Receive(BTM_SPI_handle, rx_message, 8, BTM_TIMEOUT_VAL);
+		    status = processHALStatus(status_HAL, ic_num + 1);
+            if (status.error != BTM_OK) return status;
 
 			pecValue = BTM_calculatePec15(rx_message, 8); // 0 if transfer was clean
 			if (pecValue)
 			{
-				status = BTM_ERROR_PEC;
+				status.error = BTM_ERROR_PEC;
+				status.device_num = ic_num + 1;
 				for(int i = 0; i < 8; i++)
 				{
 					rx_message[i] = 0; // Clear buffer for next try
@@ -330,7 +352,7 @@ BTM_Status_t BTM_readRegisterGroup(
 
 		BTM_writeCS(CS_HIGH);
 		error_counter++;
-	} while ((BTM_OK != status) && (error_counter < BTM_MAX_READ_ATTEMPTS));
+	} while ((status.error != BTM_OK) && (error_counter < BTM_MAX_READ_ATTEMPTS));
 
 	return status;
 }
@@ -352,22 +374,22 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 	uint8_t ADC_data[4][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 	uint16_t cell_voltage_raw = 0;
 	int cell_num = 0;
-	BTM_Status_t status = BTM_OK;
+	BTM_Status_t status = {BTM_OK, 0};
 
 	status = BTM_sendCmdAndPoll(CMD_ADCV);
-	if (status != BTM_OK) return status;
+	if (status.error != BTM_OK) return status;
 
 	status = BTM_readRegisterGroup(CMD_RDCVA, ADC_data[0]);
-	if (status != BTM_OK) return status;
+	if (status.error != BTM_OK) return status;
 
 	status = BTM_readRegisterGroup(CMD_RDCVB, ADC_data[1]);
-	if (status != BTM_OK) return status;
+	if (status.error != BTM_OK) return status;
 
 	status = BTM_readRegisterGroup(CMD_RDCVC, ADC_data[2]);
-	if (status != BTM_OK) return status;
+	if (status.error != BTM_OK) return status;
 
 	status = BTM_readRegisterGroup(CMD_RDCVD, ADC_data[3]);
-	if (status != BTM_OK) return status;
+	if (status.error != BTM_OK) return status;
 
 	// Each cell voltage is provided as a 16-bit value where
 	// voltage = 0.0001V * raw value
@@ -454,6 +476,21 @@ void calculatePackVolts(BTM_PackData_t* pack)
     }
     pack->pack_voltage = sum;
     return;
+}
+
+// Helper function to translate a HAL error into a BTM error
+BTM_Status_t processHALStatus(HAL_StatusTypeDef status_HAL, unsigned int device_num)
+{
+    BTM_Status_t status_BTM;
+    status_BTM.error = BTM_OK;
+    status_BTM.device_num = BTM_STATUS_DEVICE_NA;
+
+    if (status_HAL != HAL_OK) {
+        status_BTM.error = status_HAL + BTM_HAL_ERROR_OFFSET;
+        status_BTM.device_num = device_num;
+    }
+
+    return status_BTM;
 }
 
 /*
