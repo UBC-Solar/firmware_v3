@@ -54,7 +54,7 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 {
 	uint16_t MUX_thermistor_readings[NUMBER_OF_MUX][MUX_CHANNELS][BTM_NUM_DEVICES] = { 0 };
 	int module_num = 0;
-	BTM_Status_t status = BTM_OK;
+	BTM_Status_t status = {BTM_OK, 0};
 
 	//known reset state
 	disableMux(MUX1_ADDRESS);
@@ -62,10 +62,10 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 
 	//mux channel-switching per mux
 	status = read_and_switch_mux_channels(MUX1_ADDRESS, MUX_thermistor_readings[0]);
-	if (status != BTM_OK) return status; // There was a communication problem at some point.
+	if (status.error != BTM_OK) return status; // There was a communication problem at some point.
 
 	status = read_and_switch_mux_channels(MUX2_ADDRESS, MUX_thermistor_readings[1]);
-	if (status != BTM_OK) return status; // There was a communication problem at some point.
+	if (status.error != BTM_OK) return status; // There was a communication problem at some point.
 
 	// Copy gathered temperature data to pack data structure
 	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
@@ -162,7 +162,7 @@ BTM_Status_t read_and_switch_mux_channels(uint8_t mux_address,
 	};
 
 	uint8_t mux_message[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = { 0 };
-	BTM_Status_t status = BTM_OK;
+	BTM_Status_t status = {BTM_OK, 0};
 
 	//2)
 	for (int n = 0; n < MUX_CHANNELS; n++)
@@ -202,7 +202,7 @@ BTM_Status_t read_and_switch_mux_channels(uint8_t mux_address,
 
 		//2.8) gather thermistor readings
 		status = readThermistorVoltage(MUX_thermistor_readings[n]);
-		if (status != BTM_OK)
+		if (status.error != BTM_OK)
 		{
 			// There's a communication problem
 			disableMux(mux_address); // Just to be safe. May not do anything if communication is down.
@@ -230,14 +230,15 @@ BTM_Status_t readThermistorVoltage(uint16_t GPIO1_voltage[BTM_NUM_DEVICES])
 {
 	uint8_t registerAUXA_voltages[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 	uint16_t voltage_reading = 0;
-	BTM_Status_t status = BTM_OK;
+	BTM_Status_t status = {BTM_OK, 0};
 	//start conversion
 	//ADAX, ADc AuXillary start-conversion command
-	BTM_sendCmdAndPoll(CMD_ADAX_GPIO1);
+	status = BTM_sendCmdAndPoll(CMD_ADAX_GPIO1);
+	if (status.error != BTM_OK) return status; // There's a communication problem
 
 	//retrieve register readings
 	status = BTM_readRegisterGroup(CMD_RDAUXA, registerAUXA_voltages);
-	if (status != BTM_OK) return status; // There's a communication problem
+	if (status.error != BTM_OK) return status; // There's a communication problem
 
 	//output reading by assigning to pointed array the first two bytes of registerAUXA_voltages
 	for (int board = 0; board < BTM_NUM_DEVICES; board++)
