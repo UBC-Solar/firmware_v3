@@ -1,8 +1,7 @@
 /* @brief: skeleton for a function for controlling the flow of the balancing operation
  *
- * @param[in] pack The main pack data structure of the program to write
- *  balancing status flags to and read module enable flags from
- *
+ * @param[in] pack The main pack data structure of the program that contains the voltage
+ * of each module for each stack
  * @param[out] dch_setting_pack The discharge settings for the entire pack.
 */
 // remember to add function prototypes in the header file
@@ -10,18 +9,17 @@ void BTM_BAL_settings(
 	BTM_PackData_t* pack,
 	BTM_BAL_dch_setting_pack_t* dch_setting_pack)
 {
-	const int size = 35; // size of the pack_modules array
+	const int size = 35; // size of the pack_modules array (36 modules)
 	float Vth = 4.0;   // threshold voltage to start the balancing at
 	float Vtol = 0.05; // tolerance voltage through which cells are counted as balanced
 	float pack_modules[size]; // Array to store all cell voltages
-	float Vmin;			// minimum voltage in the pack
+	float Vmin;		// minimum voltage in the pack
 	int Vmin_loc;		// location of the minimum voltage in the array
-	int pack_modules_en[size]; // array to store modules' enable flags consistant with pack_modules array
+	int pack_modules_en[size]; // array to store modules' enable flags consistant with the order of indices in pack_modules array
 	
 	// Storing all cell voltages from the 3 stacks:
-	for(int module_num = 0; module_num < 12; module_num++) // Uncertainty: Are we sure that the last 2 modules of the first 2 stacks are discarded? 
+	for(int module_num = 0; module_num < 12; module_num++) 
 	{
-		if(pack->stack[0].module[module_num].enable = 1)
 		pack_modules[module_num] = pack->stack[0].module[module_num].voltage;
 		pack_modules_en[module_num] = pack->stack[0].module[module_num].enable;
 	}
@@ -38,22 +36,7 @@ void BTM_BAL_settings(
 		pack_modules_en[module_num] = pack->stack[2].module[module_num-24].enable;
 	}
 	
-	
-	
-	/*for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
-    {
-        for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
-        {
-            if (dch_pack_target->stack[stack_num].module_dch[module_num] < Vth) { // need to discard the last 2 modules of the first 2 slave boards
-				charg_mod = 1;
-				stack_num = BTM_NUM_DEVICES;
-				module_num = BTM_NUM_MODULES;
-				break;
-			}
-        }
-    }*/
-	
-	min_val(&Vmin, &Vmin_loc, pack_modules, size, pack_modules_en);
+	min_val(&Vmin, &Vmin_loc, pack_modules, size, pack_modules_en); // This function is written at the end of this file
 	
 	
 	// discharge all modules that are above the threshold voltage if any cell is below the threshold
@@ -89,14 +72,16 @@ void BTM_BAL_settings(
  *@param[in/out] val, pointer that gets the address and outputs the location of the minimum value
  *@param[in] arr, the array we want to extract the minimum value from
  *@param[in] size, the size of the array
+ *@param[in] pack_modules_en, enable flag to check which modules are enabled
 */	
 void min_val(float* val, int* loc, float arr[], size, enable[]) {
 	int temp_loc = 0;
-	float temp_val = arr[0];
-		
+	float temp_val = arr[0]; // the first element of the array is the first point of comparison 
+				 // and will change if another element is smaller
 	for (int i = 1; i < size; i++) {
 		if(arr[i] < temp) {
-			if(enable[i]) {
+			if(enable[i]) // only enabled modules are considered (since we're using 32 of the 36 modules)
+			{ 
 				temp_val = arr[i];
 				temp_loc = i;
 			}
