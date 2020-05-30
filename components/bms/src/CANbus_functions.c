@@ -27,7 +27,7 @@ uint8_t VoltageUnitShifter(uint16_t reading_that_was_decimal_shifted_to_avoid_fl
 //purpose: pull info and format
 //input: array to fill with message
 //output: see input; array is filled with message
-void CANinfoPullAndFormatSeries623(uint8_t aData_series623[8]){
+void CANinfoPullAndFormatSeries623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA){
   unsigned int packVoltage = 0;
   uint16_t MinVtg = 0;
   uint16_t MaxVtg = 0;
@@ -47,7 +47,7 @@ void CANinfoPullAndFormatSeries623(uint8_t aData_series623[8]){
   //Collecting and translating the collected data into CAN frame format
 
   //gather min and max voltages
-  VoltageComparator(&MinVtg, &MaxVtg, &minStack, &minModule, &maxStack, &maxModule);
+  VoltageComparator(&MinVtg, &MaxVtg, &minStack, &minModule, &maxStack, &maxModule, &pPH_PACKDATA);
   MinVtgBYTE = VoltageUnitShifter(MinVtg);
   MaxVtgBYTE = VoltageUnitShifter(MaxVtg);
   minBattModuleIndex = PH_LookUpTable[minStack][minModule];
@@ -59,7 +59,7 @@ void CANinfoPullAndFormatSeries623(uint8_t aData_series623[8]){
     unsigned, 0 to 65 kV -> ASSUMING decimal values from 0 to 65 000
     because it's alloted 2 bytes in the data frame
   */
-  packVoltage = packVoltageEncoder(PH_PACKDATA.pack_voltage);
+  packVoltage = packVoltageEncoder(PH_PACKDATA -> pack_voltage);
 
   //setting byte order in aData_series623 array
   aData_series623[0] = (uint8_t)(packVoltage >> 8); //intent: most-sig half of pack_voltage is bit-shifted right by 8 bits, such that ONLY the MSH is casted.
@@ -88,7 +88,7 @@ void VoltageComparator(uint16_t * pMinVoltage, uint16_t * pMaxVoltage, uint8_t *
   for(int i = 0; i < BTM_NUM_DEVICES; ++i){
     for(int j = 0; j < BTM_NUM_MODULES; ++j){
 
-      localVoltage = PH_PACKDATA.stack[i].module[j].voltage;
+      localVoltage = PH_PACKDATA -> stack[i].module[j].voltage;
 
       if(localVoltage < localMinVolt){
         localMinVolt = localVoltage;
