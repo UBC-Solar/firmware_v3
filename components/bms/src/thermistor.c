@@ -89,7 +89,9 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 		{
 			for(int mux_channel = 0; mux_channel < MUX_CHANNELS; ++mux_channel)
 			{
-				module_num = MUX_CHANNELS * (mux_num + 1) - mux_channel; //or (MUX_CHANNELS - 1)
+				module_num = (MUX_CHANNELS - 1) * (mux_num + 1) - mux_channel; //or (MUX_CHANNELS - 1)
+				pack->stack[ic_num].module[module_num].temperature =
+					MUX_thermistor_readings[mux_num][mux_channel][ic_num];
 			}
 		}
 	}
