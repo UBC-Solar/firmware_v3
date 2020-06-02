@@ -69,34 +69,49 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 
 	// Copy gathered temperature data to pack data structure
 
-	//OLD LOOP
-	// for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
-	// {
-	// 	for(int mux_num = 0; mux_num < NUMBER_OF_MUX; mux_num++)
-	// 	{
-	// 		for(int mux_channel = 0; mux_channel < MUX_CHANNELS; mux_channel++)
-	// 		{
-	// 			module_num = 6 * mux_num + mux_channel;
-	// 			pack->stack[ic_num].module[module_num].temperature =
-	// 				MUX_thermistor_readings[mux_num][mux_channel][ic_num];
-	// 		}
-	// 	}
-	// }
 
-
-	//updated pack data struct loop for descending order modules
-	//assigns measurements for pack with physical label number of "sticker"  to index = sitcker - 1
+	//For-loops assign measurements in arrays to the DataPack struct, in continuous and sequential order.
+	//assigns measurements for pack with physical label number of "sticker"  to index = sitcker - 1.
 	for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ++ic_num)
 	{
-		for(int mux_num = 0; mux_num < NUMBER_OF_MUX; ++mux_num)
+		//this loop is for if the number of modules measured is 12.
+		if(ic_num == 0)
 		{
-			for(int mux_channel = 0; mux_channel < MUX_CHANNELS; ++mux_channel)
+			for(int mux_num = 0; mux_num < NUMBER_OF_MUX; ++mux_num)
 			{
-				module_index = (MUX_CHANNELS - 1) * (mux_num + 1) - mux_channel; //or (MUX_CHANNELS - 1)
-				pack->stack[ic_num].module[module_num].temperature =
-					MUX_thermistor_readings[mux_num][mux_channel][ic_num];
+				for(int mux_channel = 0; mux_channel < MUX_CHANNELS; ++mux_channel)
+				{
+					//module_index has the below formula because the physical batteries are connected in descending-order to ascending-order mux channels.
+					module_index = MUX_CHANNELS * (mux_num + 1) - mux_channel - 1; //or (MUX_CHANNELS - 1)
+					pack->stack[ic_num].module[module_num].temperature =
+						MUX_thermistor_readings[mux_num][mux_channel][ic_num];
+				}
 			}
 		}
+
+		//Additional loops consider that there are 3 sets of slave boards (the thing that hold the 6811)
+		//that measure different numbers of modules.
+		//Note to self: double-check if defining "int mux_num" again in this for-loop is allowed.
+		//this loop is for if the number of modules measured is 10.
+		else if(ic_num == 1 | ic_num == 2){
+			int five_channels = MUX_CHANNELS - 1;
+			for(int mux_num = 0; mux_num < NUMBER_OF_MUX; ++mux_num)
+			{
+				//starts at mux_channel = 1 to bypass garbage value at index 0.
+				for(int mux_channel = 1; mux_channel < five_channels; ++mux_channel)
+				{
+					//NOTE: Intentionally does not have the -1 operation.
+					//      The math works out due to dropping the zero-th index.
+					module_index = five_channels * (mux_num + 1) - mux_channel; //or (MUX_CHANNELS - 1)
+					pack->stack[ic_num].module[module_num].temperature =
+						MUX_thermistor_readings[mux_num][mux_channel][ic_num];
+				}
+			}
+		}
+
+
+
+
 	}
 
 	//for 12 modules
