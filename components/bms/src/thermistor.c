@@ -53,7 +53,7 @@ Algorithm:
 BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 {
 	uint16_t MUX_thermistor_readings[NUMBER_OF_MUX][MUX_CHANNELS][BTM_NUM_DEVICES] = { 0 };
-	int module_num = 0;
+	int module_index = 0;
 	BTM_Status_t status = {BTM_OK, 0};
 
 	//known reset state
@@ -68,33 +68,36 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 	if (status.error != BTM_OK) return status; // There was a communication problem at some point.
 
 	// Copy gathered temperature data to pack data structure
-	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
-	{
-		for(int mux_num = 0; mux_num < NUMBER_OF_MUX; mux_num++)
-		{
-			for(int mux_channel = 0; mux_channel < MUX_CHANNELS; mux_channel++)
-			{
-				module_num = 6 * mux_num + mux_channel;
-				pack->stack[ic_num].module[module_num].temperature =
-					MUX_thermistor_readings[mux_num][mux_channel][ic_num];
-			}
-		}
-	}
 
-
-	// //updated pack data struct loop for descending order modules
-	// for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ++ic_num)
+	//OLD LOOP
+	// for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
 	// {
-	// 	for(int mux_num = 0; mux_num < NUMBER_OF_MUX; ++mux_num)
+	// 	for(int mux_num = 0; mux_num < NUMBER_OF_MUX; mux_num++)
 	// 	{
-	// 		for(int mux_channel = 0; mux_channel < MUX_CHANNELS; ++mux_channel)
+	// 		for(int mux_channel = 0; mux_channel < MUX_CHANNELS; mux_channel++)
 	// 		{
-	// 			module_num = (MUX_CHANNELS - 1) * (mux_num + 1) - mux_channel; //or (MUX_CHANNELS - 1)
+	// 			module_num = 6 * mux_num + mux_channel;
 	// 			pack->stack[ic_num].module[module_num].temperature =
 	// 				MUX_thermistor_readings[mux_num][mux_channel][ic_num];
 	// 		}
 	// 	}
 	// }
+
+
+	//updated pack data struct loop for descending order modules
+	//assigns measurements for pack with physical label number of "sticker"  to index = sitcker - 1
+	for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ++ic_num)
+	{
+		for(int mux_num = 0; mux_num < NUMBER_OF_MUX; ++mux_num)
+		{
+			for(int mux_channel = 0; mux_channel < MUX_CHANNELS; ++mux_channel)
+			{
+				module_index = (MUX_CHANNELS - 1) * (mux_num + 1) - mux_channel; //or (MUX_CHANNELS - 1)
+				pack->stack[ic_num].module[module_num].temperature =
+					MUX_thermistor_readings[mux_num][mux_channel][ic_num];
+			}
+		}
+	}
 
 	//for 12 modules
 
