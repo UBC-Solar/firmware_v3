@@ -82,19 +82,19 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 	}
 
 
-	//updated pack data struct loop for descending order modules
-	for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ++ic_num)
-	{
-		for(int mux_num = 0; mux_num < NUMBER_OF_MUX; ++mux_num)
-		{
-			for(int mux_channel = 0; mux_channel < MUX_CHANNELS; ++mux_channel)
-			{
-				module_num = (MUX_CHANNELS - 1) * (mux_num + 1) - mux_channel; //or (MUX_CHANNELS - 1)
-				pack->stack[ic_num].module[module_num].temperature =
-					MUX_thermistor_readings[mux_num][mux_channel][ic_num];
-			}
-		}
-	}
+	// //updated pack data struct loop for descending order modules
+	// for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ++ic_num)
+	// {
+	// 	for(int mux_num = 0; mux_num < NUMBER_OF_MUX; ++mux_num)
+	// 	{
+	// 		for(int mux_channel = 0; mux_channel < MUX_CHANNELS; ++mux_channel)
+	// 		{
+	// 			module_num = (MUX_CHANNELS - 1) * (mux_num + 1) - mux_channel; //or (MUX_CHANNELS - 1)
+	// 			pack->stack[ic_num].module[module_num].temperature =
+	// 				MUX_thermistor_readings[mux_num][mux_channel][ic_num];
+	// 		}
+	// 	}
+	// }
 
 	//for 12 modules
 
