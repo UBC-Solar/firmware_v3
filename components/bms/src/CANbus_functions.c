@@ -154,4 +154,4 @@ uint8_t VoltageUnitShifter(uint16_t tenth_mV_reading){
     //placeholder code, to see the format of struct calls.
     //Looks really clean
     //retreving voltage of module 12 of stack 3 (note the off-by-one array index)
-    //uint16_t PH_ModuleVOLTAGE = PH_PACKDATA.stack[2].module[11].voltage;
+    //uint16_t PH_ModuleVOLTAGE = PACKDATApointer -> stack[2].module[11].voltage;
