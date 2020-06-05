@@ -136,6 +136,9 @@ void CANinfoPullAndFormatMessage627(){
         &maxTmpModule
     );
 
+    maxTmpModuleSticker = PH_LookUpTable[minTmpStack][minTmpModule];
+    maxTmpModuleSticker = PH_LookUpTable[maxTmpStack][maxTmpModule];
+
     aData_series627[0] = averageTemperature;
     // aData_series627[1] = 0; //redundant
     aData_series627[2] = minTmpBYTE;
