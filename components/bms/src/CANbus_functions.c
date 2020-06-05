@@ -26,7 +26,6 @@ void VoltageComparator(uint16_t * pMinVoltage, uint16_t * pMaxVoltage);
 void packVoltageEncoder(unsigned int pack_voltage);
 uint8_t VoltageUnitShifter(uint16_t reading_that_was_decimal_shifted_to_avoid_floating_point_numericals);
 
-void CANinfoPullAndFormatMessage624();
 void CANinfoPullAndFormatMessage626();
 void CANinfoPullAndFormatMessage627();
 void CANinfoPullAndFormatCompact();
@@ -51,8 +50,8 @@ void CANinfoPullAndFormatSeries623(uint8_t aData_series623[8], BTM_PackData_t * 
     uint8_t
         minVtgBYTE = 0,
         maxVtgBYTE = 0,
-        minBattModuleIndex = 0,
-        maxBattModuleIndex = 0;
+        minBattModuleSticker = 0,
+        maxBattModuleSticker = 0;
 
   //Collecting and translating the collected data into CAN frame format
 
@@ -60,8 +59,8 @@ void CANinfoPullAndFormatSeries623(uint8_t aData_series623[8], BTM_PackData_t * 
     VoltageComparator(&MinVtg, &MaxVtg, &minStack, &minModule, &maxStack, &maxModule, &pPH_PACKDATA);
     MinVtgBYTE = VoltageUnitShifter(MinVtg);
     MaxVtgBYTE = VoltageUnitShifter(MaxVtg);
-    minBattModuleIndex = PH_LookUpTable[minStack][minModule];
-    maxBattModuleIndex = PH_LookUpTable[maxStack][maxModule];
+    minBattModuleSticker = PH_LookUpTable[minStack][minModule];
+    maxBattModuleSticker = PH_LookUpTable[maxStack][maxModule];
 
   /**
   pack Voltage
@@ -72,30 +71,58 @@ void CANinfoPullAndFormatSeries623(uint8_t aData_series623[8], BTM_PackData_t * 
   packVoltage = packVoltageEncoder(PH_PACKDATA -> pack_voltage);
 
     //setting byte order in aData_series623 array
-    aData_series623[0] = (uint8_t)(packVoltage >> 8); //intent: most-sig half of pack_voltage is bit-shifted right by 8 bits, such that ONLY the MSH is casted.
+    aData_series623[0] = (uint8_t)(packVoltage >> 8);//PROBABLY DONE WRONG //intent: most-sig half of pack_voltage is bit-shifted right by 8 bits, such that ONLY the MSH is casted.
     aData_series623[1] = (uint8_t)(packVoltage);
     aData_series623[2] = minVtgBYTE;
-    aData_series623[3] = minBattModuleIndex;
+    aData_series623[3] = minBattModuleSticker;
     aData_series623[4] = maxVtgBYTE;
-    aData_series623[5] = maxBattModuleIndex;
+    aData_series623[5] = maxBattModuleSticker;
     //aData_series623[6] = 0; //redundant
     //aData_series623[7] = 0; //redundant
 
   //end of function
 }
 
-void CANinfoPullAndFormatMessage624()
-{
+void CANinfoPullAndFormatMessage627(){
     uint8_t
-        current;
+        averageTemperature = 0,
+        minTmp = 0,
+        maxTmp = 0,
+        minTmpModuleSticker = 0,
+        maxTmpModuleSticker = 0;
 
-    current = ECUgpioInfoPull();
+    averageTemperature = temperatureDataRetrieval();
 
-    aData_series624[0] = current;
 
-    //end of code
+    aData_series627[0] = averageTemperature;
+    // aData_series627[1] = 0; //redundant
+    aData_series627[2] = minTmp;
+    aData_series627[3] = minTmpModuleSticker;
+    aData_series627[4] = maxTmp;
+    aData_series627[5] = maxTmpModuleSticker;
+    // aData_series627[6] = 0; //redundant
+    // aData_series627[7] = 0; //redundant
 }
 
+
+/*
+Function Name: VoltageComparator
+Function Purpose: Scan the array of voltages of the modules per stacks, and return the min and max temperature-voltages
+
+Input:
+    pointers:
+        pMinVoltage - pointer to variable to hold minimum voltage found.
+        pMaxVoltage - pointer to variable to hold maximum voltage found.
+        .....
+        pMinStack - pointer to variable to hold INDEX of the battery stack containing the battery module with minimum voltage found.
+        pMinModule - pointer to variable to hold INDEX of the module with the minimum voltage found.
+        .....
+        pMaxStack - pointer to variable to hold INDEX of the battery stack containing the battery module with maximum voltage found.
+        pMaxModule - pointer to variable to hold INDEX of the module with the maximum voltage found.
+
+Output:
+    Data is stored in variables pointed to. See input.
+*/
 void VoltageComparator(
     uint16_t * pMinVoltage, uint16_t * pMaxVoltage, uint8_t * pMinStack, uint8_t * pMinModule, uint8_t * pMaxStack, uint8_t * pMaxModule){
     uint16_t
@@ -148,6 +175,14 @@ unsigned int packVoltageEncoder(pack_voltage){
 uint8_t VoltageUnitShifter(uint16_t tenth_mV_reading){
     return 1337;
 }
+
+/*
+Function Name: temperatureDataRetrieval
+Function Purpose: Scan the array of temperature-voltages of the modules per stacks, find the min and max temperature-voltages, and calculate the average temperature.
+Note: The voltage measurements are from thermistors, whose resistances vary with temperature.
+      This and related functions do NOT return temperature in units of degree Celcius unless it explicitly says it does.
+*/
+void temperatureDataRetrieval()
 
 
 
