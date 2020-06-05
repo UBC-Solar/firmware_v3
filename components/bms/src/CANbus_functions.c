@@ -19,16 +19,35 @@ uint8_t PH_LookUpTable[BTM_NUM_DEVICES + 1][BTM_NUM_MODULES + 1] =
     }
 
 //function prototypes
-void CANinfoPullAndFormatMessage623();
+void CANinfoPullAndFormatMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA);
 
 //For message addressed 623.
-void VoltageComparator(uint16_t * pMinVoltage, uint16_t * pMaxVoltage);
+void VoltageComparator(
+    BTM_PackData_t * pPH_PACKDATA
+    uint16_t * pMinVoltage,
+    uint16_t * pMaxVoltage,
+    uint8_t * pMinStack,
+    uint8_t * pMinModule,
+    uint8_t * pMaxStack,
+    uint8_t * pMaxModule
+);
 void packVoltageEncoder(unsigned int pack_voltage);
 uint8_t VoltageUnitShifter(uint16_t reading_that_was_decimal_shifted_to_avoid_floating_point_numericals);
 
-void CANinfoPullAndFormatMessage626();
-void CANinfoPullAndFormatMessage627();
-void CANinfoPullAndFormatCompact();
+void CANinfoPullAndFormatMessage626(uint8_t aData_series626[8], BTM_PackData_t * pPH_PACKDATA);
+
+void CANinfoPullAndFormatMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACKDATA);
+void temperatureDataRetrieval(
+    BTM_PackData_t * pPH_PACKDATA
+    uint8_t * averageTemperature,
+    uint16_t * minTmp,
+    uint16_t * maxTmp,
+    uint8_t * minTmpStack,
+    uint8_t * maxTmpStack,
+    uint8_t * minTmpModule,
+    uint8_t * maxTmpModule
+);
+void CANinfoPullAndFormatCompact(void);
 
 //function definitions
 
@@ -56,7 +75,15 @@ void CANinfoPullAndFormatSeries623(uint8_t aData_series623[8], BTM_PackData_t * 
   //Collecting and translating the collected data into CAN frame format
 
   //gather min and max voltages
-    VoltageComparator(&MinVtg, &MaxVtg, &minStack, &minModule, &maxStack, &maxModule, &pPH_PACKDATA);
+    VoltageComparator(
+        &pPH_PACKDATA,
+        &MinVtg,
+        &MaxVtg,
+        &minStack,
+        &minModule,
+        &maxStack,
+        &maxModule
+    );
     MinVtgBYTE = VoltageUnitShifter(MinVtg);
     MaxVtgBYTE = VoltageUnitShifter(MaxVtg);
     minBattModuleSticker = PH_LookUpTable[minStack][minModule];
@@ -86,19 +113,34 @@ void CANinfoPullAndFormatSeries623(uint8_t aData_series623[8], BTM_PackData_t * 
 void CANinfoPullAndFormatMessage627(){
     uint8_t
         averageTemperature = 0,
-        minTmp = 0,
-        maxTmp = 0,
+        minTmpBYTE = 0,
+        maxTmpBYTE = 0,
         minTmpModuleSticker = 0,
         maxTmpModuleSticker = 0;
+    uint8_t
+        minTmpStack = 0,
+        maxTmpStack = 0,
+        minTmpModule = 0,
+        maxTmpModule = 0;
+    uint16_t
+        minTmp,
+        maxTmp;
 
-    averageTemperature = temperatureDataRetrieval();
-
+    temperatureDataRetrieval(
+        &averageTemperature,
+        &minTmp,
+        &maxTmp,
+        &minTmpStack,
+        &maxTmpStack,
+        &minTmpModule,
+        &maxTmpModule
+    );
 
     aData_series627[0] = averageTemperature;
     // aData_series627[1] = 0; //redundant
-    aData_series627[2] = minTmp;
+    aData_series627[2] = minTmpBYTE;
     aData_series627[3] = minTmpModuleSticker;
-    aData_series627[4] = maxTmp;
+    aData_series627[4] = maxTmpBYTE;
     aData_series627[5] = maxTmpModuleSticker;
     // aData_series627[6] = 0; //redundant
     // aData_series627[7] = 0; //redundant
@@ -124,7 +166,15 @@ Output:
     Data is stored in variables pointed to. See input.
 */
 void VoltageComparator(
-    uint16_t * pMinVoltage, uint16_t * pMaxVoltage, uint8_t * pMinStack, uint8_t * pMinModule, uint8_t * pMaxStack, uint8_t * pMaxModule){
+    BTM_PackData_t * pPH_PACKDATA,
+    uint16_t * pMinVoltage,
+    uint16_t * pMaxVoltage,
+    uint8_t * pMinStack,
+    uint8_t * pMinModule,
+    uint8_t * pMaxStack,
+    uint8_t * pMaxModule
+)
+{
     uint16_t
         localMinVolt = 65535, //note that the raw register readings are decimal-shifted to avoid storing floating points. 2^16 - 1
         localMaxVolt = 0;
@@ -182,7 +232,68 @@ Function Purpose: Scan the array of temperature-voltages of the modules per stac
 Note: The voltage measurements are from thermistors, whose resistances vary with temperature.
       This and related functions do NOT return temperature in units of degree Celcius unless it explicitly says it does.
 */
-void temperatureDataRetrieval()
+void temperatureDataRetrieval(
+    BTM_PackData_t * pPH_PACKDATA
+    uint8_t * pAverageTemperature,
+    uint16_t * pMinTmp,
+    uint16_t * pMaxTmp,
+    uint8_t * pMinTmpStack,
+    uint8_t * pMaxTmpStack,
+    uint8_t * pMinTmpModule,
+    uint8_t * pMaxTmpModule
+)
+{
+    uint16_t
+        localTemperature = 0,
+        localMinTmp = 65585,
+        localMaxTmp = 0;
+    uint8_t
+        minStack,
+        maxStack,
+        minModule,
+        maxModule;
+    int
+        temperatureTotal = 0,
+        localAverage = 0;
+
+
+
+    for(int i = 0; i < BTM_NUM_DEVICES; ++i)
+    {
+        for(int j = 0; j < BTM_NUM_MODULES; ++j)
+        {
+            localTemperature = pPH_PACKDATA -> stack[i].module[j].temperature;
+
+            //Rather than taking a massive sum of all array entries,
+            //this calculates the average every cycle
+            //to avoid possible integer overflow.
+            temperatureTotal = localAverage * (i + 1) + localTemperature;
+            localAverage = temperatureTotal / (i + 1);
+
+            if(localTemperature < localMinTmp){
+                localMinTmp = localTemperature;
+                minStack = i;
+                minModule = j;
+            }
+
+            if(localTemperature > localMaxTmp){
+                localMaxTmp = localTemperature;
+                maxStack = i;
+                maxModule = j;
+            }
+
+        }
+    }
+
+    *pAverageTemperature = localAverage;
+    *pMinTmp = localMinTmp;
+    *pMaxTmp = localMaxTmp;
+    *pMinStack = minStack;
+    *pMinModule = minModule;
+    *pMaxStack = maxStack;
+    *pMaxModule = maxModule;
+}
+
 
 
 
