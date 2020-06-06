@@ -16,7 +16,7 @@ uint8_t PH_LookUpTable[BTM_NUM_DEVICES + 1][BTM_NUM_MODULES + 1] =
         {0,1,2,3},
         {0,4,5,6},
         {0,7,8,9}
-    }
+    };
 
 //function prototypes
 void CANinfoPullAndFormatMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA);
@@ -51,16 +51,29 @@ void CANinfoPullAndFormatCompact(void);
 
 //function definitions
 
-//purpose: pull info and format
-//input: array to fill with message
-//output: see input; array is filled with message
-void CANinfoPullAndFormatSeries623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA)
+
+
+/**
+Function name: CANinfoPullAndFormatMessage623
+Function purpose:
+    Retrieve data, translate it, then format it into a message matching Elithion's format.
+    See the webstie for formatting details: https://www.elithion.com/lithiumate/php/controller_can_specs.php
+
+Algorithm:
+    1) Retrieve voltage data specified.
+        Note: this step does its best to maintain the original data type.
+    2) Translate gathered data into expected units and cast into uint8_t.
+        Note: this step is where data is made to match Elithion format's units, and where the numbers are casted to uint8_t.
+    3) Place data into message array, while following Elithion format.
+
+*/
+void CANinfoPullAndFormatMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA)
 {
     unsigned int
         packVoltage = 0;
     uint16_t
-        MinVtg = 0,
-        MaxVtg = 0;
+        minVtg = 0,
+        maxVtg = 0;
     uint8_t
         minStack = 0,
         minModule = 0,
@@ -71,21 +84,48 @@ void CANinfoPullAndFormatSeries623(uint8_t aData_series623[8], BTM_PackData_t * 
         maxVtgBYTE = 0,
         minBattModuleSticker = 0,
         maxBattModuleSticker = 0;
+    uint8_t
+        outOfBounds = 0;
 
   //Collecting and translating the collected data into CAN frame format
 
   //gather min and max voltages
     VoltageComparator(
         &pPH_PACKDATA,
-        &MinVtg,
-        &MaxVtg,
+        &minVtg,
+        &maxVtg,
         &minStack,
         &minModule,
         &maxStack,
         &maxModule
     );
-    MinVtgBYTE = VoltageUnitShifter(MinVtg);
-    MaxVtgBYTE = VoltageUnitShifter(MaxVtg);
+    minVtg = BTM_regValToVoltage(minVtg);
+    //check if value is out of out of expected bounds
+    if(minVtg < CAN_PACK_MINIMUM){
+        outOfBounds = 1
+        minVtgBYTE = CAN_PACK_MINIMUM;
+    }
+    else if(minVtg > CAN_PACK_MAXIMUM){
+        outOfBounds = 1
+        minVtgBYTE = CAN_PACK_MAXIMUM;
+    }
+    else
+    minVtgBYTE = (uint8_t)minVtg;
+
+    maxVtg = BTM_regValToVoltage(maxVtg);
+    //check if value is out of out of expected bounds
+    if(maxVtg < CAN_PACK_MINIMUM){
+        outOfBounds = 1
+        maxVtgBYTE = CAN_PACK_MINIMUM;
+    }
+    else if(maxVtg > CAN_PACK_MAXIMUM){
+        outOfBounds = 1
+        maxVtgBYTE = CAN_PACK_MAXIMUM;
+    }
+    else
+    maxVtgBYTE = (uint8_t)maxVtg;
+
+
     minBattModuleSticker = PH_LookUpTable[minStack][minModule];
     maxBattModuleSticker = PH_LookUpTable[maxStack][maxModule];
 
@@ -109,8 +149,37 @@ void CANinfoPullAndFormatSeries623(uint8_t aData_series623[8], BTM_PackData_t * 
 
   //end of function
 }
+/**
+Function name: CANinfoPullAndFormatMessage627
+Function purpose:
+    To pull/process information from structs, and format it into a CAN-ready message.
+    In this case, the information specified is:
+         - average temperature
+         - min temperature
+         - max temperature
+         - cell number with min temp
+         - cell number with max temp
 
-void CANinfoPullAndFormatMessage627(){
+Parameters:
+    uint8_t aData_series627[8] - Array pre-initialised with zeros.
+    BTM_PackData_t * pPH_PACKDATA - pointer to struct containing battery-module measurements.
+
+Return:
+    void
+
+"Output":
+    aData_series627[8] should have data in the proper order as per the Elithion format.
+    See the website: https://www.elithion.com/lithiumate/php/controller_can_specs.php
+
+Algorithm:
+    1) Gather/calculate information from structs.
+        Note: this step does its best to maintain the original data type.
+    2) Translate gathered information to expected units and data type of uint8_t.
+        Note: this step is where data is made to match Elithion format's units, and where the numbers are casted to uint8_t.
+    3) Place data into message array, while matching the Elithion format.
+
+*/
+void CANinfoPullAndFormatMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACKDATA){
     uint8_t
         averageTemperature = 0,
         minTmpBYTE = 0,
@@ -126,6 +195,7 @@ void CANinfoPullAndFormatMessage627(){
         minTmp,
         maxTmp;
 
+    //1) scans the struct and calculates the relevant information needed
     temperatureDataRetrieval(
         &averageTemperature,
         &minTmp,
@@ -136,9 +206,11 @@ void CANinfoPullAndFormatMessage627(){
         &maxTmpModule
     );
 
+    //2) Translating Data
     maxTmpModuleSticker = PH_LookUpTable[minTmpStack][minTmpModule];
     maxTmpModuleSticker = PH_LookUpTable[maxTmpStack][maxTmpModule];
 
+    //3) Placing data into message array.
     aData_series627[0] = averageTemperature;
     // aData_series627[1] = 0; //redundant
     aData_series627[2] = minTmpBYTE;
@@ -154,7 +226,7 @@ void CANinfoPullAndFormatMessage627(){
 Function Name: VoltageComparator
 Function Purpose: Scan the array of voltages of the modules per stacks, and return the min and max temperature-voltages
 
-Input:
+Parameters:
     pointers:
         pMinVoltage - pointer to variable to hold minimum voltage found.
         pMaxVoltage - pointer to variable to hold maximum voltage found.
@@ -165,8 +237,20 @@ Input:
         pMaxStack - pointer to variable to hold INDEX of the battery stack containing the battery module with maximum voltage found.
         pMaxModule - pointer to variable to hold INDEX of the module with the maximum voltage found.
 
+Return:
+    void
+
 Output:
     Data is stored in variables pointed to. See input.
+
+Algorithm:
+    1) Loop one stack and one module at a time.
+    Per loop iteration:
+    1.1) Retrieve localVoltage.
+    1.2) Compare localVoltage to running min and max voltages collected. Replace if needed.
+    1.3) If min or max voltages are updated, record stack and module INDICES.
+    1.4) Repeat until all modules have been analysed.
+    2) Assign final numbers to pointed-to variables.
 */
 void VoltageComparator(
     BTM_PackData_t * pPH_PACKDATA,
@@ -233,7 +317,31 @@ uint8_t VoltageUnitShifter(uint16_t tenth_mV_reading){
 Function Name: temperatureDataRetrieval
 Function Purpose: Scan the array of temperature-voltages of the modules per stacks, find the min and max temperature-voltages, and calculate the average temperature.
 Note: The voltage measurements are from thermistors, whose resistances vary with temperature.
-      This and related functions do NOT return temperature in units of degree Celcius unless it explicitly says it does.
+    This and related functions do NOT return temperature in units of degree Celcius unless it explicitly says it does.
+
+Parameters:
+    Pointers:
+        pAverageTemperature - pointer to variable for holding the average temperature calculated.
+        .....
+        pMinVoltage - pointer to variable to hold minimum voltage found.
+        pMaxVoltage - pointer to variable to hold maximum voltage found.
+        .....
+        pMinStack - pointer to variable to hold INDEX of the battery stack containing the battery module with minimum voltage found.
+        pMinModule - pointer to variable to hold INDEX of the module with the minimum voltage found.
+        .....
+        pMaxStack - pointer to variable to hold INDEX of the battery stack containing the battery module with maximum voltage found.
+        pMaxModule - pointer to variable to hold INDEX of the module with the maximum voltage found.
+
+Algorithm:
+1) loop through each stack for each battery-module's measurements.
+Per loop iteration:
+1.1) Retrieve localTemperature.
+1.2) Calculate the average based on the temperatures gathered up to this loop iteration; a running average.
+1.3) Compare local temperature to the current minimum and maximum temperatures measured/initialised. Replace as required.
+1.4) If minimum and/or maximum temperatures are updated, record the stack and module INDICES.
+1.5) Repeat until all modules have been analysed.
+2) the final numbers are placed into the pointed variables.
+2.1) The running average of all module temperatures is now the entire pack's temperature average.
 */
 void temperatureDataRetrieval(
     BTM_PackData_t * pPH_PACKDATA
