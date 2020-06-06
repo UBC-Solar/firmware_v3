@@ -1,6 +1,7 @@
 #include "CANbus_functions.h"
 #include "stm32f3xx_hal.h"
 #include <math.h>
+#include <stdbool.h>
 
 //private variables
 BTM_PackData_t PH_PACKDATA;
@@ -32,7 +33,9 @@ void VoltageComparator(
     uint8_t * pMaxModule
 );
 void packVoltageEncoder(unsigned int pack_voltage);
-uint8_t VoltageUnitShifter(uint16_t reading_that_was_decimal_shifted_to_avoid_floating_point_numericals);
+
+uint8_t outOfBoundsAndCast_packVoltage(uint16_t packVoltage, uint8_t * outOfBounds)
+uint8_t outOfBoundsAndCast_moduleVoltage(uint16_t moduleVoltage, uint8_t * outOfBounds)
 
 void CANinfoPullAndFormatMessage626(uint8_t aData_series626[8], BTM_PackData_t * pPH_PACKDATA);
 
@@ -99,43 +102,29 @@ void CANinfoPullAndFormatMessage623(uint8_t aData_series623[8], BTM_PackData_t *
         &maxStack,
         &maxModule
     );
+
+
+    /**
+    pack Voltage
+    format:
+      unsigned, 0 to 65 kV -> ASSUMING decimal values from 0 to 65 000
+      because it's alloted 2 bytes in the data frame
+    */
+    packVoltage = packVoltageEncoder(pPH_PACKDATA -> pack_voltage);
+
+
+    //Convert units of 100uV to V.
+    //Then check if value is out of out of expected bounds, and cast uint16_t to uint8_t.
     minVtg = BTM_regValToVoltage(minVtg);
-    //check if value is out of out of expected bounds
-    if(minVtg < CAN_PACK_MINIMUM){
-        outOfBounds = 1
-        minVtgBYTE = CAN_PACK_MINIMUM;
-    }
-    else if(minVtg > CAN_PACK_MAXIMUM){
-        outOfBounds = 1
-        minVtgBYTE = CAN_PACK_MAXIMUM;
-    }
-    else
-    minVtgBYTE = (uint8_t)minVtg;
+    minVtgBYTE = outOfBounds_moduleVoltage(minVtg, &outOfBounds);
 
     maxVtg = BTM_regValToVoltage(maxVtg);
-    //check if value is out of out of expected bounds
-    if(maxVtg < CAN_PACK_MINIMUM){
-        outOfBounds = 1
-        maxVtgBYTE = CAN_PACK_MINIMUM;
-    }
-    else if(maxVtg > CAN_PACK_MAXIMUM){
-        outOfBounds = 1
-        maxVtgBYTE = CAN_PACK_MAXIMUM;
-    }
-    else
-    maxVtgBYTE = (uint8_t)maxVtg;
-
+    maxVtgBYTE = outOfBounds_moduleVoltage(maxVtg, &outOfBounds);
 
     minBattModuleSticker = PH_LookUpTable[minStack][minModule];
     maxBattModuleSticker = PH_LookUpTable[maxStack][maxModule];
 
-  /**
-  pack Voltage
-  format:
-    unsigned, 0 to 65 kV -> ASSUMING decimal values from 0 to 65 000
-    because it's alloted 2 bytes in the data frame
-  */
-  packVoltage = packVoltageEncoder(PH_PACKDATA -> pack_voltage);
+
 
     //setting byte order in aData_series623 array
     aData_series623[0] = (uint8_t)(packVoltage >> 8);//PROBABLY DONE WRONG //intent: most-sig half of pack_voltage is bit-shifted right by 8 bits, such that ONLY the MSH is casted.
@@ -309,8 +298,38 @@ unsigned int packVoltageEncoder(pack_voltage){
     return pack_voltage;
 }
 
-uint8_t VoltageUnitShifter(uint16_t tenth_mV_reading){
-    return 1337;
+
+uint8_t outOfBounds_packVoltage(uint16_t packVoltage, uint8_t * outOfBounds){
+    if(packVoltage < CAN_PACK_MINIMUM){
+        *outOfBounds = 1
+        return CAN_PACK_MINIMUM;
+    }
+    else if(packVoltage > CAN_PACK_MAXIMUM){
+        *outOfBounds = 1
+        return CAN_PACK_MAXIMUM;
+    }
+    else
+    return (uint8_t)packVoltage; //DOUBLE CHECK IF THE CASTING WORKS
+}
+
+/**
+Function Name: outOfBounds_moduleVoltage
+Function Purpose: check if the module voltage collected is outside the expected message, then assign the casted
+
+Parameters:
+
+*/
+uint8_t outOfBoundsAndCast_moduleVoltage(uint16_t moduleVoltage, uint8_t * outOfBounds){
+    if(moduleVoltage < CAN_MODULE_MINIMUM){
+        *outOfBounds = 1
+        return CAN_MODULE_MINIMUM;
+    }
+    else if(moduleVoltage > CAN_MODULE_MAXIMUM){
+        *outOfBounds = 1
+        return CAN_MODULE_MAXIMUM;
+    }
+    else
+    return (uint8_t)moduleVoltage; //DOUBLE CHECK IF THE CASTING WORKS
 }
 
 /*
