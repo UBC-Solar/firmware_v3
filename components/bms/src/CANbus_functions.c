@@ -21,25 +21,19 @@ uint8_t PH_LookUpTable[BTM_NUM_DEVICES + 1][BTM_NUM_MODULES + 1] =
 
 //function prototypes
 void CANinfoPullAndFormatMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA);
-
+void CANinfoPullAndFormatMessage626(uint8_t aData_series626[8], BTM_PackData_t * pPH_PACKDATA);
+void CANinfoPullAndFormatMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACKDATA);
 //For message addressed 623.
-void VoltageComparator(
+void VoltageInfoRetrieval(
     BTM_PackData_t * pPH_PACKDATA
     uint16_t * pMinVoltage,
     uint16_t * pMaxVoltage,
     uint8_t * pMinStack,
     uint8_t * pMinModule,
     uint8_t * pMaxStack,
-    uint8_t * pMaxModule
-);
-void packVoltageEncoder(unsigned int pack_voltage);
-
-uint8_t outOfBoundsAndCast_packVoltage(uint16_t packVoltage, uint8_t * outOfBounds)
-uint8_t outOfBoundsAndCast_moduleVoltage(uint16_t moduleVoltage, uint8_t * outOfBounds)
-
-void CANinfoPullAndFormatMessage626(uint8_t aData_series626[8], BTM_PackData_t * pPH_PACKDATA);
-
-void CANinfoPullAndFormatMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACKDATA);
+    uint8_t * pMaxModule);
+unsigned int outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * outOfBounds)
+uint8_t outOfBoundsAndCast_moduleVoltage(float moduleVoltageFLOAT, uint8_t * outOfBounds)
 void temperatureDataRetrieval(
     BTM_PackData_t * pPH_PACKDATA
     uint8_t * averageTemperature,
@@ -48,8 +42,7 @@ void temperatureDataRetrieval(
     uint8_t * minTmpStack,
     uint8_t * maxTmpStack,
     uint8_t * minTmpModule,
-    uint8_t * maxTmpModule
-);
+    uint8_t * maxTmpModule);
 void CANinfoPullAndFormatCompact(void);
 
 //function definitions
@@ -89,11 +82,15 @@ void CANinfoPullAndFormatMessage623(uint8_t aData_series623[8], BTM_PackData_t *
         maxBattModuleSticker = 0;
     uint8_t
         outOfBounds = 0;
+    float
+        packVoltageFLOAT = 0;
+        minVtgFLOAT = 0,
+        maxVtgFLOAT = 0;
 
   //Collecting and translating the collected data into CAN frame format
 
   //gather min and max voltages
-    VoltageComparator(
+    VoltageInfoRetrieval(
         &pPH_PACKDATA,
         &minVtg,
         &maxVtg,
@@ -110,16 +107,20 @@ void CANinfoPullAndFormatMessage623(uint8_t aData_series623[8], BTM_PackData_t *
       unsigned, 0 to 65 kV -> ASSUMING decimal values from 0 to 65 000
       because it's alloted 2 bytes in the data frame
     */
-    packVoltage = packVoltageEncoder(pPH_PACKDATA -> pack_voltage);
 
 
     //Convert units of 100uV to V.
-    //Then check if value is out of out of expected bounds, and cast uint16_t to uint8_t.
-    minVtg = BTM_regValToVoltage(minVtg);
-    minVtgBYTE = outOfBounds_moduleVoltage(minVtg, &outOfBounds);
+    //Then checks if value is outside of expected bounds, then truncates float to unsigned int.
+    packVoltageFLOAT = BTM_regValToVoltage(pPH_PACKDATA -> pack_voltage);
+    packVoltage = outOfBounds_packVoltage(packVoltageFLOAT, &outOfBounds);
 
-    maxVtg = BTM_regValToVoltage(maxVtg);
-    maxVtgBYTE = outOfBounds_moduleVoltage(maxVtg, &outOfBounds);
+    //Convert units of 100uV to V.
+    //Then check if value is out of out of expected bounds, and cast uint16_t to uint8_t.
+    minVtgFLOAT = BTM_regValToVoltage(minVtg);
+    minVtgBYTE = outOfBounds_moduleVoltage(minVtgFLOAT, &outOfBounds);
+
+    maxVtgFLOAT = BTM_regValToVoltage(maxVtg);
+    maxVtgBYTE = outOfBounds_moduleVoltage(maxVtgFLOAT, &outOfBounds);
 
     minBattModuleSticker = PH_LookUpTable[minStack][minModule];
     maxBattModuleSticker = PH_LookUpTable[maxStack][maxModule];
@@ -212,7 +213,7 @@ void CANinfoPullAndFormatMessage627(uint8_t aData_series627[8], BTM_PackData_t *
 
 
 /*
-Function Name: VoltageComparator
+Function Name: VoltageInfoRetrieval
 Function Purpose: Scan the array of voltages of the modules per stacks, and return the min and max temperature-voltages
 
 Parameters:
@@ -241,7 +242,7 @@ Algorithm:
     1.4) Repeat until all modules have been analysed.
     2) Assign final numbers to pointed-to variables.
 */
-void VoltageComparator(
+void VoltageInfoRetrieval(
     BTM_PackData_t * pPH_PACKDATA,
     uint16_t * pMinVoltage,
     uint16_t * pMaxVoltage,
@@ -293,13 +294,7 @@ void VoltageComparator(
 
 }
 
-unsigned int packVoltageEncoder(pack_voltage){
-    //DESIGN UNCERTAINTY: what function updates pack_voltage in the struct?
-    return pack_voltage;
-}
-
-
-uint8_t outOfBounds_packVoltage(uint16_t packVoltage, uint8_t * outOfBounds){
+unsigned int outOfBounds_packVoltage(float packVoltageFLOAT, uint8_t * outOfBounds){
     if(packVoltage < CAN_PACK_MINIMUM){
         *outOfBounds = 1
         return CAN_PACK_MINIMUM;
@@ -309,7 +304,7 @@ uint8_t outOfBounds_packVoltage(uint16_t packVoltage, uint8_t * outOfBounds){
         return CAN_PACK_MAXIMUM;
     }
     else
-    return (uint8_t)packVoltage; //DOUBLE CHECK IF THE CASTING WORKS
+    return (unsigned int)packVoltageFLOAT; //DOUBLE CHECK IF THE CASTING WORKS
 }
 
 /**
@@ -319,7 +314,7 @@ Function Purpose: check if the module voltage collected is outside the expected 
 Parameters:
 
 */
-uint8_t outOfBoundsAndCast_moduleVoltage(uint16_t moduleVoltage, uint8_t * outOfBounds){
+uint8_t outOfBoundsAndCast_moduleVoltage(float moduleVoltageFLOAT, uint8_t * outOfBounds){
     if(moduleVoltage < CAN_MODULE_MINIMUM){
         *outOfBounds = 1
         return CAN_MODULE_MINIMUM;
@@ -329,7 +324,7 @@ uint8_t outOfBoundsAndCast_moduleVoltage(uint16_t moduleVoltage, uint8_t * outOf
         return CAN_MODULE_MAXIMUM;
     }
     else
-    return (uint8_t)moduleVoltage; //DOUBLE CHECK IF THE CASTING WORKS
+    return (uint8_t)moduleVoltageFLOAT; //DOUBLE CHECK IF THE CASTING WORKS
 }
 
 /*
