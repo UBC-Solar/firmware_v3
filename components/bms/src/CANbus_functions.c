@@ -171,7 +171,7 @@ Algorithm:
 */
 void CANinfoPullAndFormatMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACKDATA){
     uint8_t
-        averageTemperature = 0,
+        averageTemperatureBYTE = 0,
         minTmpBYTE = 0,
         maxTmpBYTE = 0,
         minTmpModuleSticker = 0,
@@ -184,10 +184,14 @@ void CANinfoPullAndFormatMessage627(uint8_t aData_series627[8], BTM_PackData_t *
     uint16_t
         minTmp,
         maxTmp;
+    float
+        averageTemperatureFLOAT,
+        minTmpFLOAT,
+        maxTmpFLOAT;
 
     //1) scans the struct and calculates the relevant information needed
     temperatureDataRetrieval(
-        &averageTemperature,
+        &averageTemperatureFLOAT,
         &minTmp,
         &maxTmp,
         &minTmpStack,
@@ -197,11 +201,19 @@ void CANinfoPullAndFormatMessage627(uint8_t aData_series627[8], BTM_PackData_t *
     );
 
     //2) Translating Data
+
+    minTmpFLOAT = BTM_regValToVoltage(minTmp);
+    
+
+    maxTmpFLOAT = BTM_regValToVoltage(maxTmp);
+
     maxTmpModuleSticker = PH_LookUpTable[minTmpStack][minTmpModule];
     maxTmpModuleSticker = PH_LookUpTable[maxTmpStack][maxTmpModule];
 
+
+
     //3) Placing data into message array.
-    aData_series627[0] = averageTemperature;
+    aData_series627[0] = averageTemperatureBYTE;
     // aData_series627[1] = 0; //redundant
     aData_series627[2] = minTmpBYTE;
     aData_series627[3] = minTmpModuleSticker;
@@ -359,7 +371,7 @@ Per loop iteration:
 */
 void temperatureDataRetrieval(
     BTM_PackData_t * pPH_PACKDATA
-    uint8_t * pAverageTemperature,
+    float * pAverageTemperature,
     uint16_t * pMinTmp,
     uint16_t * pMaxTmp,
     uint8_t * pMinTmpStack,
@@ -377,7 +389,7 @@ void temperatureDataRetrieval(
         maxStack,
         minModule,
         maxModule;
-    int
+    float
         temperatureTotal = 0,
         localAverage = 0;
 
@@ -410,7 +422,7 @@ void temperatureDataRetrieval(
         }
     }
 
-    *pAverageTemperature = localAverage;
+    *pAverageTemperature = (uint16_t)localAverage;
     *pMinTmp = localMinTmp;
     *pMaxTmp = localMaxTmp;
     *pMinStack = minStack;
