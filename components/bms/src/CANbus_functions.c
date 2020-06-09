@@ -180,7 +180,8 @@ void CANinfoPullAndFormatMessage627(uint8_t aData_series627[8], BTM_PackData_t *
         minTmpStack = 0,
         maxTmpStack = 0,
         minTmpModule = 0,
-        maxTmpModule = 0;
+        maxTmpModule = 0,
+        outOfBounds = 0;
     uint16_t
         minTmp,
         maxTmp;
@@ -188,6 +189,9 @@ void CANinfoPullAndFormatMessage627(uint8_t aData_series627[8], BTM_PackData_t *
         averageTemperatureFLOAT,
         minTmpFLOAT,
         maxTmpFLOAT;
+    double
+        minTmpDOUBLE,
+        maxTmpDOUBLE;
 
     //1) scans the struct and calculates the relevant information needed
     temperatureDataRetrieval(
@@ -203,14 +207,15 @@ void CANinfoPullAndFormatMessage627(uint8_t aData_series627[8], BTM_PackData_t *
     //2) Translating Data
 
     minTmpFLOAT = BTM_regValToVoltage(minTmp);
-    
+    minTmpDOUBLE = BTM_TEMP_volts2temp((double)minTmpFLOAT);
+    minTmpBYTE = TwosComplement_TemperatureConverter(minTmpDOUBLE, &outOfBounds);
 
     maxTmpFLOAT = BTM_regValToVoltage(maxTmp);
+    maxTmpDOUBLE = BTM_TEMP_volts2temp((double)maxTmpFLOAT);
+    maxTmpBYTE = TwosComplement_TemperatureConverter(maxTmpDOUBLE, &outOfBounds);
 
     maxTmpModuleSticker = PH_LookUpTable[minTmpStack][minTmpModule];
     maxTmpModuleSticker = PH_LookUpTable[maxTmpStack][maxTmpModule];
-
-
 
     //3) Placing data into message array.
     aData_series627[0] = averageTemperatureBYTE;
@@ -431,6 +436,34 @@ void temperatureDataRetrieval(
     *pMaxModule = maxModule;
 }
 
+uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * outOfBounds)
+{
+    uint8_t temperatureBYTE;
+
+    if(temperatureDOUBLE > CAN_TEMPERATURE_MAXIMUM)
+    {
+        *outOfBounds = 1;
+        return CAN_TEMPERATURE_MAXIMUM;
+    }
+
+
+    else if(temperatureDOUBLE < CAN_TEMPERATURE_MINIMUM)
+    {
+        *outOfBounds = 1;
+        return CAN_TEMPERATURE_MINIMUM;
+    }
+
+    else
+    {
+        temperatureBYTE = (uint8_t)temperatureDOUBLE;
+        if(temperatureBYTE >= 0)
+            return temperatureBYTE;
+        else
+            return ~temperatureBYTE + 1;
+    }
+    //Redundancy. Will review necessity later
+    return 0x00;
+}
 
 
 
