@@ -1,19 +1,22 @@
 // Both functions were tested using an array that had values that mimic the actual voltages
+#include "Balancing_Skeleton.h"
 
-/* @brief: skeleton for a function for controlling the flow of the balancing operation
+// Private function prototypes
+void min_val(uint16_t* val, int* loc, uint16_t arr[], int size, int enable[]);
+
+/** @brief: skeleton for a function for controlling the flow of the balancing operation
  *
  * @param[in] pack The main pack data structure of the program that contains the voltage
  * of each module for each stack
  * @param[out] dch_setting_pack The discharge settings for the entire pack.
 */
-// remember to add function prototypes in the header file
 void BTM_BAL_settings(
 	BTM_PackData_t* pack,
 	BTM_BAL_dch_setting_pack_t* dch_setting_pack)
 {
 	const int size = 36; // size of the pack_modules array (36 modules)
-	uint16_t Vth = 0x1001110001000000; //4.0*10^4 threshold voltage to start the balancing at (multiplied by 10^4 to match the format in the pack)
-	uint16_t Vtol = 0x0000000111110100 //0.05*10^4 tolerance voltage through which cells are counted as balanced
+	uint16_t Vth = 0b1001110001000000; //4.0*10^4 threshold voltage to start the balancing at (multiplied by 10^4 to match the format in the pack)
+	uint16_t Vtol = 0b0000000111110100; //0.05*10^4 tolerance voltage through which cells are counted as balanced
 	uint16_t pack_modules[size-1]; // Array to store all cell voltages
 	uint16_t Vmin;		// minimum voltage in the pack
 	int Vmin_loc;		// location of the minimum voltage in the array
@@ -67,7 +70,7 @@ void BTM_BAL_settings(
 			}
 		}
 		// Call BTM_BAL_setDischarge to send the settings to the configuration register
-		BTM_BAL_setDischarge(BTM_PackData_t* pack,BTM_BAL_dch_setting_pack_t* dch_setting_pack);
+		BTM_BAL_setDischarge(pack, dch_setting_pack);
 	}
 	
 	// Otherwise, balance to the lowest cell voltage
@@ -96,7 +99,7 @@ void BTM_BAL_settings(
 			}
 		}
 		// Call BTM_BAL_setDischarge to send the settings to the configuration register
-		BTM_BAL_setDischarge(BTM_PackData_t* pack,BTM_BAL_dch_setting_pack_t* dch_setting_pack);
+		BTM_BAL_setDischarge(pack, dch_setting_pack);
 	}
 
 }
@@ -109,7 +112,7 @@ void BTM_BAL_settings(
  *@param[in] size, the size of the array
  *@param[in] pack_modules_en, enable flag to check which modules are enabled
 */	
-void min_val(uint16_t* val, int* loc, uint16_t arr[], int size, uint16_t enable[]) {
+void min_val(uint16_t* val, int* loc, uint16_t arr[], int size, int enable[]) {
 	int temp_loc = 0;
 	uint16_t temp_val = arr[0]; // the first element of the array is the first point of comparison and will change if another element is smaller
 	for (int i = 1; i < size; i++) {
