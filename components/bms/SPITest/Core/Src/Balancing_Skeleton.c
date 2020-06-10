@@ -56,18 +56,18 @@ void BTM_BAL_settings(
 					if (i < 12)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_ON;
 					if (i < 24)
-						dch_setting_pack->stack[1].module_dch[i] = DISCHARGE_ON; // PROBLEM: this will write to an index out of range
+						dch_setting_pack->stack[1].module_dch[i-12] = DISCHARGE_ON; 
 					if (i < 36)
-						dch_setting_pack->stack[2].module_dch[i] = DISCHARGE_ON; // PROBLEM: this will write to an index out of range
+						dch_setting_pack->stack[2].module_dch[i-24] = DISCHARGE_ON; 
 				}
 				
 				else {
 					if (i < 12)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_OFF;
 					if (i < 24)
-						dch_setting_pack->stack[1].module_dch[i] = DISCHARGE_OFF; // PROBLEM: this will write to an index out of range
+						dch_setting_pack->stack[1].module_dch[i-12] = DISCHARGE_OFF;
 					if (i < 36)
-						dch_setting_pack->stack[2].module_dch[i] = DISCHARGE_OFF; // PROBLEM: this will write to an index out of range
+						dch_setting_pack->stack[2].module_dch[i-24] = DISCHARGE_OFF; 
 				}
 			}
 		}
@@ -85,18 +85,18 @@ void BTM_BAL_settings(
 					if (i < 12)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_ON;
 					if (i < 24)
-						dch_setting_pack->stack[1].module_dch[i] = DISCHARGE_ON; // PROBLEM: this will write to an index out of range
+						dch_setting_pack->stack[1].module_dch[i-12] = DISCHARGE_ON; 
 					if (i < 36)
-						dch_setting_pack->stack[2].module_dch[i] = DISCHARGE_ON; // PROBLEM: this will write to an index out of range
+						dch_setting_pack->stack[2].module_dch[i-24] = DISCHARGE_ON; 
 				}
 				
 				else {
 					if (i < 12)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_OFF;
 					if (i < 24)
-						dch_setting_pack->stack[1].module_dch[i] = DISCHARGE_OFF; // PROBLEM: this will write to an index out of range
+						dch_setting_pack->stack[1].module_dch[i-12] = DISCHARGE_OFF;
 					if (i < 36)
-						dch_setting_pack->stack[2].module_dch[i] = DISCHARGE_OFF; // PROBLEM: this will write to an index out of range
+						dch_setting_pack->stack[2].module_dch[i-24] = DISCHARGE_OFF;
 				}
 			}
 		}
