@@ -15,12 +15,14 @@ void BTM_BAL_settings(
 	BTM_BAL_dch_setting_pack_t* dch_setting_pack)
 {
 	const int size = 36; // size of the pack_modules array (36 modules)
+
+	// PROBLEM (fixed): Vth and Vtol had 0x prefixes before - that's for hex not binary. 0b for binary.
 	uint16_t Vth = 0b1001110001000000; //4.0*10^4 threshold voltage to start the balancing at (multiplied by 10^4 to match the format in the pack)
 	uint16_t Vtol = 0b0000000111110100; //0.05*10^4 tolerance voltage through which cells are counted as balanced
-	uint16_t pack_modules[size-1]; // Array to store all cell voltages
+	uint16_t pack_modules[size]; // Array to store all cell voltages
 	uint16_t Vmin;		// minimum voltage in the pack
 	int Vmin_loc;		// location of the minimum voltage in the array
-	int pack_modules_en[size-1]; // array to store modules' enable flags consistant with the order of indices in pack_modules array
+	int pack_modules_en[size]; // array to store modules' enable flags consistent with the order of indices in pack_modules array
 	
 	// Storing all cell voltages from the 3 stacks:
 	for(int module_num = 0; module_num < 12; module_num++) 
@@ -54,18 +56,18 @@ void BTM_BAL_settings(
 					if (i < 12)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_ON;
 					if (i < 24)
-						dch_setting_pack->stack[1].module_dch[i] = DISCHARGE_ON;
+						dch_setting_pack->stack[1].module_dch[i] = DISCHARGE_ON; // PROBLEM: this will write to an index out of range
 					if (i < 36)
-						dch_setting_pack->stack[2].module_dch[i] = DISCHARGE_ON;	
+						dch_setting_pack->stack[2].module_dch[i] = DISCHARGE_ON; // PROBLEM: this will write to an index out of range
 				}
 				
 				else {
 					if (i < 12)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_OFF;
 					if (i < 24)
-						dch_setting_pack->stack[1].module_dch[i] = DISCHARGE_OFF;
+						dch_setting_pack->stack[1].module_dch[i] = DISCHARGE_OFF; // PROBLEM: this will write to an index out of range
 					if (i < 36)
-						dch_setting_pack->stack[2].module_dch[i] = DISCHARGE_OFF;
+						dch_setting_pack->stack[2].module_dch[i] = DISCHARGE_OFF; // PROBLEM: this will write to an index out of range
 				}
 			}
 		}
@@ -83,18 +85,18 @@ void BTM_BAL_settings(
 					if (i < 12)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_ON;
 					if (i < 24)
-						dch_setting_pack->stack[1].module_dch[i] = DISCHARGE_ON;
+						dch_setting_pack->stack[1].module_dch[i] = DISCHARGE_ON; // PROBLEM: this will write to an index out of range
 					if (i < 36)
-						dch_setting_pack->stack[2].module_dch[i] = DISCHARGE_ON;
+						dch_setting_pack->stack[2].module_dch[i] = DISCHARGE_ON; // PROBLEM: this will write to an index out of range
 				}
 				
 				else {
 					if (i < 12)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_OFF;
 					if (i < 24)
-						dch_setting_pack->stack[1].module_dch[i] = DISCHARGE_OFF;
+						dch_setting_pack->stack[1].module_dch[i] = DISCHARGE_OFF; // PROBLEM: this will write to an index out of range
 					if (i < 36)
-						dch_setting_pack->stack[2].module_dch[i] = DISCHARGE_OFF;
+						dch_setting_pack->stack[2].module_dch[i] = DISCHARGE_OFF; // PROBLEM: this will write to an index out of range
 				}
 			}
 		}
@@ -104,10 +106,10 @@ void BTM_BAL_settings(
 
 }
 
-/*@brief: a function that outputs the minimum value in an array and its location
+/** @brief a function that outputs the minimum value in an array and its location
  *
  *@param[in/out] val, pointer that gets the address and outputs the minimum value
- *@param[in/out] val, pointer that gets the address and outputs the location of the minimum value
+ *@param[in/out] loc, pointer that gets the address and outputs the location of the minimum value
  *@param[in] arr, the array we want to extract the minimum value from
  *@param[in] size, the size of the array
  *@param[in] pack_modules_en, enable flag to check which modules are enabled
