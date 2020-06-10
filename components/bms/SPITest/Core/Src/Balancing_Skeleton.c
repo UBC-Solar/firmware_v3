@@ -17,8 +17,8 @@ void BTM_BAL_settings(
 	const int size = 36; // size of the pack_modules array (36 modules)
 
 	// PROBLEM (fixed): Vth and Vtol had 0x prefixes before - that's for hex not binary. 0b for binary.
-	uint16_t Vth = 0b1001110001000000; //4.0*10^4 threshold voltage to start the balancing at (multiplied by 10^4 to match the format in the pack)
-	uint16_t Vtol = 0b0000000111110100; //0.05*10^4 tolerance voltage through which cells are counted as balanced
+	uint16_t Vth = 4.0*10^4; //threshold voltage to start the balancing at (multiplied by 10^4 to match the format in the pack)
+	uint16_t Vtol = 0.05*10^4; //tolerance voltage through which cells are counted as balanced
 	uint16_t pack_modules[size]; // Array to store all cell voltages
 	uint16_t Vmin;		// minimum voltage in the pack
 	int Vmin_loc;		// location of the minimum voltage in the array
