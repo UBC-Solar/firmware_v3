@@ -11,13 +11,22 @@ uint8_t aData_series626[8] = { 0 };
 uint8_t aData_series627[8] = { 0 };
 
   //DESIGN UNCERTAINTY: off-by-one dimensioning?
-uint8_t PH_LookUpTable[BTM_NUM_DEVICES + 1][BTM_NUM_MODULES + 1] =
+// uint8_t PH_LookUpTable[BTM_NUM_DEVICES + 1][BTM_NUM_MODULES + 1] =
+//     {
+//         {0,0,0,0},
+//         {0,1,2,3},
+//         {0,4,5,6},
+//         {0,7,8,9}
+//     };
+
+uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
     {
-        {0,0,0,0},
-        {0,1,2,3},
-        {0,4,5,6},
-        {0,7,8,9}
-    };
+        { 1, 2, 3, 4, 5, 6, 7, 8, 9,10,91,92},
+        {11,12,13,14,15,16,17,18,19,20,93,94},
+        {21,22,23,24,25,26,27,28,29,30,31,32}
+    }
+    //note that the 9X numbers (91, 92, 93, 94) indicate the garbage channels.
+    //Should any of the 9X numbers appear in a CAN message, something is not right.
 
 //function prototypes
 void CANinfoPullAndFormatMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA);
@@ -122,9 +131,8 @@ void CANinfoPullAndFormatMessage623(uint8_t aData_series623[8], BTM_PackData_t *
     maxVtgFLOAT = BTM_regValToVoltage(maxVtg);
     maxVtgBYTE = outOfBounds_moduleVoltage(maxVtgFLOAT, &outOfBounds);
 
-    minBattModuleSticker = PH_LookUpTable[minStack][minModule];
-    maxBattModuleSticker = PH_LookUpTable[maxStack][maxModule];
-
+    minBattModuleSticker = LUT_moduleStickers[minStack][minModule];
+    maxBattModuleSticker = LUT_moduleStickers[maxStack][maxModule];
 
 
     //setting byte order in aData_series623 array
@@ -135,7 +143,7 @@ void CANinfoPullAndFormatMessage623(uint8_t aData_series623[8], BTM_PackData_t *
     aData_series623[4] = maxVtgBYTE;
     aData_series623[5] = maxBattModuleSticker;
     //aData_series623[6] = 0; //redundant
-    //aData_series623[7] = 0; //redundant
+    aData_series623[7] = outOfBounds;
 
   //end of function
 }
@@ -206,16 +214,16 @@ void CANinfoPullAndFormatMessage627(uint8_t aData_series627[8], BTM_PackData_t *
 
     //2) Translating Data
 
-    minTmpFLOAT = BTM_regValToVoltage(minTmp);
-    minTmpDOUBLE = BTM_TEMP_volts2temp((double)minTmpFLOAT);
+    //minTmpFLOAT = BTM_regValToVoltage(minTmp);
+    minTmpDOUBLE = BTM_TEMP_volts2temp((double)minTmp);
     minTmpBYTE = TwosComplement_TemperatureConverter(minTmpDOUBLE, &outOfBounds);
 
-    maxTmpFLOAT = BTM_regValToVoltage(maxTmp);
-    maxTmpDOUBLE = BTM_TEMP_volts2temp((double)maxTmpFLOAT);
+    //maxTmpFLOAT = BTM_regValToVoltage(maxTmp);
+    maxTmpDOUBLE = BTM_TEMP_volts2temp((double)maxTmp);
     maxTmpBYTE = TwosComplement_TemperatureConverter(maxTmpDOUBLE, &outOfBounds);
 
-    maxTmpModuleSticker = PH_LookUpTable[minTmpStack][minTmpModule];
-    maxTmpModuleSticker = PH_LookUpTable[maxTmpStack][maxTmpModule];
+    maxTmpModuleSticker = LUT_moduleStickers[minTmpStack][minTmpModule];
+    maxTmpModuleSticker = LUT_moduleStickers[maxTmpStack][maxTmpModule];
 
     //3) Placing data into message array.
     aData_series627[0] = averageTemperatureBYTE;
@@ -225,7 +233,7 @@ void CANinfoPullAndFormatMessage627(uint8_t aData_series627[8], BTM_PackData_t *
     aData_series627[4] = maxTmpBYTE;
     aData_series627[5] = maxTmpModuleSticker;
     // aData_series627[6] = 0; //redundant
-    // aData_series627[7] = 0; //redundant
+    aData_series627[7] = outOfBounds;
 }
 
 
@@ -311,6 +319,21 @@ void VoltageInfoRetrieval(
 
 }
 
+
+/**
+Function Name: outOfBounds_packVoltage
+Function Purpose:
+    Check if the pack voltage collected is outside the expected message.
+        If out of bounds, assign the broken bound and cast to unsigned int.
+        Else, return exact value casted to unsigned int.
+
+Parameters:
+    float packVoltageFLOAT - The voltage to check.
+    uint8_t * outOfBounds - The pointer to a variable used as a flag for if bounds are broken.
+
+Return:
+    The packVoltageFLOAT parameter casted to unsigned int.
+*/
 unsigned int outOfBounds_packVoltage(float packVoltageFLOAT, uint8_t * outOfBounds){
     if(packVoltage < CAN_PACK_MINIMUM){
         *outOfBounds = 1
@@ -326,10 +349,17 @@ unsigned int outOfBounds_packVoltage(float packVoltageFLOAT, uint8_t * outOfBoun
 
 /**
 Function Name: outOfBounds_moduleVoltage
-Function Purpose: check if the module voltage collected is outside the expected message, then assign the casted
+Function Purpose:
+    Check if the module voltage collected is outside the expected message.
+        If out of bounds, assign the broken bound and cast to uint8_t.
+        Else, return exact value casted to uint8_t.
 
 Parameters:
+    float moduleVoltageFLOAT - The voltage to check.
+    uint8_t * outOfBounds - The pointer to a variable used as a flag for if bounds are broken.
 
+Return:
+    The moduleVoltageFLOAT parameter casted to uint8_t.
 */
 uint8_t outOfBoundsAndCast_moduleVoltage(float moduleVoltageFLOAT, uint8_t * outOfBounds){
     if(moduleVoltage < CAN_MODULE_MINIMUM){
@@ -436,6 +466,27 @@ void temperatureDataRetrieval(
     *pMaxModule = maxModule;
 }
 
+
+/*
+Function Name: TwosComplement_TemperatureConverter
+Function purpose:
+    Check if value is within expected message bounds, and returns the value converted to two's complement.
+Parameters:
+    double temperatureDOUBLE - the temperature in Celcius.
+    uint8_t * outOfBounds - The pointer to a variable used as a flag for if bounds are broken.
+
+Return:
+    Tmperature, casted to uint8_t.
+
+Algorithm:
+    1) Check if greater-than upper bound.
+        If true, set outOfBounds flag and return the bound broken.
+    2) Check if less-than lower bound.
+        If true, set outOfBounds flag and return the bound broken.
+        Note that the bounds are intentionally set to two's complement min and max for uint8_t size.
+    3) Cast temperatureDOUBLE to uint8_t and assign to temperatureBYTE
+    4) Convert temperatureBYTE to two's complement, then return the value.
+*/
 uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * outOfBounds)
 {
     uint8_t temperatureBYTE;
