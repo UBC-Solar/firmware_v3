@@ -4,6 +4,14 @@
 #include "stm32f3xx_hal.h"
 
 
+
+
+#define PH_START_OF_ADDRESS_SERIES 600
+#define PH_UNUSED 0x0DEADBEE
+#define CAN_BRIGHTSIDE_DATA_LENGTH 8
+
+#define PH_SERIES_SIZE 2
+
 #define CAN_PACK_MINIMUM 0 //0 kV
 #define CAN_PACK_MAXIMUM 65 //65 kV
 
@@ -14,4 +22,8 @@
 #define CAN_TEMPERATURE_MAXIMUM 127 //twos complement; 0x0111'1111
 
 
-//testing that git pushes properly; hello world
+typedef struct PH_FULL_CAN_MESSAGE_STRUCT
+{
+    CAN_TxHeaderTypeDef PH_CANheaderInternal;
+    uint8_t PH_CAN_DATA_FRAME[CAN_BRIGHTSIDE_DATA_LENGTH];
+};

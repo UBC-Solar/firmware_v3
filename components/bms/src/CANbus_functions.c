@@ -1,10 +1,17 @@
 #include "CANbus_functions.h"
 #include "stm32f3xx_hal.h"
+#include "stm32f3xx_hal_can.h"
 #include <math.h>
 #include <stdbool.h>
 
 //private variables
 BTM_PackData_t PH_PACKDATA;
+
+
+CAN_TxHeaderTypeDef PH_CANheader;
+PH_FULL_CAN_MESSAGE_STRUCT PH_STRUCT_SERIES[PH_SERIES_SIZE];
+
+
 uint8_t aData_series623[8] = { 0 };
 uint8_t aData_series624[8] = { 0 };
 uint8_t aData_series626[8] = { 0 };
@@ -55,6 +62,28 @@ void temperatureDataRetrieval(
 void CANinfoPullAndFormatCompact(void);
 
 //function definitions
+
+
+void CAN_InitHeaderStruct(CAN_TxHeaderTypeDef * PH_CANheader, PH_FULL_CAN_MESSAGE_STRUCT * PH_STRUCT_SERIES[]){
+
+    PH_CANheader -> StdId = PH_START_OF_ADDRESS_SERIES;
+    PH_CANheader -> ExtId = PH_UNUSED;
+    PH_CANheader -> IDE = CAN_ID_STD; //Predefined constant in stm32 include file.
+    PH_CANheader -> RTR = CAN_RTR_DATA; //Predefined constant in stm32 include file.
+    PH_CANheader -> DLC = CAN_BRIGHTSIDE_DATA_LENGTH;
+    PH_CANheader -> TransmitGlobalTime = DISABLE; //I mean, we could use this eventually, if we use a custom message format
+
+    for(int i=0 ; i < PH_SERIES_SIZE ; ++i)
+    {
+        PH_STRUCT_SERIES[i] -> PH_CANheaderInternal.StdId
+            = PH_START_OF_ADDRESS_SERIES + i;
+        PH_STRUCT_SERIES[i] -> PH_CANheaderInternal.ExtId = PH_UNUSED;
+        PH_STRUCT_SERIES[i] -> PH_CANheaderInternal.IDE = CAN_ID_STD;
+        PH_STRUCT_SERIES[i] -> PH_CANheaderInternal.RTR = CAN_RTR_DATA;
+        PH_STRUCT_SERIES[i] -> PH_CANheaderInternal.DLC = CAN_BRIGHTSIDE_DATA_LENGTH;
+        PH_STRUCT_SERIES[i] -> PH_CANheaderInternal.TransmitGlobalTime = DISABLE;
+    }
+}
 
 
 
