@@ -21,8 +21,8 @@ uint8_t aData_series627[8] = { 0 };
 
 uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
     {
-        { 1, 2, 3, 4, 5, 6, 7, 8, 9,10,91,92},
-        {11,12,13,14,15,16,17,18,19,20,93,94},
+        { 1, 2, 3, 4, 5,91, 6, 7, 8, 9,10,92},
+        {11,12,13,14,15,93,16,17,18,19,20,94},
         {21,22,23,24,25,26,27,28,29,30,31,32}
     }
     //note that the 9X numbers (91, 92, 93, 94) indicate the garbage channels.
@@ -291,20 +291,22 @@ void VoltageInfoRetrieval(
     {
         for(int j = 0; j < BTM_NUM_MODULES; ++j)
         {
-
-            localVoltage = PH_PACKDATA -> stack[i].module[j].voltage;
-
-            if(localVoltage < localMinVolt)
+            if(PH_PACKDATA -> stack[i].module[j].enable == 1)
             {
-                localMinVolt = localVoltage;
-                minStack = i;
-                minModule = j;
-            }
-            if(localVoltage > localMaxVolt)
-            {
-                localMaxVolt = localVoltage;
-                maxStack = i;
-                maxModule = j;
+                localVoltage = PH_PACKDATA -> stack[i].module[j].voltage;
+
+                if(localVoltage < localMinVolt)
+                {
+                    localMinVolt = localVoltage;
+                    minStack = i;
+                    minModule = j;
+                }
+                if(localVoltage > localMaxVolt)
+                {
+                    localMaxVolt = localVoltage;
+                    maxStack = i;
+                    maxModule = j;
+                }
             }
         }
     }
@@ -434,24 +436,28 @@ void temperatureDataRetrieval(
     {
         for(int j = 0; j < BTM_NUM_MODULES; ++j)
         {
-            localTemperature = pPH_PACKDATA -> stack[i].module[j].temperature;
+            if(pPH_PACKDATA -> stack[i].module[j].enable == 1)
+            {
+                localTemperature = pPH_PACKDATA -> stack[i].module[j].temperature;
 
-            //Rather than taking a massive sum of all array entries,
-            //this calculates the average every cycle
-            //to avoid possible integer overflow.
-            temperatureTotal = localAverage * (i + 1) + localTemperature;
-            localAverage = temperatureTotal / (i + 1);
+                //Rather than taking a massive sum of all array entries,
+                //this calculates the average every cycle
+                //to avoid possible integer overflow,
+                //versus doing a single division of a large sum at the end.
+                temperatureTotal = localAverage * (i + 1) + localTemperature;
+                localAverage = temperatureTotal / (i + 1);
 
-            if(localTemperature < localMinTmp){
-                localMinTmp = localTemperature;
-                minStack = i;
-                minModule = j;
-            }
+                if(localTemperature < localMinTmp){
+                    localMinTmp = localTemperature;
+                    minStack = i;
+                    minModule = j;
+                }
 
-            if(localTemperature > localMaxTmp){
-                localMaxTmp = localTemperature;
-                maxStack = i;
-                maxModule = j;
+                if(localTemperature > localMaxTmp){
+                    localMaxTmp = localTemperature;
+                    maxStack = i;
+                    maxModule = j;
+                }
             }
 
         }
