@@ -55,18 +55,18 @@ void BTM_BAL_settings(
 					// turn on the corresponding s pins
 					if (i < 12)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_ON;
-					if (i < 24)
+					else if (i < 24)
 						dch_setting_pack->stack[1].module_dch[i-12] = DISCHARGE_ON; 
-					if (i < 36)
+					else if (i < 36)
 						dch_setting_pack->stack[2].module_dch[i-24] = DISCHARGE_ON; 
 				}
 				
 				else {
 					if (i < 12)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_OFF;
-					if (i < 24)
+					else if (i < 24)
 						dch_setting_pack->stack[1].module_dch[i-12] = DISCHARGE_OFF;
-					if (i < 36)
+					else if (i < 36)
 						dch_setting_pack->stack[2].module_dch[i-24] = DISCHARGE_OFF; 
 				}
 			}
@@ -84,18 +84,18 @@ void BTM_BAL_settings(
 					// turn on the corresponding s 
 					if (i < 12)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_ON;
-					if (i < 24)
+					else if (i < 24)
 						dch_setting_pack->stack[1].module_dch[i-12] = DISCHARGE_ON; 
-					if (i < 36)
+					else if (i < 36)
 						dch_setting_pack->stack[2].module_dch[i-24] = DISCHARGE_ON; 
 				}
 				
 				else {
 					if (i < 12)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_OFF;
-					if (i < 24)
+					else if (i < 24)
 						dch_setting_pack->stack[1].module_dch[i-12] = DISCHARGE_OFF;
-					if (i < 36)
+					else if (i < 36)
 						dch_setting_pack->stack[2].module_dch[i-24] = DISCHARGE_OFF;
 				}
 			}
