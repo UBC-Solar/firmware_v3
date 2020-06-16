@@ -427,7 +427,7 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
  * @param raw_reading The 16-bit reading from an LTC6811
  * @return Returns a properly scaled floating-point version of raw_reading
  */
-float BTM_regValToVoltage(uint16_t raw_reading)
+float BTM_regValToVoltage(unsigned int raw_reading)
 {
 	return raw_reading * BTM_VOLTAGE_CONVERSION_FACTOR;
 }

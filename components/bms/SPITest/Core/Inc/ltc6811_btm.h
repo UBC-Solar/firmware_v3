@@ -280,7 +280,7 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command);
 void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][BTM_REG_GROUP_SIZE]);
 BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_REG_GROUP_SIZE]);
 BTM_Status_t BTM_readBatt(BTM_PackData_t * packData);
-float BTM_regValToVoltage(uint16_t raw_reading);
+float BTM_regValToVoltage(unsigned int raw_reading);
 void BTM_writeCS(CS_state_t new_state);
 
 #endif /* LTC6811_BTM_H_ */
