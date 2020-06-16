@@ -9,7 +9,7 @@ BTM_PackData_t PH_PACKDATA;
 
 
 CAN_TxHeaderTypeDef PH_CANheader;
-PH_FULL_CAN_MESSAGE_STRUCT PH_STRUCT_SERIES[PH_SERIES_SIZE];
+Brightside_CAN_MessageTypeDef CANmessages_elithionSeries[PH_SERIES_SIZE];
 
 
 uint8_t aData_series623[8] = { 0 };
@@ -36,9 +36,10 @@ uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
     //Should any of the 9X numbers appear in a CAN message, something is not right.
 
 //function prototypes
-void CANinfoPullAndFormatMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA);
-void CANinfoPullAndFormatMessage626(uint8_t aData_series626[8], BTM_PackData_t * pPH_PACKDATA);
-void CANinfoPullAndFormatMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACKDATA);
+void CAN_InitHeaderStruct(Brightside_CAN_MessageTypeDef * CANmessages_elithionSeries[])
+void CAN_CompileMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA);
+void CAN_CompileMessage626(uint8_t aData_series626[8], BTM_PackData_t * pPH_PACKDATA);
+void CAN_CompileMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACKDATA);
 //For message addressed 623.
 void VoltageInfoRetrieval(
     BTM_PackData_t * pPH_PACKDATA
@@ -59,36 +60,61 @@ void temperatureDataRetrieval(
     uint8_t * maxTmpStack,
     uint8_t * minTmpModule,
     uint8_t * maxTmpModule);
-void CANinfoPullAndFormatCompact(void);
+uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * outOfBounds);
 
 //function definitions
 
 
-void CAN_InitHeaderStruct(CAN_TxHeaderTypeDef * PH_CANheader, PH_FULL_CAN_MESSAGE_STRUCT * PH_STRUCT_SERIES[]){
+/*******************************
+*
+*      TOP LEVEL FUNCTIONS
+*
+********************************/
 
-    PH_CANheader -> StdId = PH_START_OF_ADDRESS_SERIES;
-    PH_CANheader -> ExtId = PH_UNUSED;
-    PH_CANheader -> IDE = CAN_ID_STD; //Predefined constant in stm32 include file.
-    PH_CANheader -> RTR = CAN_RTR_DATA; //Predefined constant in stm32 include file.
-    PH_CANheader -> DLC = CAN_BRIGHTSIDE_DATA_LENGTH;
-    PH_CANheader -> TransmitGlobalTime = DISABLE; //I mean, we could use this eventually, if we use a custom message format
-
+void CAN_InitHeaderStruct(Brightside_CAN_MessageTypeDef * CANmessages_elithionSeries[])
+{
     for(int i=0 ; i < PH_SERIES_SIZE ; ++i)
     {
-        PH_STRUCT_SERIES[i] -> PH_CANheaderInternal.StdId
+        CANmessages_elithionSeries[i] -> messageHeader.StdId
             = PH_START_OF_ADDRESS_SERIES + i;
-        PH_STRUCT_SERIES[i] -> PH_CANheaderInternal.ExtId = PH_UNUSED;
-        PH_STRUCT_SERIES[i] -> PH_CANheaderInternal.IDE = CAN_ID_STD;
-        PH_STRUCT_SERIES[i] -> PH_CANheaderInternal.RTR = CAN_RTR_DATA;
-        PH_STRUCT_SERIES[i] -> PH_CANheaderInternal.DLC = CAN_BRIGHTSIDE_DATA_LENGTH;
-        PH_STRUCT_SERIES[i] -> PH_CANheaderInternal.TransmitGlobalTime = DISABLE;
+        CANmessages_elithionSeries[i] -> messageHeader.ExtId = PH_UNUSED;
+        CANmessages_elithionSeries[i] -> messageHeader.IDE = CAN_ID_STD;//Predefined constant in stm32 include file.
+        CANmessages_elithionSeries[i] -> messageHeader.RTR = CAN_RTR_DATA; //Predefined constant in stm32 include file.
+        CANmessages_elithionSeries[i] -> messageHeader.DLC = CAN_BRIGHTSIDE_DATA_LENGTH;
+        CANmessages_elithionSeries[i] -> messageHeader.TransmitGlobalTime = DISABLE;//We could use this eventually, if we use a custom message format
+    }
+
+    //separate assignments for setting unique, non-consecutive addresses.
+    CANmessages_elithionSeries[0] -> messageHeader.StdId = ADDRESS_623;
+    CANmessages_elithionSeries[1] -> messageHeader.StdId = ADDRESS_627;
+}
+
+void PH_CAN_FillDataFrames_TESTING(Brightside_CAN_MessageTypeDef * CANmessages_elithionSeries[], BTM_PackData_t * pPH_PACKDATA)
+{
+    CAN_CompileMessage623(CANmessages_elithionSeries[0] -> &dataFrame[], pPH_PACKDATA);
+    CAN_CompileMessage627(CANmessages_elithionSeries[1] -> &dataFrame[], pPH_PACKDATA);
+
+    //print contents of dataFrame for testing purposes
+    for(int i = 0; i < PH_SERIES_SIZE; ++i)
+    {
+        for(int j = 0; i < CAN_BRIGHTSIDE_DATA_LENGTH ; ++i)
+            {
+            printf("Address: %u    Index: %i    Data: %u /r/n",
+                CANmessages_elithionSeries[i] -> messageHeader.StdId,
+                j,
+                CANmessages_elithionSeries[i] -> dataFrame[i]);
+        }
     }
 }
 
-
+/*******************************
+*
+*      HELPER FUNCTIONS
+*
+********************************/
 
 /**
-Function name: CANinfoPullAndFormatMessage623
+Function name: CAN_CompileMessage623
 Function purpose:
     Retrieve data, translate it, then format it into a message matching Elithion's format.
     See the webstie for formatting details: https://www.elithion.com/lithiumate/php/controller_can_specs.php
@@ -101,7 +127,7 @@ Algorithm:
     3) Place data into message array, while following Elithion format.
 
 */
-void CANinfoPullAndFormatMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA)
+void CAN_CompileMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA)
 {
     unsigned int
         packVoltage = 0;
@@ -177,7 +203,7 @@ void CANinfoPullAndFormatMessage623(uint8_t aData_series623[8], BTM_PackData_t *
   //end of function
 }
 /**
-Function name: CANinfoPullAndFormatMessage627
+Function name: CAN_CompileMessage627
 Function purpose:
     To pull/process information from structs, and format it into a CAN-ready message.
     In this case, the information specified is:
@@ -206,7 +232,7 @@ Algorithm:
     3) Place data into message array, while matching the Elithion format.
 
 */
-void CANinfoPullAndFormatMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACKDATA){
+void CAN_CompileMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACKDATA){
     uint8_t
         averageTemperatureBYTE = 0,
         minTmpBYTE = 0,

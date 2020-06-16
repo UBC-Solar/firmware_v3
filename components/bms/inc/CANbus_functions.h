@@ -5,13 +5,18 @@
 
 
 
-
+//general technicalities
 #define PH_START_OF_ADDRESS_SERIES 600
 #define PH_UNUSED 0x0DEADBEE
 #define CAN_BRIGHTSIDE_DATA_LENGTH 8
 
 #define PH_SERIES_SIZE 2
 
+//message addresses
+#define ADDRESS_623 = 623;
+#define ADDRESS_627 = 627;
+
+//value bounds
 #define CAN_PACK_MINIMUM 0 //0 kV
 #define CAN_PACK_MAXIMUM 65 //65 kV
 
@@ -22,8 +27,9 @@
 #define CAN_TEMPERATURE_MAXIMUM 127 //twos complement; 0x0111'1111
 
 
-typedef struct PH_FULL_CAN_MESSAGE_STRUCT
+typedef struct
 {
-    CAN_TxHeaderTypeDef PH_CANheaderInternal;
-    uint8_t PH_CAN_DATA_FRAME[CAN_BRIGHTSIDE_DATA_LENGTH];
-};
+    CAN_TxHeaderTypeDef messageHeader;
+    uint8_t dataFrame[CAN_BRIGHTSIDE_DATA_LENGTH];
+}
+Brightside_CAN_MessageTypeDef;
