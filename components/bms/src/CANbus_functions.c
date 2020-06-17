@@ -42,7 +42,7 @@ void CAN_CompileMessage626(uint8_t aData_series626[8], BTM_PackData_t * pPH_PACK
 void CAN_CompileMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACKDATA);
 //For message addressed 623.
 void VoltageInfoRetrieval(
-    BTM_PackData_t * pPH_PACKDATA
+    BTM_PackData_t * pPH_PACKDATA,
     uint16_t * pMinVoltage,
     uint16_t * pMaxVoltage,
     uint8_t * pMinStack,
@@ -52,7 +52,7 @@ void VoltageInfoRetrieval(
 unsigned int outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * outOfBounds)
 uint8_t outOfBoundsAndCast_moduleVoltage(float moduleVoltageFLOAT, uint8_t * outOfBounds)
 void temperatureDataRetrieval(
-    BTM_PackData_t * pPH_PACKDATA
+    BTM_PackData_t * pPH_PACKDATA,
     uint8_t * averageTemperature,
     uint16_t * minTmp,
     uint16_t * maxTmp,
@@ -191,8 +191,8 @@ void CAN_CompileMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACK
 
 
     //setting byte order in aData_series623 array
-    aData_series623[0] = (uint8_t)(packVoltage >> 8);//PROBABLY DONE WRONG //intent: most-sig half of pack_voltage is bit-shifted right by 8 bits, such that ONLY the MSH is casted.
-    aData_series623[1] = (uint8_t)(packVoltage);
+    aData_series623[0] = (uint8_t)(packVoltage >> 8);//intent: most-sig half of pack_voltage is bit-shifted right by 8 bits, such that ONLY the MSH is casted.
+    aData_series623[1] = (uint8_t)(packVoltage); //intent: only the LSB half is stored. the MSB half is truncated by the casting.
     aData_series623[2] = minVtgBYTE;
     aData_series623[3] = minBattModuleSticker;
     aData_series623[4] = maxVtgBYTE;
