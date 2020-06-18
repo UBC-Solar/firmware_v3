@@ -16,7 +16,7 @@ Function name: BTM_TEMP_measureState
 Purpose: Algorithm for reading thermistors across multiple mux (2 mux's)
 
 input:
-No user defined input.
+Pointer to predefined pack data structure.
 Internal functions pull readings from hardware registers
 
 Output:
@@ -33,22 +33,22 @@ disableMux()
 readThermistorVoltage()
 
 Algorithm:
-0) Initialize
-0.1) disable all mux for known reset state
+0) Initialize.
+0.1) Disable all mux for known reset state.
 
-1) read mux1
-1.1) set mux_address or COMM1 bits for mux1
-1.2) call read_and_switch_mux_channels()
-1.2.1) call readThermistorVoltage() six times
-1.2.2) disable mux1
+1) Read mux1.
+1.1) Set mux_address or COMM1 bits for mux1.
+1.2) Call read_and_switch_mux_channels().
+1.2.1) Call readThermistorVoltage() six times.
+1.2.2) Disable mux1.
 
-2) read mux2
-2.1) set mux_address or COMM1 bits for mux2
-2.2) call read_and_switch_mux_channels()
-2.2.1) call readThermistorVoltage() six times
-2.2.2) disable mux2
+2) Read mux2.
+2.1) Set mux_address or COMM1 bits for mux2.
+2.2) Call read_and_switch_mux_channels().
+2.2.1) Call readThermistorVoltage() six times.
+2.2.2) Disable mux2.
 
-3) done
+3) Done.
 */
 BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 {
@@ -124,13 +124,13 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 Function name: read_and_switch_mux_channels
 Purpose:
 switch between all 8 channels of a single mux per lTC6811
-and gather the associated themistor readings per LTC6811
+and gather the associated themistor readings per LTC6811.
 
 input:
 uint8_t mux_address
 	- the exact address bits
 uint16_t MUX_thermistor_readings[MUX_CHANNELS][BTM_NUM_DEVICES]
-	- the array of all thermistor voltage readings from all mux channels from all LTC6811 devices
+	- The array of all thermistor voltage readings from all mux channels from all LTC6811 devices.
 internal functions pull readings from hardware registers
 
 output: None. Readings are put into an array. See above.
@@ -138,21 +138,28 @@ output: None. Readings are put into an array. See above.
 
 Algorithm:
 1) Define comm_val array of 6 bytes to be copied to COMM register of LTC6811.
-	The LTC1380 MUX needs 2 bytes for a single Send Byte protocol.
-	The two bytes are enveloped by I2C commands for LTC6811.
+	The LTC1380 MUX needs 2 bytes for a single "Send Byte Protocol" (See LTC1380 Datasheet).
+		One byte is the command byte. The other byte is the address byte.
+	The two bytes are enveloped by I2C commands for LTC6811 (see LTC6811 Manual: start at Operation -> I2C/SPI MASTER ON LTC6811 USING GPIOS).
 	The full message totals to 4 bytes.
 	Last two bytes of COMM are not needed.
-2) In a loop for MUX_CHANNELS cycles, set the MUX channel and measure its voltage:
-2.1) Set the appropriate comm_val bits to the mux channel to switch to.
-2.2) Copy comm_val to mux_message. Mux message has additional dimension for LTC6811 device specified.
-2.3) WRCOMM: mux_message from STM32 is written to the COMM register of all lTC6811 devices.
-2.4) Chip Select is pulled Low (it signals to allow SPI communication from the STM32 to the 6811)
-2.5) STCOMM: LTC6811 is sent the command to send an I2C message to the MUX. The message is stored in COMM register.
-2.6) the STM32 is purposefully stalled with a NULL_message SPI transmission going from STM32 to LTC6811
-	 for exactly 3 clock cycles per bit of I2C transmission going from LTC6811 to MUX.
-			 (needs testing but we suspect the I2C output of the 6811 uses SPI as a clock input)
-2.7) Chip Select is pulled high (it signals to block SPI communication from the STM32 to the 6811)
-2.8) Measure the voltage.
+2) In a loop for MUX_CHANNELS cycles, set the MUX channel and measure its voltage.
+	Full details of step 2):
+	2.1) Set the appropriate comm_val bits to the mux channel to switch to.
+	2.2) Copy comm_val[] to mux_message[][]. mux_message[][] has additional dimension for multiple LTC6811 devices in daisy-chain.
+	2.3) WRCOMM: mux_message[x][6] from STM32 is written to the COMM register of all lTC6811 devices.
+	2.4) Chip Select is pulled Low (it signals to allow SPI communication from the STM32 to the 6811)
+	2.5) STCOMM: LTC6811 is sent the command to send an I2C message to the MUX. The I2C message is the mux_message[x][6] stored in COMM register.
+	2.6) the STM32 is purposefully stalled with a NULL_message SPI transmission going from STM32 to LTC6811
+		 for exactly 3 clock cycles per bit of I2C transmission going from LTC6811 to MUX.
+				 (needs testing but we suspect the I2C output of the 6811 uses SPI as a "clock input" of some sort.)
+				 (See 6811 Manual section named "Timing Specifications of I2C and SPI Master".
+				 It says it uses the "primary SPI interface's" timing to control the "I2C Master's" timing.
+				 I assume the "primary" SPI interface refers to the pins used for STM32 to 6811 communication,
+				 while "master" refers to the 6811's capacity to be a master to a slave device down the line,
+				 i.e. the 1380 mux)
+	2.7) Chip Select is pulled high (it signals to block SPI communication from the STM32 to the 6811)
+	2.8) Measure the voltage.
 
 COMM register details:
 
@@ -171,7 +178,7 @@ Note: you release the bus on the acknowledge bit, so the mux can acknowledge.
 A NACK is a high bit, and an open drain output going high is the same as releasing the bus.
 
 Command half of COMM
-1.5) ICOMn[3:0] = I2C_BLANK
+1.5) ICOMn[3:0] = I2C_BLANK (it's just all zeros)
 1.6) D1[7:4] = 0x0
 1.7) D1[3:0] = MUX_Sn
 1.8) FCOMn[3:0] = I2C_MASTER_NACK_STOP
@@ -189,12 +196,12 @@ BTM_Status_t read_and_switch_mux_channels(uint8_t mux_address,
 
 	uint8_t comm_val[BTM_REG_GROUP_SIZE] =
 	{
-		(I2C_START << 4) | (mux_address >> 4), // 1.1.1) - 1.1.2)
+		(I2C_START << 4) | (mux_address >> 4),
 		(mux_address << 4) | I2C_MASTER_NACK,
-		0, // ((I2C_BLANK << 4) | 0x00) = 0, First nibble of mux command is 0
-		I2C_MASTER_NACK_STOP, // mux command in upper nibble is set in loop
-		0, // There's no 3rd byte to transmit
-		0
+		0,                                      // ((I2C_BLANK << 4) | 0x00) = 0, First nibble of mux command is 0
+		I2C_MASTER_NACK_STOP,                   // mux command in upper nibble is set in loop
+		0,                                      // There's no 3rd byte to transmit
+		0                                       // Ditto.
 	};
 
 	uint8_t mux_message[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = { 0 };
@@ -298,7 +305,7 @@ void disableMux(uint8_t mux_address)
 {
 	uint8_t comm_val[BTM_REG_GROUP_SIZE] =
 	{
-		(I2C_START << 4) | (mux_address >> 4), // 1.1.1) - 1.1.2)
+		(I2C_START << 4) | (mux_address >> 4),
 		(mux_address << 4) | I2C_MASTER_NACK,
 		0, // ((I2C_BLANK << 4) | 0x00) = 0, First nibble of mux command is 0
 		(MUX_DISABLE << 4) | I2C_MASTER_NACK_STOP,
