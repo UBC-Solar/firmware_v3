@@ -123,7 +123,7 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 /*
 Function name: read_and_switch_mux_channels
 Purpose:
-switch between all 8 channels of a single mux per lTC6811
+Switch between all specified channels of a single mux per lTC6811
 and gather the associated themistor readings per LTC6811.
 
 input:
