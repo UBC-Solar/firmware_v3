@@ -2,22 +2,21 @@
 #include "stm32f3xx_hal.h"
 #include "stm32f3xx_hal_can.h"
 #include <math.h>
-#include <stdbool.h>
+//#include <stdbool.h>
 
 //private variables
 BTM_PackData_t PH_PACKDATA;
 
 
-CAN_TxHeaderTypeDef PH_CANheader;
+//CAN_TxHeaderTypeDef PH_CANheader;
 Brightside_CAN_MessageTypeDef CANmessages_elithionSeries[PH_SERIES_SIZE];
 
 
-uint8_t aData_series623[8] = { 0 };
-uint8_t aData_series624[8] = { 0 };
-uint8_t aData_series626[8] = { 0 };
-uint8_t aData_series627[8] = { 0 };
+// uint8_t aData_series623[8] = { 0 };
+// uint8_t aData_series624[8] = { 0 };
+// uint8_t aData_series626[8] = { 0 };
+// uint8_t aData_series627[8] = { 0 };
 
-  //DESIGN UNCERTAINTY: off-by-one dimensioning?
 // uint8_t PH_LookUpTable[BTM_NUM_DEVICES + 1][BTM_NUM_MODULES + 1] =
 //     {
 //         {0,0,0,0},
@@ -78,7 +77,7 @@ void CAN_InitHeaderStruct(Brightside_CAN_MessageTypeDef * CANmessages_elithionSe
         CANmessages_elithionSeries[i] -> messageHeader.StdId
             = PH_START_OF_ADDRESS_SERIES + i;
         CANmessages_elithionSeries[i] -> messageHeader.ExtId = PH_UNUSED;
-        CANmessages_elithionSeries[i] -> messageHeader.IDE = CAN_ID_STD;//Predefined constant in stm32 include file.
+        CANmessages_elithionSeries[i] -> messageHeader.IDE = CAN_ID_STD;   //Predefined constant in stm32 include file.
         CANmessages_elithionSeries[i] -> messageHeader.RTR = CAN_RTR_DATA; //Predefined constant in stm32 include file.
         CANmessages_elithionSeries[i] -> messageHeader.DLC = CAN_BRIGHTSIDE_DATA_LENGTH;
         CANmessages_elithionSeries[i] -> messageHeader.TransmitGlobalTime = DISABLE;//We could use this eventually, if we use a custom message format
@@ -176,15 +175,15 @@ void CAN_CompileMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACK
     //Convert units of 100uV to V.
     //Then checks if value is outside of expected bounds, then truncates float to unsigned int.
     packVoltageFLOAT = BTM_regValToVoltage(pPH_PACKDATA -> pack_voltage);
-    packVoltage = outOfBounds_packVoltage(packVoltageFLOAT, &outOfBounds);
+    packVoltage = outOfBoundsAndCast_packVoltage(packVoltageFLOAT, &outOfBounds);
 
     //Convert units of 100uV to V.
     //Then check if value is out of out of expected bounds, and cast uint16_t to uint8_t.
     minVtgFLOAT = BTM_regValToVoltage(minVtg);
-    minVtgBYTE = outOfBounds_moduleVoltage(minVtgFLOAT, &outOfBounds);
+    minVtgBYTE = outOfBoundsAndCast_moduleVoltage(minVtgFLOAT, &outOfBounds);
 
     maxVtgFLOAT = BTM_regValToVoltage(maxVtg);
-    maxVtgBYTE = outOfBounds_moduleVoltage(maxVtgFLOAT, &outOfBounds);
+    maxVtgBYTE = outOfBoundsAndCast_moduleVoltage(maxVtgFLOAT, &outOfBounds);
 
     minBattModuleSticker = LUT_moduleStickers[minStack][minModule];
     maxBattModuleSticker = LUT_moduleStickers[maxStack][maxModule];
@@ -294,7 +293,7 @@ void CAN_CompileMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACK
 
 /*
 Function Name: VoltageInfoRetrieval
-Function Purpose: Scan the array of voltages of the modules per stacks, and return the min and max temperature-voltages
+Function Purpose: Scan the array of voltages of the modules per stacks, and return the min and max voltages
 
 Parameters:
     pointers:
@@ -391,7 +390,7 @@ Parameters:
 Return:
     The packVoltageFLOAT parameter casted to unsigned int.
 */
-unsigned int outOfBounds_packVoltage(float packVoltageFLOAT, uint8_t * outOfBounds){
+unsigned int outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * outOfBounds){
     if(packVoltage < CAN_PACK_MINIMUM){
         *outOfBounds = 1
         return CAN_PACK_MINIMUM;
@@ -439,7 +438,7 @@ Note: The voltage measurements are from thermistors, whose resistances vary with
 
 Parameters:
     Pointers:
-        pAverageTemperature - pointer to variable for holding the average temperature calculated.
+        pAverageTemperature - pointer to variable for holding the average temperature-voltage calculated.
         .....
         pMinVoltage - pointer to variable to hold minimum voltage found.
         pMaxVoltage - pointer to variable to hold maximum voltage found.
@@ -481,13 +480,13 @@ void temperatureDataRetrieval(
         maxStack,
         minModule,
         maxModule;
-    float
+    double
         temperatureTotal = 0,
         localAverage = 0;
 
+    int i = 0;
 
-
-    for(int i = 0; i < BTM_NUM_DEVICES; ++i)
+    for(i = 0; i < BTM_NUM_DEVICES; ++i)
     {
         for(int j = 0; j < BTM_NUM_MODULES; ++j)
         {
@@ -495,12 +494,10 @@ void temperatureDataRetrieval(
             {
                 localTemperature = pPH_PACKDATA -> stack[i].module[j].temperature;
 
-                //Rather than taking a massive sum of all array entries,
-                //this calculates the average every cycle
-                //to avoid possible integer overflow,
-                //versus doing a single division of a large sum at the end.
-                temperatureTotal = localAverage * (i + 1) + localTemperature;
-                localAverage = temperatureTotal / (i + 1);
+                //double type is used to avoid possible integer overflow.
+                //localTemperature is uint16_t. Reasonably, in this loop, it should
+                //never add up to a number greater than the max double value.
+                temperatureTotal = temperatureTotal + localTemperature;
 
                 if(localTemperature < localMinTmp){
                     localMinTmp = localTemperature;
@@ -516,6 +513,18 @@ void temperatureDataRetrieval(
             }
 
         }
+    }
+
+    localAverage = temperatureTotal / i;
+
+    //Ensuring that the value fits into the uint16_t size.
+    //If it's breaks the bounds, it will be set to the bounds.
+    //If the bounds ever appear, that is a sign that something may be off.
+    if(localAverage > 65535){
+        localAverage = 65535;
+    }
+    else if(localAverage < 0){
+        localAverage = 0;
     }
 
     *pAverageTemperature = (uint16_t)localAverage;
@@ -558,7 +567,6 @@ uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * 
         return CAN_TEMPERATURE_MAXIMUM;
     }
 
-
     else if(temperatureDOUBLE < CAN_TEMPERATURE_MINIMUM)
     {
         *outOfBounds = 1;
@@ -573,11 +581,7 @@ uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * 
         else
             return ~temperatureBYTE + 1;
     }
-    //Redundancy. Will review necessity later
-    return 0x00;
 }
-
-
 
     //placeholder code, to see the format of struct calls.
     //Looks really clean
