@@ -1,3 +1,11 @@
+/*
+CANbus_functions.c
+
+This file contains the suite of functions used for CAN functionality
+
+*/
+
+
 #include "CANbus_functions.h"
 #include "stm32f3xx_hal.h"
 #include "stm32f3xx_hal_can.h"
@@ -11,11 +19,6 @@ BTM_PackData_t PH_PACKDATA;
 //CAN_TxHeaderTypeDef PH_CANheader;
 Brightside_CAN_MessageTypeDef CANmessages_elithionSeries[PH_SERIES_SIZE];
 
-
-// uint8_t aData_series623[8] = { 0 };
-// uint8_t aData_series624[8] = { 0 };
-// uint8_t aData_series626[8] = { 0 };
-// uint8_t aData_series627[8] = { 0 };
 
 // uint8_t PH_LookUpTable[BTM_NUM_DEVICES + 1][BTM_NUM_MODULES + 1] =
 //     {
@@ -49,7 +52,7 @@ void VoltageInfoRetrieval(
     uint8_t * pMaxStack,
     uint8_t * pMaxModule);
 unsigned int outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * outOfBounds)
-uint8_t outOfBoundsAndCast_moduleVoltage(float moduleVoltageFLOAT, uint8_t * outOfBounds)
+uint8_t outOfBoundsAndConvert_moduleVoltage(float moduleVoltageFLOAT, uint8_t * outOfBounds)
 void temperatureDataRetrieval(
     BTM_PackData_t * pPH_PACKDATA,
     uint8_t * averageTemperature,
@@ -69,6 +72,7 @@ uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * 
 *      TOP LEVEL FUNCTIONS
 *
 ********************************/
+uint8_t PH_TOP_level_functions;
 
 void CAN_InitHeaderStruct(Brightside_CAN_MessageTypeDef * CANmessages_elithionSeries[])
 {
@@ -106,12 +110,38 @@ void PH_CAN_FillDataFrames_TESTING(Brightside_CAN_MessageTypeDef * CANmessages_e
     }
 }
 
+void PH_CANstate(Brightside_CAN_MessageTypeDef * messageSeries[]){
+    uint8_t errorFlag = 0;
+    int i = 0;
+
+    //check if there are still pending messages in the transmission mailboxes.
+    //NOTE: assumption is that the TxMailboxes param (2nd parameter)
+    //is using one-hot encoding, allowing for CAN_TX_MAILBOX0, CAN_TX_MAILBOX1,
+    //and CAN_TX_MAILBOX2 to superimpose onto each other.
+    //See actual definition of CAN_TX_MAILBOX0, CAN_TX_MAILBOX1, and CAN_TX_MAILBOX2
+    //for the one hot encoding.
+    // if(HAL_CAN_IsTxMessagePending(PH_hcan, 0x111u) == CAN_PENDING){
+    //     errorFlag = 1; //1 for true
+    // }
+    if(HAL_CAN_GetTxMailboxesFreeLevel(CAN_HandleTypeDef * hcan) != 3){
+        errorFlag = 1;
+    }
+
+    //Continue with placing new messages
+    if(HAL_CAN_IsTxMessagePending(PH_hcan, CAN_TX_MAILBOX0) == CAN_NOT_PENDING){
+        HAL_CAN_AddTxMessage(PH_hcan, messageSeries[i]->header);
+    }
+
+
+
+}
+
 /*******************************
 *
 *      HELPER FUNCTIONS
 *
 ********************************/
-
+uint8_t PH_HELPER_functions;
 /**
 Function name: CAN_CompileMessage623
 Function purpose:
@@ -180,10 +210,10 @@ void CAN_CompileMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACK
     //Convert units of 100uV to V.
     //Then check if value is out of out of expected bounds, and cast uint16_t to uint8_t.
     minVtgFLOAT = BTM_regValToVoltage(minVtg);
-    minVtgBYTE = outOfBoundsAndCast_moduleVoltage(minVtgFLOAT, &outOfBounds);
+    minVtgBYTE = outOfBoundsAndConvert_moduleVoltage(minVtgFLOAT, &outOfBounds);
 
     maxVtgFLOAT = BTM_regValToVoltage(maxVtg);
-    maxVtgBYTE = outOfBoundsAndCast_moduleVoltage(maxVtgFLOAT, &outOfBounds);
+    maxVtgBYTE = outOfBoundsAndConvert_moduleVoltage(maxVtgFLOAT, &outOfBounds);
 
     minBattModuleSticker = LUT_moduleStickers[minStack][minModule];
     maxBattModuleSticker = LUT_moduleStickers[maxStack][maxModule];
@@ -191,12 +221,12 @@ void CAN_CompileMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACK
 
     //setting byte order in aData_series623 array
     aData_series623[0] = (uint8_t)(packVoltage >> 8);//intent: most-sig half of pack_voltage is bit-shifted right by 8 bits, such that ONLY the MSH is casted.
-    aData_series623[1] = (uint8_t)(packVoltage); //intent: only the LSB half is stored. the MSB half is truncated by the casting.
-    aData_series623[2] = minVtgBYTE;
+    aData_series623[1] = (uint8_t)(packVoltage);     //intent: only the LSB half is stored. the MSB half is truncated by the casting.
+    aData_series623[2] = minVtgBYTE;                 //NOTE: the voltage is in units of 100mV
     aData_series623[3] = minBattModuleSticker;
-    aData_series623[4] = maxVtgBYTE;
+    aData_series623[4] = maxVtgBYTE;                 //NOTE: the voltage is in units of 100mV
     aData_series623[5] = maxBattModuleSticker;
-    //aData_series623[6] = 0; //redundant
+    //aData_series623[6] = 0;                        //redundant
     aData_series623[7] = outOfBounds;
 
   //end of function
@@ -268,11 +298,11 @@ void CAN_CompileMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACK
 
     //2) Translating Data
 
-    //minTmpFLOAT = BTM_regValToVoltage(minTmp);
+    averageTemperatureBYTE = (uint8_t)averageTemperatureFLOAT;
+
     minTmpDOUBLE = BTM_TEMP_volts2temp((double)minTmp);
     minTmpBYTE = TwosComplement_TemperatureConverter(minTmpDOUBLE, &outOfBounds);
 
-    //maxTmpFLOAT = BTM_regValToVoltage(maxTmp);
     maxTmpDOUBLE = BTM_TEMP_volts2temp((double)maxTmp);
     maxTmpBYTE = TwosComplement_TemperatureConverter(maxTmpDOUBLE, &outOfBounds);
 
@@ -377,7 +407,7 @@ void VoltageInfoRetrieval(
 
 
 /**
-Function Name: outOfBounds_packVoltage
+Function Name: outOfBoundsAndCast_packVoltage
 Function Purpose:
     Check if the pack voltage collected is outside the expected message.
         If out of bounds, assign the broken bound and cast to unsigned int.
@@ -404,7 +434,7 @@ unsigned int outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * ou
 }
 
 /**
-Function Name: outOfBounds_moduleVoltage
+Function Name: outOfBoundsAndConvert_moduleVoltage
 Function Purpose:
     Check if the module voltage collected is outside the expected message.
         If out of bounds, assign the broken bound and cast to uint8_t.
@@ -415,19 +445,22 @@ Parameters:
     uint8_t * outOfBounds - The pointer to a variable used as a flag for if bounds are broken.
 
 Return:
-    The moduleVoltageFLOAT parameter casted to uint8_t.
+    The moduleVoltage100mV value, casted to uint8_t.
+    moduleVoltage100mV is moduleVoltageFLOAT converted to units of 100mV.
 */
-uint8_t outOfBoundsAndCast_moduleVoltage(float moduleVoltageFLOAT, uint8_t * outOfBounds){
-    if(moduleVoltage < CAN_MODULE_MINIMUM){
+uint8_t outOfBoundsAndConvert_moduleVoltage(float moduleVoltageFLOAT, uint8_t * outOfBounds){
+    float moduleVoltage100mV = moduleVoltageFLOAT * 10;
+
+    if(moduleVoltage100mV < CAN_MODULE_MINIMUM){
         *outOfBounds = 1
         return CAN_MODULE_MINIMUM;
     }
-    else if(moduleVoltage > CAN_MODULE_MAXIMUM){
+    else if(moduleVoltage100mV > CAN_MODULE_MAXIMUM){
         *outOfBounds = 1
         return CAN_MODULE_MAXIMUM;
     }
     else
-    return (uint8_t)moduleVoltageFLOAT; //DOUBLE CHECK IF THE CASTING WORKS
+    return (uint8_t)moduleVoltage100mV; //DOUBLE CHECK IF THE CASTING WORKS
 }
 
 /*
@@ -484,7 +517,9 @@ void temperatureDataRetrieval(
         temperatureTotal = 0,
         localAverage = 0;
 
-    int i = 0;
+    int
+        i = 0;
+        total_mux_read = 0;
 
     for(i = 0; i < BTM_NUM_DEVICES; ++i)
     {
@@ -497,6 +532,10 @@ void temperatureDataRetrieval(
                 //double type is used to avoid possible integer overflow.
                 //localTemperature is uint16_t. Reasonably, in this loop, it should
                 //never add up to a number greater than the max double value.
+                //assuming that the thermistors can handle up to the solder melting point,
+                //about 300 degree Celcius, the three digits multiplied by 12 is way-way-way
+                //lower than the max value of data type double.
+                //So, the risk of overflow should be negligible.
                 temperatureTotal = temperatureTotal + localTemperature;
 
                 if(localTemperature < localMinTmp){
@@ -510,12 +549,13 @@ void temperatureDataRetrieval(
                     maxStack = i;
                     maxModule = j;
                 }
+                total_mux_read++;
             }
 
         }
     }
 
-    localAverage = temperatureTotal / i;
+    localAverage = temperatureTotal / total_mux_read;
 
     //Ensuring that the value fits into the uint16_t size.
     //If it's breaks the bounds, it will be set to the bounds.
@@ -579,8 +619,53 @@ uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * 
         if(temperatureBYTE >= 0)
             return temperatureBYTE;
         else
+            //Conversion to two's complement, for negative numbers.
             return ~temperatureBYTE + 1;
     }
+}
+
+
+/*
+
+Other Functions
+
+*/
+uint8_t PH_OTHER_functions;
+
+uint8_t celciusAverage(BTM_PackData_t * pPH_PACKDATA){
+    uint16_t localTemperature = 0;
+    double temperatureTotal = 0;
+    double localAverage = 0;
+
+    int i = 0;
+
+    for(i = 0; i < BTM_NUM_DEVICES; ++i)
+    {
+        for(int j = 0; j < BTM_NUM_MODULES; ++j)
+        {
+            if(pPH_PACKDATA -> stack[i].module[j].enable == 1)
+            {
+                localTemperature = pPH_PACKDATA -> stack[i].module[j].temperature;
+                temperatureTotal = temperatureTotal + BTM_TEMP_volts2temp(localTemperature);
+            }
+        }
+    }
+
+    localAverage = temperatureTotal / PH_TOTAL_MUX;
+
+    if(localAverage > 255)
+    {
+        return 255;
+    }
+    else if(localAverage < 0)
+    {
+        return 0;
+    }
+    else
+    {
+        return (uint8_t)localAverage;
+    }
+
 }
 
     //placeholder code, to see the format of struct calls.

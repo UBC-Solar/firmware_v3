@@ -4,6 +4,8 @@
 #include "stm32f3xx_hal.h"
 
 
+#define TRUE = 1
+#define FALSE = 0
 
 //general technicalities
 #define PH_START_OF_ADDRESS_SERIES 600
@@ -12,6 +14,10 @@
 
 #define PH_SERIES_SIZE 2
 
+#define PH_TOTAL_MUX = 32 //10 + 10 + 12
+
+#define CAN_PENDING = 1
+#define CAN_NOT_PENDING = 0
 //message addresses
 #define ADDRESS_623 = 623;
 #define ADDRESS_627 = 627;
