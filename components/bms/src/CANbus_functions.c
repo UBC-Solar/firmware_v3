@@ -110,10 +110,8 @@ void PH_CAN_FillDataFrames_TESTING(Brightside_CAN_MessageTypeDef * CANmessages_e
     }
 }
 
-void PH_CANstate(Brightside_CAN_MessageTypeDef * messageSeries[]){
+void PH_CANstate(Brightside_CAN_MessageSeries * series){
     uint8_t errorFlag = 0;
-    int i = 0;
-
     //check if there are still pending messages in the transmission mailboxes.
     //NOTE: assumption is that the TxMailboxes param (2nd parameter)
     //is using one-hot encoding, allowing for CAN_TX_MAILBOX0, CAN_TX_MAILBOX1,
@@ -123,15 +121,39 @@ void PH_CANstate(Brightside_CAN_MessageTypeDef * messageSeries[]){
     // if(HAL_CAN_IsTxMessagePending(PH_hcan, 0x111u) == CAN_PENDING){
     //     errorFlag = 1; //1 for true
     // }
-    if(HAL_CAN_GetTxMailboxesFreeLevel(CAN_HandleTypeDef * hcan) != 3){
+    if(HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) != 3)
+    {
         errorFlag = 1;
     }
 
+    //compile messages
+    CAN_CompileMessage623(series->message[0].dataFrame, pPH_PACKDATA);
+    CAN_CompileMessage627(series->message[1].dataFrame, pPH_PACKDATA);
+
     //Continue with placing new messages
-    if(HAL_CAN_IsTxMessagePending(PH_hcan, CAN_TX_MAILBOX0) == CAN_NOT_PENDING){
-        HAL_CAN_AddTxMessage(PH_hcan, messageSeries[i]->header);
+    while
+        (HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) > 0
+         && series->runningIndex < series.messageStackSize)
+    {
+        HAL_CAN_AddTxMessage
+            (
+            PH_hcan,
+            &series->message[series->runningIndex].header,
+            series->message[series->runningIndex].dataFrame,//intent: pass the array using call by value.
+            &series->message[series->runningIndex].mailbox
+            );
+
+        series->runningIndex++;
     }
 
+/*self-notes:
+POINTER2struct->member is already a dereference.
+&POINTER2struct->member is the address of the member
+&POINTER2struct->array and &POINTER2struct->array[0] are different somehow?
+I think &POINTER2struct->array is the pointer to the first element of the array,
+like arr == &arr[0].
+I think &POINTER2struct->array[0] is the same as above, but &POINTER2struct->array[1] is not.
+*/
 
 
 }

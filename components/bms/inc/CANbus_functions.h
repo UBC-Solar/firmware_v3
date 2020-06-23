@@ -35,7 +35,21 @@
 
 typedef struct
 {
-    CAN_TxHeaderTypeDef messageHeader;
+    CAN_TxHeaderTypeDef header;
     uint8_t dataFrame[CAN_BRIGHTSIDE_DATA_LENGTH];
+    uint32_t mailbox;
 }
 Brightside_CAN_MessageTypeDef;
+
+
+typedef structs
+{
+    //The struct holding the actual message data.
+    Brightside_CAN_MessageTypeDef message[];
+    //Convienient storage of the counter that tracks
+    //how many of the messages have been requested.
+    int runningIndex = 0;
+    //the total messages in the stack.
+    int messageStackSize;
+}
+Brightside_CAN_MessageSeries;
