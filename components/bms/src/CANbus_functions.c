@@ -7,17 +7,11 @@ This file contains the suite of functions used for CAN functionality
 
 
 #include "CANbus_functions.h"
-#include "stm32f3xx_hal.h"
-#include "stm32f3xx_hal_can.h"
-#include <math.h>
 //#include <stdbool.h>
 
 //private variables
 BTM_PackData_t PH_PACKDATA;
 
-
-//CAN_TxHeaderTypeDef PH_CANheader;
-Brightside_CAN_MessageTypeDef CANmessages_elithionSeries[PH_SERIES_SIZE];
 
 
 // uint8_t PH_LookUpTable[BTM_NUM_DEVICES + 1][BTM_NUM_MODULES + 1] =
@@ -38,7 +32,7 @@ uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
     //Should any of the 9X numbers appear in a CAN message, something is not right.
 
 //function prototypes
-void CAN_InitHeaderStruct(Brightside_CAN_MessageTypeDef * CANmessages_elithionSeries[])
+void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessages_elithionSeries[]);
 void CAN_CompileMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA);
 void CAN_CompileMessage626(uint8_t aData_series626[8], BTM_PackData_t * pPH_PACKDATA);
 void CAN_CompileMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACKDATA);
@@ -51,8 +45,8 @@ void VoltageInfoRetrieval(
     uint8_t * pMinModule,
     uint8_t * pMaxStack,
     uint8_t * pMaxModule);
-unsigned int outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * outOfBounds)
-uint8_t outOfBoundsAndConvert_moduleVoltage(float moduleVoltageFLOAT, uint8_t * outOfBounds)
+unsigned int outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * outOfBounds);
+uint8_t outOfBoundsAndConvert_moduleVoltage(float moduleVoltageFLOAT, uint8_t * outOfBounds);
 void temperatureDataRetrieval(
     BTM_PackData_t * pPH_PACKDATA,
     uint8_t * averageTemperature,
@@ -74,28 +68,28 @@ uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * 
 ********************************/
 uint8_t PH_TOP_level_functions;
 
-void CAN_InitHeaderStruct(Brightside_CAN_MessageTypeDef * CANmessages_elithionSeries[])
+void CAN_InitHeaderStruct(Brightside_CAN_MessageSeries * CANmessages_elithionSeries, int messageArraySize)
 {
-    for(int i=0 ; i < PH_SERIES_SIZE ; ++i)
+    for(int i=0 ; i < messageArraySize ; ++i)
     {
-        CANmessages_elithionSeries[i] -> messageHeader.StdId
+        CANmessages_elithionSeries -> message[i] -> header.StdId
             = PH_START_OF_ADDRESS_SERIES + i;
-        CANmessages_elithionSeries[i] -> messageHeader.ExtId = PH_UNUSED;
-        CANmessages_elithionSeries[i] -> messageHeader.IDE = CAN_ID_STD;   //Predefined constant in stm32 include file.
-        CANmessages_elithionSeries[i] -> messageHeader.RTR = CAN_RTR_DATA; //Predefined constant in stm32 include file.
-        CANmessages_elithionSeries[i] -> messageHeader.DLC = CAN_BRIGHTSIDE_DATA_LENGTH;
-        CANmessages_elithionSeries[i] -> messageHeader.TransmitGlobalTime = DISABLE;//We could use this eventually, if we use a custom message format
+        CANmessages_elithionSeries -> message[i] -> header.ExtId = PH_UNUSED;
+        CANmessages_elithionSeries -> message[i] -> header.IDE = CAN_ID_STD;   //Predefined constant in stm32 include file.
+        CANmessages_elithionSeries -> message[i] -> header.RTR = CAN_RTR_DATA; //Predefined constant in stm32 include file.
+        CANmessages_elithionSeries -> message[i] -> header.DLC = CAN_BRIGHTSIDE_DATA_LENGTH;
+        CANmessages_elithionSeries -> message[i] -> header.TransmitGlobalTime = DISABLE;//We could use this eventually, if we use a custom message format
     }
 
     //separate assignments for setting unique, non-consecutive addresses.
-    CANmessages_elithionSeries[0] -> messageHeader.StdId = ADDRESS_623;
-    CANmessages_elithionSeries[1] -> messageHeader.StdId = ADDRESS_627;
+    CANmessages_elithionSeries -> message[0].header.StdId = ADDRESS_623;
+    CANmessages_elithionSeries -> message[1].header.StdId = ADDRESS_627;
 }
 
-void PH_CAN_FillDataFrames_TESTING(Brightside_CAN_MessageTypeDef * CANmessages_elithionSeries[], BTM_PackData_t * pPH_PACKDATA)
+void PH_CAN_FillDataFrames_TESTING(Brightside_CAN_MessageSeries * CANmessages_elithionSeries, BTM_PackData_t * pPH_PACKDATA)
 {
-    CAN_CompileMessage623(CANmessages_elithionSeries[0] -> &dataFrame[], pPH_PACKDATA);
-    CAN_CompileMessage627(CANmessages_elithionSeries[1] -> &dataFrame[], pPH_PACKDATA);
+    CAN_CompileMessage623(CANmessages_elithionSeries -> message[0] -> dataFrame, pPH_PACKDATA);
+    CAN_CompileMessage627(CANmessages_elithionSeries -> message[1] -> dataFrame, pPH_PACKDATA);
 
     //print contents of dataFrame for testing purposes
     for(int i = 0; i < PH_SERIES_SIZE; ++i)
@@ -103,15 +97,22 @@ void PH_CAN_FillDataFrames_TESTING(Brightside_CAN_MessageTypeDef * CANmessages_e
         for(int j = 0; i < CAN_BRIGHTSIDE_DATA_LENGTH ; ++i)
             {
             printf("Address: %u    Index: %i    Data: %u /r/n",
-                CANmessages_elithionSeries[i] -> messageHeader.StdId,
+                CANmessages_elithionSeries -> message[i] -> header.StdId,
                 j,
-                CANmessages_elithionSeries[i] -> dataFrame[i]);
+                CANmessages_elithionSeries -> message[i] -> dataFrame[i]);
         }
     }
 }
 
-void PH_CANstate(Brightside_CAN_MessageSeries * series){
+void CAN_initMessageSeries()
+{
+    return;
+}
+
+void PH_CANstate(Brightside_CAN_MessageSeries * pSeries)
+{
     uint8_t errorFlag = 0;
+    int messageIndex;
     //check if there are still pending messages in the transmission mailboxes.
     //NOTE: assumption is that the TxMailboxes param (2nd parameter)
     //is using one-hot encoding, allowing for CAN_TX_MAILBOX0, CAN_TX_MAILBOX1,
@@ -126,31 +127,43 @@ void PH_CANstate(Brightside_CAN_MessageSeries * series){
         errorFlag = 1;
     }
 
+
     //compile messages
-    CAN_CompileMessage623(series->message[0].dataFrame, pPH_PACKDATA);
-    CAN_CompileMessage627(series->message[1].dataFrame, pPH_PACKDATA);
+    CAN_CompileMessage623(pSeries->message[0]->dataFrame, pPH_PACKDATA);
+    CAN_CompileMessage627(pSeries->message[1]->dataFrame, pPH_PACKDATA);
 
     //Continue with placing new messages
+    messageIndex = pSeries -> runningIndex;
     while
         (HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) > 0
-         && series->runningIndex < series.messageStackSize)
+         && messageIndex < pSeries->messageArraySize)
     {
         HAL_CAN_AddTxMessage
             (
             PH_hcan,
-            &series->message[series->runningIndex].header,
-            series->message[series->runningIndex].dataFrame,//intent: pass the array using call by value.
-            &series->message[series->runningIndex].mailbox
+            &pSeries->message[messageIndex]->header,
+            pSeries->message[messageIndex]->dataFrame,//intent: pass the array using call by value.
+            &pSeries->message[messageIndex]->mailbox
             );
 
-        series->runningIndex++;
+        messageIndex++;
+    }
+
+    //sets or resets the runningIndex stored outside this function's scope.
+    if(messageIndex < messageArraySize)
+    {
+        pSeries -> runningIndex = messageIndex;
+    }
+    else
+    {
+        pSeries -> runningIndex = 0;
     }
 
 /*self-notes:
 POINTER2struct->member is already a dereference.
 &POINTER2struct->member is the address of the member
-&POINTER2struct->array and &POINTER2struct->array[0] are different somehow?
-I think &POINTER2struct->array is the pointer to the first element of the array,
+POINTER2struct->array and &POINTER2struct->array[0] are different somehow?
+I think POINTER2struct->array is the pointer to the first element of the array,
 like arr == &arr[0].
 I think &POINTER2struct->array[0] is the same as above, but &POINTER2struct->array[1] is not.
 */
@@ -178,7 +191,7 @@ Algorithm:
     3) Place data into message array, while following Elithion format.
 
 */
-void CAN_CompileMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA)
+void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA)
 {
     unsigned int
         packVoltage = 0;

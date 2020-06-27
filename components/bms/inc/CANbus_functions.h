@@ -1,8 +1,9 @@
-#ifndef CANBUS_FUNCTION_H
-#define CANBUS_FUNCTION_H
+#ifndef CANBUS_FUNCTION_H_
+#define CANBUS_FUNCTION_H_
 
 #include "stm32f3xx_hal.h"
-
+#include "stm32f3xx_hal_can.h"
+#include <math.h>
 
 #define TRUE = 1
 #define FALSE = 0
@@ -39,17 +40,22 @@ typedef struct
     uint8_t dataFrame[CAN_BRIGHTSIDE_DATA_LENGTH];
     uint32_t mailbox;
 }
-Brightside_CAN_MessageTypeDef;
+Brightside_CAN_Message;
 
 
 typedef structs
 {
-    //The struct holding the actual message data.
-    Brightside_CAN_MessageTypeDef message[];
-    //Convienient storage of the counter that tracks
-    //how many of the messages have been requested.
-    int runningIndex = 0;
+    //Pointer to the struct holding the actual message data.
+    Brightside_CAN_Message * message[];
+
+    //Used to track which messages have been placed in
+    //the TxMailboxes across multiple function calls.
+    int runningIndex;
+
     //the total messages in the stack.
-    int messageStackSize;
+    int messageArraySize;
 }
 Brightside_CAN_MessageSeries;
+
+
+#endif
