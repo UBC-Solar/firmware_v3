@@ -22,17 +22,21 @@ BTM_PackData_t PH_PACKDATA;
 //         {0,7,8,9}
 //     };
 
+//uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
+//    {
+//        { 1, 2, 3, 4, 5,91, 6, 7, 8, 9,10,92},
+//        {11,12,13,14,15,93,16,17,18,19,20,94},
+//        {21,22,23,24,25,26,27,28,29,30,31,32}
+//    };
 uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
-    {
-        { 1, 2, 3, 4, 5,91, 6, 7, 8, 9,10,92},
-        {11,12,13,14,15,93,16,17,18,19,20,94},
-        {21,22,23,24,25,26,27,28,29,30,31,32}
-    }
+{
+    { 1, 2, 3, 4, 5,91, 6, 7, 8, 9,10,92}
+};
     //note that the 9X numbers (91, 92, 93, 94) indicate the garbage channels.
     //Should any of the 9X numbers appear in a CAN message, something is not right.
 
 //function prototypes
-void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessages_elithionSeries[]);
+void CAN_InitHeaderStruct(Brightside_CAN_MessageSeries * CANmessages_elithionSeries, int messageArraySize);
 void CAN_CompileMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA);
 void CAN_CompileMessage626(uint8_t aData_series626[8], BTM_PackData_t * pPH_PACKDATA);
 void CAN_CompileMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACKDATA);
@@ -49,7 +53,7 @@ unsigned int outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * ou
 uint8_t outOfBoundsAndConvert_moduleVoltage(float moduleVoltageFLOAT, uint8_t * outOfBounds);
 void temperatureDataRetrieval(
     BTM_PackData_t * pPH_PACKDATA,
-    uint8_t * averageTemperature,
+    uint16_t * averageTemperature,
     uint16_t * minTmp,
     uint16_t * maxTmp,
     uint8_t * minTmpStack,
@@ -72,13 +76,13 @@ void CAN_InitHeaderStruct(Brightside_CAN_MessageSeries * CANmessages_elithionSer
 {
     for(int i=0 ; i < messageArraySize ; ++i)
     {
-        CANmessages_elithionSeries -> message[i] -> header.StdId
+        CANmessages_elithionSeries -> message[i].header.StdId
             = PH_START_OF_ADDRESS_SERIES + i;
-        CANmessages_elithionSeries -> message[i] -> header.ExtId = PH_UNUSED;
-        CANmessages_elithionSeries -> message[i] -> header.IDE = CAN_ID_STD;   //Predefined constant in stm32 include file.
-        CANmessages_elithionSeries -> message[i] -> header.RTR = CAN_RTR_DATA; //Predefined constant in stm32 include file.
-        CANmessages_elithionSeries -> message[i] -> header.DLC = CAN_BRIGHTSIDE_DATA_LENGTH;
-        CANmessages_elithionSeries -> message[i] -> header.TransmitGlobalTime = DISABLE;//We could use this eventually, if we use a custom message format
+        CANmessages_elithionSeries -> message[i].header.ExtId = PH_UNUSED;
+        CANmessages_elithionSeries -> message[i].header.IDE = CAN_ID_STD;   //Predefined constant in stm32 include file.
+        CANmessages_elithionSeries -> message[i].header.RTR = CAN_RTR_DATA; //Predefined constant in stm32 include file.
+        CANmessages_elithionSeries -> message[i].header.DLC = CAN_BRIGHTSIDE_DATA_LENGTH;
+        CANmessages_elithionSeries -> message[i].header.TransmitGlobalTime = DISABLE;//We could use this eventually, if we use a custom message format
     }
 
     //separate assignments for setting unique, non-consecutive addresses.
@@ -88,8 +92,8 @@ void CAN_InitHeaderStruct(Brightside_CAN_MessageSeries * CANmessages_elithionSer
 
 void PH_CAN_FillDataFrames_TESTING(Brightside_CAN_MessageSeries * CANmessages_elithionSeries, BTM_PackData_t * pPH_PACKDATA)
 {
-    CAN_CompileMessage623(CANmessages_elithionSeries -> message[0] -> dataFrame, pPH_PACKDATA);
-    CAN_CompileMessage627(CANmessages_elithionSeries -> message[1] -> dataFrame, pPH_PACKDATA);
+    CAN_CompileMessage623(CANmessages_elithionSeries -> message[0].dataFrame, pPH_PACKDATA);
+    CAN_CompileMessage627(CANmessages_elithionSeries -> message[1].dataFrame, pPH_PACKDATA);
 
     //print contents of dataFrame for testing purposes
     for(int i = 0; i < PH_SERIES_SIZE; ++i)
@@ -97,9 +101,9 @@ void PH_CAN_FillDataFrames_TESTING(Brightside_CAN_MessageSeries * CANmessages_el
         for(int j = 0; i < CAN_BRIGHTSIDE_DATA_LENGTH ; ++i)
             {
             printf("Address: %u    Index: %i    Data: %u /r/n",
-                CANmessages_elithionSeries -> message[i] -> header.StdId,
+                CANmessages_elithionSeries -> message[i].header.StdId,
                 j,
-                CANmessages_elithionSeries -> message[i] -> dataFrame[i]);
+                CANmessages_elithionSeries -> message[i].dataFrame[i]);
         }
     }
 }
@@ -212,7 +216,7 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], 
     uint8_t
         outOfBounds = 0;
     float
-        packVoltageFLOAT = 0;
+        packVoltageFLOAT = 0,
         minVtgFLOAT = 0,
         maxVtgFLOAT = 0;
 
@@ -220,7 +224,7 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], 
 
   //gather min and max voltages
     VoltageInfoRetrieval(
-        &pPH_PACKDATA,
+        pPH_PACKDATA,
         &minVtg,
         &maxVtg,
         &minStack,
@@ -311,19 +315,21 @@ void CAN_CompileMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACK
         maxTmpModule = 0,
         outOfBounds = 0;
     uint16_t
+        averageTemperature2BYTE,
         minTmp,
         maxTmp;
-    float
-        averageTemperatureFLOAT,
-        minTmpFLOAT,
-        maxTmpFLOAT;
+    //float
+    //    minTmpFLOAT,
+    //    maxTmpFLOAT;
     double
+        averageTemperatureDOUBLE,
         minTmpDOUBLE,
         maxTmpDOUBLE;
 
     //1) scans the struct and calculates the relevant information needed
     temperatureDataRetrieval(
-        &averageTemperatureFLOAT,
+        pPH_PACKDATA,
+        &averageTemperature2BYTE,
         &minTmp,
         &maxTmp,
         &minTmpStack,
@@ -334,7 +340,8 @@ void CAN_CompileMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACK
 
     //2) Translating Data
 
-    averageTemperatureBYTE = (uint8_t)averageTemperatureFLOAT;
+    averageTemperatureDOUBLE = BTM_TEMP_volts2temp((double)averageTemperature2BYTE);
+    averageTemperatureBYTE = TwosComplement_TemperatureConverter(averageTemperatureDOUBLE, &outOfBounds);
 
     minTmpDOUBLE = BTM_TEMP_volts2temp((double)minTmp);
     minTmpBYTE = TwosComplement_TemperatureConverter(minTmpDOUBLE, &outOfBounds);
@@ -399,7 +406,8 @@ void VoltageInfoRetrieval(
 {
     uint16_t
         localMinVolt = 65535, //note that the raw register readings are decimal-shifted to avoid storing floating points. 2^16 - 1
-        localMaxVolt = 0;
+        localMaxVolt = 0,
+        localVoltage = 0;
     uint8_t
         minStack = 0,
         minModule = 0,
@@ -411,9 +419,9 @@ void VoltageInfoRetrieval(
     {
         for(int j = 0; j < BTM_NUM_MODULES; ++j)
         {
-            if(PH_PACKDATA -> stack[i].module[j].enable == 1)
+            if(pPH_PACKDATA -> stack[i].module[j].enable == 1)
             {
-                localVoltage = PH_PACKDATA -> stack[i].module[j].voltage;
+                localVoltage = pPH_PACKDATA -> stack[i].module[j].voltage;
 
                 if(localVoltage < localMinVolt)
                 {
@@ -457,12 +465,12 @@ Return:
     The packVoltageFLOAT parameter casted to unsigned int.
 */
 unsigned int outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * outOfBounds){
-    if(packVoltage < CAN_PACK_MINIMUM){
-        *outOfBounds = 1
+    if(packVoltageFLOAT < CAN_PACK_MINIMUM){
+        *outOfBounds = 1;
         return CAN_PACK_MINIMUM;
     }
-    else if(packVoltage > CAN_PACK_MAXIMUM){
-        *outOfBounds = 1
+    else if(packVoltageFLOAT > CAN_PACK_MAXIMUM){
+        *outOfBounds = 1;
         return CAN_PACK_MAXIMUM;
     }
     else
@@ -488,11 +496,11 @@ uint8_t outOfBoundsAndConvert_moduleVoltage(float moduleVoltageFLOAT, uint8_t * 
     float moduleVoltage100mV = moduleVoltageFLOAT * 10;
 
     if(moduleVoltage100mV < CAN_MODULE_MINIMUM){
-        *outOfBounds = 1
+        *outOfBounds = 1;
         return CAN_MODULE_MINIMUM;
     }
     else if(moduleVoltage100mV > CAN_MODULE_MAXIMUM){
-        *outOfBounds = 1
+        *outOfBounds = 1;
         return CAN_MODULE_MAXIMUM;
     }
     else
@@ -530,8 +538,8 @@ Per loop iteration:
 2.1) The running average of all module temperatures is now the entire pack's temperature average.
 */
 void temperatureDataRetrieval(
-    BTM_PackData_t * pPH_PACKDATA
-    float * pAverageTemperature,
+    BTM_PackData_t * pPH_PACKDATA,
+    uint16_t * pAverageTemperature,
     uint16_t * pMinTmp,
     uint16_t * pMaxTmp,
     uint8_t * pMinTmpStack,
@@ -542,7 +550,7 @@ void temperatureDataRetrieval(
 {
     uint16_t
         localTemperature = 0,
-        localMinTmp = 65585,
+        localMinTmp = 65535,
         localMaxTmp = 0;
     uint8_t
         minStack,
@@ -554,7 +562,7 @@ void temperatureDataRetrieval(
         localAverage = 0;
 
     int
-        i = 0;
+        i = 0,
         total_mux_read = 0;
 
     for(i = 0; i < BTM_NUM_DEVICES; ++i)
@@ -606,10 +614,10 @@ void temperatureDataRetrieval(
     *pAverageTemperature = (uint16_t)localAverage;
     *pMinTmp = localMinTmp;
     *pMaxTmp = localMaxTmp;
-    *pMinStack = minStack;
-    *pMinModule = minModule;
-    *pMaxStack = maxStack;
-    *pMaxModule = maxModule;
+    *pMinTmpStack = minStack;
+    *pMinTmpModule = minModule;
+    *pMaxTmpStack = maxStack;
+    *pMaxTmpModule = maxModule;
 }
 
 
