@@ -7,9 +7,11 @@
 #include "CANbus_TESTING_ONLY.h"
 
 #ifndef CANBUS_TESTING_ONLY_H_
+#include <stdint.h>
 #include "stm32f3xx_hal.h"
 #include "stm32f3xx_hal_can.h"
 #include <math.h>
+#include <stdio.h>
 #endif
 
 #define TRUE = 1
@@ -53,7 +55,7 @@ Brightside_CAN_Message;
 typedef struct
 {
     //Pointer to the struct holding the actual message data.
-    Brightside_CAN_Message * message[];
+    Brightside_CAN_Message * message;
 
     //Used to track which messages have been placed in
     //the TxMailboxes across multiple function calls.

@@ -1,6 +1,9 @@
 #ifndef CANBUS_TESTING_ONLY_H_
 #define CANBUS_TESTING_ONLY_H_
 
+#include <stdint.h>
+#include <math.h>
+#include <stdio.h>
 
 /*
     Copied from stm32f3xx_hal_can.h, provided by STMicroelectronics.
@@ -50,6 +53,15 @@ typedef struct
 /**
   * @brief  CAN Tx message header structure definition
   */
+
+//from stm32f3xx.h
+typedef enum
+{
+    DISABLE = 0U,
+    ENABLE = !DISABLE
+} FunctionalState;
+//end of stm32f3xx.h copy
+
 typedef struct
 {
   uint32_t StdId;    /*!< Specifies the standard identifier.
@@ -220,8 +232,19 @@ double BTM_TEMP_volts2temp(double Vout)
 /*
     Copied from ltc6811_btm.h, created by UBC Solar
 */
+#define BTM_NUM_DEVICES 1U // Number of LTC6811-1 ICs daisy chained
 #define BTM_NUM_MODULES 12
 #define BTM_REG_GROUP_SIZE 6 // All of the LTC6811 register groups consist of 6 bytes
+
+typedef enum {
+    MODULE_DISABLED = 0,
+    MODULE_ENABLED = 1
+} BTM_module_enable_t;
+
+typedef enum {
+    DISCHARGE_OFF = 0,
+    DISCHARGE_ON = 1
+} BTM_module_bal_status_t;
 
 /*============================================================================*/
 /* STRUCTURES FOR GATHERED DATA */
@@ -266,6 +289,7 @@ typedef struct {
 
 #define BTM_STATUS_DEVICE_NA 0  // device number not applicable value
                                 // for device_num attribute of BTM_Status_t
+
 
 /*
     End of Copy
