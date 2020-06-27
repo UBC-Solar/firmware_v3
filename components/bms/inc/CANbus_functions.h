@@ -1,9 +1,16 @@
 #ifndef CANBUS_FUNCTION_H_
 #define CANBUS_FUNCTION_H_
 
+
+//If debugging in visual studio, uncomment the include below.
+//Else, comment out the include.
+#include "CANbus_TESTING_ONLY.h"
+
+#ifndef CANBUS_TESTING_ONLY_H_
 #include "stm32f3xx_hal.h"
 #include "stm32f3xx_hal_can.h"
 #include <math.h>
+#endif
 
 #define TRUE = 1
 #define FALSE = 0
@@ -15,13 +22,13 @@
 
 #define PH_SERIES_SIZE 2
 
-#define PH_TOTAL_MUX = 32 //10 + 10 + 12
+#define PH_TOTAL_MUX 32 //10 + 10 + 12
 
-#define CAN_PENDING = 1
-#define CAN_NOT_PENDING = 0
+#define CAN_PENDING     1
+#define CAN_NOT_PENDING 0
 //message addresses
-#define ADDRESS_623 = 623;
-#define ADDRESS_627 = 627;
+#define ADDRESS_623 623;
+#define ADDRESS_627 627;
 
 //value bounds
 #define CAN_PACK_MINIMUM 0 //0 kV
@@ -43,7 +50,7 @@ typedef struct
 Brightside_CAN_Message;
 
 
-typedef structs
+typedef struct
 {
     //Pointer to the struct holding the actual message data.
     Brightside_CAN_Message * message[];

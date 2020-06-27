@@ -109,6 +109,7 @@ void CAN_initMessageSeries()
     return;
 }
 
+#ifndef CANBUS_FUNCTION_H_
 void PH_CANstate(Brightside_CAN_MessageSeries * pSeries)
 {
     uint8_t errorFlag = 0;
@@ -158,7 +159,6 @@ void PH_CANstate(Brightside_CAN_MessageSeries * pSeries)
     {
         pSeries -> runningIndex = 0;
     }
-
 /*self-notes:
 POINTER2struct->member is already a dereference.
 &POINTER2struct->member is the address of the member
@@ -170,6 +170,7 @@ I think &POINTER2struct->array[0] is the same as above, but &POINTER2struct->arr
 
 
 }
+#endif
 
 /*******************************
 *

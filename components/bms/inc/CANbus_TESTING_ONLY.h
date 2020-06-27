@@ -184,6 +184,114 @@ typedef struct
 */
 
 
+/*
+    Copied from thermistor.h, created by UBC Solar.
+/*
 
+/**
+ * @brief Converts a raw thermistor voltage reading from an LTC6811 into a temperature
+ *
+ * @param[in] Vout the thermistor voltage reading to convert
+ * @return the temperature of the thermistor in degrees celcius
+ */
+double BTM_TEMP_volts2temp(double Vout)
+{
+	const double Vs = 5.0; // assuming the supply is 5V - measure Vref2 to check
+	const double beta = 3435.0;
+	const double room_temp = 298.15;
+	const double R_balance = 10000.0; //from LTC6811 datasheet p.85. note: this doesn't account for tolerance. to be exact, measure the 10k resistor with a multimeter
+	const double R_room_temp = 10000.0; //resistance at room temperature (25C)
+	double R_therm = 0;
+	double temp_kelvin = 0;
+	double temp_celsius = 0;
+
+	// to get the voltage in volts from the LTC6811's value,
+	// multiply it by 0.0001 as below.
+	R_therm = R_balance * ((Vs / (Vout * 0.0001)) - 1);
+	temp_kelvin = (beta * room_temp)
+		/ (beta + (room_temp * log(R_therm / R_room_temp)));
+	return temp_celsius = temp_kelvin - 273.15;
+}
+
+/*
+    End of copy.
+*/
+
+/*
+    Copied from ltc6811_btm.h, created by UBC Solar
+*/
+#define BTM_NUM_MODULES 12
+#define BTM_REG_GROUP_SIZE 6 // All of the LTC6811 register groups consist of 6 bytes
+
+/*============================================================================*/
+/* STRUCTURES FOR GATHERED DATA */
+
+/*
+ * NOTE: the BTM_module entity would be considered a "cell" by the LTC6811
+ * datasheet's naming conventions. Here it's called a module due to the fact
+ * that we arrange physical battery cells in parallel to create modules.
+ * (the cells in a module are in parallel - they're all at the same voltage
+ * and their voltage is measured at the module, not cell level).
+ */
+struct BTM_module {
+    // To ignore particular modules in the string (for checking functions),
+    // the enable parameter has been included. A zero means
+    // the module will be ignored when checking for faults, etc.
+    BTM_module_enable_t enable;
+    uint16_t voltage;
+    uint16_t temperature;
+    BTM_module_bal_status_t bal_status;
+};
+
+struct BTM_stack {
+    uint8_t cfgr[BTM_REG_GROUP_SIZE]; // Configuration Register Group setting
+    unsigned int stack_voltage;
+    struct BTM_module module[BTM_NUM_MODULES];
+    // TODO: balancing settings, other stack-level (IC-level) parameters
+    // Don't forget to add any new parameters to BTM_init()
+};
+
+typedef struct {
+    unsigned int pack_voltage;
+    struct BTM_stack stack[BTM_NUM_DEVICES];
+} BTM_PackData_t;
+
+// Status type for error reporting
+typedef struct {
+    enum BTM_Error error;
+    unsigned int device_num; // Device at which error occurred, if applicable.
+    // 0 = N/A, 1 = first device in chain, 2 = second device...
+    // If there is no error (error == BTM_OK), device_num should be 0
+} BTM_Status_t;
+
+#define BTM_STATUS_DEVICE_NA 0  // device number not applicable value
+                                // for device_num attribute of BTM_Status_t
+
+/*
+    End of Copy
+*/
+
+/*
+    Copied from ltc6811_btm.c, created by UBC Solar.
+*/
+
+#define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
+
+/**
+ * @brief Converts a voltage reading from a register in the LTC6811 to a float
+ * Each cell voltage is provided as a 16-bit value where
+ * voltage = 0.0001V * raw value
+ *
+ * @param raw_reading The 16-bit reading from an LTC6811
+ * @return Returns a properly scaled floating-point version of raw_reading
+ */
+float BTM_regValToVoltage(uint16_t raw_reading)
+{
+	return raw_reading * BTM_VOLTAGE_CONVERSION_FACTOR;
+}
+
+/*
+    End of copy.
+*/
 
 #endif
