@@ -36,7 +36,7 @@ uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
     //Should any of the 9X numbers appear in a CAN message, something is not right.
 
 //function prototypes
-void CAN_InitHeaderStruct(Brightside_CAN_MessageSeries * CANmessages_elithionSeries, int messageArraySize);
+void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessages_elithionSeries, int messageArraySize);
 void CAN_CompileMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA);
 void CAN_CompileMessage626(uint8_t aData_series626[8], BTM_PackData_t * pPH_PACKDATA);
 void CAN_CompileMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACKDATA);
@@ -72,41 +72,27 @@ uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * 
 ********************************/
 uint8_t PH_TOP_level_functions;
 
-void CAN_InitHeaderStruct(Brightside_CAN_MessageSeries * CANmessages_elithionSeries, int messageArraySize)
+void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int messageSeriesSize)
 {
-    for(int i=0 ; i < messageArraySize ; ++i)
+    Brightside_CAN_Message* elementAddress = CANmessageWiseContent;
+    for(int i=0 ; i < messageSeriesSize ; ++i)
     {
-        CANmessages_elithionSeries -> message[i].header.StdId
+        elementAddress -> header.StdId
             = PH_START_OF_ADDRESS_SERIES + i;
-        CANmessages_elithionSeries -> message[i].header.ExtId = PH_UNUSED;
-        CANmessages_elithionSeries -> message[i].header.IDE = CAN_ID_STD;   //Predefined constant in stm32 include file.
-        CANmessages_elithionSeries -> message[i].header.RTR = CAN_RTR_DATA; //Predefined constant in stm32 include file.
-        CANmessages_elithionSeries -> message[i].header.DLC = CAN_BRIGHTSIDE_DATA_LENGTH;
-        CANmessages_elithionSeries -> message[i].header.TransmitGlobalTime = DISABLE;//We could use this eventually, if we use a custom message format
+        elementAddress -> header.ExtId = PH_UNUSED;
+        elementAddress -> header.IDE = CAN_ID_STD;   //Predefined constant in stm32 include file.
+        elementAddress -> header.RTR = CAN_RTR_DATA; //Predefined constant in stm32 include file.
+        elementAddress -> header.DLC = CAN_BRIGHTSIDE_DATA_LENGTH;
+        elementAddress -> header.TransmitGlobalTime = DISABLE;//We could use this eventually, if we use a custom message format
+        ++elementAddress;
     }
 
     //separate assignments for setting unique, non-consecutive addresses.
-    CANmessages_elithionSeries -> message[0].header.StdId = ADDRESS_623;
-    CANmessages_elithionSeries -> message[1].header.StdId = ADDRESS_627;
+    (CANmessageWiseContent + 0) -> header.StdId = ADDRESS_623;
+    (CANmessageWiseContent + 1) -> header.StdId = ADDRESS_627;
 }
 
-void PH_CAN_FillDataFrames_TESTING(Brightside_CAN_MessageSeries * CANmessages_elithionSeries, BTM_PackData_t * pPH_PACKDATA)
-{
-    CAN_CompileMessage623(CANmessages_elithionSeries -> message[0].dataFrame, pPH_PACKDATA);
-    CAN_CompileMessage627(CANmessages_elithionSeries -> message[1].dataFrame, pPH_PACKDATA);
 
-    //print contents of dataFrame for testing purposes
-    for(int i = 0; i < PH_SERIES_SIZE; ++i)
-    {
-        for(int j = 0; i < CAN_BRIGHTSIDE_DATA_LENGTH ; ++i)
-            {
-            printf("Address: %u    Index: %i    Data: %u /r/n",
-                CANmessages_elithionSeries -> message[i].header.StdId,
-                j,
-                CANmessages_elithionSeries -> message[i].dataFrame[i]);
-        }
-    }
-}
 
 void CAN_initMessageSeries()
 {
@@ -141,7 +127,7 @@ void PH_CANstate(Brightside_CAN_MessageSeries * pSeries)
     messageIndex = pSeries -> runningIndex;
     while
         (HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) > 0
-         && messageIndex < pSeries->messageArraySize)
+         && messageIndex < pSeries->messageSeriesSize)
     {
         HAL_CAN_AddTxMessage
             (
@@ -155,7 +141,7 @@ void PH_CANstate(Brightside_CAN_MessageSeries * pSeries)
     }
 
     //sets or resets the runningIndex stored outside this function's scope.
-    if(messageIndex < messageArraySize)
+    if(messageIndex < messageSeriesSize)
     {
         pSeries -> runningIndex = messageIndex;
     }
