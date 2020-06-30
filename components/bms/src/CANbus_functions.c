@@ -36,6 +36,13 @@ uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
     //Should any of the 9X numbers appear in a CAN message, something is not right.
 
 //function prototypes
+#define CODEWORD_DEBUG_BRIGHTSIDE
+#ifdef CODEWORD_DEBUG_BRIGHTSIDE
+double BTM_TEMP_volts2temp(double vout);
+#endif // DEBUG
+
+
+
 void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessages_elithionSeries, int messageArraySize);
 void CAN_CompileMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA);
 void CAN_CompileMessage626(uint8_t aData_series626[8], BTM_PackData_t * pPH_PACKDATA);
