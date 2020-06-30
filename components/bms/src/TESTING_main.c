@@ -33,6 +33,8 @@ void assignAndCheckMessageStructLinks(
     uint8_t messageArray[PH_MESSAGE_SERIES_LENGTH][PH_MESSAGE_ARRAY_SIZE]
 );
 
+void printMessageContent(uint8_t messageArray[PH_MESSAGE_SERIES_LENGTH][PH_MESSAGE_ARRAY_SIZE]);
+
 void main()
 {
     BTM_PackData_t PH_VS_PACKDATA;
@@ -72,7 +74,30 @@ void main()
         PH_message,
         messageArray
     );
-#ifdef NOT_EXISTING
+
+    CAN_CompileMessage623(
+        messageArray[0],
+        &PH_VS_PACKDATA
+    );
+
+    CAN_CompileMessage627(
+        messageArray[1],
+        &PH_VS_PACKDATA
+    );
+
+    //for (int series_i = 0; series_i < 2; ++series_i)
+    //{
+    //    for (int message_i = 0; message_i < PH_MESSAGE_ARRAY_SIZE; ++message_i)
+    //    {
+    //        printf("%4.1i  ", messageArray[series_i][message_i]);
+    //    }
+    //    printf("\r\n");
+    //}
+
+    printMessageContent(messageArray);
+
+    //message initialisation, linking, and testing.
+#ifdef NOT_EXISTING 
     //initialising the message array
     printf("Initialising messageArray.\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
@@ -161,11 +186,8 @@ void main()
         printf("\r\n");
     };
 #endif
-    
 
-
-
-
+    //packdata initialisation
 #ifdef NOT_EXISTING
     for (int device_i = 0; device_i < BTM_NUM_DEVICES; ++device_i)
     {
@@ -189,19 +211,6 @@ void main()
         };
     };
 #endif
-
-    //Adding variety to the assignments to check that the initial for-loop actually worked per-element.
-
-
-
-
-    //simple functions calls to ensure the functions are linked properly in Visual Studio
-    
-
-    //function-wise testing
-
-    //full function-chain testing
-
 
     //system("pause");
     return;
@@ -550,8 +559,15 @@ void assignAndCheckMessageStructLinks(
     printf("\r\n");
 }
 
-void printMessageContent() {
-    return;
+void printMessageContent(uint8_t messageArray[PH_MESSAGE_SERIES_LENGTH][PH_MESSAGE_ARRAY_SIZE]){
+    for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
+    {
+        for (int message_i = 0; message_i < PH_MESSAGE_ARRAY_SIZE; ++message_i)
+        {
+            printf("%4.1i  ", messageArray[series_i][message_i]);
+        }
+        printf("\r\n");
+    }
 }
 
 void PH_CAN_FillDataFrames_TESTING(Brightside_CAN_MessageSeries* CANmessages_elithionSeries, BTM_PackData_t* pPH_PACKDATA)
