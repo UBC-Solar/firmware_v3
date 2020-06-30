@@ -196,38 +196,38 @@ typedef struct
 */
 
 
-/*
-    Copied from thermistor.h, created by UBC Solar.
-/*
-
-/**
- * @brief Converts a raw thermistor voltage reading from an LTC6811 into a temperature
- *
- * @param[in] Vout the thermistor voltage reading to convert
- * @return the temperature of the thermistor in degrees celcius
- */
-double BTM_TEMP_volts2temp(double Vout)
-{
-	const double Vs = 5.0; // assuming the supply is 5V - measure Vref2 to check
-	const double beta = 3435.0;
-	const double room_temp = 298.15;
-	const double R_balance = 10000.0; //from LTC6811 datasheet p.85. note: this doesn't account for tolerance. to be exact, measure the 10k resistor with a multimeter
-	const double R_room_temp = 10000.0; //resistance at room temperature (25C)
-	double R_therm = 0;
-	double temp_kelvin = 0;
-	double temp_celsius = 0;
-
-	// to get the voltage in volts from the LTC6811's value,
-	// multiply it by 0.0001 as below.
-	R_therm = R_balance * ((Vs / (Vout * 0.0001)) - 1);
-	temp_kelvin = (beta * room_temp)
-		/ (beta + (room_temp * log(R_therm / R_room_temp)));
-	return temp_celsius = temp_kelvin - 273.15;
-}
-
-/*
-    End of copy.
-*/
+///*
+//    Copied from thermistor.h, created by UBC Solar.
+///*
+//
+///**
+// * @brief Converts a raw thermistor voltage reading from an LTC6811 into a temperature
+// *
+// * @param[in] Vout the thermistor voltage reading to convert
+// * @return the temperature of the thermistor in degrees celcius
+// */
+//double BTM_TEMP_volts2temp(double Vout)
+//{
+//	const double Vs = 5.0; // assuming the supply is 5V - measure Vref2 to check
+//	const double beta = 3435.0;
+//	const double room_temp = 298.15;
+//	const double R_balance = 10000.0; //from LTC6811 datasheet p.85. note: this doesn't account for tolerance. to be exact, measure the 10k resistor with a multimeter
+//	const double R_room_temp = 10000.0; //resistance at room temperature (25C)
+//	double R_therm = 0;
+//	double temp_kelvin = 0;
+//	double temp_celsius = 0;
+//
+//	// to get the voltage in volts from the LTC6811's value,
+//	// multiply it by 0.0001 as below.
+//	R_therm = R_balance * ((Vs / (Vout * 0.0001)) - 1);
+//	temp_kelvin = (beta * room_temp)
+//		/ (beta + (room_temp * log(R_therm / R_room_temp)));
+//	return temp_celsius = temp_kelvin - 273.15;
+//}
+//
+///*
+//    End of copy.
+//*/
 
 /*
     Copied from ltc6811_btm.h, created by UBC Solar
@@ -295,27 +295,27 @@ typedef struct {
     End of Copy
 */
 
-/*
-    Copied from ltc6811_btm.c, created by UBC Solar.
-*/
-
-#define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
-
-/**
- * @brief Converts a voltage reading from a register in the LTC6811 to a float
- * Each cell voltage is provided as a 16-bit value where
- * voltage = 0.0001V * raw value
- *
- * @param raw_reading The 16-bit reading from an LTC6811
- * @return Returns a properly scaled floating-point version of raw_reading
- */
-float BTM_regValToVoltage(uint16_t raw_reading)
-{
-	return raw_reading * BTM_VOLTAGE_CONVERSION_FACTOR;
-}
-
-/*
-    End of copy.
-*/
+///*
+//    Copied from ltc6811_btm.c, created by UBC Solar.
+//*/
+//
+//#define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
+//
+///**
+// * @brief Converts a voltage reading from a register in the LTC6811 to a float
+// * Each cell voltage is provided as a 16-bit value where
+// * voltage = 0.0001V * raw value
+// *
+// * @param raw_reading The 16-bit reading from an LTC6811
+// * @return Returns a properly scaled floating-point version of raw_reading
+// */
+//float BTM_regValToVoltage(uint16_t raw_reading)
+//{
+//	return raw_reading * BTM_VOLTAGE_CONVERSION_FACTOR;
+//}
+//
+///*
+//    End of copy.
+//*/
 
 #endif
