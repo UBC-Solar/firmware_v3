@@ -39,7 +39,7 @@ uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
 #define CODEWORD_DEBUG_BRIGHTSIDE
 #ifdef CODEWORD_DEBUG_BRIGHTSIDE
 double BTM_TEMP_volts2temp(double vout);
-#endif // DEBUG
+#endif //CODEWORD_DEBUG_BRIGHTSIDE
 
 
 
@@ -101,10 +101,10 @@ void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int me
 
 
 
-void CAN_initMessageSeries()
-{
-    return;
-}
+//void CAN_initMessageSeries()
+//{
+//    return;
+//}
 
 #ifndef CANBUS_FUNCTION_H_
 void PH_CANstate(Brightside_CAN_MessageSeries * pSeries)
@@ -546,10 +546,10 @@ void temperatureDataRetrieval(
         localMinTmp = 65535,
         localMaxTmp = 0;
     uint8_t
-        minStack,
-        maxStack,
-        minModule,
-        maxModule;
+        minStack = 255,
+        maxStack = 255,
+        minModule = 255,
+        maxModule = 255;
     double
         temperatureTotal = 0,
         localAverage = 0;
