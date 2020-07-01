@@ -1,17 +1,37 @@
+/*
+
+TESTING_main.h
+
+Purpose: Intended for testing CANbus_functions.c in visual studio 2019.
+
+*/
+
+//debug enable constant
+#define CODEWORD_DEBUG_BRIGHTSIDE
+
 #include <stdio.h>
 #include <stdint.h>
-#include "CANbus_TESTING_ONLY.h"
-#include "CANbus_functions.h"
-//#include "CANbus_functions.c"
+#include <math.h>
+//#include "CANbus_TESTING_ONLY.h"
+//#include "CANbus_functions.h"
+#include "CANbus_functions.c"
 
 #define PH_MESSAGE_SERIES_LENGTH 4
 #define PH_MESSAGE_ARRAY_SIZE 8
 
-#define CODEWORD_DEBUG_BRIGHTSIDE
+
+
+//double BTM_TEMP_volts2temp(double Vout);
+//float BTM_regValToVoltage(uint16_t raw_reading);
 
 void setPackdata_striped(BTM_PackData_t* pPackdata);
 void setPackdata_incrementing(BTM_PackData_t* pPackdata);
+void setPackdata_allZeros(BTM_PackData_t* pPackdata);
+void setPackdata_allArbitrary(BTM_PackData_t* pPackdata, int userDef1, int userDef2);
+//void setPackdata_specific(BTM_PackData_t* pPackdata, int userDef1, int userDef2, int messageChange);
 
+void resetArray(uint8_t array[PH_MESSAGE_SERIES_LENGTH][PH_MESSAGE_ARRAY_SIZE]);
+void tableLabels();
 
 void initMessageSeries(
     Brightside_CAN_MessageSeries* seriesStruct,
@@ -48,7 +68,7 @@ void main()
     //Sanity check: setting and changing pack voltage
     PH_VS_PACKDATA.pack_voltage = 111222333;
     printf("pack voltage: %i \r\n", PH_VS_PACKDATA.pack_voltage);
-    PH_VS_PACKDATA.pack_voltage = 444555666;
+    PH_VS_PACKDATA.pack_voltage = 65535 * 10000;
     printf("pack voltage: %i \r\n", PH_VS_PACKDATA.pack_voltage);
 
     //Sanity check: setting and changing packdata data, and printing the contents
@@ -75,26 +95,60 @@ void main()
         messageArray
     );
 
-    CAN_CompileMessage623(
-        messageArray[0],
-        &PH_VS_PACKDATA
-    );
+    CAN_CompileMessage623(messageArray[0], &PH_VS_PACKDATA);
+    CAN_CompileMessage627(messageArray[1], &PH_VS_PACKDATA);
 
-    CAN_CompileMessage627(
-        messageArray[1],
-        &PH_VS_PACKDATA
-    );
 
-    //for (int series_i = 0; series_i < 2; ++series_i)
-    //{
-    //    for (int message_i = 0; message_i < PH_MESSAGE_ARRAY_SIZE; ++message_i)
-    //    {
-    //        printf("%4.1i  ", messageArray[series_i][message_i]);
-    //    }
-    //    printf("\r\n");
-    //}
-
+    printf("   PkVtg|   PkVtg|  MinVtg| MinVtg#|  MaxVtg| MaxVtg#|    0x00|OOBounds|\r\n");
     printMessageContent(messageArray);
+
+
+    setPackdata_allZeros(&PH_VS_PACKDATA);
+    resetArray(messageArray);
+    CAN_CompileMessage623(messageArray[0], &PH_VS_PACKDATA);
+    CAN_CompileMessage627(messageArray[1], &PH_VS_PACKDATA);
+    tableLabels();
+    printMessageContent(messageArray);
+
+    setPackdata_allArbitrary(&PH_VS_PACKDATA, 10, 10000);
+    resetArray(messageArray);
+    CAN_CompileMessage623(messageArray[0], &PH_VS_PACKDATA);
+    CAN_CompileMessage627(messageArray[1], &PH_VS_PACKDATA);
+    tableLabels();
+    printMessageContent(messageArray);
+
+    setPackdata_allZeros(&PH_VS_PACKDATA);
+    resetArray(messageArray);
+    CAN_CompileMessage623(messageArray[0], &PH_VS_PACKDATA);
+    CAN_CompileMessage627(messageArray[1], &PH_VS_PACKDATA);
+    tableLabels();
+    printMessageContent(messageArray);
+
+    setPackdata_allArbitrary(&PH_VS_PACKDATA, 10000, 10000);
+    resetArray(messageArray);
+    CAN_CompileMessage623(messageArray[0], &PH_VS_PACKDATA);
+    CAN_CompileMessage627(messageArray[1], &PH_VS_PACKDATA);
+    tableLabels();
+    printMessageContent(messageArray);
+
+
+    PH_VS_PACKDATA.pack_voltage = 123 * 10000;
+    setPackdata_allArbitrary(&PH_VS_PACKDATA, 10000, 10000);
+    resetArray(messageArray);
+    PH_VS_PACKDATA.stack[0].module[3].voltage = 20000;
+    PH_VS_PACKDATA.stack[0].module[5].voltage = 5000;
+    PH_VS_PACKDATA.stack[0].module[2].temperature = 5000;
+    PH_VS_PACKDATA.stack[0].module[8].temperature = 15000;
+    CAN_CompileMessage623(messageArray[0], &PH_VS_PACKDATA);
+    CAN_CompileMessage627(messageArray[1], &PH_VS_PACKDATA);
+    tableLabels();
+    printMessageContent(messageArray);
+
+    printf("%e\r\n", BTM_TEMP_volts2temp(10));
+
+    float PH_var = BTM_regValToVoltage((uint16_t)10);
+
+    printf("%e\r\n", PH_var);
 
     //message initialisation, linking, and testing.
 #ifdef NOT_EXISTING 
@@ -108,7 +162,7 @@ void main()
             printf("%2.1i  ", messageArray[series_i][message_i]);
         }
         printf("\r\n");
-    };
+    }
     
     printf("Assigning and checking messageArray in messageSeries struct\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
@@ -119,7 +173,7 @@ void main()
             printf("%2.1i  ", PH_message[series_i].dataFrame[message_i]);
         }
         printf("\r\n");
-    };
+    }
 
     printf("0 + 1 = %2.1i  \r\n", PH_message[0].dataFrame[1]);
     printf("1 + 2 = %2.1i  \r\n", PH_message[1].dataFrame[2]);
@@ -134,7 +188,7 @@ void main()
             printf("%2.1i  ", messageArray[series_i][message_i]);
         }
         printf("\r\n");
-    };
+    }
 
     printf("Assigning and checking messageArray in messageSeries struct\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
@@ -145,7 +199,7 @@ void main()
             printf("%2.1i  ", PH_message[series_i].dataFrame[message_i]);
         }
         printf("\r\n");
-    };
+    }
 
     printf("0 + 1 + 20 = %2.1i  \r\n", PH_message[0].dataFrame[1]);
     printf("2 + 4 + 20 = %2.1i  \r\n", PH_message[2].dataFrame[4]);
@@ -165,7 +219,7 @@ void main()
             printf("%2.1i  ", PH_messageSeries.message[series_i].dataFrame[message_i]);
         }
         printf("\r\n");
-    };
+    }
     printf("Initialising messageArray.\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
     {
@@ -175,7 +229,7 @@ void main()
             printf("%2.1i  ", messageArray[series_i][message_i]);
         }
         printf("\r\n");
-    };
+    }
     printf("Checking that the structs are linked correctly.\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
     {
@@ -184,7 +238,19 @@ void main()
             printf("%2.1i  ", PH_messageSeries.message[series_i].dataFrame[message_i]);
         }
         printf("\r\n");
-    };
+    }
+#endif
+
+    //for loop for printing array entries
+#ifdef NOT_EXISTING
+//for (int series_i = 0; series_i < 2; ++series_i)
+//{
+//    for (int message_i = 0; message_i < PH_MESSAGE_ARRAY_SIZE; ++message_i)
+//    {
+//        printf("%4.1i  ", messageArray[series_i][message_i]);
+//    }
+//    printf("\r\n");
+//}
 #endif
 
     //packdata initialisation
@@ -208,8 +274,8 @@ void main()
                 *pPD_voltage,
                 *pPD_temperature,
                 *pPD_bal_status);
-        };
-    };
+        }
+    }
 #endif
 
     //system("pause");
@@ -217,6 +283,7 @@ void main()
 
 }
 
+#ifdef NOT_EXISTING
 /*
     Copied from ltc6811_btm.c, created by UBC Solar.
 */
@@ -233,7 +300,10 @@ void main()
  */
 float BTM_regValToVoltage(uint16_t raw_reading)
 {
-    return raw_reading * BTM_VOLTAGE_CONVERSION_FACTOR;
+    float returnVal;
+    float temp = BTM_VOLTAGE_CONVERSION_FACTOR;
+    returnVal = (float)(raw_reading * temp);
+    return (float)(raw_reading) * 0.0001;
 }
 
 /*
@@ -273,27 +343,27 @@ double BTM_TEMP_volts2temp(double Vout)
     End of copy.
 */
 
-
+#endif
 
 /*
     Helper Functions for testing.
 */
 
-void setPackdata_striped(BTM_PackData_t * pPackdata) 
+void setPackdata_striped(BTM_PackData_t* pPackdata)
 {
     printf("Running setPackdata_striped().\r\n");
     for (int device_i = 0; device_i < BTM_NUM_DEVICES; ++device_i)
     {
         for (int module_i = 0; module_i < BTM_NUM_MODULES; ++module_i)
         {
-            pPackdata -> stack[device_i].module[module_i].enable      = MODULE_ENABLED;
-            pPackdata -> stack[device_i].module[module_i].voltage     = 2.2;
-            pPackdata -> stack[device_i].module[module_i].temperature = 3;
-            pPackdata -> stack[device_i].module[module_i].bal_status  = DISCHARGE_ON;
-            uint16_t* pPD_enable      = &pPackdata -> stack[device_i].module[module_i].enable      ;
-            uint16_t* pPD_voltage     = &pPackdata -> stack[device_i].module[module_i].voltage     ;
-            uint16_t* pPD_temperature = &pPackdata -> stack[device_i].module[module_i].temperature ;
-            uint16_t* pPD_bal_status  = &pPackdata -> stack[device_i].module[module_i].bal_status  ;
+            pPackdata->stack[device_i].module[module_i].enable = MODULE_ENABLED;
+            pPackdata->stack[device_i].module[module_i].voltage = 2.2;
+            pPackdata->stack[device_i].module[module_i].temperature = 3;
+            pPackdata->stack[device_i].module[module_i].bal_status = DISCHARGE_ON;
+            uint16_t* pPD_enable = &pPackdata->stack[device_i].module[module_i].enable;
+            uint16_t* pPD_voltage = &pPackdata->stack[device_i].module[module_i].voltage;
+            uint16_t* pPD_temperature = &pPackdata->stack[device_i].module[module_i].temperature;
+            uint16_t* pPD_bal_status = &pPackdata->stack[device_i].module[module_i].bal_status;
 
             //print contents after setting.
             printf("device: %2.1i  module: %2.1i  enable: %2.1i  voltage: %2.1i  temp.: %2.1i  bal_status: %2.1i\r\n",
@@ -303,8 +373,8 @@ void setPackdata_striped(BTM_PackData_t * pPackdata)
                 *pPD_voltage,
                 *pPD_temperature,
                 *pPD_bal_status);
-        };
-    };
+        }
+    }
     printf("\r\n");
 }
 
@@ -332,10 +402,69 @@ void setPackdata_incrementing(BTM_PackData_t* pPackdata)
                 *pPD_voltage,
                 *pPD_temperature,
                 *pPD_bal_status);
-        };
-    };
+        }
+    }
     printf("\r\n");
-};
+}
+
+void setPackdata_allZeros(BTM_PackData_t* pPackdata)
+{
+    printf("Running setPackdata_allZeros().\r\n");
+    for (int device_i = 0; device_i < BTM_NUM_DEVICES; ++device_i)
+    {
+        for (int module_i = 0; module_i < BTM_NUM_MODULES; ++module_i)
+        {
+            pPackdata->stack[device_i].module[module_i].enable = MODULE_ENABLED;
+            pPackdata->stack[device_i].module[module_i].voltage = 0;
+            pPackdata->stack[device_i].module[module_i].temperature = 0;
+            pPackdata->stack[device_i].module[module_i].bal_status = DISCHARGE_ON;
+            uint16_t* pPD_enable = &pPackdata->stack[device_i].module[module_i].enable;
+            uint16_t* pPD_voltage = &pPackdata->stack[device_i].module[module_i].voltage;
+            uint16_t* pPD_temperature = &pPackdata->stack[device_i].module[module_i].temperature;
+            uint16_t* pPD_bal_status = &pPackdata->stack[device_i].module[module_i].bal_status;
+
+            //print contents after setting.
+            printf("device: %2.1i  module: %2.1i  enable: %2.1i  voltage: %2.1i  temp.: %2.1i  bal_status: %2.1i\r\n",
+                device_i,
+                module_i,
+                *pPD_enable,
+                *pPD_voltage,
+                *pPD_temperature,
+                *pPD_bal_status);
+        }
+    }
+    printf("\r\n");
+}
+
+void setPackdata_allArbitrary(BTM_PackData_t* pPackdata, int userVoltage, int userTemperatureVoltage)
+{
+    printf("Running setPackdata_allArbitrary().\r\n");
+    for (int device_i = 0; device_i < BTM_NUM_DEVICES; ++device_i)
+    {
+        for (int module_i = 0; module_i < BTM_NUM_MODULES; ++module_i)
+        {
+            pPackdata->stack[device_i].module[module_i].enable = MODULE_ENABLED;
+            pPackdata->stack[device_i].module[module_i].voltage = userVoltage;
+            pPackdata->stack[device_i].module[module_i].temperature = userTemperatureVoltage;
+            pPackdata->stack[device_i].module[module_i].bal_status = DISCHARGE_ON;
+            uint16_t* pPD_enable = &pPackdata->stack[device_i].module[module_i].enable;
+            uint16_t* pPD_voltage = &pPackdata->stack[device_i].module[module_i].voltage;
+            uint16_t* pPD_temperature = &pPackdata->stack[device_i].module[module_i].temperature;
+            uint16_t* pPD_bal_status = &pPackdata->stack[device_i].module[module_i].bal_status;
+
+            //print contents after setting.
+            printf("device: %2.1i  module: %2.1i  enable: %2.1i  voltage: %2.1i  temp.: %2.1i  bal_status: %2.1i\r\n",
+                device_i,
+                module_i,
+                *pPD_enable,
+                *pPD_voltage,
+                *pPD_temperature,
+                *pPD_bal_status);
+        }
+    }
+    printf("\r\n");
+}
+
 
 //Note that message series size refers to the number of messages in one series,
 //while     message array  size refers to the length of a single message wrt units of bytes.
@@ -358,7 +487,7 @@ void initMessageSeries(
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
     {
         messageWiseContent[series_i].dataFrame = &messageArrays[series_i];
-    };
+    }
 
     seriesStruct->message           = messageWiseContent;
     seriesStruct->runningIndex      = 0;
@@ -367,7 +496,7 @@ void initMessageSeries(
 #ifdef CODEWORD_DEBUG_BRIGHTSIDE
     printf("End of initMessageSeries().\r\n\r\n");
 #endif
-};
+}
 
 void checkMessageStructLinks(
     Brightside_CAN_MessageSeries* PH_messageSeries,
@@ -386,7 +515,7 @@ void checkMessageStructLinks(
             printf("%2.1i  ", messageArray[series_i][message_i]);
         }
         printf("\r\n");
-    };
+    }
 
     printf("Assigning and checking messageArray in messageSeries struct.\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
@@ -396,7 +525,7 @@ void checkMessageStructLinks(
             printf("%2.1i  ", PH_message[series_i].dataFrame[message_i]);
         }
         printf("\r\n");
-    };
+    }
 
     printf("0 + 1 = %2.1i  \r\n", PH_message[0].dataFrame[1]);
     printf("1 + 2 = %2.1i  \r\n", PH_message[1].dataFrame[2]);
@@ -411,7 +540,7 @@ void checkMessageStructLinks(
             printf("%2.1i  ", messageArray[series_i][message_i]);
         }
         printf("\r\n");
-    };
+    }
 
     printf("checking messageArray in messageSeries struct.\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
@@ -421,7 +550,7 @@ void checkMessageStructLinks(
             printf("%2.1i  ", PH_message[series_i].dataFrame[message_i]);
         }
         printf("\r\n");
-    };
+    }
 
     printf("0 + 1 + 20 = %2.1i  \r\n", PH_message[0].dataFrame[1]);
     printf("2 + 4 + 20 = %2.1i  \r\n", PH_message[2].dataFrame[4]);
@@ -436,7 +565,7 @@ void checkMessageStructLinks(
             printf("%2.1i  ", PH_messageSeries->message[series_i].dataFrame[message_i]);
         }
         printf("\r\n");
-    };
+    }
     printf("changing messageArray.\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
     {
@@ -446,7 +575,7 @@ void checkMessageStructLinks(
             printf("%2.1i  ", messageArray[series_i][message_i]);
         }
         printf("\r\n");
-    };
+    }
     printf("Checking that the structs are linked correctly by seeing if the array updated.\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
     {
@@ -455,13 +584,13 @@ void checkMessageStructLinks(
             printf("%2.1i  ", PH_messageSeries->message[series_i].dataFrame[message_i]);
         }
         printf("\r\n");
-    };
+    }
     printf("End of checkMessageStructLinks().\r\n\r\n");
 }
 
 void assignAndCheckMessageStructLinks(
-    Brightside_CAN_MessageSeries * PH_messageSeries,
-    Brightside_CAN_Message * PH_message,
+    Brightside_CAN_MessageSeries* PH_messageSeries,
+    Brightside_CAN_Message* PH_message,
     uint8_t messageArray[PH_MESSAGE_SERIES_LENGTH][PH_MESSAGE_ARRAY_SIZE]
 )
 {
@@ -479,7 +608,7 @@ void assignAndCheckMessageStructLinks(
             printf("%2.1i  ", messageArray[series_i][message_i]);
         }
         printf("\r\n");
-    };
+    }
 
     printf("Assigning and checking messageArray in messageSeries struct\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
@@ -490,7 +619,7 @@ void assignAndCheckMessageStructLinks(
             printf("%2.1i  ", PH_message[series_i].dataFrame[message_i]);
         }
         printf("\r\n");
-    };
+    }
 
     printf("0 + 1 = %2.1i  \r\n", PH_message[0].dataFrame[1]);
     printf("1 + 2 = %2.1i  \r\n", PH_message[1].dataFrame[2]);
@@ -505,7 +634,7 @@ void assignAndCheckMessageStructLinks(
             printf("%2.1i  ", messageArray[series_i][message_i]);
         }
         printf("\r\n");
-    };
+    }
 
     printf("Assigning and checking messageArray in messageSeries struct\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
@@ -516,16 +645,16 @@ void assignAndCheckMessageStructLinks(
             printf("%2.1i  ", PH_message[series_i].dataFrame[message_i]);
         }
         printf("\r\n");
-    };
+    }
 
     printf("0 + 1 + 20 = %2.1i  \r\n", PH_message[0].dataFrame[1]);
     printf("2 + 4 + 20 = %2.1i  \r\n", PH_message[2].dataFrame[4]);
     printf("3 + 6 + 20 = %2.1i  \r\n", PH_message[3].dataFrame[6]);
 
     //setting up the rest of the message series struct
-    PH_messageSeries -> message = PH_message; //assigns address of message-wise content to series struct
-    PH_messageSeries -> runningIndex = 0;
-    PH_messageSeries -> messageSeriesSize = PH_MESSAGE_SERIES_LENGTH;
+    PH_messageSeries->message = PH_message; //assigns address of message-wise content to series struct
+    PH_messageSeries->runningIndex = 0;
+    PH_messageSeries->messageSeriesSize = PH_MESSAGE_SERIES_LENGTH;
 
     //checking that the array of structs, PH_message[], was linked properly to the messageSeries struct
     printf("Checking that the structs are linked correctly.\r\n");
@@ -533,10 +662,10 @@ void assignAndCheckMessageStructLinks(
     {
         for (int message_i = 0; message_i < PH_MESSAGE_ARRAY_SIZE; ++message_i)
         {
-            printf("%2.1i  ", PH_messageSeries -> message[series_i].dataFrame[message_i]);
+            printf("%2.1i  ", PH_messageSeries->message[series_i].dataFrame[message_i]);
         }
         printf("\r\n");
-    };
+    }
     printf("Initialising messageArray.\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
     {
@@ -546,28 +675,56 @@ void assignAndCheckMessageStructLinks(
             printf("%2.1i  ", messageArray[series_i][message_i]);
         }
         printf("\r\n");
-    };
+    }
     printf("Checking that the structs are linked correctly.\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
     {
         for (int message_i = 0; message_i < PH_MESSAGE_ARRAY_SIZE; ++message_i)
         {
-            printf("%2.1i  ", PH_messageSeries -> message[series_i].dataFrame[message_i]);
+            printf("%2.1i  ", PH_messageSeries->message[series_i].dataFrame[message_i]);
         }
         printf("\r\n");
-    };
+    }
     printf("\r\n");
 }
 
-void printMessageContent(uint8_t messageArray[PH_MESSAGE_SERIES_LENGTH][PH_MESSAGE_ARRAY_SIZE]){
+void printMessageContent(uint8_t messageArray[PH_MESSAGE_SERIES_LENGTH][PH_MESSAGE_ARRAY_SIZE]) {
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
     {
         for (int message_i = 0; message_i < PH_MESSAGE_ARRAY_SIZE; ++message_i)
         {
-            printf("%4.1i  ", messageArray[series_i][message_i]);
+            if (series_i == 1)
+            {
+                printf("%7.1x  ", messageArray[series_i][message_i]);
+            }
+            else
+            printf("%7.1i  ", messageArray[series_i][message_i]);
         }
         printf("\r\n");
     }
+}
+
+void resetArray(uint8_t array[PH_MESSAGE_SERIES_LENGTH][PH_MESSAGE_ARRAY_SIZE])
+{
+    printf("Running resetArray().\r\n");
+    for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
+    {
+        for (int message_i = 0; message_i < PH_MESSAGE_ARRAY_SIZE; ++message_i)
+        {
+            array[series_i][message_i] = 0;
+            printf("%4.1i  ", array[series_i][message_i]);
+        }
+        printf("\r\n");
+    }
+    return;
+}
+
+void tableLabels()
+{
+    printf("   PkVtg|   PkVtg|  MinVtg| MinVtg#|  MaxVtg| MaxVtg#|    0x00|OOBounds|\r\n");
+    printf("     (V)|     (V)| (100mV)|        | (100mV)|        |        |        |\r\n");
+    printf("  AveTmp|    0x00|  MinTmp| MinTmp#|  MaxTmp| MaxTmp#|    0x00|OOBounds|\r\n");
+    printf("TwosDegC|        |TwosDegC|        |TwosDegC|        |        |        |\r\n");
 }
 
 void PH_CAN_FillDataFrames_TESTING(Brightside_CAN_MessageSeries* CANmessages_elithionSeries, BTM_PackData_t* pPH_PACKDATA)

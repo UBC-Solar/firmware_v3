@@ -1,26 +1,16 @@
 /*
+
 CANbus_functions.c
 
 This file contains the suite of functions used for CAN functionality
 
 */
 
-
 #include "CANbus_functions.h"
 //#include <stdbool.h>
 
 //private variables
-BTM_PackData_t PH_PACKDATA;
-
-
-
-// uint8_t PH_LookUpTable[BTM_NUM_DEVICES + 1][BTM_NUM_MODULES + 1] =
-//     {
-//         {0,0,0,0},
-//         {0,1,2,3},
-//         {0,4,5,6},
-//         {0,7,8,9}
-//     };
+//BTM_PackData_t PH_PACKDATA;
 
 //uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
 //    {
@@ -44,9 +34,9 @@ double BTM_TEMP_volts2temp(double vout);
 
 
 void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessages_elithionSeries, int messageArraySize);
-void CAN_CompileMessage623(uint8_t aData_series623[8], BTM_PackData_t * pPH_PACKDATA);
-void CAN_CompileMessage626(uint8_t aData_series626[8], BTM_PackData_t * pPH_PACKDATA);
-void CAN_CompileMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACKDATA);
+void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA);
+//void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA);
+void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA);
 //For message addressed 623.
 void VoltageInfoRetrieval(
     BTM_PackData_t * pPH_PACKDATA,
@@ -237,15 +227,18 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], 
 
     //Convert units of 100uV to V.
     //Then checks if value is outside of expected bounds, then truncates float to unsigned int.
-    packVoltageFLOAT = BTM_regValToVoltage(pPH_PACKDATA -> pack_voltage);
+    //packVoltageFLOAT = BTM_regValToVoltage(pPH_PACKDATA -> pack_voltage);
+    packVoltageFLOAT = (float)(pPH_PACKDATA->pack_voltage) * 0.0001;
     packVoltage = outOfBoundsAndCast_packVoltage(packVoltageFLOAT, &outOfBounds);
 
     //Convert units of 100uV to V.
     //Then check if value is out of out of expected bounds, and cast uint16_t to uint8_t.
-    minVtgFLOAT = BTM_regValToVoltage(minVtg);
+    //minVtgFLOAT = BTM_regValToVoltage(minVtg);
+    minVtgFLOAT = (float)minVtg * 0.0001;
     minVtgBYTE = outOfBoundsAndConvert_moduleVoltage(minVtgFLOAT, &outOfBounds);
 
-    maxVtgFLOAT = BTM_regValToVoltage(maxVtg);
+    //maxVtgFLOAT = BTM_regValToVoltage(maxVtg);
+    maxVtgFLOAT = (float)maxVtg * 0.0001;
     maxVtgBYTE = outOfBoundsAndConvert_moduleVoltage(maxVtgFLOAT, &outOfBounds);
 
     minBattModuleSticker = LUT_moduleStickers[minStack][minModule];
@@ -294,13 +287,13 @@ Algorithm:
     3) Place data into message array, while matching the Elithion format.
 
 */
-void CAN_CompileMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACKDATA){
+void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA){
     uint8_t
         averageTemperatureBYTE = 0,
         minTmpBYTE = 0,
         maxTmpBYTE = 0,
-        minTmpModuleSticker = 0,
-        maxTmpModuleSticker = 0;
+        minTmpModuleSticker = 255,
+        maxTmpModuleSticker = 255;
     uint8_t
         minTmpStack = 0,
         maxTmpStack = 0,
@@ -342,7 +335,7 @@ void CAN_CompileMessage627(uint8_t aData_series627[8], BTM_PackData_t * pPH_PACK
     maxTmpDOUBLE = BTM_TEMP_volts2temp((double)maxTmp);
     maxTmpBYTE = TwosComplement_TemperatureConverter(maxTmpDOUBLE, &outOfBounds);
 
-    maxTmpModuleSticker = LUT_moduleStickers[minTmpStack][minTmpModule];
+    minTmpModuleSticker = LUT_moduleStickers[minTmpStack][minTmpModule];
     maxTmpModuleSticker = LUT_moduleStickers[maxTmpStack][maxTmpModule];
 
     //3) Placing data into message array.
@@ -562,7 +555,7 @@ void temperatureDataRetrieval(
     {
         for(int j = 0; j < BTM_NUM_MODULES; ++j)
         {
-            if(pPH_PACKDATA -> stack[i].module[j].enable == 1)
+            if(pPH_PACKDATA -> stack[i].module[j].enable == MODULE_ENABLED)
             {
                 localTemperature = pPH_PACKDATA -> stack[i].module[j].temperature;
 
@@ -575,13 +568,13 @@ void temperatureDataRetrieval(
                 //So, the risk of overflow should be negligible.
                 temperatureTotal = temperatureTotal + localTemperature;
 
-                if(localTemperature < localMinTmp){
+                if(localTemperature <= localMinTmp){
                     localMinTmp = localTemperature;
                     minStack = i;
                     minModule = j;
                 }
 
-                if(localTemperature > localMaxTmp){
+                if(localTemperature >= localMaxTmp){
                     localMaxTmp = localTemperature;
                     maxStack = i;
                     maxModule = j;
@@ -647,13 +640,13 @@ uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * 
     else if(temperatureDOUBLE < CAN_TEMPERATURE_MINIMUM)
     {
         *outOfBounds = 1;
-        return CAN_TEMPERATURE_MINIMUM;
+        return ~(CAN_TEMPERATURE_MINIMUM)+1;
     }
 
     else
     {
-        temperatureBYTE = (uint8_t)temperatureDOUBLE;
-        if(temperatureBYTE >= 0)
+        temperatureBYTE = (uint8_t)abs(temperatureDOUBLE);
+        if(temperatureDOUBLE >= 0)
             return temperatureBYTE;
         else
             //Conversion to two's complement, for negative numbers.

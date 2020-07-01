@@ -1,3 +1,11 @@
+/*
+
+CANbus_function.h
+
+Purpose: Goes with CANbus_function.c
+
+*/
+
 #ifndef CANBUS_FUNCTION_H_
 #define CANBUS_FUNCTION_H_
 
