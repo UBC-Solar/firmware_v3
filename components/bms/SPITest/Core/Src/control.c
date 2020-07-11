@@ -91,3 +91,42 @@ void CONT_FAN_PWM_set(unsigned int pwm_val)
     pwm_val = (pwm_val * PWM_DIVISIONS) / 100;
     __HAL_TIM_SET_COMPARE(CONT_timer_handle, CONT_TIM_CHANNEL, pwm_val);
 }
+
+/**
+ * @brief Calculates a PWM duty cycle percentage for fans based on a temperature
+ *
+ * The percentage is linearly dependent on temperature. Below FAN_OFF_TEMP, the
+ * fans are off. Above FAN_FULL_TEMP, the fans are on full. In between those 2
+ * values, the fans ramp linearly with temperature from MIN_FAN_PWM to 100%.
+ *
+ * To avoid spurious fan startup and shutdown, control with hysteresis
+ * is used. If the fans are started, (say, the temp rises above FAN_OFF_TEMP),
+ * they won't actually be turned off until the temperature drops to
+ * TEMP_HYSTERESIS degrees below FAN_OFF_TEMP.
+ *
+ * @param[in] temp Temperature to use in calculation
+ * @return The duty cycle percentage for fan PWM
+ */
+unsigned int fanPwmFromTemp(float temp) {
+    int new_fan_PWM = FAN_RAMP_SLOPE * temp + MIN_FAN_PWM;
+    // Limit range to [MIN_FAN_PWM, 100]
+    if (new_fan_PWM < MIN_FAN_PWM) new_fan_PWM = MIN_FAN_PWM;
+    if (new_fan_PWM > 100) new_fan_PWM = 100;
+
+    if (CONT_FAN_PWM_percent != 0) // If fans are on...
+    {
+        // Don't turn fans off unless temp is low enough
+        if (temp < FAN_OFF_TEMP - TEMP_HYSTERESIS) {
+            new_fan_PWM = 0;
+        }
+    }
+    else // If fans are off...
+    {
+        // Don't turn fans on unless temp is high enough
+        if(temp < FAN_OFF_TEMP) {
+            new_fan_PWM = 0;
+        }
+    }
+
+    return new_fan_PWM; // a cast to unsigned happens here
+}
