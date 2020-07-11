@@ -109,6 +109,8 @@ void BTM_wakeup()
 /**
  * @brief Initializes the LTC6811s and the data structures used for monitoring the battery
  *
+ * WARNING: Disable modules via their "enable" attribute only AFTER calling this function,
+ * otherwise these settings will be overwritten.
  * @param pack A pointer to the PackData structure in use
  */
 void BTM_init(BTM_PackData_t * pack)
@@ -143,6 +145,8 @@ void BTM_init(BTM_PackData_t * pack)
             pack->stack[ic_num].module[module_num].voltage = 0;
             pack->stack[ic_num].module[module_num].temperature = 0;
             pack->stack[ic_num].module[module_num].bal_status = DISCHARGE_OFF;
+            pack->stack[ic_num].module[module_num].volt_state = VOLTAGE_NORMAL;
+            pack->stack[ic_num].module[module_num].temp_state = TEMP_NORMAL;
         }
 
     }
