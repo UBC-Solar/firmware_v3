@@ -15,6 +15,14 @@ Purpose: Intended for testing CANbus_functions.c in visual studio 2019.
 //#include "CANbus_TESTING_ONLY.h"
 //#include "CANbus_functions.h"
 #include "CANbus_functions.c"
+// FP limits
+#include <float.h>
+// Standard integers 
+#include <limits.h>
+//// Fixed width, minimum width, fast integers 
+//#include <stdint.h>
+//// Extended multibyte/wide characters
+//#include <wchar.h>
 
 #define PH_MESSAGE_SERIES_LENGTH 4
 #define PH_MESSAGE_ARRAY_SIZE 8
@@ -32,6 +40,8 @@ void setPackdata_allArbitrary(BTM_PackData_t* pPackdata, int userDef1, int userD
 
 void resetArray(uint8_t array[PH_MESSAGE_SERIES_LENGTH][PH_MESSAGE_ARRAY_SIZE]);
 void tableLabels();
+int compareInts(uint32_t a, uint32_t b, int isSigned);
+void compareintsPrint(uint32_t a, uint32_t b, int isSigned);
 
 void initMessageSeries(
     Brightside_CAN_MessageSeries* seriesStruct,
@@ -61,6 +71,8 @@ void main()
     Brightside_CAN_MessageSeries PH_messageSeries;
     Brightside_CAN_Message PH_message[PH_MESSAGE_SERIES_LENGTH];
     uint8_t messageArray[PH_MESSAGE_SERIES_LENGTH][PH_MESSAGE_ARRAY_SIZE];
+
+    uint32_t packVoltFull;
 
     //Sanity check: if printf works.
     printf("Hello world!\r\n\r\nBiscuits.\r\n\r\n");
@@ -130,11 +142,13 @@ void main()
     CAN_CompileMessage627(messageArray[1], &PH_VS_PACKDATA);
     tableLabels();
     printMessageContent(messageArray);
-
+    packVoltFull = (((uint32_t)messageArray[0][0]) << 8) | (uint32_t)messageArray[0][1];
+    compareIntsPrint(packVoltFull, 65000, 0);
 
     PH_VS_PACKDATA.pack_voltage = 123 * 10000;
     setPackdata_allArbitrary(&PH_VS_PACKDATA, 10000, 10000);
     resetArray(messageArray);
+    printf("Setting individual elements to be distinctly greater or less than 10000.\r\n");
     PH_VS_PACKDATA.stack[0].module[3].voltage = 20000;
     PH_VS_PACKDATA.stack[0].module[5].voltage = 5000;
     PH_VS_PACKDATA.stack[0].module[2].temperature = 5000;
@@ -144,11 +158,30 @@ void main()
     tableLabels();
     printMessageContent(messageArray);
 
+    //comparison check
+    packVoltFull = (((uint32_t)messageArray[0][0]) << 8) | (uint32_t)messageArray[0][1];
+    printf("packVoltFull = %i\r\n", packVoltFull);
+
+    compareIntsPrint(packVoltFull, 123, 0);
+
     printf("%e\r\n", BTM_TEMP_volts2temp(10));
 
     float PH_var = BTM_regValToVoltage((uint16_t)10);
 
     printf("%e\r\n", PH_var);
+
+    PH_var = BTM_regValToVoltage(1);
+    printf("%e\r\n", PH_var);
+
+
+    printf("char            range %d ... %u\n", CHAR_MIN, CHAR_MAX);
+    printf("unsigned char   range %u ... %u\n", 0, UCHAR_MAX);
+    printf("short           range %d ... %d\n", SHRT_MIN, SHRT_MAX);
+    printf("int             range %d ... %d\n", INT_MIN, INT_MAX);
+    printf("unsigned int    range %u ... %u\n", 0, UINT_MAX);
+    printf("unsigned long   range %lu ... %lu\n", 0, ULONG_MAX);
+    printf("float           finite range %.*g ... %.*g\n", FLT_DECIMAL_DIG, -FLT_MAX,
+        FLT_DECIMAL_DIG, FLT_MAX);
 
     //message initialisation, linking, and testing.
 #ifdef NOT_EXISTING 
@@ -725,6 +758,45 @@ void tableLabels()
     printf("     (V)|     (V)| (100mV)|        | (100mV)|        |        |        |\r\n");
     printf("  AveTmp|    0x00|  MinTmp| MinTmp#|  MaxTmp| MaxTmp#|    0x00|OOBounds|\r\n");
     printf("TwosDegC|        |TwosDegC|        |TwosDegC|        |        |        |\r\n");
+}
+
+
+/*
+compares two unsigned integers, or signed integers
+Returns 0 if everything is the same.
+Returns 1 if they are not the same.
+*/
+int compareInts(uint32_t a, uint32_t b, int isSigned) 
+{
+    signed int A, B;
+
+    //cast to signed int if indicated.
+    if (isSigned == 1) {
+        A = (signed int)a;
+        B = (signed int)b;
+    }
+    else
+    {
+        A = a;
+        B = b;
+    }
+
+    if (A == B)
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
+int compareIntsPrint(uint32_t a, uint32_t b, int isSigned) {
+    if (compareInts(a, b, isSigned) != 0) {
+        printf("comparison failed: %i != %i\r\n", a, b);
+    }
+    else
+        printf("comparison passed: %i == %i\r\n", a, b);
 }
 
 void PH_CAN_FillDataFrames_TESTING(Brightside_CAN_MessageSeries* CANmessages_elithionSeries, BTM_PackData_t* pPH_PACKDATA)
