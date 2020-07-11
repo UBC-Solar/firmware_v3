@@ -17,9 +17,9 @@ Purpose: Intended for testing CANbus_functions.c in visual studio 2019.
 #include "CANbus_functions.c"
 // FP limits
 #include <float.h>
-// Standard integers 
+// Standard integers
 #include <limits.h>
-//// Fixed width, minimum width, fast integers 
+//// Fixed width, minimum width, fast integers
 //#include <stdint.h>
 //// Extended multibyte/wide characters
 //#include <wchar.h>
@@ -47,8 +47,7 @@ void initMessageSeries(
     Brightside_CAN_MessageSeries* seriesStruct,
     Brightside_CAN_Message* messageWiseContent,
     uint8_t messageArrays[PH_MESSAGE_SERIES_LENGTH][PH_MESSAGE_ARRAY_SIZE],
-    int messageSeriesSize,
-    int messageArraySize
+    int messageSeriesSize
 );
 
 void checkMessageStructLinks(
@@ -98,7 +97,6 @@ void main()
         PH_message,
         messageArray,
         PH_MESSAGE_SERIES_LENGTH,
-        PH_MESSAGE_ARRAY_SIZE
     );
 
     checkMessageStructLinks(
@@ -184,7 +182,7 @@ void main()
         FLT_DECIMAL_DIG, FLT_MAX);
 
     //message initialisation, linking, and testing.
-#ifdef NOT_EXISTING 
+#ifdef NOT_EXISTING
     //initialising the message array
     printf("Initialising messageArray.\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
@@ -196,7 +194,7 @@ void main()
         }
         printf("\r\n");
     }
-    
+
     printf("Assigning and checking messageArray in messageSeries struct\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
     {
@@ -211,7 +209,7 @@ void main()
     printf("0 + 1 = %2.1i  \r\n", PH_message[0].dataFrame[1]);
     printf("1 + 2 = %2.1i  \r\n", PH_message[1].dataFrame[2]);
     printf("3 + 5 = %2.1i  \r\n", PH_message[3].dataFrame[5]);
-    
+
     printf("Initialising messageArray.\r\n");
     for (int series_i = 0; series_i < PH_MESSAGE_SERIES_LENGTH; ++series_i)
     {
@@ -300,7 +298,7 @@ void main()
             uint16_t* pPD_voltage     = &PH_VS_PACKDATA.stack[device_i].module[module_i].voltage    ;
             uint16_t* pPD_temperature = &PH_VS_PACKDATA.stack[device_i].module[module_i].temperature;
             uint16_t* pPD_bal_status  = &PH_VS_PACKDATA.stack[device_i].module[module_i].bal_status ;
-            printf("device: %2.1i  module: %2.1i  enable: %2.1i  voltage: %2.1i  temp.: %2.1i  bal_status: %2.1i\r\n", 
+            printf("device: %2.1i  module: %2.1i  enable: %2.1i  voltage: %2.1i  temp.: %2.1i  bal_status: %2.1i\r\n",
                 device_i,
                 module_i,
                 *pPD_enable,
@@ -502,11 +500,10 @@ void setPackdata_allArbitrary(BTM_PackData_t* pPackdata, int userVoltage, int us
 //Note that message series size refers to the number of messages in one series,
 //while     message array  size refers to the length of a single message wrt units of bytes.
 void initMessageSeries(
-    Brightside_CAN_MessageSeries* seriesStruct, 
-    Brightside_CAN_Message* messageWiseContent, 
-    uint8_t messageArrays[PH_MESSAGE_SERIES_LENGTH][PH_MESSAGE_ARRAY_SIZE], 
-    int messageSeriesSize,  
-    int messageArraySize)
+    Brightside_CAN_MessageSeries* seriesStruct,
+    Brightside_CAN_Message* messageWiseContent,
+    uint8_t messageArrays[PH_MESSAGE_SERIES_LENGTH][PH_MESSAGE_ARRAY_SIZE],
+    int messageSeriesSize)
 {
 #ifdef CODEWORD_DEBUG_BRIGHTSIDE
     printf("Running initMessageSeries().\r\n");
@@ -524,7 +521,7 @@ void initMessageSeries(
 
     seriesStruct->message           = messageWiseContent;
     seriesStruct->runningIndex      = 0;
-    seriesStruct->messageSeriesSize = messageArraySize;
+    seriesStruct->messageSeriesSize = messageSeriesSize;
 
 #ifdef CODEWORD_DEBUG_BRIGHTSIDE
     printf("End of initMessageSeries().\r\n\r\n");
@@ -766,7 +763,7 @@ compares two unsigned integers, or signed integers
 Returns 0 if everything is the same.
 Returns 1 if they are not the same.
 */
-int compareInts(uint32_t a, uint32_t b, int isSigned) 
+int compareInts(uint32_t a, uint32_t b, int isSigned)
 {
     signed int A, B;
 

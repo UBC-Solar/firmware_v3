@@ -94,29 +94,47 @@ void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int me
 
 */
 
+
+/*
+Function Name: CAN_InitMessageSeries_Dynamic()
+Function Purpose: link pre-defined structs and arrays together
+
+Parameters:
+    Brightside_CAN_MessageSeries * seriesStruct:
+        The highest-level struct containing everything else
+    Brightside_CAN_Message * messageWiseContent:
+        An array of structs, each element containing a message hedaer,
+        dataFrame array, and mailbox.
+    uint8_t messageArrays[PH_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH]:
+        A 2D array for easy assignment of message dataFrames to each struct.
+    int messageSeriesSize:
+        The total number of messages in one series.
+
+Algorithm:
+    1) initialise headers wrt messageSeriesSize
+    2) assign to each message-struct a pointer reference to a
+    dataFrame, stored in the 2D array.
+    3) assign to the messageSeries struct the message struct,
+       and initialise the runningIndex and the messageSeriesSize
+*/
 void CAN_InitMessageSeries_Dynamic(
         Brightside_CAN_MessageSeries * seriesStruct,
         Brightside_CAN_Message * messageWiseContent,
         uint8_t messageArrays[PH_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH],
-        int messageSeriesSize,
-        int messageArraySize)
+        int messageSeriesSize)
 {
 
     CAN_InitHeaderStruct(messageWiseContent, messageSeriesSize);
 
-    for (int series_i = 0; series_i < PH_SERIES_SIZE; ++series_i)
+    for (int series_i = 0; series_i < messageSeriesSize; ++series_i)
     {
         messageWiseContent[series_i].dataFrame = &messageArrays[series_i];
     }
 
     seriesStruct->message = messageWiseContent;
     seriesStruct->runningIndex = 0;
-    seriesStruct->messageSeriesSize = messageArraySize;
+    seriesStruct->messageSeriesSize = messageSeriesSize;
 
-}
-
-void CAN_InitAllMessages() {
-    return;
 }
 
 #ifndef CANBUS_FUNCTION_H_
