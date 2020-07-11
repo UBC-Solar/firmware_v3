@@ -90,11 +90,34 @@ void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int me
 }
 
 
+/*
 
-//void CAN_initMessageSeries()
-//{
-//    return;
-//}
+*/
+
+void CAN_InitMessageSeries_Dynamic(
+        Brightside_CAN_MessageSeries * seriesStruct,
+        Brightside_CAN_Message * messageWiseContent,
+        uint8_t messageArrays[PH_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH],
+        int messageSeriesSize,
+        int messageArraySize)
+{
+
+    CAN_InitHeaderStruct(messageWiseContent, messageSeriesSize);
+
+    for (int series_i = 0; series_i < PH_SERIES_SIZE; ++series_i)
+    {
+        messageWiseContent[series_i].dataFrame = &messageArrays[series_i];
+    }
+
+    seriesStruct->message = messageWiseContent;
+    seriesStruct->runningIndex = 0;
+    seriesStruct->messageSeriesSize = messageArraySize;
+
+}
+
+void CAN_InitAllMessages() {
+    return;
+}
 
 #ifndef CANBUS_FUNCTION_H_
 void PH_CANstate(Brightside_CAN_MessageSeries * pSeries)
@@ -117,8 +140,8 @@ void PH_CANstate(Brightside_CAN_MessageSeries * pSeries)
 
 
     //compile messages
-    CAN_CompileMessage623(pSeries->message[0]->dataFrame, pPH_PACKDATA);
-    CAN_CompileMessage627(pSeries->message[1]->dataFrame, pPH_PACKDATA);
+    CAN_CompileMessage623(pSeries->message[0].dataFrame, pPH_PACKDATA);
+    CAN_CompileMessage627(pSeries->message[1].dataFrame, pPH_PACKDATA);
 
     //Continue with placing new messages
     messageIndex = pSeries -> runningIndex;
@@ -129,9 +152,9 @@ void PH_CANstate(Brightside_CAN_MessageSeries * pSeries)
         HAL_CAN_AddTxMessage
             (
             PH_hcan,
-            &pSeries->message[messageIndex]->header,
-            pSeries->message[messageIndex]->dataFrame,//intent: pass the array using call by value.
-            &pSeries->message[messageIndex]->mailbox
+            &pSeries->message[messageIndex].header,
+            pSeries->message[messageIndex].dataFrame,//intent: pass the array using call by value.
+            &pSeries->message[messageIndex].mailbox
             );
 
         messageIndex++;
@@ -227,7 +250,7 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], 
 
     //Convert units of 100uV to V.
     //Then checks if value is outside of expected bounds, then truncates float to unsigned int.
-    //packVoltageFLOAT = BTM_regValToVoltage(pPH_PACKDATA -> pack_voltage);
+    //packVoltageFLOAT = BTM_regValToVoltage((pPH_PACKDATA -> pack_voltage));
     packVoltageFLOAT = (float)(pPH_PACKDATA->pack_voltage) * 0.0001;
     packVoltage = outOfBoundsAndCast_packVoltage(packVoltageFLOAT, &outOfBounds);
 
@@ -401,6 +424,8 @@ void VoltageInfoRetrieval(
         maxModule = 0;
 
   //combines the minVolt and maxVolt loops to reduce redundant struct pulls.
+    //localMinVolt = pPH_PACKDATA->stack[0].module[0].voltage;
+    //localMaxVolt = pPH_PACKDATA->stack[0].module[0].voltage;
     for(int i = 0; i < BTM_NUM_DEVICES; ++i)
     {
         for(int j = 0; j < BTM_NUM_MODULES; ++j)
