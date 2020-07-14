@@ -31,7 +31,10 @@ uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
 double BTM_TEMP_volts2temp(double vout);
 #endif //CODEWORD_DEBUG_BRIGHTSIDE
 
-
+void CANstate(Brightside_CAN_MessageSeries * pSeries);
+uint8_t CANstate_staleCheck();
+void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries);
+void CANstate_requestQueue();
 
 void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessages_elithionSeries, int messageArraySize);
 void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA);
@@ -137,8 +140,99 @@ void CAN_InitMessageSeries_Dynamic(
 
 }
 
-#ifndef CANBUS_FUNCTION_H_
-void PH_CANstate(Brightside_CAN_MessageSeries * pSeries)
+/*
+Function Name: CANstate_EntryCheck
+Function Purpose: TO limit the number of CANstate calls to at most 5 times per second.
+
+Parameters:
+    Brightside_CAN_MessageSeries * pSeries : pointer to the full messageSeries struct.
+
+Return:
+    0 if everything is alright
+    1 if something has gone wrong
+
+Algorithm:
+    1) If first function call, run CANstate once. //will remove this step if it leads to redundant code.
+    2) Else, wait for 0.2s after previous state entry to pass
+        2.1) check if the current tickValue has exceeded lastSubInterval by 0.2s or more.
+        2.2) increase lastSubinterval by the multiple of 0.2 that tickValue exceeded it by.
+    3) Flag the state entries that occur at 1.0s intervals
+        3.1) This is for CANstate() to process if old transmissions are still pending.
+*/
+void CANstate_EntryCheck(Brightside_CAN_MessageSeries * pSeries, uint32_t * lastInterval, uint32_t * lastSubInterval)
+{
+    uint32_t
+        tickValue = HAL_GetTick(),
+        tickDelta,
+        tickSubDelta;
+
+    //gets the absolute difference between tickValue and lastInterval
+    //avoids counter reset edge-case
+    if(tickValue >= *lastInterval)
+    {
+        tickDelta = tickValue - *lastInterval;
+    }
+    else //if(tickValue < lastInterval)
+    {
+        tickDelta = *lastInterval - tickValue;
+    }
+
+    //gets the absolute difference between tickValue and lastSubInterval
+    if(tickValue >= *lastSubInterval)
+    {
+        tickSubDelta = tickValue - *lastSubInterval;
+    }
+    else //if(tickValue < lastSubInterval)
+    {
+        tickSubDelta = *lastSubInterval - tickValue;
+    }
+
+    //check if called at 1.0s interval or greater
+    //if so, run additional functions.
+    if(tickDelta >= ONE_THOUSAND_MILLISECONDS)
+    {
+        *lastInterval = tickValue - (tickValue % ONE_THOUSAND_MILLISECONDS);
+        CANstate_staleCheck();
+        CANstate_compileAll(pSeries);
+        if(CANstate_requestQueue(pSeries) == PH_STATUS_FAIL)
+        {
+            //INSERT PH_ERROR ACTION
+
+            return 1;
+        }
+        else
+        return 0;
+    }
+
+    else //if(tickDelta < ONE_THOUSAND_MILLISECONDS)
+    //check if tickValue exceeds lastSubInterval by 0.2s or more,
+    //If < TWO_HUNDRED_MILLISECONDS, exit.
+    //Else, continue.
+    //then updare lastSubInterval
+    //then run CANstate()
+    if(tickSubDelta < TWO_HUNDRED_MILLISECONDS)
+    {
+        return 0;
+    }
+
+    else //if(tickSubDelta >= TWO_HUNDRED_MILLISECONDS)
+    {
+        //update lastSubInterval to be a multiple of 0.2s.
+        *lastSubInterval = tickValue - (tickValue % TWO_HUNDRED_MILLISECONDS);
+        if(CANstate_requestQueue(pSeries) == PH_STATUS_FAIL)
+        {
+            //INSERT PH_ERROR ACTION
+
+            return 1;
+        }
+        else
+        return 0;
+    }
+    return 1; //this should only be reached if for some reason, every intended exit was bypassed.
+}
+
+#ifndef CANBUS_TESTING_ONLY_H_
+void CANstate(Brightside_CAN_MessageSeries * pSeries)
 {
     uint8_t errorFlag = 0;
     int messageIndex;
@@ -197,6 +291,56 @@ I think &POINTER2struct->array[0] is the same as above, but &POINTER2struct->arr
 */
 
 
+}
+
+/*
+returns 1 if there is stale data
+else, returns 0 if the mailboxes are empty, i.e. without stale data to send.
+*/
+uint8_t CANstate_staleCheck()
+{
+//    uint8_t errorFlag = 0;
+    if(HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) != 3)
+    {
+        //errorFlag = 1
+        return 1;
+    }
+    return 0;
+}
+
+void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries)
+{
+    CAN_CompileMessage623(pSeries->message[0].dataFrame, pPH_PACKDATA);
+    CAN_CompileMessage627(pSeries->message[1].dataFrame, pPH_PACKDATA);
+}
+
+BTM_Error CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
+{
+    messageIndex = pSeries -> runningIndex;
+    while
+        (HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) > 0
+         && messageIndex < pSeries->messageSeriesSize)
+    {
+        HAL_CAN_AddTxMessage
+            (
+            PH_hcan,
+            &pSeries->message[messageIndex].header,
+            pSeries->message[messageIndex].dataFrame,//intent: pass the array using call by value.
+            &pSeries->message[messageIndex].mailbox
+            );
+
+        messageIndex++;
+    }
+
+    //sets or resets the runningIndex stored outside this function's scope.
+    if(messageIndex < messageSeriesSize)
+    {
+        pSeries -> runningIndex = messageIndex;
+    }
+    else
+    {
+        pSeries -> runningIndex = 0;
+    }
 }
 #endif
 
