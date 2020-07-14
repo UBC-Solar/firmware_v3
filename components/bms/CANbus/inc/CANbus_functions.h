@@ -26,6 +26,10 @@ Purpose: Goes with CANbus_function.c
 #define FALSE = 0
 
 //general technicalities
+#define TWENTY_MILLISECONDS 20
+#define TWO_HUNDRED_MILLISECONDS 200
+#define ONE_THOUSAND_MILLISECONDS 1000
+
 #define PH_START_OF_ADDRESS_SERIES 600
 #define PH_UNUSED 0x0DEADBEE
 #define CAN_BRIGHTSIDE_DATA_LENGTH 8
@@ -37,8 +41,8 @@ Purpose: Goes with CANbus_function.c
 #define CAN_PENDING     1
 #define CAN_NOT_PENDING 0
 //message addresses
-#define ADDRESS_623 623;
-#define ADDRESS_627 627;
+#define ADDRESS_623 623
+#define ADDRESS_627 627
 
 //value bounds
 #define CAN_PACK_MINIMUM 0 //0 kV
