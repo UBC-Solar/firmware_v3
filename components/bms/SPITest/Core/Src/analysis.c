@@ -7,32 +7,38 @@
  */
 #include "analysis.h"
 
-// Function prototypes
+// Private function prototypes
 float BTM_TEMP_volts2temp(uint16_t); // TODO: remove later; here until thermistor code is available
-BTM_module_volt_state_t findModuleVoltState(uint16_t pack);
-BTM_module_temp_state_t findModuleTempState(float temp);
+int findModuleVoltState(int status, uint16_t pack);
+int findModuleTempState(int status, float temp);
 
 /**
- * @brief Determine voltage-based state of all modules in the pack
+ * @brief Determines voltage- and temperature-based state of each module in the pack
  *
- * @param[in/out] pack Pointer to the pack data structure to update statuses in
+ * @param[in/out] pack Pointer to the pack data structure to update module statuses in
  */
-void ANA_analyzeModuleVoltages(BTM_PackData_t * pack) {
+void ANA_analyzeModules(BTM_PackData_t * pack) {
     uint16_t voltage = 0;
+    float temp = 0.0;
+    int module_status = 0;
+    struct BTM_module * module_p;
 
     for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++) {
         for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) {
-            voltage = pack->stack[stack_num].module[module_num].voltage;
+            module_p = &(pack->stack[stack_num].module[module_num]);
 
             // If module is enabled...
-            if (pack->stack[stack_num].module[module_num].enable)
+            if (module_p->enable)
             {
-                // If the module has faulted (volt_state >= VOLTAGE_OV numeric value)
-                // DO NOT update the volt state - this way faults persist
-                if (pack->stack[stack_num].module[module_num].volt_state < VOLTAGE_OV)
-                {
-                    pack->stack[stack_num].module[module_num].volt_state = findModuleVoltState(voltage);
-                }
+                // Get key readings
+                voltage = module_p->voltage;
+                temp = BTM_TEMP_volts2temp(module_p->temperature);
+                // Get existing status
+                module_status = module_p->status;
+                // Update module status
+                module_status = findModuleVoltState(module_status, voltage);
+                module_status = findModuleTempState(module_status, temp);
+                module_p->status = module_status;
             }
         } // end inner for loop
     } // end outer for loop
@@ -40,89 +46,97 @@ void ANA_analyzeModuleVoltages(BTM_PackData_t * pack) {
     return;
 }
 
-// Helper function for analyzeModuleVoltages()
-BTM_module_volt_state_t findModuleVoltState(uint16_t voltage) {
-    BTM_module_volt_state_t volt_state = VOLTAGE_NORMAL;
+// Helper function for ANA_analyzeModules()
+int findModuleVoltState(int status, uint16_t voltage) {
+    // Some conditionals here have no else because faults don't clear
 
-    if (voltage >= HLIM_FAULT_VOLTAGE)
-    {
-       volt_state = VOLTAGE_OV;
-    }
-    else if (voltage >= HLIM_WARNING_VOLTAGE)
-    {
-       volt_state = VOLTAGE_FULLCHARGE;
-    }
-    else if (voltage <= SHORT_FAULT_VOLTAGE)
-    {
-       volt_state = VOLTAGE_NONE;
-    }
-    else if (voltage <= LLIM_FAULT_VOLTAGE)
-    {
-       volt_state = VOLTAGE_UV;
-    }
-    else if (voltage <= LLIM_WARNING_VOLTAGE)
-    {
-       volt_state = VOLTAGE_LOWCHARGE;
+    if (voltage >= OV_FAULT_VOLTAGE) {
+        status |= BMS_FAULT_OV; // Set FAULT_OV bit
     }
 
-    // May return VOLTAGE_NORMAL - warnings are allowed to resolve,
-    // faults are not (this is handled elsewhere)
-    return volt_state;
+    if (voltage >= HLIM_TRIP_VOLTAGE) {
+        status |= BMS_TRIP_HLIM; // Set TRIP_HLIM bit
+    } else {
+        status &= ~BMS_TRIP_HLIM; // Clear TRIP_HLIM bit
+    }
+
+    if (voltage >= HIGH_WARNING_VOLTAGE) {
+        status |= BMS_WARNING_HIGH_V; // Set WARNING_HIGH_V bit
+    } else {
+        status &= ~BMS_WARNING_HIGH_V; // Clear WARNING_HIGH_V bit
+    }
+
+    if (voltage <= SHORT_FAULT_VOLTAGE) {
+        status |= BMS_FAULT_NO_VOLT; // Set FAULT_NO_VOLT bit
+    }
+
+    if (voltage <= UV_FAULT_VOLTAGE) {
+        status |= BMS_FAULT_UV; // Set BMS_FAULT_UV
+    }
+
+    if (voltage <= LLIM_TRIP_VOLTAGE) {
+        status |= BMS_TRIP_LLIM; // Set TRIP_LLIM bit
+    } else {
+        status &= ~BMS_TRIP_LLIM; // Clear TRIP_LLIM bit
+    }
+
+    if (voltage <= LOW_WARNING_VOLTAGE) {
+        status |= BMS_WARNING_LOW_V; // Set WARNING_LOW_V bit
+    } else {
+        status &= ~BMS_WARNING_LOW_V; // Clear WARNING_LOW_V bit
+    }
+
+    return status;
 }
 
+
+// Helper function for ANA_analyzeModules()
+int findModuleTempState(int status, float temp) {
+    // Some conditionals here have no else because faults don't clear
+
+    if (temp >= HIGH_READ_LIMIT_TEMP || temp <= LOW_READ_LIMIT_TEMP) {
+        status |= BMS_FAULT_TEMP_RANGE; // Set FAULT_TEMP_RANGE bit
+    }
+
+    if (temp >= OT_FAULT_TEMP) {
+        status |= BMS_FAULT_OT; // Set FAULT_OT bit
+    }
+
+    if (temp >= HIGH_WARNING_TEMP) {
+        status |= BMS_WARNING_HIGH_T; // Set WARNING_HIGH_T bit
+    } else {
+        status &= ~BMS_WARNING_HIGH_T; // Clear WARNING_HIGH_T bit
+    }
+
+    if (temp <= LOW_WARNING_TEMP) {
+        status |= BMS_WARNING_LOW_T; // Set WARNING_LOW_T bit
+    } else {
+        status &= ~BMS_WARNING_LOW_T; // Clear WARNING_LOW_T bit
+    }
+
+    return status;
+}
 
 /**
- * @brief Determine temp-based state of all modules in the pack
+ * @brief Generates a single BMS status code as an accumulation of all enabled modules' statuses
  *
- * @param[in/out] pack Pointer to the pack data structure to update statuses in
+ * @param[in] pack Pack data structure to read module statuses from
+ * @return status code as a (32-bit) integer
  */
-void ANA_analyzeModuleTemps(BTM_PackData_t * pack) {
-    float temp = 0.0;
+int ANA_mergeModuleStatusCodes(BTM_PackData_t * pack) {
+    int status_result = 0; // Start with a clean code
+    struct BTM_module * module_p;
 
+    // Just OR together status codes from all enabled modules
     for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++) {
         for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) {
-            temp = BTM_TEMP_volts2temp(pack->stack[stack_num].module[module_num].temperature);
-
-            // If module is enabled...
-            if (pack->stack[stack_num].module[module_num].enable)
+            module_p = &(pack->stack[stack_num].module[module_num]);
+            if(module_p->enable)
             {
-                // If the module has faulted (temp_state >= TEMP_OT numeric value)
-                // DO NOT update the temp state - this way faults persist
-                if (pack->stack[stack_num].module[module_num].temp_state < TEMP_OT)
-                {
-                    pack->stack[stack_num].module[module_num].temp_state = findModuleTempState(temp);
-                }
+                status_result |= module_p->status;
             }
-        } // end inner for loop
-    } // end outer for loop
-
-    return;
-}
-
-// Helper function for analyzeModuleTemps()
-BTM_module_temp_state_t findModuleTempState(float temp) {
-    BTM_module_temp_state_t temp_state;
-
-    if (temp >= HIGH_READ_LIMIT_TEMP)
-    {
-        temp_state = TEMP_BAD_READ;
-    }
-    else if (temp >= OT_FAULT_TEMP)
-    {
-        temp_state = TEMP_OT;
-    }
-    else if (temp >= HIGH_WARNING_TEMP)
-    {
-        temp_state = TEMP_HIGH;
-    }
-    else if (temp <= LOW_READ_LIMIT_TEMP)
-    {
-        temp_state = TEMP_BAD_READ;
-    }
-    else if (temp <= LOW_WARNING_TEMP)
-    {
-        temp_state = TEMP_LOW;
+        }
     }
 
-    return temp_state;
+    return status_result;
 }

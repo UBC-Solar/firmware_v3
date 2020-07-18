@@ -15,10 +15,14 @@
 /* CONFIGURABLE PARAMETERS */
 
 // Integer values in 10th's of mV
-#define HLIM_WARNING_VOLTAGE    42000U // 4.2000 V
-#define HLIM_FAULT_VOLTAGE      42100U // 4.2100 V
-#define LLIM_WARNING_VOLTAGE    27100U // 2.7100 V
-#define LLIM_FAULT_VOLTAGE      27000U // 2.7000 V
+#define OV_FAULT_VOLTAGE        42100U // 4.2100 V
+#define HLIM_TRIP_VOLTAGE       42000U // 4.2000 V
+#define HIGH_WARNING_VOLTAGE    41500U // 4.1500 V
+
+#define LOW_WARNING_VOLTAGE     27500U // 2.7500 V
+#define LLIM_TRIP_VOLTAGE       27100U // 2.7100 V
+#define UV_FAULT_VOLTAGE        27000U // 2.7000 V
+
 #define SHORT_FAULT_VOLTAGE     05000U // 0.5000 V
 
 // A temperature beyond the limit temps will be regarded as a bad read (fault)
@@ -29,8 +33,29 @@
 #define OT_FAULT_TEMP           55.0 // degrees C
 
 /*============================================================================*/
+/* PUBLIC CONSTANTS */
+
+// BMS Status Code Bitmasks
+#define BMS_FAULT_COMM          0x0001
+#define BMS_FAULT_ST            0x0002
+#define BMS_FAULT_OT            0x0004
+#define BMS_FAULT_UV            0x0008
+#define BMS_FAULT_OV            0x0010
+#define BMS_FAULT_NO_VOLT       0x0020
+#define BMS_FAULT_TEMP_RANGE    0x0040
+
+#define BMS_TRIP_BAL            0x0100
+#define BMS_TRIP_LLIM           0x0200
+#define BMS_TRIP_HLIM           0x0400
+
+#define BMS_WARNING_LOW_V       0x1000
+#define BMS_WARNING_HIGH_V      0x2000
+#define BMS_WARNING_LOW_T       0x4000
+#define BMS_WARNING_HIGH_T      0x8000
+
+/*============================================================================*/
 /* FUNCTION PROTOTYPES */
-void ANA_analyzeModuleVoltages(BTM_PackData_t * pack);
-void ANA_analyzeModuleTemps(BTM_PackData_t * pack);
+void ANA_analyzeModules(BTM_PackData_t * pack);
+int ANA_mergeModuleStatusCodes(BTM_PackData_t * pack);
 
 #endif /* INC_ANALYSIS_H_ */

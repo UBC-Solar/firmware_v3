@@ -82,28 +82,6 @@ typedef enum {
 } BTM_module_enable_t;
 
 typedef enum {
-    DISCHARGE_OFF = 0,
-    DISCHARGE_ON = 1
-} BTM_module_bal_status_t;
-
-typedef enum {
-    VOLTAGE_NORMAL = 0,
-    VOLTAGE_FULLCHARGE,
-    VOLTAGE_LOWCHARGE,
-    VOLTAGE_OV,
-    VOLTAGE_UV,
-    VOLTAGE_NONE
-} BTM_module_volt_state_t;
-
-typedef enum {
-    TEMP_NORMAL = 0,
-    TEMP_LOW,
-    TEMP_HIGH,
-    TEMP_OT,
-    TEMP_BAD_READ
-} BTM_module_temp_state_t;
-
-typedef enum {
     CS_LOW = 0,
     CS_HIGH = 1
 } CS_state_t;
@@ -254,9 +232,7 @@ struct BTM_module {
     BTM_module_enable_t enable;
     uint16_t voltage;
     uint16_t temperature;
-    BTM_module_bal_status_t bal_status;
-    BTM_module_volt_state_t volt_state;
-    BTM_module_temp_state_t temp_state;
+    int status;
 };
 
 struct BTM_stack {
