@@ -96,7 +96,7 @@ void CONT_HLIM_switch(CONT_signal_state_t new_state);
 void CONT_LLIM_switch(CONT_signal_state_t new_state);
 void CONT_OT_switch(CONT_signal_state_t new_state);
 void CONT_FAN_PWM_set(unsigned int pwm_val);
-unsigned int fanPwmFromTemp(float temp);
+unsigned int CONT_fanPwmFromTemp(float temp);
 
 #endif /* INC_CONTROL_H_ */
 
