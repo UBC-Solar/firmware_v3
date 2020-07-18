@@ -2,4 +2,22 @@
 StateOfCharge.h
 */
 
-//hello world
+#ifndef STATEOFCHARGE_H_
+#define STATEOFCHARGE_H_
+
+#define SOC_VOLT_MAX         124.4 //4.2 * 32
+#define SOC_VOLT_THRESHOLD_1 128   //placeholder: 4*32
+#define SOC_VOLT_THRESHOLD_2 112   //placeholder: 3.5*32
+#define SOC_VOLT_THRESHOLD_3 96    //placeholder: 3*32
+#define SOC_VOLT_MIN         80    //2.5*32
+
+#define SOC_PERCENT_THRESHOLD_1 80
+#define SOC_PERCENT_THRESHOLD_2 60
+#define SOC_PERCENT_THRESHOLD_3 40
+
+global float SOCregion1slope = (SOC_PERCENT_THRESHOLD_1 - 100) / (SOC_VOLT_THRESHOLD_1 - SOC-SOC_VOLT_MAX);
+global float SOCregion2slope = (SOC_PERCENT_THRESHOLD_2 - SOC-SOC_PERCENT_THRESHOLD_1) / (SOC_VOLT_THRESHOLD_2 - SOC_VOLT_THRESHOLD_1);
+global float SOCregion3slope = (SOC_PERCENT_THRESHOLD_3 - SOC-SOC_PERCENT_THRESHOLD_2) / (SOC_VOLT_THRESHOLD_3 - SOC_VOLT_THRESHOLD_2);
+global float SOCregion4slope = (0 - SOC-SOC_PERCENT_THRESHOLD_3) / (SOC_VOLT_MIN - SOC_VOLT_THRESHOLD_3);
+
+#endif
