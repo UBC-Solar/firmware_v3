@@ -159,12 +159,14 @@ Algorithm:
     3) Flag the state entries that occur at 1.0s intervals
         3.1) This is for CANstate() to process if old transmissions are still pending.
 */
-void CANstate_EntryCheck(Brightside_CAN_MessageSeries * pSeries, uint32_t * lastInterval, uint32_t * lastSubInterval)
+BTM_Error CANstate_EntryCheck(Brightside_CAN_MessageSeries * pSeries, uint32_t * lastInterval, uint32_t * lastSubInterval)
 {
     uint32_t
         tickValue = HAL_GetTick(),
         tickDelta,
         tickSubDelta;
+    BTM_Error
+        status = 0;
 
     //gets the absolute difference between tickValue and lastInterval
     //avoids counter reset edge-case
@@ -194,11 +196,10 @@ void CANstate_EntryCheck(Brightside_CAN_MessageSeries * pSeries, uint32_t * last
         *lastInterval = tickValue - (tickValue % ONE_THOUSAND_MILLISECONDS);
         CANstate_staleCheck();
         CANstate_compileAll(pSeries);
-        if(CANstate_requestQueue(pSeries) == PH_STATUS_FAIL)
+        status = CANstate_requestQueue(pSeries);
+        if(status != BTM_OK)
         {
-            //INSERT PH_ERROR ACTION
-
-            return 1;
+            return status;
         }
         else
         return 0;
@@ -219,11 +220,10 @@ void CANstate_EntryCheck(Brightside_CAN_MessageSeries * pSeries, uint32_t * last
     {
         //update lastSubInterval to be a multiple of 0.2s.
         *lastSubInterval = tickValue - (tickValue % TWO_HUNDRED_MILLISECONDS);
-        if(CANstate_requestQueue(pSeries) == PH_STATUS_FAIL)
+        status = CANstate_requestQueue(pSeries);
+        if(status != BTM_OK)
         {
-            //INSERT PH_ERROR ACTION
-
-            return 1;
+            return status;
         }
         else
         return 0;
@@ -299,10 +299,8 @@ else, returns 0 if the mailboxes are empty, i.e. without stale data to send.
 */
 uint8_t CANstate_staleCheck()
 {
-//    uint8_t errorFlag = 0;
     if(HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) != 3)
     {
-        //errorFlag = 1
         return 1;
     }
     return 0;
@@ -316,18 +314,22 @@ void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries)
 
 BTM_Error CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
 {
+    BTM_Error
+        status = 0;
+
     messageIndex = pSeries -> runningIndex;
     while
         (HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) > 0
          && messageIndex < pSeries->messageSeriesSize)
     {
-        HAL_CAN_AddTxMessage
-            (
-            PH_hcan,
-            &pSeries->message[messageIndex].header,
-            pSeries->message[messageIndex].dataFrame,//intent: pass the array using call by value.
-            &pSeries->message[messageIndex].mailbox
-            );
+        status =
+            HAL_CAN_AddTxMessage
+                (
+                PH_hcan,
+                &pSeries->message[messageIndex].header,
+                pSeries->message[messageIndex].dataFrame,//intent: pass the array using call by value.
+                &pSeries->message[messageIndex].mailbox
+                );
 
         messageIndex++;
     }
@@ -341,6 +343,8 @@ BTM_Error CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
     {
         pSeries -> runningIndex = 0;
     }
+
+    return status;
 }
 #endif
 
@@ -362,7 +366,6 @@ Algorithm:
     2) Translate gathered data into expected units and cast into uint8_t.
         Note: this step is where data is made to match Elithion format's units, and where the numbers are casted to uint8_t.
     3) Place data into message array, while following Elithion format.
-
 */
 void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA)
 {
