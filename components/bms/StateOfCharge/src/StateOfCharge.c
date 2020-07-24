@@ -38,16 +38,17 @@ void main()
 }
 #endif
 
-float stateOfCharge(uint32t voltage100mV);
+float stateOfCharge(uint32_t voltage100uV);
 
-float stateOfCharge(uint32t voltage100mV)
+float stateOfCharge(uint32_t voltage100uV)
 {
     float
         voltage,
         SoCpercent;
 
     //convert to volts
-    voltage = BTM_regValToVoltage(voltage100mV);
+    //voltage = BTM_regValToVoltage(voltage100uV);
+    voltage = voltage100uV * 0.0001;
 
     //calculate state of charge.
     if(voltage > SOC_VOLT_MAX)
