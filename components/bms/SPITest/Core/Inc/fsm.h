@@ -12,7 +12,6 @@
 #include "stm32f3xx_hal.h"
 #include "ltc6811_btm.h"
 #include "control.h"
-// TODO: add these includes once project directories are reconfigured
 #include "thermistor.h"
 #include "ltc6811_btm_bal.h"
 #include "Balancing_Skeleton.h"

@@ -201,8 +201,18 @@ void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_p
 
         // perform measurements
         func_status = BTM_readBatt(pack);
+#ifdef PRINTF_DEBUG
+        printf("V: ");
+        printBTMStatus(func_status, 1);
+        putchar('\n');
+#endif
         if (commsProblem(func_status, &system_status)) return;
         func_status = BTM_TEMP_measureState(pack);
+#ifdef PRINTF_DEBUG
+        printf("T: ");
+        printBTMStatus(func_status, 1);
+        putchar('\n');
+#endif
         if (commsProblem(func_status, &system_status)) return;
 
         // analyze measurements, update system status code
@@ -249,33 +259,72 @@ void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_p
 
 void FSM_fault_comm(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack)
 {
-    // do not attempt any more slave-board communication
+    // do not attempt any more slave-board communication - means we do nothing
+    // drive fans at full power - should be set on transition to this state
+    // system status should not change, since no readings can take place.
 
-    // drive fans at full power
-
-    // send status-only CAN messages (no data)?
+    // TODO: send status-only CAN messages (no data)?
 
     return;
 }
 
 void FSM_fault_general(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack)
 {
+    unsigned int current_tick;
+    BTM_Status_t func_status = {BTM_OK, 0};
+
+    // Perform measurements and update the system state no more frequently than
+    // FSM_MIN_UPDATE_INTERVAL milliseconds
+    current_tick = HAL_GetTick();
+    if (last_update_tick - current_tick >= FSM_MIN_UPDATE_INTERVAL)
+    {
+        last_update_tick = current_tick;
+
+        // perform measurements
+        func_status = BTM_readBatt(pack);
+#ifdef PRINTF_DEBUG
+        printf("V: ");
+        printBTMStatus(func_status, 1);
+        putchar('\n');
+#endif
+        if (commsProblem(func_status, &system_status)) return;
+        func_status = BTM_TEMP_measureState(pack);
+#ifdef PRINTF_DEBUG
+        printf("T: ");
+        printBTMStatus(func_status, 1);
+        putchar('\n');
+#endif
+        if (commsProblem(func_status, &system_status)) return;
+
+        // analyze measurements, update system status code
+        ANA_analyzeModules(pack);
+        system_status = (system_status & MASK_BMS_SYSTEM_FAULT);
+        system_status |= ANA_mergeModuleStatusCodes(pack);
+        // ^ prevent system-level faults from being overwritten
+
+        // TODO: Balancing under fault
+        // If there is an HLIM fault, **and** no other faults for a given module,
+        // continue running balancing to try to alleviate the problem
+        // Set as a TODO because we need an additional balancing function for this
+
+        // run balancing calculations and set balancing
+        BTM_BAL_settings(pack, dch_setting_pack);
+
+        // drive control signals based on status code
+        driveControlSignals(system_status);
+
+#ifdef PRINTF_DEBUG
+        // dump voltage and temp data through printf
+        printMeasurements(pack);
+#endif
+    }
+
+    // TODO: perform CAN communication
+    // this is not necessarily synchronous to the main system update
     // perform measurements
 
-    // check for communication fault
-
-    // analyze measurements, update system status code
-
-    // if new faults come up, drive control signals;
-    // drive fans at full power
-
-    // If there is an HLIM fault, **and** no SHORT or OT fault, continue running balancing to
-    // try to alleviate the problem
-
-    // send CAN messages
-
-    // can switch from here to FAULT_COMM, or stay in this state ONLY
-
+    // fans should have been set at full power when the transition to this state took place
+    // can ONLY switch from here to FAULT_COMM, or stay in this state
     return;
 }
 
@@ -299,7 +348,11 @@ void FSM_fault_general(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_se
  * }
  */
 
-// Checks for a communication fault condition, switches FSM to FAULT_COMM state if necessary
+/*============================================================================*/
+/* HELPER FUNCTIONS */
+
+// Checks for a communication fault condition, switches FSM to FAULT_COMM
+// state if necessary
 // Returns 1 if there is a communication fault, 0 otherwise
 int commsProblem(BTM_Status_t func_status, int * sys_status)
 {
@@ -382,12 +435,24 @@ void printMeasurements(BTM_PackData_t * pack)
     {
         printf("IC #%d\n", ic_num);
         printf("C0\t\tC1\t\tC2\t\tC3\t\tC4\t\tC5\t\tC6\t\tC7\t\tC8\t\tC9\t\tC10\t\tC11\n");
+
         for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) {
-            printf("%.4f\t", BTM_regValToVoltage(pack->stack[ic_num].module[module_num].voltage));
+            if (pack->stack[ic_num].module[module_num].enable) {
+                printf("%.4f\t", BTM_regValToVoltage(
+                        pack->stack[ic_num].module[module_num].voltage));
+            } else {
+                printf("x\t\t"); // Don't print the voltage for inactive modules
+            }
         }
         putchar('\n');
+
         for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) {
-            printf("%.3f\t", BTM_TEMP_volts2temp(pack->stack[ic_num].module[module_num].temperature));
+            if (pack->stack[ic_num].module[module_num].enable) {
+                printf("%.4f\t", BTM_TEMP_volts2temp(
+                        pack->stack[ic_num].module[module_num].temperature));
+            } else {
+                printf("x\t\t"); // Don't print the voltage for inactive modules
+            }
         }
         putchar('\n');
     }
