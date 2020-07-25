@@ -9,21 +9,35 @@
 #ifndef INC_FSM_H_
 #define INC_FSM_H_
 
+#include "stm32f3xx_hal.h"
+#include "ltc6811_btm.h"
+#include "control.h"
+// TODO: add these includes once project directories are reconfigured
+#include "thermistor.h"
+#include "ltc6811_btm_bal.h"
+//#include "BTM_BAL_settings.h"
+#include "analysis.h"
+
 /*============================================================================*/
 /* ENUMERATIONS */
 
 typedef enum
 {
-    BMS_RESET = 0
+    FSM_RESET = 0,
+    FSM_NORMAL,
+    FSM_FAULT_COMM,
+    FSM_FAULT_GENERAL
     // BMS_<STATE> ... Add states here
 } FSM_state_t;
+
+/*============================================================================*/
+/* PUBLIC VARAIBLES */
+unsigned int uptime;
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
 void FSM_init(void);
-void FSM_run(void);
-void FSM_reset(void);
-// More state functions go here
+void FSM_run(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
 
 #endif /* INC_FSM_H_ */

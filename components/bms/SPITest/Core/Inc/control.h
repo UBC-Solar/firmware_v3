@@ -65,10 +65,12 @@ typedef enum {
                              //   (they'll be on full regardless under FAULT)
 #define MIN_FAN_PWM     15   // %; Fans may not actually spin at very low duty cycles
 #define TEMP_HYSTERESIS 1.0
-#define FAN_RAMP_SLOPE  ((100 - MIN_FAN_PWM) / (FAN_FULL_TEMP - FAN_OFF_TEMP))
 
 /*============================================================================*/
 /* PUBLIC CONSTANTS */
+
+#define FAN_FULL 100
+#define FAN_RAMP_SLOPE  ((FAN_FULL - MIN_FAN_PWM) / (FAN_FULL_TEMP - FAN_OFF_TEMP))
 
 /*============================================================================*/
 /* PUBLIC VARAIBLES */
