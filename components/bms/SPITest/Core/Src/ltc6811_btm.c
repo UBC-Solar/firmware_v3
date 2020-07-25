@@ -316,7 +316,7 @@ BTM_Status_t BTM_readRegisterGroup(
 		BTM_sendCmd(command);
 
 		// Read back the data, but stop between device data groups on error
-		// TODO: Indicate to caller which LTC6811 is having problems, if problems are encountered
+		// This will indicate to caller which LTC6811 is having problems, if problems are encountered
 		ic_num = 0;
 		// reset status before a new try
 		status.error = BTM_OK;

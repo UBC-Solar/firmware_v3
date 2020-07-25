@@ -15,7 +15,7 @@
 // TODO: add these includes once project directories are reconfigured
 #include "thermistor.h"
 #include "ltc6811_btm_bal.h"
-//#include "BTM_BAL_settings.h"
+#include "Balancing_Skeleton.h"
 #include "analysis.h"
 
 /*============================================================================*/
@@ -29,6 +29,11 @@ typedef enum
     FSM_FAULT_GENERAL
     // BMS_<STATE> ... Add states here
 } FSM_state_t;
+
+/*============================================================================*/
+/* CONFIGURABLE PARAMETERS */
+
+#define FSM_MIN_UPDATE_INTERVAL 500 // milliseconds
 
 /*============================================================================*/
 /* PUBLIC VARAIBLES */

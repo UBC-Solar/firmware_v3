@@ -25,6 +25,7 @@
 #endif
 
 // Private function prototypes
+// State functions:
 void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
 void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
 void FSM_fault_comm(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
@@ -36,6 +37,7 @@ int doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
 void driveControlSignals(int status);
 #ifdef PRINTF_DEBUG
 void printBTMStatus(BTM_Status_t status, int print_ok);
+void printMeasurements(BTM_PackData_t * pack);
 #endif
 
 // Function pointer array to BMS FSM state functions
@@ -47,6 +49,7 @@ void (* FSM_state_table[])(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dc
 // FSM Global Variables
 FSM_state_t FSM_state;
 unsigned int last_uptime_tick; // for keeping track of uptime
+unsigned int last_update_tick; // for control of measurement timing
 int system_status; // status code for system
 
 
@@ -136,6 +139,7 @@ void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pa
     if (commsProblem(func_status, &system_status)) return;
 
     // perform initial voltage measurement
+    last_update_tick = HAL_GetTick(); // initialize last_measurement_tick
     func_status = BTM_readBatt(pack);
 #ifdef PRINTF_DEBUG
     printf("Performing initial measurements\nVolt: ");
@@ -155,7 +159,8 @@ void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pa
 
     // analyze initial measurements
     ANA_analyzeModules(pack);
-    system_status = (system_status & MASK_BMS_SYSTEM_FAULT) | ANA_mergeModuleStatusCodes(pack);
+    system_status = (system_status & MASK_BMS_SYSTEM_FAULT);
+    system_status |= ANA_mergeModuleStatusCodes(pack);
     // ^ prevent system-level faults from being overwritten
 
     driveControlSignals(system_status);
@@ -180,31 +185,70 @@ void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pa
     return;
 }
 
-void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack) {
+void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack)
+{
+    unsigned int current_tick;
+    BTM_Status_t func_status = {BTM_OK, 0};
     unsigned int fan_PWM = 0;
     float max_temp = 0;
 
-    // perform measurements
+    // Perform measurements and update the system state no more frequently than
+    // FSM_MIN_UPDATE_INTERVAL milliseconds
+    current_tick = HAL_GetTick();
+    if (last_update_tick - current_tick >= FSM_MIN_UPDATE_INTERVAL)
+    {
+        last_update_tick = current_tick;
 
-    // check for communication fault
+        // perform measurements
+        func_status = BTM_readBatt(pack);
+        if (commsProblem(func_status, &system_status)) return;
+        func_status = BTM_TEMP_measureState(pack);
+        if (commsProblem(func_status, &system_status)) return;
 
-    // analyze measurements, update system status code
+        // analyze measurements, update system status code
+        ANA_analyzeModules(pack);
+        system_status = (system_status & MASK_BMS_SYSTEM_FAULT);
+        system_status |= ANA_mergeModuleStatusCodes(pack);
+        // ^ prevent system-level faults from being overwritten
 
-    // drive control signals based on status code
-    driveControlSignals(system_status);
+        // run balancing calculations and set balancing
+        BTM_BAL_settings(pack, dch_setting_pack);
 
-    // drive Fan PWM based on temperature
-    max_temp = ANA_findHighestModuleTemp(pack);
-    fan_PWM = CONT_fanPwmFromTemp(max_temp);
-    CONT_FAN_PWM_set(fan_PWM);
-    // run balancing calculations and set balancing
+        // drive control signals based on status code
+        driveControlSignals(system_status);
 
-    // perform CAN communication
+#ifdef PRINTF_DEBUG
+        // dump voltage and temp data through printf
+        printMeasurements(pack);
+#endif
+
+        // drive fans, potentially switch state
+        if (system_status & MASK_BMS_FAULT) // If any faults are active
+        {
+#ifdef PRINTF_DEBUG
+            printf("ENTERING GENERAL FAULT STATE\n");
+#endif
+            CONT_FAN_PWM_set(FAN_FULL); // drive fans at full speed for fault
+            FSM_state = FSM_FAULT_GENERAL;
+        }
+        else
+        {
+            // drive Fan PWM based on highest module temperature
+            max_temp = ANA_findHighestModuleTemp(pack);
+            fan_PWM = CONT_fanPwmFromTemp(max_temp);
+            CONT_FAN_PWM_set(fan_PWM);
+            // stay in the NORMAL state - ie. do nothing to FSM_state
+        }
+    }
+
+    // TODO: perform CAN communication
+    // this is not necessarily synchronous to the main system update
 
     return;
 }
 
-void FSM_fault_comm(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack) {
+void FSM_fault_comm(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack)
+{
     // do not attempt any more slave-board communication
 
     // drive fans at full power
@@ -214,7 +258,8 @@ void FSM_fault_comm(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setti
     return;
 }
 
-void FSM_fault_general(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack) {
+void FSM_fault_general(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack)
+{
     // perform measurements
 
     // check for communication fault
@@ -256,7 +301,8 @@ void FSM_fault_general(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_se
 
 // Checks for a communication fault condition, switches FSM to FAULT_COMM state if necessary
 // Returns 1 if there is a communication fault, 0 otherwise
-int commsProblem(BTM_Status_t func_status, int * sys_status) {
+int commsProblem(BTM_Status_t func_status, int * sys_status)
+{
     if (func_status.error != BTM_OK || (*sys_status & BMS_FAULT_COMM))
     {
 #ifdef PRINTF_DEBUG
@@ -328,5 +374,22 @@ void printBTMStatus(BTM_Status_t status, int print_ok)
         printf("at LTC device #%d", status.device_num);
     }
     return;
+}
+
+void printMeasurements(BTM_PackData_t * pack)
+{
+    for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+    {
+        printf("IC #%d\n", ic_num);
+        printf("C0\t\tC1\t\tC2\t\tC3\t\tC4\t\tC5\t\tC6\t\tC7\t\tC8\t\tC9\t\tC10\t\tC11\n");
+        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) {
+            printf("%.4f\t", BTM_regValToVoltage(pack->stack[ic_num].module[module_num].voltage));
+        }
+        putchar('\n');
+        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) {
+            printf("%.3f\t", BTM_TEMP_volts2temp(pack->stack[ic_num].module[module_num].temperature));
+        }
+        putchar('\n');
+    }
 }
 #endif
