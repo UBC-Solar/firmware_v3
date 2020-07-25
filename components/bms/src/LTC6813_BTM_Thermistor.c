@@ -49,17 +49,25 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 	float temp_celsius[GPIO_NUM][MUX_CHANNELS][BTM_NUM_DEVICES] = 0; // add in header GPIO_NUM = 8
 	BTM_Status_t status = {BTM_OK, 0};
 	uint8_t cfgr_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
-
+	uint8_t config_val[BTM_REG_GROUP_SIZE];
+	
+	
     // Refer to the LTC6813 datasheet pages 60 and 65 for format and content of config_val
-    uint8_t config_val[BTM_REG_GROUP_SIZE] =
-    {
-        0x0F, // GPIO 6-9 = 1 (the default state)
-        0x0000000000
-    };
-
-	for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
-			for(int reg_num = 0; reg_num < BTM_REG_GROUP_SIZE; reg_num++)
-				cfgr_to_write[ic_num][reg_num] = config_val[reg_num];
+	for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++) {
+		for(int reg_num = 0; reg_num < BTM_REG_GROUP_SIZE; reg_num++) {
+			config_val[BTM_REG_GROUP_SIZE] = 
+			{
+				pack->stack[board].cfgrb[0] & 0b1111_0111, // GPIO 9 = 0
+				pack->stack[board].cfgrb[1],
+				pack->stack[board].cfgrb[2],
+				pack->stack[board].cfgrb[3],
+				pack->stack[board].cfgrb[4],
+				pack->stack[board].cfgrb[5]
+			};
+			cfgr_to_write[ic_num][reg_num] = config_val[reg_num];
+			pack->stack[board].cfgrb[0] = config_val[0] // updating the configuration register
+		}
+	}
 	
 	BTM_writeRegisterGroup(CMD_WRCFGB, cfgr_to_write); // CMD_WRCFGB has to be added to the header file: CMD_WRCFGB = 0b000_0010_0100
 	
@@ -80,25 +88,25 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 	if (status.error != BTM_OK)
 		return status;
 	
-	BTM_TEMP_volts2temp(GPIO1_voltage[0], ref2_voltage[0], temp_celsius[0][0]);
-	BTM_TEMP_volts2temp(GPIO2_voltage[0], ref2_voltage[0], temp_celsius[1][0]);
-	BTM_TEMP_volts2temp(GPIO3_voltage[0], ref2_voltage[0], temp_celsius[2][0]);
-	BTM_TEMP_volts2temp(GPIO4_voltage[0], ref2_voltage[0], temp_celsius[3][0]);
-	BTM_TEMP_volts2temp(GPIO5_voltage[0], ref2_voltage[0], temp_celsius[4][0]);
-	BTM_TEMP_volts2temp(GPIO6_voltage[0], ref2_voltage[0], temp_celsius[5][0]);
-	BTM_TEMP_volts2temp(GPIO7_voltage[0], ref2_voltage[0], temp_celsius[6][0]);
-	BTM_TEMP_volts2temp(GPIO8_voltage[0], ref2_voltage[0], temp_celsius[7][0]);
+	for(GPIO_num = 0; GPIO_num < GPIO_NUM; GPIO_num++) {
+		BTM_TEMP_volts2temp(GPIO1_voltage[0], ref2_voltage[0], temp_celsius[GPIO_num][0]);
 	
 	// Switch to the other side of the muxes
-	config_val[BTM_REG_GROUP_SIZE] =
-    {
-        0x07, // GPIO 9 = 0, (GPIO 6-8 = 1 kept at default)
-        0x0000000000
-    };
-
-	for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
-			for(int reg_num = 0; reg_num < BTM_REG_GROUP_SIZE; reg_num++)
-				cfgr_to_write[ic_num][reg_num] = config_val[reg_num];
+	for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++) {
+		for(int reg_num = 0; reg_num < BTM_REG_GROUP_SIZE; reg_num++) {
+			config_val[BTM_REG_GROUP_SIZE] = 
+			{
+				pack->stack[board].cfgrb[0] | 0b0000_1000, // GPIO 9 = 1 (the default state)
+				pack->stack[board].cfgrb[1],
+				pack->stack[board].cfgrb[2],
+				pack->stack[board].cfgrb[3],
+				pack->stack[board].cfgrb[4],
+				pack->stack[board].cfgrb[5]
+			};
+			cfgr_to_write[ic_num][reg_num] = config_val[reg_num];
+			pack->stack[board].cfgrb[0] = config_val[0] // updating the configuration register
+		}
+	}
 	
 	BTM_writeRegisterGroup(CMD_WRCFGB, cfgr_to_write);
 	
@@ -118,14 +126,8 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 	if (status.error != BTM_OK)
 		return status;
 	
-	BTM_TEMP_volts2temp(GPIO1_voltage[1], ref2_voltage[1], temp_celsius[0][1]);
-	BTM_TEMP_volts2temp(GPIO2_voltage[1], ref2_voltage[1], temp_celsius[1][1]);
-	BTM_TEMP_volts2temp(GPIO3_voltage[1], ref2_voltage[1], temp_celsius[2][1]);
-	BTM_TEMP_volts2temp(GPIO4_voltage[1], ref2_voltage[1], temp_celsius[3][1]);
-	BTM_TEMP_volts2temp(GPIO5_voltage[1], ref2_voltage[1], temp_celsius[4][1]);
-	BTM_TEMP_volts2temp(GPIO6_voltage[1], ref2_voltage[1], temp_celsius[5][1]);
-	BTM_TEMP_volts2temp(GPIO7_voltage[1], ref2_voltage[1], temp_celsius[6][1]);
-	BTM_TEMP_volts2temp(GPIO8_voltage[1], ref2_voltage[1], temp_celsius[7][1]);
+	for(GPIO_num = 0; GPIO_num < GPIO_NUM; GPIO_num++) {
+		BTM_TEMP_volts2temp(GPIO1_voltage[1], ref2_voltage[1], temp_celsius[GPIO_num][1]);
 			
 	
 	// Copy gathered temperature data to pack data structure
@@ -275,7 +277,7 @@ uint16_t REF2_voltage[BTM_NUM_DEVICES]
  * @param[in] REF2[] the measured reference voltage 
  * @return the temperature of the thermistor in degrees celcius
  */
-void BTM_TEMP_volts2temp(float Vout, uint16_t REF2[], float temp_celsius[])
+void BTM_TEMP_volts2temp(uint16_t ADC, uint16_t REF2[], float temp_celsius[])
 {
 	float Vs[] = REF2[];
 	const float beta = 3435.0; // from NTC datasheet
@@ -284,6 +286,7 @@ void BTM_TEMP_volts2temp(float Vout, uint16_t REF2[], float temp_celsius[])
 	const float R_room_temp = 10000.0; //resistance at room temperature (25C)
 	float R_therm = 0;
 	float temp_kelvin = 0;
+	float Vout = ADC;
 
 	// to get the voltage in volts from the LTC6813's value,
 	// multiply it by 0.0001 as below.
