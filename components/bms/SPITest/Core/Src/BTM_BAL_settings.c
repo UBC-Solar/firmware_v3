@@ -1,4 +1,3 @@
-// Both functions were tested using an array that had values that mimic the actual voltages
 #include "Balancing_Skeleton.h"
 
 // Private function prototypes
@@ -24,24 +23,19 @@ void BTM_BAL_settings(
 	int Vmin_loc;		// location of the minimum voltage in the array
 	int pack_modules_en[size]; // array to store modules' enable flags consistent with the order of indices in pack_modules array
 	
-	// Storing all cell voltages from the 3 stacks:
-	for(int module_num = 0; module_num < 12; module_num++) 
+	// Storing all cell voltages from the 2 stacks:
+	for(int module_num = 0; module_num < 18; module_num++) 
 	{
 		pack_modules[module_num] = pack->stack[0].module[module_num].voltage;
 		pack_modules_en[module_num] = pack->stack[0].module[module_num].enable;
 	}
 	
-	for(int module_num = 12; module_num < 24; module_num++)
+	for(int module_num = 18; module_num < 36; module_num++)
 	{
-		pack_modules[module_num] = pack->stack[1].module[module_num-12].voltage;
-		pack_modules_en[module_num] = pack->stack[1].module[module_num-12].enable;
+		pack_modules[module_num] = pack->stack[1].module[module_num-18].voltage;
+		pack_modules_en[module_num] = pack->stack[1].module[module_num-18].enable;
 	}
 	
-	for(int module_num = 24; module_num < 36; module_num++)
-	{
-		pack_modules[module_num] = pack->stack[2].module[module_num-24].voltage;
-		pack_modules_en[module_num] = pack->stack[2].module[module_num-24].enable;
-	}
 	
 	min_val(&Vmin, &Vmin_loc, pack_modules, size, pack_modules_en); // This function is written at the end of this file
 	
@@ -53,21 +47,17 @@ void BTM_BAL_settings(
 			if(pack_modules_en[i]) {
 				if(pack_modules[i] > Vth) {
 					// turn on the corresponding s pins
-					if (i < 12)
+					if (i < 18)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_ON;
-					else if (i < 24)
-						dch_setting_pack->stack[1].module_dch[i-12] = DISCHARGE_ON; 
 					else if (i < 36)
-						dch_setting_pack->stack[2].module_dch[i-24] = DISCHARGE_ON; 
+						dch_setting_pack->stack[1].module_dch[i-18] = DISCHARGE_ON; 
 				}
 				
 				else {
-					if (i < 12)
+					if (i < 18)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_OFF;
-					else if (i < 24)
-						dch_setting_pack->stack[1].module_dch[i-12] = DISCHARGE_OFF;
 					else if (i < 36)
-						dch_setting_pack->stack[2].module_dch[i-24] = DISCHARGE_OFF; 
+						dch_setting_pack->stack[1].module_dch[i-18] = DISCHARGE_OFF;
 				}
 			}
 		}
@@ -82,21 +72,17 @@ void BTM_BAL_settings(
 			if(pack_modules_en[i]) {
 				if(pack_modules[i] > Vmin + Vtol) {
 					// turn on the corresponding s 
-					if (i < 12)
+					if (i < 18)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_ON;
-					else if (i < 24)
-						dch_setting_pack->stack[1].module_dch[i-12] = DISCHARGE_ON; 
 					else if (i < 36)
-						dch_setting_pack->stack[2].module_dch[i-24] = DISCHARGE_ON; 
+						dch_setting_pack->stack[1].module_dch[i-18] = DISCHARGE_ON; 
 				}
 				
 				else {
-					if (i < 12)
+					if (i < 18)
 						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_OFF;
-					else if (i < 24)
-						dch_setting_pack->stack[1].module_dch[i-12] = DISCHARGE_OFF;
 					else if (i < 36)
-						dch_setting_pack->stack[2].module_dch[i-24] = DISCHARGE_OFF;
+						dch_setting_pack->stack[1].module_dch[i-18] = DISCHARGE_OFF;
 				}
 			}
 		}
