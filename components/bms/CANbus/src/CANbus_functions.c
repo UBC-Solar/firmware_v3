@@ -1,8 +1,9 @@
 /*
 
 CANbus_functions.c
+Author: Edward Ma (Github: RootBeer1313)
 
-This file contains the suite of functions used for CAN functionality
+This file contains the suite of functions used for CAN functionality.
 
 */
 
@@ -37,10 +38,12 @@ void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries);
 void CANstate_requestQueue();
 
 void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessages_elithionSeries, int messageArraySize);
+
+void CAN_CompileMessage622(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA);
 void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA);
-//void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA);
+void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA);
 void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA);
-//For message addressed 623.
+
 void VoltageInfoRetrieval(
     BTM_PackData_t * pPH_PACKDATA,
     uint16_t * pMinVoltage,
@@ -77,13 +80,13 @@ void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int me
     Brightside_CAN_Message* elementAddress = CANmessageWiseContent;
     for(int i=0 ; i < messageSeriesSize ; ++i)
     {
-        elementAddress -> header.StdId
-            = PH_START_OF_ADDRESS_SERIES + i;
+        elementAddress -> header.StdId = PH_START_OF_ADDRESS_SERIES + i;
         elementAddress -> header.ExtId = PH_UNUSED;
-        elementAddress -> header.IDE = CAN_ID_STD;   //Predefined constant in stm32 include file.
-        elementAddress -> header.RTR = CAN_RTR_DATA; //Predefined constant in stm32 include file.
-        elementAddress -> header.DLC = CAN_BRIGHTSIDE_DATA_LENGTH;
+        elementAddress -> header.IDE   = CAN_ID_STD;   //Predefined constant in stm32 include file.
+        elementAddress -> header.RTR   = CAN_RTR_DATA; //Predefined constant in stm32 include file.
+        elementAddress -> header.DLC   = CAN_BRIGHTSIDE_DATA_LENGTH;
         elementAddress -> header.TransmitGlobalTime = DISABLE;//We could use this eventually, if we use a custom message format
+
         ++elementAddress;
     }
 
@@ -114,11 +117,11 @@ Parameters:
         The total number of messages in one series.
 
 Algorithm:
-    1) initialise headers wrt messageSeriesSize
-    2) assign to each message-struct a pointer reference to a
+    1) Initialise headers wrt messageSeriesSize.
+    2) Assign to each message-struct a pointer reference to a
     dataFrame, stored in the 2D array.
-    3) assign to the messageSeries struct the message struct,
-       and initialise the runningIndex and the messageSeriesSize
+    3) Assign to the messageSeries struct the message struct,
+       and initialise the runningIndex and the messageSeriesSize.
 */
 void CAN_InitMessageSeries_Dynamic(
         Brightside_CAN_MessageSeries * seriesStruct,
@@ -146,18 +149,22 @@ Function Purpose: TO limit the number of CANstate calls to at most 5 times per s
 
 Parameters:
     Brightside_CAN_MessageSeries * pSeries : pointer to the full messageSeries struct.
+    uint32_t lastInterval : Keeps track of the last 1.0s interval.
+    uint32_t lasSubInterval : keeps track of the last 0.2s interval.
 
 Return:
-    0 if everything is alright
-    1 if something has gone wrong
+    BTM_Error
 
 Algorithm:
-    1) If first function call, run CANstate once. //will remove this step if it leads to redundant code.
-    2) Else, wait for 0.2s after previous state entry to pass
-        2.1) check if the current tickValue has exceeded lastSubInterval by 0.2s or more.
-        2.2) increase lastSubinterval by the multiple of 0.2 that tickValue exceeded it by.
-    3) Flag the state entries that occur at 1.0s intervals
-        3.1) This is for CANstate() to process if old transmissions are still pending.
+1) Calculate tickDelta and tickSubDelta.
+2) Check if a 1.0s interval has passed.
+2.1) if so, run extra functions, update lastInterval, then return.
+3) Else, check if a 0.2s interval has passed.
+3.1) if not, return.
+3.2) if so, run only queue(), update lastSubInterval, then return.
+
+Design Notes:
+    Note that lastInterval and lastSubInterval are always multiples of their intervals, 1.0s and 0.2s respectively. This is to make it easier to debug and to
 */
 BTM_Error CANstate_EntryCheck(Brightside_CAN_MessageSeries * pSeries, uint32_t * lastInterval, uint32_t * lastSubInterval)
 {
@@ -166,7 +173,7 @@ BTM_Error CANstate_EntryCheck(Brightside_CAN_MessageSeries * pSeries, uint32_t *
         tickDelta,
         tickSubDelta;
     BTM_Error
-        status = 0;
+        status = BTM_OK;
 
     //gets the absolute difference between tickValue and lastInterval
     //avoids counter reset edge-case
@@ -193,7 +200,8 @@ BTM_Error CANstate_EntryCheck(Brightside_CAN_MessageSeries * pSeries, uint32_t *
     //if so, run additional functions.
     if(tickDelta >= ONE_THOUSAND_MILLISECONDS)
     {
-        *lastInterval = tickValue - (tickValue % ONE_THOUSAND_MILLISECONDS);
+        //update lastInterval to be a multiple of 1.0s.
+        *lastInterval = *tickValue - (tickValue % ONE_THOUSAND_MILLISECONDS);
         CANstate_staleCheck();
         CANstate_compileAll(pSeries);
         status = CANstate_requestQueue(pSeries);
@@ -202,18 +210,12 @@ BTM_Error CANstate_EntryCheck(Brightside_CAN_MessageSeries * pSeries, uint32_t *
             return status;
         }
         else
-        return 0;
+            goto CAN_state_end;
     }
 
-    else //if(tickDelta < ONE_THOUSAND_MILLISECONDS)
-    //check if tickValue exceeds lastSubInterval by 0.2s or more,
-    //If < TWO_HUNDRED_MILLISECONDS, exit.
-    //Else, continue.
-    //then updare lastSubInterval
-    //then run CANstate()
-    if(tickSubDelta < TWO_HUNDRED_MILLISECONDS)
+    else if(tickSubDelta < TWO_HUNDRED_MILLISECONDS)
     {
-        return 0;
+        goto CAN_state_end;
     }
 
     else //if(tickSubDelta >= TWO_HUNDRED_MILLISECONDS)
@@ -226,11 +228,14 @@ BTM_Error CANstate_EntryCheck(Brightside_CAN_MessageSeries * pSeries, uint32_t *
             return status;
         }
         else
-        return 0;
+            goto CAN_state_end;
     }
-    return 1; //this should only be reached if for some reason, every intended exit was bypassed.
+CAN_state_end:
+    return BTM_OK;
 }
 
+
+//I am depreciating this.
 #ifndef CANBUS_TESTING_ONLY_H_
 void CANstate(Brightside_CAN_MessageSeries * pSeries)
 {
@@ -249,7 +254,6 @@ void CANstate(Brightside_CAN_MessageSeries * pSeries)
     {
         errorFlag = 1;
     }
-
 
     //compile messages
     CAN_CompileMessage623(pSeries->message[0].dataFrame, pPH_PACKDATA);
@@ -289,13 +293,19 @@ I think POINTER2struct->array is the pointer to the first element of the array,
 like arr == &arr[0].
 I think &POINTER2struct->array[0] is the same as above, but &POINTER2struct->array[1] is not.
 */
-
-
 }
 
+
 /*
-returns 1 if there is stale data
-else, returns 0 if the mailboxes are empty, i.e. without stale data to send.
+Function Name: CANstate_staleCheck
+Function Purpose: check if the CAN-bus mailboxes stil lcontain messages from the previous interval.
+
+Parameters:
+    None.
+
+Return:
+    returns 1 if there is stale data
+    else, returns 0 if the mailboxes are empty, i.e. without stale data to send.
 */
 uint8_t CANstate_staleCheck()
 {
@@ -306,12 +316,35 @@ uint8_t CANstate_staleCheck()
     return 0;
 }
 
+/*
+Function Name: CANstate_compileAll
+Function Purpose: Run all functions that compile messages.
+
+Parameters:
+    Brightside_CAN_MessageSeries * pSeries : pointer to message series struct.
+Return:
+    None.
+
+Design Notes:
+    Each CompileMessage() function call takes the message[].dataFrame element of the struct parameter.
+*/
 void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries)
 {
     CAN_CompileMessage623(pSeries->message[0].dataFrame, pPH_PACKDATA);
     CAN_CompileMessage627(pSeries->message[1].dataFrame, pPH_PACKDATA);
 }
 
+/*
+Function Name:
+Function Purpose:
+
+Parameters:
+
+Return:
+
+Algorithm:
+Design Notes:
+*/
 BTM_Error CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
 {
     BTM_Error
@@ -354,6 +387,125 @@ BTM_Error CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
 *
 ********************************/
 uint8_t PH_HELPER_functions;
+
+/*
+Function name: CAN_CompileMessage622
+Function purpose:
+    Retrieve data, translate it, then format it into a message matching Elithion's format.
+    See the webstie for formatting details: https://www.elithion.com/lithiumate/php/controller_can_specs.php
+
+Algorithm:
+    1) Retrieve fault flags specified.
+    2) Place fault flag data into Elithion format.
+    3) Place data into message array, while following Elithion format.
+*/
+void CAN_CompileMessage622(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA)
+{
+    uint8_t
+        stateBYTE           = 0,
+        //timerBYTE           = 0,
+        //flagsBYTE           = 0,
+        faultCodeBYTE       = 0,
+        levelFaultFlagsBYTE = 0,
+        warningFlagsBYTE    = 0;
+
+
+
+    int
+        status_var = pPH_PACKDATA->status;
+    /*
+    Update stateBYTE.
+    */
+    //Bit 0: fault state.
+    if(status_var & BMS_FAULT_ST != 0)
+    {
+        stateBYTE |= CAN_BITFLAG_FAULT_STATE;
+    }
+
+    /*
+    Update faultCodeBYTE.
+    */
+
+    // if(status_var & BMS_FAULT_COMM != 0)
+    // if(status_var & BMS_FAULT_OT != 0)
+    // if(status_var & BMS_FAULT_UV != 0)
+    // if(status_var & BMS_FAULT_OV != 0)
+    // if(status_var & BMS_FAULT_NO_VOLT != 0)
+
+
+/*
+Update levelFaultFlagsBYTE.
+*/
+    // Bit 7: Over voltage.
+    if(status_var & BMS_FAULT_OV != 0)
+    {
+        levelFaultFlagsBYTE |= CAN_FAULTFLAG_OVERVOLTAGE;
+    }
+    // Bit 6: Under voltage.
+    if(status_var & BMS_FAULT_UV != 0)
+    {
+        levelFaultFlagsBYTE |= CAN_FAULTFLAG_UNDERVOLTAGE;
+    }
+
+    // Bit 5: Over-temperature.
+    if(status_var & BMS_FAULT_OT != 0)
+    {
+        levelFaultFlagsBYTE |= CAN_FAULTFLAG_OVERTEMP;
+    }
+
+    // Bit 4: Discharge overcurrent.
+    // Bit 3: Charge overcurrent.
+
+    // Bit 2: Communication fault with a bank or cell.
+    if(status_var & BMS_FAULT_COMM != 0)
+    {
+        levelFaultFlagsBYTE |= CAN_FAULTFLAG_COMMFAULT;
+    }
+    // Bit 1: Interlock is tripped.
+    // Bit 0: Driving off while plugged in.
+
+    /*
+    Update warningFlagsBYTE.
+    */
+
+    // Bit 7 : isolation fault.
+    // Bit 6 : low SOH.
+    // Bit 5 : hot temperature.
+    if(status_var & BMS_WARNING_HIGH_T != 0)
+    {
+        warningFlagsBYTE |= CAN_WARNFLAG_HIGHTEMP;
+    }
+    // Bit 4 : cold temperature.
+    if(status_var & BMS_WARNING_LOW_T != 0)
+    {
+        warningFlagsBYTE |= CAN_WARNFLAG_LOWTEMP;
+    }
+
+    // Bit 3 : discharge overcurrent.
+    // Bit 2 : charge overcurrent.
+    // Bit 1 : high voltage.
+    if(status_var & BMS_WARNING_HIGH_V != 0)
+    {
+        warningFlagsBYTE |= CAN_WARNFLAG_HIGHVOLTAGE;
+    }
+    // Bit 0 : low voltage.
+    if(status_var & BMS_WARNING_LOW_V != 0)
+    {
+        warningFlagsBYTE |= CAN_WARNFLAG_LOWVOLTAGE;
+    }
+
+    //setting byte order in aData_series623 array
+    aData_series623[0] = stateBYTE;
+    //aData_series623[1] = timerBYTE;
+    //aData_series623[2] = timerBYTE;
+    aData_series623[3] = flagsBYTE;
+    aData_series623[4] = faultCodeBYTE;
+    aData_series623[5] = levelFaultFlagsBYTE;
+    aData_series623[6] = warningFlagsBYTE;
+    //aData_series623[7] = outOfBounds;
+
+  //end of function
+}
 /**
 Function name: CAN_CompileMessage623
 Function purpose:
@@ -404,15 +556,6 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], 
         &maxModule
     );
 
-
-    /**
-    pack Voltage
-    format:
-      unsigned, 0 to 65 kV -> ASSUMING decimal values from 0 to 65 000
-      because it's alloted 2 bytes in the data frame
-    */
-
-
     //Convert units of 100uV to V.
     //Then checks if value is outside of expected bounds, then truncates float to unsigned int.
     //packVoltageFLOAT = BTM_regValToVoltage((pPH_PACKDATA -> pack_voltage));
@@ -432,7 +575,6 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], 
     minBattModuleSticker = LUT_moduleStickers[minStack][minModule];
     maxBattModuleSticker = LUT_moduleStickers[maxStack][maxModule];
 
-
     //setting byte order in aData_series623 array
     aData_series623[0] = (uint8_t)(packVoltage >> 8);//intent: most-sig half of pack_voltage is bit-shifted right by 8 bits, such that ONLY the MSH is casted.
     aData_series623[1] = (uint8_t)(packVoltage);     //intent: only the LSB half is stored. the MSB half is truncated by the casting.
@@ -445,6 +587,7 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], 
 
   //end of function
 }
+
 /**
 Function name: CAN_CompileMessage627
 Function purpose:
@@ -492,9 +635,7 @@ void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], 
         averageTemperature2BYTE,
         minTmp,
         maxTmp;
-    //float
-    //    minTmpFLOAT,
-    //    maxTmpFLOAT;
+
     double
         averageTemperatureDOUBLE,
         minTmpDOUBLE,

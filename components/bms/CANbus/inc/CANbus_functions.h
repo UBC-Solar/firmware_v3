@@ -1,9 +1,9 @@
 /*
 
 CANbus_function.h
+Author: Edward Ma (Github: RootBeer1313)
 
 Purpose: Goes with CANbus_function.c
-
 */
 
 #ifndef CANBUS_FUNCTION_H_
@@ -45,6 +45,20 @@ Purpose: Goes with CANbus_function.c
 #define ADDRESS_627 627
 
 //value bounds
+#define CAN_FAULT_VALUES            0b01111111
+
+#define CAN_BITFLAG_FAULT_STATE     0b00000001 //bit 0
+
+#define CAN_FAULTFLAG_OVERVOLTAGE   0b10000000 //bit 7
+#define CAN_FAULTFLAG_UNDERVOLTAGE  0b01000000 //bit 6
+#define CAN_FAULTFLAG_OVERTEMP      0b00100000 //bit 5
+#define CAN_FAULTFLAG_COMMFAULT     0b00000100 //bit 2
+
+#define CAN_WARNFLAG_HIGHTEMP       0b00100000 //bit 5
+#define CAN_WARNFLAG_LOWTEMP        0b00010000 //bit 4
+#define CAN_WARNFLAG_HIGHVOLTAGE    0b00000010 //bit 1
+#define CAN_WARNFLAG_LOWVOLTAGE     0b00000001 //bit 0
+
 #define CAN_PACK_MINIMUM 0 //0 kV
 #define CAN_PACK_MAXIMUM 65000 //65 kV
 
@@ -79,4 +93,28 @@ typedef struct
 Brightside_CAN_MessageSeries;
 
 
+#endif
+
+/*
+Copied from analysis.h, created by Andrew Hanlon.
+Put here so that the code editor autocompletes.
+*/
+
+#ifdef SHAMELESSLY_COPIED_FROM_ANDREW_HANLON_ANALYSIS_H_
+#define BMS_FAULT_COMM          0x0001
+#define BMS_FAULT_ST            0x0002
+#define BMS_FAULT_OT            0x0004
+#define BMS_FAULT_UV            0x0008
+#define BMS_FAULT_OV            0x0010
+#define BMS_FAULT_NO_VOLT       0x0020
+#define BMS_FAULT_TEMP_RANGE    0x0040
+
+#define BMS_TRIP_BAL            0x0100
+#define BMS_TRIP_LLIM           0x0200
+#define BMS_TRIP_HLIM           0x0400
+
+#define BMS_WARNING_LOW_V       0x1000
+#define BMS_WARNING_HIGH_V      0x2000
+#define BMS_WARNING_LOW_T       0x4000
+#define BMS_WARNING_HIGH_T      0x8000
 #endif
