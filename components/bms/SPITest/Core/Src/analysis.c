@@ -140,3 +140,25 @@ int ANA_mergeModuleStatusCodes(BTM_PackData_t * pack) {
 
     return status_result;
 }
+
+float ANA_findHighestModuleTemp(BTM_PackData_t * pack) {
+    uint16_t temp_voltage = 0;
+    uint16_t max_temp_voltage = 0;
+    struct BTM_module * module_p;
+
+    for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++) {
+        for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) {
+            module_p = &(pack->stack[stack_num].module[module_num]);
+
+            // If module is enabled...
+            if (module_p->enable)
+            {
+                temp_voltage = module_p->temperature;
+                if(temp_voltage > max_temp_voltage)
+                    max_temp_voltage = temp_voltage;
+            }
+        }
+    }
+
+    return BTM_TEMP_volts2temp(max_temp_voltage);
+}

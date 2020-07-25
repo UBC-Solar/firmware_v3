@@ -53,9 +53,14 @@
 #define BMS_WARNING_LOW_T       0x4000
 #define BMS_WARNING_HIGH_T      0x8000
 
+#define MASK_BMS_FAULT          0x007F // Covers all faults
+#define MASK_BMS_WARNING        0xF000 // Covers all warnings
+#define MASK_BMS_SYSTEM_FAULT   0x0003 // Covers COMM and ST faults
+
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 void ANA_analyzeModules(BTM_PackData_t * pack);
 int ANA_mergeModuleStatusCodes(BTM_PackData_t * pack);
+float ANA_findHighestModuleTemp(BTM_PackData_t * pack);
 
 #endif /* INC_ANALYSIS_H_ */
