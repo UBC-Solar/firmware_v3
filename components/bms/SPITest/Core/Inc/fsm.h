@@ -26,17 +26,20 @@ typedef enum
     FSM_NORMAL,
     FSM_FAULT_COMM,
     FSM_FAULT_GENERAL
-    // BMS_<STATE> ... Add states here
+    // FSM_<STATE> ... Add states here
 } FSM_state_t;
 
 /*============================================================================*/
 /* CONFIGURABLE PARAMETERS */
 
-#define FSM_MIN_UPDATE_INTERVAL 500 // milliseconds
+#define FSM_MIN_UPDATE_INTERVAL 500 // milliseconds - time between reads of
+// voltage and temperature data, analysis of measurements, and updates to
+// balancing, status, etc. Make sure this is no longer than ~2 seconds or the
+// LTC6813 will be reset by its watchdog timer!
 
 /*============================================================================*/
 /* PUBLIC VARAIBLES */
-unsigned int uptime;
+unsigned int uptime; // time in seconds since FSM started
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */

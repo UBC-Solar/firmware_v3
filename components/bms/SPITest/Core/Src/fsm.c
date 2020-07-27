@@ -24,7 +24,9 @@
 #include "stdio.h"
 #endif
 
-// Private function prototypes
+/*============================================================================*/
+/* PRIVATE FUNCTION PROTOTYPES */
+
 // State functions:
 void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
 void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
@@ -40,18 +42,25 @@ void printBTMStatus(BTM_Status_t status, int print_ok);
 void printMeasurements(BTM_PackData_t * pack);
 #endif
 
-// Function pointer array to BMS FSM state functions
+/*============================================================================*/
+/* BMS FSM STATE FUNCTIONS POINTER ARRAY */
+
 // Function names go in this array declaration, and must be in the same order
 // as the FSM_BMS_state_t enumeration.
 void (* FSM_state_table[])(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack)
     = {FSM_reset, FSM_normal, FSM_fault_comm, FSM_fault_general};
 
-// FSM Global Variables
+/*============================================================================*/
+/* FSM GLOBAL VARIABLES */
+
 FSM_state_t FSM_state;
 unsigned int last_uptime_tick; // for keeping track of uptime
 unsigned int last_update_tick; // for control of measurement timing
 int system_status; // status code for system
 
+
+/*============================================================================*/
+/* FSM FUNCTIONS */
 
 /**
  * @brief Initializes FSM state.
@@ -97,6 +106,7 @@ void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pa
 {
     uint8_t test_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE]
         = {{0x55, 0x6E, 0x69, 0x42, 0x43, 0x20}/*, {0x53, 0x6f, 0x6c, 0x61, 0x72, 0x21}*/};
+    // TODO: ^ Add second subarray once configured for 2 LTC6813's
     uint8_t test_data_rx[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
     BTM_Status_t func_status = {BTM_OK, 0};
     int reg_group_match_failed = 0;
@@ -110,7 +120,7 @@ void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pa
     BTM_BAL_initDchPack(dch_setting_pack);
     // TODO: initialize CAN
 
-    // initialize other stuff?
+    // initialize other stuff here in future
 
 #ifdef PRINTF_DEBUG
     printf("BTM system initialized\nChecking communication with LTC devices: ");
@@ -136,7 +146,7 @@ void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pa
 
     // TODO: more self tests...
 
-    if (commsProblem(func_status, &system_status)) return;
+    //if (commsProblem(func_status, &system_status)) return;
 
     // perform initial voltage measurement
     last_update_tick = HAL_GetTick(); // initialize last_measurement_tick
@@ -159,8 +169,8 @@ void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pa
 
     // analyze initial measurements
     ANA_analyzeModules(pack);
-    system_status = (system_status & MASK_BMS_SYSTEM_FAULT);
-    system_status |= ANA_mergeModuleStatusCodes(pack);
+    system_status &= MASK_BMS_SYSTEM_FAULT; // Clear bits that come from modules
+    system_status |= ANA_mergeModuleStatusCodes(pack); // Add in module statuses
     // ^ prevent system-level faults from being overwritten
 
     driveControlSignals(system_status);
@@ -303,12 +313,11 @@ void FSM_fault_general(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_se
         // ^ prevent system-level faults from being overwritten
 
         // TODO: Balancing under fault
-        // If there is an HLIM fault, **and** no other faults for a given module,
-        // continue running balancing to try to alleviate the problem
+        // Module by module: if there is an HLIM fault, **and** no other faults,
+        // discharge the cell to try to alleviate the problem
         // Set as a TODO because we need an additional balancing function for this
 
-        // run balancing calculations and set balancing
-        BTM_BAL_settings(pack, dch_setting_pack);
+        //BTM_BAL_settings(pack, dch_setting_pack);
 
         // drive control signals based on status code
         driveControlSignals(system_status);
@@ -433,7 +442,8 @@ void printMeasurements(BTM_PackData_t * pack)
 {
     for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
     {
-        printf("IC #%d\n", ic_num);
+        printf("BOARD #%d\n", ic_num);
+        // TODO: Append more modules once project is configured for LTC6813
         printf("C0\t\tC1\t\tC2\t\tC3\t\tC4\t\tC5\t\tC6\t\tC7\t\tC8\t\tC9\t\tC10\t\tC11\n");
 
         for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) {
@@ -448,7 +458,7 @@ void printMeasurements(BTM_PackData_t * pack)
 
         for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) {
             if (pack->stack[ic_num].module[module_num].enable) {
-                printf("%.4f\t", BTM_TEMP_volts2temp(
+                printf("%.3f\t", BTM_TEMP_volts2temp(
                         pack->stack[ic_num].module[module_num].temperature));
             } else {
                 printf("x\t\t"); // Don't print the voltage for inactive modules
