@@ -52,7 +52,8 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
     float temp_celsius[NUM_GPIOS][MUX_CHANNELS][BTM_NUM_DEVICES]; // add in header NUM_GPIOS = 8
     BTM_Status_t status = {BTM_OK, 0};
     uint8_t cfgrb_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
-
+    // For data copy to pack data:
+    int module_num = 0;
 
     // Refer to the LTC6813 datasheet pages 60 and 65 for format and content of config_val
     for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++) {
@@ -136,8 +137,13 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
     {
         for(int gpio_num = 0; gpio_num < NUM_GPIOS; gpio_num++) {
             for(int mux_channel = 0; mux_channel < MUX_CHANNELS; mux_channel++) {
-                pack->stack[ic_num].module[2 * gpio_num + mux_channel].temperature =
+                pack->stack[ic_num].module[module_num].temperature =
                     temp_celsius[gpio_num][mux_channel][ic_num];
+                // Skip disabled module(s)
+                do {
+                    module_num++;
+                } while (pack->stack[ic_num].module[module_num].enable == MODULE_DISABLED);
+
             }
         }
     }
@@ -264,7 +270,7 @@ void volts2temp(uint16_t ADC[], uint16_t REF2[], float temp_celsius[])
         Vout = BTM_regValToVoltage(ADC[board]);
         R_therm = R_balance * ((Vs / Vout) - 1);
         temp_kelvin = (beta * room_temp)
-            / (beta + (room_temp * log(R_therm / R_room_temp)));
+            / (beta + (room_temp * logf(R_therm / R_room_temp)));
         temp_celsius[board] = temp_kelvin - 273.15;
     }
 }
