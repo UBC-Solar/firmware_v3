@@ -7,11 +7,22 @@ This file contains the suite of functions used for CAN functionality.
 
 */
 
+#ifdef ATOM_SYMBOLS_LABELLING
+#define Include_statements
+#endif
+
 #include "CANbus_functions.h"
 //#include <stdbool.h>
 
-//private variables
+
+
+#ifdef ATOM_SYMBOLS_LABELLING
+#define static_global_variables
+#endif
 //BTM_PackData_t PH_PACKDATA;
+static uint32_t GLOBAL_lastInterval;
+static uint32_t GLOBAL_lastSubInterval;
+
 
 //uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
 //    {
@@ -32,11 +43,11 @@ uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
 double BTM_TEMP_volts2temp(double vout);
 #endif //CODEWORD_DEBUG_BRIGHTSIDE
 
-BTM_Error CANstate(Brightside_CAN_MessageSeries * pSeries, uint32_t * lastInterval, uint32_t * lastSubInterval);
+HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries, uint32_t * lastInterval, uint32_t * lastSubInterval);
 //void CANstate_depreciated(Brightside_CAN_MessageSeries * pSeries);
 uint8_t CANstate_staleCheck();
 void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries);
-void CANstate_requestQueue();
+HAL_StatusTypeDef CANstate_requestQueue();
 
 void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessages_elithionSeries, int messageArraySize);
 
