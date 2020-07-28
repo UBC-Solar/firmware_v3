@@ -167,8 +167,13 @@ Parameters:
     Brightside_CAN_MessageSeries * pSeries : pointer to the full messageSeries struct.
 
 GLOBAL_variables_used:
+<<<<<<< HEAD
     uint32_t GLOBAL_lastInterval : Keeps track of the last 1.0s interval.
     uint32_t GLOBAL_lasSubInterval : keeps track of the last 0.2s interval.
+=======
+uint32_t GLOBAL_lastInterval : Keeps track of the last 1.0s interval.
+uint32_t GLOBAL_lasSubInterval : keeps track of the last 0.2s interval.
+>>>>>>> 42ff226decaa75908d5d7fbf9836798db3cd4687
 
 Return:
     BTM_Error
