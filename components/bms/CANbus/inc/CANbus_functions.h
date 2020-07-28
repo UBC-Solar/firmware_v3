@@ -30,18 +30,24 @@ Purpose: Goes with CANbus_function.c
 #define TWO_HUNDRED_MILLISECONDS 200
 #define ONE_THOUSAND_MILLISECONDS 1000
 
-#define PH_START_OF_ADDRESS_SERIES 600
-#define PH_UNUSED 0x0DEADBEE
-#define CAN_BRIGHTSIDE_DATA_LENGTH 8
+#define PH_MAX_VALUE //max value of int (the data type of tick)
+
+#define CAN_INITIAL_ELITHION_SERIES_ADDRESS 600
+#define CAN_UNUSED_EXT_ID 0x0DEADBEE //defined as "deadbee" to ensure new people understand that this value showing up is by design, and not a coincidence. Also, "deadbeef" doesn't fit the extended id bit size.
+#define CAN_BRIGHTSIDE_DATA_LENGTH 8 //8 bytes
 
 #define PH_SERIES_SIZE 2
+#define CAN_ELITHION_MESSAGE_SERIES_SIZE 4
 
-#define PH_TOTAL_MUX 32 //10 + 10 + 12
+#define PH_TOTAL_MUX 32 //10 + 10 + 12 //to be replaced by another global constant that probably exists in another header file
 
 #define CAN_PENDING     1
 #define CAN_NOT_PENDING 0
 //message addresses
+
+#define ADDRESS_622 622
 #define ADDRESS_623 623
+#define ADDRESS_626 626
 #define ADDRESS_627 627
 
 //value bounds
@@ -109,9 +115,9 @@ Put here so that the code editor autocompletes.
 #define BMS_FAULT_NO_VOLT       0x0020
 #define BMS_FAULT_TEMP_RANGE    0x0040
 
-#define BMS_TRIP_BAL            0x0100
-#define BMS_TRIP_LLIM           0x0200
-#define BMS_TRIP_HLIM           0x0400
+#define BMS_TRIP_BAL            0x0100 //(3) (flags) bit N/A
+#define BMS_TRIP_LLIM           0x0200 //(3) (flags) bit 6
+#define BMS_TRIP_HLIM           0x0400 //(3) (flags) bit 5
 
 #define BMS_WARNING_LOW_V       0x1000
 #define BMS_WARNING_HIGH_V      0x2000

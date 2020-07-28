@@ -32,7 +32,8 @@ uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
 double BTM_TEMP_volts2temp(double vout);
 #endif //CODEWORD_DEBUG_BRIGHTSIDE
 
-void CANstate(Brightside_CAN_MessageSeries * pSeries);
+BTM_Error CANstate(Brightside_CAN_MessageSeries * pSeries, uint32_t * lastInterval, uint32_t * lastSubInterval);
+//void CANstate_depreciated(Brightside_CAN_MessageSeries * pSeries);
 uint8_t CANstate_staleCheck();
 void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries);
 void CANstate_requestQueue();
@@ -73,15 +74,17 @@ uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * 
 *      TOP LEVEL FUNCTIONS
 *
 ********************************/
-uint8_t PH_TOP_level_functions;
+#ifdef ATOM_SYMBOLS_LABELLING
+#define TOP_level_functions;
+#endif
 
 void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int messageSeriesSize)
 {
     Brightside_CAN_Message* elementAddress = CANmessageWiseContent;
     for(int i=0 ; i < messageSeriesSize ; ++i)
     {
-        elementAddress -> header.StdId = PH_START_OF_ADDRESS_SERIES + i;
-        elementAddress -> header.ExtId = PH_UNUSED;
+        elementAddress -> header.StdId = CAN_INITIAL_ELITHION_SERIES_ADDRESS + i;
+        elementAddress -> header.ExtId = CAN_UNUSED_EXT_ID;
         elementAddress -> header.IDE   = CAN_ID_STD;   //Predefined constant in stm32 include file.
         elementAddress -> header.RTR   = CAN_RTR_DATA; //Predefined constant in stm32 include file.
         elementAddress -> header.DLC   = CAN_BRIGHTSIDE_DATA_LENGTH;
@@ -91,8 +94,10 @@ void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int me
     }
 
     //separate assignments for setting unique, non-consecutive addresses.
-    (CANmessageWiseContent + 0) -> header.StdId = ADDRESS_623;
-    (CANmessageWiseContent + 1) -> header.StdId = ADDRESS_627;
+    (CANmessageWiseContent + 0) -> header.StdId = ADDRESS_622;
+    (CANmessageWiseContent + 1) -> header.StdId = ADDRESS_623;
+    (CANmessageWiseContent + 2) -> header.StdId = ADDRESS_626;
+    (CANmessageWiseContent + 3) -> header.StdId = ADDRESS_627;
 }
 
 
@@ -111,7 +116,7 @@ Parameters:
     Brightside_CAN_Message * messageWiseContent:
         An array of structs, each element containing a message hedaer,
         dataFrame array, and mailbox.
-    uint8_t messageArrays[PH_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH]:
+    uint8_t messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH]:
         A 2D array for easy assignment of message dataFrames to each struct.
     int messageSeriesSize:
         The total number of messages in one series.
@@ -126,7 +131,7 @@ Algorithm:
 void CAN_InitMessageSeries_Dynamic(
         Brightside_CAN_MessageSeries * seriesStruct,
         Brightside_CAN_Message * messageWiseContent,
-        uint8_t messageArrays[PH_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH],
+        uint8_t messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH],
         int messageSeriesSize)
 {
 
@@ -166,14 +171,14 @@ Algorithm:
 Design Notes:
     Note that lastInterval and lastSubInterval are always multiples of their intervals, 1.0s and 0.2s respectively. This is to make it easier to debug and to
 */
-BTM_Error CANstate_EntryCheck(Brightside_CAN_MessageSeries * pSeries, uint32_t * lastInterval, uint32_t * lastSubInterval)
+HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries, uint32_t * lastInterval, uint32_t * lastSubInterval)
 {
     uint32_t
         tickValue = HAL_GetTick(),
         tickDelta,
         tickSubDelta;
-    BTM_Error
-        status = BTM_OK;
+    HAL_StatusTypeDef
+        status = HAL_OK;
 
     //gets the absolute difference between tickValue and lastInterval
     //avoids counter reset edge-case
@@ -181,9 +186,9 @@ BTM_Error CANstate_EntryCheck(Brightside_CAN_MessageSeries * pSeries, uint32_t *
     {
         tickDelta = tickValue - *lastInterval;
     }
-    else //if(tickValue < lastInterval)
+    else //if(tickValue < lastInterval) //if overflow
     {
-        tickDelta = *lastInterval - tickValue;
+        tickDelta = PH_MAX_VALUE - *lastInterval + tickValue;
     }
 
     //gets the absolute difference between tickValue and lastSubInterval
@@ -193,7 +198,7 @@ BTM_Error CANstate_EntryCheck(Brightside_CAN_MessageSeries * pSeries, uint32_t *
     }
     else //if(tickValue < lastSubInterval)
     {
-        tickSubDelta = *lastSubInterval - tickValue;
+        tickSubDelta = PH_MAX_VALUE - *lastSubInterval + tickValue;
     }
 
     //check if called at 1.0s interval or greater
@@ -205,17 +210,17 @@ BTM_Error CANstate_EntryCheck(Brightside_CAN_MessageSeries * pSeries, uint32_t *
         CANstate_staleCheck();
         CANstate_compileAll(pSeries);
         status = CANstate_requestQueue(pSeries);
-        if(status != BTM_OK)
-        {
+        // if(status != HAL_OK)
+        // {
+        //     return status;
+        // }
+        // else
             return status;
-        }
-        else
-            goto CAN_state_end;
     }
 
     else if(tickSubDelta < TWO_HUNDRED_MILLISECONDS)
     {
-        goto CAN_state_end;
+        return status;
     }
 
     else //if(tickSubDelta >= TWO_HUNDRED_MILLISECONDS)
@@ -223,77 +228,78 @@ BTM_Error CANstate_EntryCheck(Brightside_CAN_MessageSeries * pSeries, uint32_t *
         //update lastSubInterval to be a multiple of 0.2s.
         *lastSubInterval = tickValue - (tickValue % TWO_HUNDRED_MILLISECONDS);
         status = CANstate_requestQueue(pSeries);
-        if(status != BTM_OK)
-        {
+        // if(status != HAL_OK)
+        // {
+        //     return status;
+        // }
+        // else
             return status;
-        }
-        else
-            goto CAN_state_end;
     }
-CAN_state_end:
-    return BTM_OK;
 }
 
 
-//I am depreciating this.
-#ifndef CANBUS_TESTING_ONLY_H_
-void CANstate(Brightside_CAN_MessageSeries * pSeries)
-{
-    uint8_t errorFlag = 0;
-    int messageIndex;
-    //check if there are still pending messages in the transmission mailboxes.
-    //NOTE: assumption is that the TxMailboxes param (2nd parameter)
-    //is using one-hot encoding, allowing for CAN_TX_MAILBOX0, CAN_TX_MAILBOX1,
-    //and CAN_TX_MAILBOX2 to superimpose onto each other.
-    //See actual definition of CAN_TX_MAILBOX0, CAN_TX_MAILBOX1, and CAN_TX_MAILBOX2
-    //for the one hot encoding.
-    // if(HAL_CAN_IsTxMessagePending(PH_hcan, 0x111u) == CAN_PENDING){
-    //     errorFlag = 1; //1 for true
-    // }
-    if(HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) != 3)
-    {
-        errorFlag = 1;
-    }
 
-    //compile messages
-    CAN_CompileMessage623(pSeries->message[0].dataFrame, pPH_PACKDATA);
-    CAN_CompileMessage627(pSeries->message[1].dataFrame, pPH_PACKDATA);
+//
+// void CANstate_depreciated(Brightside_CAN_MessageSeries * pSeries)
+// {
+//     uint8_t errorFlag = 0;
+//     int messageIndex;
+//     //check if there are still pending messages in the transmission mailboxes.
+//     //NOTE: assumption is that the TxMailboxes param (2nd parameter)
+//     //is using one-hot encoding, allowing for CAN_TX_MAILBOX0, CAN_TX_MAILBOX1,
+//     //and CAN_TX_MAILBOX2 to superimpose onto each other.
+//     //See actual definition of CAN_TX_MAILBOX0, CAN_TX_MAILBOX1, and CAN_TX_MAILBOX2
+//     //for the one hot encoding.
+//     // if(HAL_CAN_IsTxMessagePending(PH_hcan, 0x111u) == CAN_PENDING){
+//     //     errorFlag = 1; //1 for true
+//     // }
+//     if(HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) != 3)
+//     {
+//         errorFlag = 1;
+//     }
+//
+//     //compile messages
+//     CAN_CompileMessage623(pSeries->message[0].dataFrame, pPH_PACKDATA);
+//     CAN_CompileMessage627(pSeries->message[1].dataFrame, pPH_PACKDATA);
+//
+//     //Continue with placing new messages
+//     messageIndex = pSeries -> runningIndex;
+//     while
+//         (HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) > 0
+//          && messageIndex < pSeries->messageSeriesSize)
+//     {
+//         HAL_CAN_AddTxMessage
+//             (
+//             PH_hcan,
+//             &pSeries->message[messageIndex].header,
+//             pSeries->message[messageIndex].dataFrame,//intent: pass the array using call by value.
+//             &pSeries->message[messageIndex].mailbox
+//             );
+//
+//         messageIndex++;
+//     }
+//
+//     //sets or resets the runningIndex stored outside this function's scope.
+//     if(messageIndex < messageSeriesSize)
+//     {
+//         pSeries -> runningIndex = messageIndex;
+//     }
+//     else
+//     {
+//         pSeries -> runningIndex = 0;
+//     }
+// /*self-notes:
+// POINTER2struct->member is already a dereference.
+// &POINTER2struct->member is the address of the member
+// POINTER2struct->array and &POINTER2struct->array[0] are different somehow?
+// I think POINTER2struct->array is the pointer to the first element of the array,
+// like arr == &arr[0].
+// I think &POINTER2struct->array[0] is the same as above, but &POINTER2struct->array[1] is not.
+// */
+// }
 
-    //Continue with placing new messages
-    messageIndex = pSeries -> runningIndex;
-    while
-        (HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) > 0
-         && messageIndex < pSeries->messageSeriesSize)
-    {
-        HAL_CAN_AddTxMessage
-            (
-            PH_hcan,
-            &pSeries->message[messageIndex].header,
-            pSeries->message[messageIndex].dataFrame,//intent: pass the array using call by value.
-            &pSeries->message[messageIndex].mailbox
-            );
 
-        messageIndex++;
-    }
 
-    //sets or resets the runningIndex stored outside this function's scope.
-    if(messageIndex < messageSeriesSize)
-    {
-        pSeries -> runningIndex = messageIndex;
-    }
-    else
-    {
-        pSeries -> runningIndex = 0;
-    }
-/*self-notes:
-POINTER2struct->member is already a dereference.
-&POINTER2struct->member is the address of the member
-POINTER2struct->array and &POINTER2struct->array[0] are different somehow?
-I think POINTER2struct->array is the pointer to the first element of the array,
-like arr == &arr[0].
-I think &POINTER2struct->array[0] is the same as above, but &POINTER2struct->array[1] is not.
-*/
-}
 
 
 /*
@@ -330,8 +336,10 @@ Design Notes:
 */
 void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries)
 {
-    CAN_CompileMessage623(pSeries->message[0].dataFrame, pPH_PACKDATA);
-    CAN_CompileMessage627(pSeries->message[1].dataFrame, pPH_PACKDATA);
+    CAN_CompileMessage622(pSeries->message[0].dataFrame, pPH_PACKDATA);
+    CAN_CompileMessage623(pSeries->message[1].dataFrame, pPH_PACKDATA);
+    CAN_CompileMessage626(pSeries->message[2].dataFrame, pPH_PACKDATA);
+    CAN_CompileMessage627(pSeries->message[3].dataFrame, pPH_PACKDATA);
 }
 
 /*
@@ -345,10 +353,10 @@ Return:
 Algorithm:
 Design Notes:
 */
-BTM_Error CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
+HAL_StatusTypeDef CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
 {
-    BTM_Error
-        status = 0;
+    HAL_StatusTypeDef
+        status = HAL_OK;
 
     messageIndex = pSeries -> runningIndex;
     while
@@ -379,27 +387,28 @@ BTM_Error CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
 
     return status;
 }
-#endif
+
 
 /*******************************
 *
 *      HELPER FUNCTIONS
 *
 ********************************/
-uint8_t PH_HELPER_functions;
-
+#ifdef ATOM_SYMBOLS_LABELLING
+#define HELPER_functions;
+#endif
 /*
 Function name: CAN_CompileMessage622
 Function purpose:
     Retrieve data, translate it, then format it into a message matching Elithion's format.
-    See the webstie for formatting details: https://www.elithion.com/lithiumate/php/controller_can_specs.php
+    See the website for formatting details: https://www.elithion.com/lithiumate/php/controller_can_specs.php
 
 Algorithm:
     1) Retrieve fault flags specified.
     2) Place fault flag data into Elithion format.
     3) Place data into message array, while following Elithion format.
 */
-void CAN_CompileMessage622(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA)
+void CAN_CompileMessage622(uint8_t aData_series622[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA)
 {
     uint8_t
         stateBYTE           = 0,
@@ -417,7 +426,7 @@ void CAN_CompileMessage622(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], 
     Update stateBYTE.
     */
     //Bit 0: fault state.
-    if(status_var & BMS_FAULT_ST != 0)
+    if(status_var & CAN_FAULT_VALUES != 0)
     {
         stateBYTE |= CAN_BITFLAG_FAULT_STATE;
     }
@@ -475,6 +484,7 @@ Update levelFaultFlagsBYTE.
     {
         warningFlagsBYTE |= CAN_WARNFLAG_HIGHTEMP;
     }
+
     // Bit 4 : cold temperature.
     if(status_var & BMS_WARNING_LOW_T != 0)
     {
@@ -494,23 +504,24 @@ Update levelFaultFlagsBYTE.
         warningFlagsBYTE |= CAN_WARNFLAG_LOWVOLTAGE;
     }
 
-    //setting byte order in aData_series623 array
-    aData_series623[0] = stateBYTE;
+    //setting byte order in aData_series622 array
+    aData_series622[0] = stateBYTE;
     //aData_series623[1] = timerBYTE;
     //aData_series623[2] = timerBYTE;
-    aData_series623[3] = flagsBYTE;
-    aData_series623[4] = faultCodeBYTE;
-    aData_series623[5] = levelFaultFlagsBYTE;
-    aData_series623[6] = warningFlagsBYTE;
+    aData_series622[3] = flagsBYTE;
+    aData_series622[4] = faultCodeBYTE;
+    aData_series622[5] = levelFaultFlagsBYTE;
+    aData_series622[6] = warningFlagsBYTE;
     //aData_series623[7] = outOfBounds;
 
   //end of function
 }
+
 /**
 Function name: CAN_CompileMessage623
 Function purpose:
     Retrieve data, translate it, then format it into a message matching Elithion's format.
-    See the webstie for formatting details: https://www.elithion.com/lithiumate/php/controller_can_specs.php
+    See the website for formatting details: https://www.elithion.com/lithiumate/php/controller_can_specs.php
 
 Algorithm:
     1) Retrieve voltage data specified.
@@ -586,6 +597,33 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], 
     aData_series623[7] = outOfBounds;
 
   //end of function
+}
+
+/*
+Function name: CAN_CompileMessage626
+Function purpose:
+    Retrieve data, translate it, then format it into a message matching Elithion's format.
+    See the website for formatting details: https://www.elithion.com/lithiumate/php/controller_can_specs.php
+
+Algorithm:
+    1) Retrieve state of charge
+    2) Place data into message array, while following Elithion format.
+*/
+void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA)
+{
+    uint8_t StateOfChargeBYTE;
+
+    StateOfChargeBYTE = pPH_PACKDATA->PH_SOC_LOCATION;
+
+    //setting byte order in aData_series626 array
+    aData_series626[0] = StateOfChargeBYTE;
+    // aData_series623[1] = 0;
+    // aData_series623[2] = 0;
+    // aData_series626[3] = 0;
+    // aData_series626[4] = 0;
+    // aData_series626[5] = 0;
+    // aData_series626[6] = 0;
+    // aData_series623[7] = 0;
 }
 
 /**
@@ -991,7 +1029,10 @@ uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * 
 Other Functions
 
 */
-uint8_t PH_OTHER_functions;
+#ifdef ATOM_SYMBOLS_LABELLING
+#define OTHER_functions;
+#endif
+
 
 uint8_t celciusAverage(BTM_PackData_t * pPH_PACKDATA){
     uint16_t localTemperature = 0;
