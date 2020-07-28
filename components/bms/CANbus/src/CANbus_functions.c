@@ -165,8 +165,10 @@ Function Purpose: TO limit the number of CANstate calls to at most 5 times per s
 
 Parameters:
     Brightside_CAN_MessageSeries * pSeries : pointer to the full messageSeries struct.
-    uint32_t lastInterval : Keeps track of the last 1.0s interval.
-    uint32_t lasSubInterval : keeps track of the last 0.2s interval.
+
+GLOBAL_variables_used:
+    uint32_t GLOBAL_lastInterval : Keeps track of the last 1.0s interval.
+    uint32_t GLOBAL_lasSubInterval : keeps track of the last 0.2s interval.
 
 Return:
     BTM_Error
@@ -182,7 +184,7 @@ Algorithm:
 Design Notes:
     Note that lastInterval and lastSubInterval are always multiples of their intervals, 1.0s and 0.2s respectively. This is to make it easier to debug and to
 */
-HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries, uint32_t * lastInterval, uint32_t * lastSubInterval)
+HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
 {
     uint32_t
         tickValue = HAL_GetTick(),
@@ -193,23 +195,23 @@ HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries, uint32_t * la
 
     //gets the absolute difference between tickValue and lastInterval
     //avoids counter reset edge-case
-    if(tickValue >= *lastInterval)
+    if(tickValue >= GLOBAL_lastInterval)
     {
-        tickDelta = tickValue - *lastInterval;
+        tickDelta = tickValue - GLOBAL_lastInterval;
     }
     else //if(tickValue < lastInterval) //if overflow
     {
-        tickDelta = PH_MAX_VALUE - *lastInterval + tickValue;
+        tickDelta = PH_MAX_VALUE - GLOBAL_lastInterval + tickValue;
     }
 
     //gets the absolute difference between tickValue and lastSubInterval
-    if(tickValue >= *lastSubInterval)
+    if(tickValue >= GLOBAL_lastSubInterval)
     {
-        tickSubDelta = tickValue - *lastSubInterval;
+        tickSubDelta = tickValue - GLOBAL_lastSubInterval;
     }
     else //if(tickValue < lastSubInterval)
     {
-        tickSubDelta = PH_MAX_VALUE - *lastSubInterval + tickValue;
+        tickSubDelta = PH_MAX_VALUE - GLOBAL_lastSubInterval + tickValue;
     }
 
     //check if called at 1.0s interval or greater
@@ -217,7 +219,7 @@ HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries, uint32_t * la
     if(tickDelta >= ONE_THOUSAND_MILLISECONDS)
     {
         //update lastInterval to be a multiple of 1.0s.
-        *lastInterval = *tickValue - (tickValue % ONE_THOUSAND_MILLISECONDS);
+        GLOBAL_lastInterval = tickValue - (tickValue % ONE_THOUSAND_MILLISECONDS);
         CANstate_staleCheck();
         CANstate_compileAll(pSeries);
         status = CANstate_requestQueue(pSeries);
@@ -237,7 +239,7 @@ HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries, uint32_t * la
     else //if(tickSubDelta >= TWO_HUNDRED_MILLISECONDS)
     {
         //update lastSubInterval to be a multiple of 0.2s.
-        *lastSubInterval = tickValue - (tickValue % TWO_HUNDRED_MILLISECONDS);
+        GLOBAL_lastSubInterval = tickValue - (tickValue % TWO_HUNDRED_MILLISECONDS);
         status = CANstate_requestQueue(pSeries);
         // if(status != HAL_OK)
         // {
