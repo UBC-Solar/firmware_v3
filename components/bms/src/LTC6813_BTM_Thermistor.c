@@ -146,6 +146,7 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 
             }
         }
+		module_num = 0;
     }
 
     return status;
