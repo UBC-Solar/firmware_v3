@@ -102,6 +102,12 @@ int findModuleTempState(int status, float temp) {
         status |= BMS_FAULT_OT; // Set FAULT_OT bit
     }
 
+    if (temp >= CHARGE_OT_TEMP) {
+        status |= BMS_TRIP_CHARGE_OT; // Set TRIP_CHARGE_OT bit
+    } else {
+        status &= ~BMS_TRIP_CHARGE_OT; // Clear TRIP_CHARGE_OT bit
+    }
+
     if (temp >= HIGH_WARNING_TEMP) {
         status |= BMS_WARNING_HIGH_T; // Set WARNING_HIGH_T bit
     } else {

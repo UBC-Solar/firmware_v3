@@ -30,7 +30,8 @@
 #define HIGH_READ_LIMIT_TEMP    150.0// degrees C
 #define LOW_WARNING_TEMP        10.0 // degrees C
 #define HIGH_WARNING_TEMP       45.0 // degrees C
-#define OT_FAULT_TEMP           55.0 // degrees C
+#define CHARGE_OT_TEMP          45.0 // degrees C
+#define OT_FAULT_TEMP           65.0 // degrees C
 
 /*============================================================================*/
 /* PUBLIC CONSTANTS */
@@ -47,14 +48,13 @@
 #define BMS_TRIP_BAL            0x0100
 #define BMS_TRIP_LLIM           0x0200
 #define BMS_TRIP_HLIM           0x0400
-
+#define BMS_TRIP_CHARGE_OT      0x0800
 #define BMS_WARNING_LOW_V       0x1000
 #define BMS_WARNING_HIGH_V      0x2000
 #define BMS_WARNING_LOW_T       0x4000
 #define BMS_WARNING_HIGH_T      0x8000
 
 #define MASK_BMS_FAULT          0x007F // Covers all faults
-#define MASK_BMS_WARNING        0xF000 // Covers all warnings
 #define MASK_BMS_SYSTEM_FAULT   0x0003 // Covers COMM and ST faults
 
 /*============================================================================*/

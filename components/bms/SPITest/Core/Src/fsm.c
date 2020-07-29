@@ -32,8 +32,10 @@ void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pa
 void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
 void FSM_fault_comm(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
 void FSM_fault_general(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
+
 // Helper functions:
 int commsProblem(BTM_Status_t func_status, int * sys_status);
+void analysisStatusUpdate(BTM_PackData_t * pack, int * status);
 int doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
                       uint8_t reg_group2[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE]);
 void driveControlSignals(int status);
@@ -167,11 +169,8 @@ void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pa
 #endif
     if (commsProblem(func_status, &system_status)) return;
 
-    // analyze initial measurements
-    ANA_analyzeModules(pack);
-    system_status &= MASK_BMS_SYSTEM_FAULT; // Clear bits that come from modules
-    system_status |= ANA_mergeModuleStatusCodes(pack); // Add in module statuses
-    // ^ prevent system-level faults from being overwritten
+    // analyze initial measurements, update system status code
+    analysisStatusUpdate(pack, &system_status);
 
     driveControlSignals(system_status);
 
@@ -226,10 +225,7 @@ void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_p
         if (commsProblem(func_status, &system_status)) return;
 
         // analyze measurements, update system status code
-        ANA_analyzeModules(pack);
-        system_status = (system_status & MASK_BMS_SYSTEM_FAULT);
-        system_status |= ANA_mergeModuleStatusCodes(pack);
-        // ^ prevent system-level faults from being overwritten
+        analysisStatusUpdate(pack, &system_status);
 
         // run balancing calculations and set balancing
         BTM_BAL_settings(pack, dch_setting_pack);
@@ -250,6 +246,11 @@ void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_p
 #endif
             CONT_FAN_PWM_set(FAN_FULL); // drive fans at full speed for fault
             FSM_state = FSM_FAULT_GENERAL;
+        }
+        else if (system_status & BMS_TRIP_CHARGE_OT)
+        {
+            // any module is too hot to charge (not a fault)
+            CONT_FAN_PWM_set(FAN_FULL);
         }
         else
         {
@@ -307,10 +308,7 @@ void FSM_fault_general(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_se
         if (commsProblem(func_status, &system_status)) return;
 
         // analyze measurements, update system status code
-        ANA_analyzeModules(pack);
-        system_status = (system_status & MASK_BMS_SYSTEM_FAULT);
-        system_status |= ANA_mergeModuleStatusCodes(pack);
-        // ^ prevent system-level faults from being overwritten
+        analysisStatusUpdate(pack, &system_status);
 
         // TODO: Balancing under fault
         // Module by module: if there is an HLIM fault, **and** no other faults,
@@ -378,6 +376,21 @@ int commsProblem(BTM_Status_t func_status, int * sys_status)
     }
 
     return 0;
+}
+
+void analysisStatusUpdate(BTM_PackData_t * pack, int * status)
+{
+    ANA_analyzeModules(pack);
+    *status = (system_status & MASK_BMS_SYSTEM_FAULT);
+    *status |= ANA_mergeModuleStatusCodes(pack);
+    // ^ prevent system-level faults from being overwritten
+    // Activate HLIM under CHARGE_OT condition
+    if (*status & BMS_TRIP_CHARGE_OT)
+    {
+        *status |= BMS_TRIP_HLIM;
+    }
+    // note that TRIP_HLIM will be cleared by analysis.c functions next loop
+    // if conditions change
 }
 
 // Helper function for initial system checks
