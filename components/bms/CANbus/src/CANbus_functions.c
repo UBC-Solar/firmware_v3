@@ -20,9 +20,11 @@ This file contains the suite of functions used for CAN functionality.
 #define static_global_variables
 #endif
 //BTM_PackData_t PH_PACKDATA;
-static uint32_t GLOBAL_lastInterval;
-static uint32_t GLOBAL_lastSubInterval;
-
+static uint32_t STATIC_lastInterval;
+static uint32_t STATIC_lastSubInterval;
+static Brightside_CAN_MessageSeries STATIC_ElithionSeries;
+static Brightside_CAN_Message STATIC_messagesWiseContent;
+static uint8_t STATIC_messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH] = 0;
 
 //uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
 //    {
@@ -49,7 +51,7 @@ uint8_t CANstate_staleCheck();
 void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries);
 HAL_StatusTypeDef CANstate_requestQueue();
 
-void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessages_elithionSeries, int messageArraySize);
+void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int messageArraySize);
 
 void CAN_CompileMessage622(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA);
 void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA);
@@ -88,6 +90,24 @@ uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * 
 #ifdef ATOM_SYMBOLS_LABELLING
 #define TOP_level_functions;
 #endif
+
+/*
+
+*/
+void CAN_InitAll()
+{
+    //Initialise static variables
+    STATIC_lastInterval = 0;
+    STATIC_lastSubInterval = 0;
+    //STATIC_messageArrays = 0;
+
+    //initialise message series structures
+    CAN_InitMessageSeries_Dynamic(
+        &STATIC_ElithionSeries,
+        &STATIC_messagesWiseContent,
+        STATIC_messageArrays,
+        CAN_ELITHION_MESSAGE_SERIES_SIZE);
+}
 
 void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int messageSeriesSize)
 {
@@ -167,13 +187,8 @@ Parameters:
     Brightside_CAN_MessageSeries * pSeries : pointer to the full messageSeries struct.
 
 GLOBAL_variables_used:
-<<<<<<< HEAD
-    uint32_t GLOBAL_lastInterval : Keeps track of the last 1.0s interval.
-    uint32_t GLOBAL_lasSubInterval : keeps track of the last 0.2s interval.
-=======
-uint32_t GLOBAL_lastInterval : Keeps track of the last 1.0s interval.
-uint32_t GLOBAL_lasSubInterval : keeps track of the last 0.2s interval.
->>>>>>> 42ff226decaa75908d5d7fbf9836798db3cd4687
+    uint32_t STATIC_lastInterval : Keeps track of the last 1.0s interval.
+    uint32_t STATIC_lasSubInterval : keeps track of the last 0.2s interval.
 
 Return:
     BTM_Error
@@ -200,23 +215,23 @@ HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
 
     //gets the absolute difference between tickValue and lastInterval
     //avoids counter reset edge-case
-    if(tickValue >= GLOBAL_lastInterval)
+    if(tickValue >= STATIC_lastInterval)
     {
-        tickDelta = tickValue - GLOBAL_lastInterval;
+        tickDelta = tickValue - STATIC_lastInterval;
     }
     else //if(tickValue < lastInterval) //if overflow
     {
-        tickDelta = PH_MAX_VALUE - GLOBAL_lastInterval + tickValue;
+        tickDelta = PH_MAX_VALUE - STATIC_lastInterval + tickValue;
     }
 
     //gets the absolute difference between tickValue and lastSubInterval
-    if(tickValue >= GLOBAL_lastSubInterval)
+    if(tickValue >= STATIC_lastSubInterval)
     {
-        tickSubDelta = tickValue - GLOBAL_lastSubInterval;
+        tickSubDelta = tickValue - STATIC_lastSubInterval;
     }
     else //if(tickValue < lastSubInterval)
     {
-        tickSubDelta = PH_MAX_VALUE - GLOBAL_lastSubInterval + tickValue;
+        tickSubDelta = PH_MAX_VALUE - STATIC_lastSubInterval + tickValue;
     }
 
     //check if called at 1.0s interval or greater
@@ -224,7 +239,7 @@ HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
     if(tickDelta >= ONE_THOUSAND_MILLISECONDS)
     {
         //update lastInterval to be a multiple of 1.0s.
-        GLOBAL_lastInterval = tickValue - (tickValue % ONE_THOUSAND_MILLISECONDS);
+        STATIC_lastInterval = tickValue - (tickValue % ONE_THOUSAND_MILLISECONDS);
         CANstate_staleCheck();
         CANstate_compileAll(pSeries);
         status = CANstate_requestQueue(pSeries);
@@ -244,7 +259,7 @@ HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
     else //if(tickSubDelta >= TWO_HUNDRED_MILLISECONDS)
     {
         //update lastSubInterval to be a multiple of 0.2s.
-        GLOBAL_lastSubInterval = tickValue - (tickValue % TWO_HUNDRED_MILLISECONDS);
+        STATIC_lastSubInterval = tickValue - (tickValue % TWO_HUNDRED_MILLISECONDS);
         status = CANstate_requestQueue(pSeries);
         // if(status != HAL_OK)
         // {
