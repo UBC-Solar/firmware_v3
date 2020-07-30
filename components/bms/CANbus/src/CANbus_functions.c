@@ -414,14 +414,45 @@ Design Notes: This function should NOT reset the runningIndex.
 */
 HAL_StatusTypeDef CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
 {
+    if(messageIndex >= pSeries->messageSeriesSize)
+    {
+        return HAL_OK;
+    }
+    //else
+
     HAL_StatusTypeDef
         status = HAL_OK;
+    uint8_t attempt = 0;
 
     messageIndex = pSeries -> runningIndex;
     while
         (HAL_CAN_GetTxMailboxesFreeLevel(Brightside_CAN_handle) > 0
          && messageIndex < pSeries->messageSeriesSize)
     {
+#if CAN_ENABLE_REQUEST_QUEUE_REDUNDANCY == 1
+        //attempt transmission at most three times
+        do{
+            status =
+                HAL_CAN_AddTxMessage
+                    (
+                    Brightside_CAN_handle,
+                    &pSeries->message[messageIndex].header,
+                    pSeries->message[messageIndex].dataFrame,//intent: pass the array using call by value.
+                    &pSeries->message[messageIndex].mailbox
+                    );
+            attempt++;
+        }
+        while(status != HAL_OK && attempt < CAN_REQUEST_ATTEMPT_MAX)
+
+        //if all three transmission retrys fail.
+        if(status != HAL_OK)
+        {
+            pSeries -> runningIndex = messageIndex;
+            return status;
+        }
+#endif
+
+#else
         status =
             HAL_CAN_AddTxMessage
                 (
@@ -430,20 +461,12 @@ HAL_StatusTypeDef CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
                 pSeries->message[messageIndex].dataFrame,//intent: pass the array using call by value.
                 &pSeries->message[messageIndex].mailbox
                 );
+#endif
 
         messageIndex++;
     }
 
-    //sets or resets the runningIndex stored outside this function's scope.
-    if(messageIndex < messageSeriesSize)
-    {
-        pSeries -> runningIndex = messageIndex;
-    }
-    else
-    {
-        pSeries -> runningIndex = 0;
-    }
-
+    pSeries -> runningIndex = messageIndex;
     return status;
 }
 

@@ -43,6 +43,9 @@ Purpose: Goes with CANbus_function.c
 
 #define CAN_STALE     1
 #define CAN_NOT_STALE 0
+
+#define CAN_REQUEST_ATTEMPT_MAX 3
+#define CAN_ENABLE_REQUEST_QUEUE_REDUNDANCY 1
 //message addresses
 
 #define ADDRESS_622 622
