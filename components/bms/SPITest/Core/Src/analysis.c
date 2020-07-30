@@ -147,6 +147,12 @@ int ANA_mergeModuleStatusCodes(BTM_PackData_t * pack) {
     return status_result;
 }
 
+/**
+ * @brief Finds the value of the highest module temperature in the battery pack
+ *
+ * @param pack Data pack to search for highest module temperature
+ * @return Floating point value in degrees C of the hottest module's temperature
+ */
 float ANA_findHighestModuleTemp(BTM_PackData_t * pack) {
     uint16_t temp_voltage = 0;
     uint16_t max_temp_voltage = 0;
