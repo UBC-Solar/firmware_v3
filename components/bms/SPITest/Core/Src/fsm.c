@@ -245,6 +245,10 @@ void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_p
             printf("ENTERING GENERAL FAULT STATE\n");
 #endif
             CONT_FAN_PWM_set(FAN_FULL); // drive fans at full speed for fault
+            // Stop all balancing (see note about fault balancing in FAULT_GENERAL state)
+            BTM_BAL_initDchPack(dch_setting_pack);
+            BTM_BAL_setDischarge(pack, dch_setting_pack);
+
             FSM_state = FSM_FAULT_GENERAL;
         }
         else if (system_status & BMS_TRIP_CHARGE_OT)
@@ -311,11 +315,11 @@ void FSM_fault_general(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_se
         analysisStatusUpdate(pack, &system_status);
 
         // TODO: Balancing under fault
-        // Module by module: if there is an HLIM fault, **and** no other faults,
-        // discharge the cell to try to alleviate the problem
-        // Set as a TODO because we need an additional balancing function for this
-
+        // if there is an OV fault, **and** no other faults,
+        // discharge any OV modules to try to alleviate the problem
+        //BTM_BAL_balanceUnderFault(pack, system_status);
         //BTM_BAL_settings(pack, dch_setting_pack);
+        // Alternatively, stop all balancing (done in transition to this state)
 
         // drive control signals based on status code
         driveControlSignals(system_status);
