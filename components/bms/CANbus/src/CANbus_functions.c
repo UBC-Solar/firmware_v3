@@ -126,6 +126,10 @@ Function Name: CAN_InitHeaderStruct
 Function Purpose:
     Initialise the aspects of a CAN message that don't change
     after initialisation, as defined by HAL for STM32.
+
+Design Notes:
+    Note that by default, the message addresses are assigned sequential
+    addresses, before being overwritten by separate assignments.
 */
 void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int messageSeriesSize)
 {
@@ -258,8 +262,12 @@ HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
     {
         //update lastInterval to be a multiple of 1.0s.
         STATIC_lastInterval = tickValue - (tickValue % ONE_THOUSAND_MILLISECONDS);
-        CANstate_staleCheck();
+        if(CANstate_staleCheck() != CAN_NOT_STALE)
+        {
+            //at this moment, there isn't anything special to do with stale messages
+        }
         CANstate_compileAll(pSeries);
+        CANstate_resetRequestQueue(pSeries);
         status = CANstate_requestQueue(pSeries);
         // if(status != HAL_OK)
         // {
@@ -364,13 +372,13 @@ Return:
     returns 1 if there is stale data
     else, returns 0 if the mailboxes are empty, i.e. without stale data to send.
 */
-uint8_t CANstate_staleCheck()
+static inline uint8_t CANstate_staleCheck()
 {
     if(HAL_CAN_GetTxMailboxesFreeLevel(Brightside_CAN_handle) != 3)
     {
-        return 1;
+        return CAN_STALE;
     }
-    return 0;
+    return CAN_NOT_STALE;
 }
 
 /*
@@ -402,7 +410,7 @@ Parameters:
 Return:
 
 Algorithm:
-Design Notes:
+Design Notes: This function should NOT reset the runningIndex.
 */
 HAL_StatusTypeDef CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
 {
@@ -439,6 +447,10 @@ HAL_StatusTypeDef CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
     return status;
 }
 
+static inline CANstate_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries)
+{
+    pSeries -> runningIndex = 0;
+}
 
 /*******************************
 *

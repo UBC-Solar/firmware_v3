@@ -41,8 +41,8 @@ Purpose: Goes with CANbus_function.c
 
 #define PH_TOTAL_MUX 32 //10 + 10 + 12 //to be replaced by another global constant that probably exists in another header file
 
-#define CAN_PENDING     1
-#define CAN_NOT_PENDING 0
+#define CAN_STALE     1
+#define CAN_NOT_STALE 0
 //message addresses
 
 #define ADDRESS_622 622
