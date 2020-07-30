@@ -75,6 +75,15 @@ Purpose: Goes with CANbus_function.c
 #define CAN_TEMPERATURE_MAXIMUM 127 //twos complement; 0x0111'1111
 
 
+/************************
+Global variables
+*************************/
+CAN_HandleTypeDef * Brightside_CAN_handle = hcan1; //global pointer for easy inclusion.
+
+
+/************************
+Structs
+*************************/
 typedef struct
 {
     CAN_TxHeaderTypeDef header;

@@ -301,10 +301,10 @@ HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
 //     //and CAN_TX_MAILBOX2 to superimpose onto each other.
 //     //See actual definition of CAN_TX_MAILBOX0, CAN_TX_MAILBOX1, and CAN_TX_MAILBOX2
 //     //for the one hot encoding.
-//     // if(HAL_CAN_IsTxMessagePending(PH_hcan, 0x111u) == CAN_PENDING){
+//     // if(HAL_CAN_IsTxMessagePending(Brightside_CAN_handle, 0x111u) == CAN_PENDING){
 //     //     errorFlag = 1; //1 for true
 //     // }
-//     if(HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) != 3)
+//     if(HAL_CAN_GetTxMailboxesFreeLevel(Brightside_CAN_handle) != 3)
 //     {
 //         errorFlag = 1;
 //     }
@@ -316,12 +316,12 @@ HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
 //     //Continue with placing new messages
 //     messageIndex = pSeries -> runningIndex;
 //     while
-//         (HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) > 0
+//         (HAL_CAN_GetTxMailboxesFreeLevel(Brightside_CAN_handle) > 0
 //          && messageIndex < pSeries->messageSeriesSize)
 //     {
 //         HAL_CAN_AddTxMessage
 //             (
-//             PH_hcan,
+//             Brightside_CAN_handle,
 //             &pSeries->message[messageIndex].header,
 //             pSeries->message[messageIndex].dataFrame,//intent: pass the array using call by value.
 //             &pSeries->message[messageIndex].mailbox
@@ -366,7 +366,7 @@ Return:
 */
 uint8_t CANstate_staleCheck()
 {
-    if(HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) != 3)
+    if(HAL_CAN_GetTxMailboxesFreeLevel(Brightside_CAN_handle) != 3)
     {
         return 1;
     }
@@ -411,13 +411,13 @@ HAL_StatusTypeDef CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
 
     messageIndex = pSeries -> runningIndex;
     while
-        (HAL_CAN_GetTxMailboxesFreeLevel(PH_hcan) > 0
+        (HAL_CAN_GetTxMailboxesFreeLevel(Brightside_CAN_handle) > 0
          && messageIndex < pSeries->messageSeriesSize)
     {
         status =
             HAL_CAN_AddTxMessage
                 (
-                PH_hcan,
+                Brightside_CAN_handle,
                 &pSeries->message[messageIndex].header,
                 pSeries->message[messageIndex].dataFrame,//intent: pass the array using call by value.
                 &pSeries->message[messageIndex].mailbox
