@@ -53,13 +53,13 @@ HAL_StatusTypeDef CANstate_requestQueue();
 
 void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int messageArraySize);
 
-void CAN_CompileMessage622(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA);
-void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA);
-void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA);
-void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA);
+void CAN_CompileMessage622(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
+void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
+void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
+void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
 
 void VoltageInfoRetrieval(
-    BTM_PackData_t * pPH_PACKDATA,
+    BTM_PackData_t * pPACKDATA,
     uint16_t * pMinVoltage,
     uint16_t * pMaxVoltage,
     uint8_t * pMinStack,
@@ -69,7 +69,7 @@ void VoltageInfoRetrieval(
 unsigned int outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * outOfBounds);
 uint8_t outOfBoundsAndConvert_moduleVoltage(float moduleVoltageFLOAT, uint8_t * outOfBounds);
 void temperatureDataRetrieval(
-    BTM_PackData_t * pPH_PACKDATA,
+    BTM_PackData_t * pPACKDATA,
     uint16_t * averageTemperature,
     uint16_t * minTmp,
     uint16_t * maxTmp,
@@ -395,10 +395,10 @@ Design Notes:
 */
 void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries)
 {
-    CAN_CompileMessage622(pSeries->message[0].dataFrame, pPH_PACKDATA);
-    CAN_CompileMessage623(pSeries->message[1].dataFrame, pPH_PACKDATA);
-    CAN_CompileMessage626(pSeries->message[2].dataFrame, pPH_PACKDATA);
-    CAN_CompileMessage627(pSeries->message[3].dataFrame, pPH_PACKDATA);
+    CAN_CompileMessage622(pSeries->message[0].dataFrame, CAN_PACKDATA_POINTER);
+    CAN_CompileMessage623(pSeries->message[1].dataFrame, CAN_PACKDATA_POINTER);
+    CAN_CompileMessage626(pSeries->message[2].dataFrame, CAN_PACKDATA_POINTER);
+    CAN_CompileMessage627(pSeries->message[3].dataFrame, CAN_PACKDATA_POINTER);
 }
 
 /*
@@ -494,7 +494,7 @@ Algorithm:
     2) Place fault flag data into Elithion format.
     3) Place data into message array, while following Elithion format.
 */
-void CAN_CompileMessage622(uint8_t aData_series622[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA)
+void CAN_CompileMessage622(uint8_t aData_series622[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA)
 {
     uint8_t
         stateBYTE           = 0,
@@ -507,7 +507,7 @@ void CAN_CompileMessage622(uint8_t aData_series622[CAN_BRIGHTSIDE_DATA_LENGTH], 
 
 
     int
-        status_var = pPH_PACKDATA->status;
+        status_var = pPACKDATA->status;
     /*
     Update stateBYTE.
     */
@@ -616,7 +616,7 @@ Algorithm:
         Note: this step is where data is made to match Elithion format's units, and where the numbers are casted to uint8_t.
     3) Place data into message array, while following Elithion format.
 */
-void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA)
+void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA)
 {
     unsigned int
         packVoltage = 0;
@@ -644,7 +644,7 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], 
 
   //gather min and max voltages
     VoltageInfoRetrieval(
-        pPH_PACKDATA,
+        pPACKDATA,
         &minVtg,
         &maxVtg,
         &minStack,
@@ -655,8 +655,8 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], 
 
     //Convert units of 100uV to V.
     //Then checks if value is outside of expected bounds, then truncates float to unsigned int.
-    //packVoltageFLOAT = BTM_regValToVoltage((pPH_PACKDATA -> pack_voltage));
-    packVoltageFLOAT = (float)(pPH_PACKDATA->pack_voltage) * 0.0001;
+    //packVoltageFLOAT = BTM_regValToVoltage((pPACKDATA -> pack_voltage));
+    packVoltageFLOAT = (float)(pPACKDATA->pack_voltage) * 0.0001;
     packVoltage = outOfBoundsAndCast_packVoltage(packVoltageFLOAT, &outOfBounds);
 
     //Convert units of 100uV to V.
@@ -695,11 +695,11 @@ Algorithm:
     1) Retrieve state of charge
     2) Place data into message array, while following Elithion format.
 */
-void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA)
+void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA)
 {
     uint8_t StateOfChargeBYTE;
 
-    StateOfChargeBYTE = pPH_PACKDATA->PH_SOC_LOCATION;
+    StateOfChargeBYTE = pPACKDATA->PH_SOC_LOCATION;
 
     //setting byte order in aData_series626 array
     aData_series626[0] = StateOfChargeBYTE;
@@ -725,7 +725,7 @@ Function purpose:
 
 Parameters:
     uint8_t aData_series627[8] - Array pre-initialised with zeros.
-    BTM_PackData_t * pPH_PACKDATA - pointer to struct containing battery-module measurements.
+    BTM_PackData_t * pPACKDATA - pointer to struct containing battery-module measurements.
 
 Return:
     void
@@ -742,7 +742,7 @@ Algorithm:
     3) Place data into message array, while matching the Elithion format.
 
 */
-void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPH_PACKDATA){
+void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA){
     uint8_t
         averageTemperatureBYTE = 0,
         minTmpBYTE = 0,
@@ -767,7 +767,7 @@ void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], 
 
     //1) scans the struct and calculates the relevant information needed
     temperatureDataRetrieval(
-        pPH_PACKDATA,
+        pPACKDATA,
         &averageTemperature2BYTE,
         &minTmp,
         &maxTmp,
@@ -834,7 +834,7 @@ Algorithm:
     2) Assign final numbers to pointed-to variables.
 */
 void VoltageInfoRetrieval(
-    BTM_PackData_t * pPH_PACKDATA,
+    BTM_PackData_t * pPACKDATA,
     uint16_t * pMinVoltage,
     uint16_t * pMaxVoltage,
     uint8_t * pMinStack,
@@ -854,15 +854,15 @@ void VoltageInfoRetrieval(
         maxModule = 0;
 
   //combines the minVolt and maxVolt loops to reduce redundant struct pulls.
-    //localMinVolt = pPH_PACKDATA->stack[0].module[0].voltage;
-    //localMaxVolt = pPH_PACKDATA->stack[0].module[0].voltage;
+    //localMinVolt = pPACKDATA->stack[0].module[0].voltage; //Meant to avoid edge case where values are not updated from default.
+    //localMaxVolt = pPACKDATA->stack[0].module[0].voltage; //Meant to avoid edge case where values are not updated.
     for(int i = 0; i < BTM_NUM_DEVICES; ++i)
     {
         for(int j = 0; j < BTM_NUM_MODULES; ++j)
         {
-            if(pPH_PACKDATA -> stack[i].module[j].enable == 1)
+            if(pPACKDATA -> stack[i].module[j].enable == 1)
             {
-                localVoltage = pPH_PACKDATA -> stack[i].module[j].voltage;
+                localVoltage = pPACKDATA -> stack[i].module[j].voltage;
 
                 if(localVoltage < localMinVolt)
                 {
@@ -979,7 +979,7 @@ Per loop iteration:
 2.1) The running average of all module temperatures is now the entire pack's temperature average.
 */
 void temperatureDataRetrieval(
-    BTM_PackData_t * pPH_PACKDATA,
+    BTM_PackData_t * pPACKDATA,
     uint16_t * pAverageTemperature,
     uint16_t * pMinTmp,
     uint16_t * pMaxTmp,
@@ -1010,9 +1010,9 @@ void temperatureDataRetrieval(
     {
         for(int j = 0; j < BTM_NUM_MODULES; ++j)
         {
-            if(pPH_PACKDATA -> stack[i].module[j].enable == MODULE_ENABLED)
+            if(pPACKDATA -> stack[i].module[j].enable == MODULE_ENABLED)
             {
-                localTemperature = pPH_PACKDATA -> stack[i].module[j].temperature;
+                localTemperature = pPACKDATA -> stack[i].module[j].temperature;
 
                 //double type is used to avoid possible integer overflow.
                 //localTemperature is uint16_t. Reasonably, in this loop, it should
@@ -1120,7 +1120,7 @@ Other Functions
 #endif
 
 
-uint8_t celciusAverage(BTM_PackData_t * pPH_PACKDATA){
+uint8_t celciusAverage(BTM_PackData_t * pPACKDATA){
     uint16_t localTemperature = 0;
     double temperatureTotal = 0;
     double localAverage = 0;
@@ -1131,9 +1131,9 @@ uint8_t celciusAverage(BTM_PackData_t * pPH_PACKDATA){
     {
         for(int j = 0; j < BTM_NUM_MODULES; ++j)
         {
-            if(pPH_PACKDATA -> stack[i].module[j].enable == 1)
+            if(pPACKDATA -> stack[i].module[j].enable == 1)
             {
-                localTemperature = pPH_PACKDATA -> stack[i].module[j].temperature;
+                localTemperature = pPACKDATA -> stack[i].module[j].temperature;
                 temperatureTotal = temperatureTotal + BTM_TEMP_volts2temp(localTemperature);
             }
         }
