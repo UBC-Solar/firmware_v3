@@ -81,8 +81,8 @@ Purpose: Goes with CANbus_function.c
 /************************
 Global variables
 *************************/
-CAN_HandleTypeDef * Brightside_CAN_handle = hcan1; //global pointer for easy inclusion.
-
+CAN_HandleTypeDef * Brightside_CAN_handle = &hcan1; //global pointer for easy inclusion.
+BTM_PackData_t * CAN_PACKDATA_POINTER = &pack;
 
 /************************
 Structs
