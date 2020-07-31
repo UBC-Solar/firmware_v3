@@ -2,7 +2,7 @@
 #include "stm32f3xx_hal.h"
 #include <math.h>
 
-#define GPIO_9_TOGGLE 0b00001000 // For bitwise operations with CFGRB byte 0
+#define GPIO_5_TOGGLE 0b10000000 // For bitwise operations with CFGRB byte 0
 
 // Private function prototypes:
 BTM_Status_t readThermistorVoltage(
@@ -10,10 +10,10 @@ BTM_Status_t readThermistorVoltage(
     uint16_t GPIO2_voltage[BTM_NUM_DEVICES],
     uint16_t GPIO3_voltage[BTM_NUM_DEVICES],
     uint16_t GPIO4_voltage[BTM_NUM_DEVICES],
-    uint16_t GPIO5_voltage[BTM_NUM_DEVICES],
     uint16_t GPIO6_voltage[BTM_NUM_DEVICES],
     uint16_t GPIO7_voltage[BTM_NUM_DEVICES],
     uint16_t GPIO8_voltage[BTM_NUM_DEVICES],
+	uint16_t GPIO9_voltage[BTM_NUM_DEVICES],
     uint16_t REF2_voltage[BTM_NUM_DEVICES]
 );
 
@@ -44,31 +44,31 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
     uint16_t GPIO2_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
     uint16_t GPIO3_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
     uint16_t GPIO4_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
-    uint16_t GPIO5_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
     uint16_t GPIO6_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
     uint16_t GPIO7_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
     uint16_t GPIO8_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
+    uint16_t GPIO9_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
     uint16_t REF2_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
     float temp_celsius[NUM_GPIOS][MUX_CHANNELS][BTM_NUM_DEVICES]; // add in header NUM_GPIOS = 8
     BTM_Status_t status = {BTM_OK, 0};
-    uint8_t cfgrb_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
+    uint8_t cfgra_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
     // For data copy to pack data:
     int module_num = 0;
 
     // Refer to the LTC6813 datasheet pages 60 and 65 for format and content of config_val
     for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++) {
         for(int reg_num = 0; reg_num < BTM_REG_GROUP_SIZE; reg_num++) {
-            cfgrb_to_write[ic_num][reg_num] =  pack->stack[ic_num].cfgrb[reg_num];
+            cfgra_to_write[ic_num][reg_num] =  pack->stack[ic_num].cfgra[reg_num];
             if (reg_num == 0)
             {
-                cfgrb_to_write[ic_num][reg_num] &= ~GPIO_9_TOGGLE; // GPIO 9 = 0
+                cfgra_to_write[ic_num][reg_num] &= ~GPIO_5_TOGGLE; // GPIO 5 = 0
                 // update the stored configuration register
-                pack->stack[ic_num].cfgrb[reg_num] = cfgrb_to_write[ic_num][reg_num];
+                pack->stack[ic_num].cfgra[reg_num] = cfgra_to_write[ic_num][reg_num];
             }
         }
     }
 
-    BTM_writeRegisterGroup(CMD_WRCFGB, cfgrb_to_write);
+    BTM_writeRegisterGroup(CMD_WRCFGA, cfgra_to_write);
     // CMD_WRCFGB has to be added to the header file: CMD_WRCFGB = 0b000_0010_0100// CMD_WRCFGB has to be added to the header file: CMD_WRCFGB = 0b000_0010_0100
 
     // perform readings for channel 0
@@ -78,10 +78,10 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
         GPIO2_voltage[0],
         GPIO3_voltage[0],
         GPIO4_voltage[0],
-        GPIO5_voltage[0],
         GPIO6_voltage[0],
         GPIO7_voltage[0],
         GPIO8_voltage[0],
+		GPIO9_voltage[0],
         REF2_voltage[0]
     );
 
@@ -93,19 +93,19 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
     volts2temp(GPIO2_voltage[0], REF2_voltage[0], temp_celsius[1][0]);
     volts2temp(GPIO3_voltage[0], REF2_voltage[0], temp_celsius[2][0]);
     volts2temp(GPIO4_voltage[0], REF2_voltage[0], temp_celsius[3][0]);
-    volts2temp(GPIO5_voltage[0], REF2_voltage[0], temp_celsius[4][0]);
-    volts2temp(GPIO6_voltage[0], REF2_voltage[0], temp_celsius[5][0]);
-    volts2temp(GPIO7_voltage[0], REF2_voltage[0], temp_celsius[6][0]);
-    volts2temp(GPIO8_voltage[0], REF2_voltage[0], temp_celsius[7][0]);
+    volts2temp(GPIO6_voltage[0], REF2_voltage[0], temp_celsius[4][0]);
+    volts2temp(GPIO7_voltage[0], REF2_voltage[0], temp_celsius[5][0]);
+    volts2temp(GPIO8_voltage[0], REF2_voltage[0], temp_celsius[6][0]);
+    volts2temp(GPIO9_voltage[0], REF2_voltage[0], temp_celsius[7][0]);
 
     // Switch to the other side of the muxes
     for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++) {
-        cfgrb_to_write[ic_num][0] |= GPIO_9_TOGGLE; // GPIO 9 = 1
+        cfgrb_to_write[ic_num][0] |= GPIO_5_TOGGLE; // GPIO 9 = 1
         // update the stored configuration register
-        pack->stack[ic_num].cfgrb[0] = cfgrb_to_write[ic_num][0];
+        pack->stack[ic_num].cfgra[0] = cfgra_to_write[ic_num][0];
     }
 
-    BTM_writeRegisterGroup(CMD_WRCFGB, cfgrb_to_write);
+    BTM_writeRegisterGroup(CMD_WRCFGA, cfgra_to_write);
 
     status = readThermistorVoltage
     (
@@ -113,10 +113,10 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
         GPIO2_voltage[1],
         GPIO3_voltage[1],
         GPIO4_voltage[1],
-        GPIO5_voltage[1],
         GPIO6_voltage[1],
         GPIO7_voltage[1],
         GPIO8_voltage[1],
+	GPIO9_voltage[1],
         REF2_voltage[1]
     );
 
@@ -127,10 +127,10 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
     volts2temp(GPIO2_voltage[1], REF2_voltage[1], temp_celsius[1][1]);
     volts2temp(GPIO3_voltage[1], REF2_voltage[1], temp_celsius[2][1]);
     volts2temp(GPIO4_voltage[1], REF2_voltage[1], temp_celsius[3][1]);
-    volts2temp(GPIO5_voltage[1], REF2_voltage[1], temp_celsius[4][1]);
-    volts2temp(GPIO6_voltage[1], REF2_voltage[1], temp_celsius[5][1]);
-    volts2temp(GPIO7_voltage[1], REF2_voltage[1], temp_celsius[6][1]);
-    volts2temp(GPIO8_voltage[1], REF2_voltage[1], temp_celsius[7][1]);
+    volts2temp(GPIO6_voltage[1], REF2_voltage[1], temp_celsius[4][1]);
+    volts2temp(GPIO7_voltage[1], REF2_voltage[1], temp_celsius[5][1]);
+    volts2temp(GPIO8_voltage[1], REF2_voltage[1], temp_celsius[6][1]);
+    volts2temp(GPIO9_voltage[1], REF2_voltage[1], temp_celsius[7][1]);
 
     // Copy gathered temperature data to pack data structure
     for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
@@ -168,17 +168,17 @@ BTM_Status_t readThermistorVoltage(
     uint16_t GPIO2_voltage[BTM_NUM_DEVICES],
     uint16_t GPIO3_voltage[BTM_NUM_DEVICES],
     uint16_t GPIO4_voltage[BTM_NUM_DEVICES],
-    uint16_t GPIO5_voltage[BTM_NUM_DEVICES],
     uint16_t GPIO6_voltage[BTM_NUM_DEVICES],
     uint16_t GPIO7_voltage[BTM_NUM_DEVICES],
     uint16_t GPIO8_voltage[BTM_NUM_DEVICES],
+    uint16_t GPIO9_voltage[BTM_NUM_DEVICES],
     uint16_t REF2_voltage[BTM_NUM_DEVICES]
 )
 {
     uint8_t registerAUXA_voltages[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
     uint8_t registerAUXB_voltages[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
     uint8_t registerAUXC_voltages[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
-    //uint8_t registerAUXD_voltages[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
+    uint8_t registerAUXD_voltages[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
     uint16_t voltage_reading = 0;
     BTM_Status_t status = {BTM_OK, 0};
     //start conversion
@@ -193,7 +193,7 @@ BTM_Status_t readThermistorVoltage(
     if (status.error != BTM_OK) return status; // There's a communication problem
     status = BTM_readRegisterGroup(CMD_RDAUXC, registerAUXC_voltages); // CMD_RDAUXC need to be added to the header file (CMD_RDAUXC  = 0x000D)
     if (status.error != BTM_OK) return status; // There's a communication problem
-    /*status = BTM_readRegisterGroup(CMD_RDAUXD, registerAUXD_voltages); // CMD_RDAUXD need to be added to the header file (CMD_RDAUXD  = 0x000F)
+    status = BTM_readRegisterGroup(CMD_RDAUXD, registerAUXD_voltages); // CMD_RDAUXD need to be added to the header file (CMD_RDAUXD  = 0x000F)
     if (status.error != BTM_OK) return status; // There's a communication problem*/
 
     //output reading by assigning to pointed array the first two bytes of registerAUXA_voltages
@@ -217,9 +217,9 @@ BTM_Status_t readThermistorVoltage(
             | registerAUXB_voltages[board][0];
         GPIO4_voltage[board] = voltage_reading;
 
-        voltage_reading = ( ((uint16_t) registerAUXB_voltages[board][3]) << 8)
+        /*voltage_reading = ( ((uint16_t) registerAUXB_voltages[board][3]) << 8)
             | registerAUXB_voltages[board][2];
-        GPIO5_voltage[board] = voltage_reading;
+        GPIO5_voltage[board] = voltage_reading;*/
 
         voltage_reading = ( ((uint16_t) registerAUXB_voltages[board][5]) << 8)
             | registerAUXB_voltages[board][4];
@@ -237,9 +237,9 @@ BTM_Status_t readThermistorVoltage(
             | registerAUXC_voltages[board][4];
         GPIO8_voltage[board] = voltage_reading;
 
-        /*voltage_reading = ( ((uint16_t) registerAUXD_voltages[board][1]) << 8)
+        voltage_reading = ( ((uint16_t) registerAUXD_voltages[board][1]) << 8)
             | registerAUXD_voltages[board][0];
-        GPIO9_voltage[board] = voltage_reading;*/
+        GPIO9_voltage[board] = voltage_reading;
     }
 
     return status;
