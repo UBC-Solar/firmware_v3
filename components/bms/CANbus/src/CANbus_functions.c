@@ -45,11 +45,11 @@ uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
 double BTM_TEMP_volts2temp(double vout);
 #endif //CODEWORD_DEBUG_BRIGHTSIDE
 
-HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries, uint32_t * lastInterval, uint32_t * lastSubInterval);
 //void CANstate_depreciated(Brightside_CAN_MessageSeries * pSeries);
-uint8_t CANstate_staleCheck();
+static inline int8_t CANstate_staleCheck();
 void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries);
 HAL_StatusTypeDef CANstate_requestQueue();
+static inline CANstate_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries);
 
 void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int messageArraySize);
 
@@ -92,7 +92,7 @@ uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * 
 #endif
 
 /*
-Function Name: CAN_InitAll
+Function Name: CANstate_InitAll
 Function purpose:
     To be the one and only function to call to
     initialise most things for CAN functionality
@@ -105,7 +105,7 @@ Difference between this function and cubeMX code:
     of message structures preinitialised as global static
     variables, arrays, and structs.
 */
-void CAN_InitAll()
+void CANstate_InitAll()
 {
     //Initialise static variables
     STATIC_lastInterval = 0;
