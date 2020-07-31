@@ -113,6 +113,13 @@ Brightside_CAN_MessageSeries;
 
 #endif
 
+
+/************************
+external function prototypes
+************************/
+extern void CANstate_InitAll();
+extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries);
+
 /*
 Copied from analysis.h, created by Andrew Hanlon.
 Put here so that the code editor autocompletes.
