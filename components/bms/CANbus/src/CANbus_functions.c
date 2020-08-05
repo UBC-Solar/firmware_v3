@@ -105,7 +105,7 @@ Difference between this function and cubeMX code:
     of message structures preinitialised as global static
     variables, arrays, and structs.
 */
-void CANstate_InitAll()
+extern void CANstate_InitAll()
 {
     //Initialise static variables
     STATIC_lastInterval = 0;
@@ -226,7 +226,7 @@ Algorithm:
 Design Notes:
     Note that lastInterval and lastSubInterval are always multiples of their intervals, 1.0s and 0.2s respectively. This is to make it easier to debug and to
 */
-HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
+extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
 {
     uint32_t
         tickValue = HAL_GetTick(),
