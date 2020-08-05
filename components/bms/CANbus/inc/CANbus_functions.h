@@ -30,7 +30,7 @@ Purpose: Goes with CANbus_function.c
 #define TWO_HUNDRED_MILLISECONDS 200
 #define ONE_THOUSAND_MILLISECONDS 1000
 
-#define PH_MAX_VALUE //max value of int (the data type of tick)
+#define PH_MAX_VALUE = 2147483647 //max value of int (the data type of tick)
 
 #define CAN_INITIAL_ELITHION_SERIES_ADDRESS 600
 #define CAN_UNUSED_EXT_ID 0x0DEADBEE //defined as "deadbee" to ensure new people understand that this value showing up is by design, and not a coincidence. Also, "deadbeef" doesn't fit the extended id bit size.
