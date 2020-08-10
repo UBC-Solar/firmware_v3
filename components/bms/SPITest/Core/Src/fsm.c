@@ -120,7 +120,8 @@ void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pa
     // initialize the LTC6811 and system data
     BTM_init(pack);
     BTM_BAL_initDchPack(dch_setting_pack);
-    // TODO: initialize CAN
+    // Initialize CAN
+    //CAN_initAll();
 
     // initialize other stuff here in future
 
@@ -266,8 +267,9 @@ void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_p
         }
     }
 
-    // TODO: perform CAN communication
+    // Perform CAN communication
     // this is not necessarily synchronous to the main system update
+    //CANState();
 
     return;
 }
@@ -279,6 +281,7 @@ void FSM_fault_comm(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setti
     // system status should not change, since no readings can take place.
 
     // TODO: send status-only CAN messages (no data)?
+    //CANState();
 
     return;
 }
@@ -332,7 +335,7 @@ void FSM_fault_general(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_se
 
     // TODO: perform CAN communication
     // this is not necessarily synchronous to the main system update
-    // perform measurements
+    //CANState();
 
     // fans should have been set at full power when the transition to this state took place
     // can ONLY switch from here to FAULT_COMM, or stay in this state
