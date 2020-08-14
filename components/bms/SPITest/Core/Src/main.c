@@ -26,6 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "ltc6811_btm.h"
+#include "ltc6811_btm_bal.h"
 #include "control.h"
 
 /* USER CODE END Includes */
@@ -87,7 +88,7 @@ int main(void)
 	    };
 
 	uint8_t register_readout[BTM_NUM_DEVICES][6] = {{0}};
-
+	BTM_BAL_dch_setting_pack_t dch_pack1, dch_pack2;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -136,6 +137,32 @@ int main(void)
 		printf("%X\t\t%X\n", config_val[i], register_readout[0][i]);
 	}
 	putchar('\n');
+
+	// Test BTM_BAL functions written so far
+    BTM_BAL_initDchPack(&dch_pack1);
+    BTM_BAL_initDchPack(&dch_pack2);
+    pack.stack[2].module[4].enable = MODULE_DISABLED; // for 3 stack test w/o 6811 dev board
+    for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+    {
+        for(int mod_num = 0; mod_num < BTM_NUM_MODULES; mod_num++)
+        {
+            switch(ic_num)
+            {
+            case 0:
+                dch_pack1.stack[ic_num].module_dch[mod_num] = (0x55 >> mod_num) & 1;
+                break;
+            case 1:
+                dch_pack1.stack[ic_num].module_dch[mod_num] = (0x2AA >> mod_num) & 1;
+                break;
+            default:
+                dch_pack1.stack[ic_num].module_dch[mod_num] = (0xB38 >> mod_num) & 1;
+                break;
+            }
+        }
+    }
+
+    BTM_BAL_setDischarge(&pack, &dch_pack1); // Don't run with dev board on
+    BTM_BAL_copyDchPack(&dch_pack1, &dch_pack2);
   /* USER CODE END 2 */
 
   /* Infinite loop */

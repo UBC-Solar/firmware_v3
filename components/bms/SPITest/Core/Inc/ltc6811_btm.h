@@ -94,7 +94,7 @@ typedef enum {
 /*============================================================================*/
 /* CONFIGURABLE PARAMETERS */
 
-#define BTM_NUM_DEVICES 1U // Number of LTC6811-1 ICs daisy chained
+#define BTM_NUM_DEVICES 3U // Number of LTC6811-1 ICs daisy chained
 
 #define BTM_TIMEOUT_VAL 30U // ms - safety timeout threshold for BTM functions
 #define BTM_MAX_READ_ATTEMPTS 3U // maximum number of times to try to perform a
