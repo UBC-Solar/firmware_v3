@@ -1,4 +1,4 @@
-//the main program that will run the BMS of V3 (that I will call Sol Crusher, named after its home university)
+//the main program that will run the BMS of Brightside
 
 //TODO: review how compliers optimise code and how to avoid optimisations from getting rid of needed code. it might be a keyword or something, like "VOLATILE".
 
@@ -46,14 +46,14 @@ init_PERIPHERALS();
 //startup checks
 	//overvoltage and under voltage
 	measure_voltage();
-	
+
 	//overcurrent
 	measure_current();
-		
+
 	//temperature
 	measure_temperature();
-	
-	
+
+
 //main looping process
 
 	while(GLOBAL_interupt == 0){
@@ -78,21 +78,21 @@ void measure_voltage(){
 
 void measure_current(){
 	int raw_current, final_current;
-	
+
 	//pull reading from registers
 	raw_current = read_current();
-	
+
 	//an immediate comparison, for safety
 	//TODO: figure out value of raw overcurrent
 	if(raw_current >= OVERCURRENT_THRESHOLD){
-		//TODO: set interrupt 
+		//TODO: set interrupt
 	}
 	else{
 	final_current = calc_current(raw_current);
-	
+
 	//set global var for CAN functions to send
 	DISPLAY_current = final current;
-	}	
+	}
 	return final_current;
 }
 

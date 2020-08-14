@@ -264,7 +264,7 @@ typedef struct {
                                 // for device_num attribute of BTM_Status_t
 
 /*============================================================================*/
-/* PUBLIC VARAIBLES */
+/* PUBLIC VARIABLES */
 
 // BTM_SPI_handle - must set this variable to the HAL SPI handle corresponding
 // to the SPI peripheral to which the LTC devices are connected
