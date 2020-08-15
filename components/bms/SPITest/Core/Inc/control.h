@@ -1,6 +1,6 @@
 /**
- *  @file contactors.h
- *  @brief Header file for contactor control
+ *  @file control.h
+ *  @brief Header file for ECU control signal outputs functionality
  *
  *  Steps to set up this functionality:
  *  1.  Set the GPIO port and pin for all signals in this file
@@ -59,8 +59,18 @@ typedef enum {
 #define PWM_DIVISIONS 320 // This should be equal to the value of the
 // auto-reload register of the timer used for PWM generation + 1
 
+// Parameters for linear temp -> fan PWM calculation
+#define FAN_OFF_TEMP    20.0 // degrees C; fans off below this temp, on above, starting at MIN_FAN_PWM
+#define FAN_FULL_TEMP   45.0 // Fans will be on full beyond this temp
+                             //   (they'll be on full regardless under FAULT)
+#define MIN_FAN_PWM     15   // %; Fans may not actually spin at very low duty cycles
+#define TEMP_HYSTERESIS 1.0
+
 /*============================================================================*/
 /* PUBLIC CONSTANTS */
+
+#define FAN_FULL 100
+#define FAN_RAMP_SLOPE  ((FAN_FULL - MIN_FAN_PWM) / (FAN_FULL_TEMP - FAN_OFF_TEMP))
 
 /*============================================================================*/
 /* PUBLIC VARAIBLES */
@@ -88,6 +98,7 @@ void CONT_HLIM_switch(CONT_signal_state_t new_state);
 void CONT_LLIM_switch(CONT_signal_state_t new_state);
 void CONT_OT_switch(CONT_signal_state_t new_state);
 void CONT_FAN_PWM_set(unsigned int pwm_val);
+unsigned int CONT_fanPwmFromTemp(float temp);
 
 #endif /* INC_CONTROL_H_ */
 

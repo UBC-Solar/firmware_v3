@@ -109,6 +109,8 @@ void BTM_wakeup()
 /**
  * @brief Initializes the LTC6811s and the data structures used for monitoring the battery
  *
+ * WARNING: Disable modules via their "enable" attribute only AFTER calling this function,
+ * otherwise these settings will be overwritten.
  * @param pack A pointer to the PackData structure in use
  */
 void BTM_init(BTM_PackData_t * pack)
@@ -142,7 +144,7 @@ void BTM_init(BTM_PackData_t * pack)
             pack->stack[ic_num].module[module_num].enable = MODULE_ENABLED;
             pack->stack[ic_num].module[module_num].voltage = 0;
             pack->stack[ic_num].module[module_num].temperature = 0;
-            pack->stack[ic_num].module[module_num].bal_status = DISCHARGE_OFF;
+            pack->stack[ic_num].module[module_num].status = 0; // clean code
         }
 
     }
@@ -314,7 +316,7 @@ BTM_Status_t BTM_readRegisterGroup(
 		BTM_sendCmd(command);
 
 		// Read back the data, but stop between device data groups on error
-		// TODO: Indicate to caller which LTC6811 is having problems, if problems are encountered
+		// This will indicate to caller which LTC6811 is having problems, if problems are encountered
 		ic_num = 0;
 		// reset status before a new try
 		status.error = BTM_OK;
@@ -427,7 +429,7 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
  * @param raw_reading The 16-bit reading from an LTC6811
  * @return Returns a properly scaled floating-point version of raw_reading
  */
-float BTM_regValToVoltage(uint16_t raw_reading)
+float BTM_regValToVoltage(unsigned int raw_reading)
 {
 	return raw_reading * BTM_VOLTAGE_CONVERSION_FACTOR;
 }

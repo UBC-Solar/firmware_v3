@@ -49,15 +49,15 @@ enum BTM_Error {
 // LTC6811 ADC mode options
 // First freq applies when ADCOPT == 0, second when ADCOPT == 1
 // Descriptions "fast," "normal," 'filtered" apply when ADCOPT == 0
-typedef enum {
+enum BTM_MD_e {
     MD_422HZ_1KHZ  = 0x0,
     MD_27KHZ_14KHZ = 0x1,	// fast
     MD_7KHZ_3KHZ   = 0x2,	// normal
     MD_26HZ_2KHZ   = 0x3	// filtered
-} BTM_MD_t;
+};
 
 // LTC6811 GPIO selection for ADC conversion
-typedef enum {
+enum BTM_CHG_e {
     CHG_ALL   = 0x0, // GPIO 1 through 5 and VREF2
     CHG_GPIO1 = 0x1,
     CHG_GPIO2 = 0x2,
@@ -65,26 +65,21 @@ typedef enum {
     CHG_GPIO4 = 0x4,
     CHG_GPIO5 = 0x5,
     CHG_VREF2 = 0x6
-} BTM_CHG_t;
+};
 
 // LTC6811 Status Group selection
-typedef enum {
+enum BTM_CHST_e {
     CHST_ALL = 0x0, // Measure all 4 parameters below:
     CHST_SC  = 0x1, // Sum of all Cells
     CHST_ITMP= 0x2, // Internal Die Temperature
     CHST_VA  = 0x3, // Analog Power Supply
     CHST_VD  = 0x4  // Digital Power Supply
-} BTM_CHST_t;
+};
 
 typedef enum {
     MODULE_DISABLED = 0,
     MODULE_ENABLED = 1
 } BTM_module_enable_t;
-
-typedef enum {
-    DISCHARGE_OFF = 0,
-    DISCHARGE_ON = 1
-} BTM_module_bal_status_t;
 
 typedef enum {
     CS_LOW = 0,
@@ -114,6 +109,7 @@ typedef enum {
 #define VUV 1687U // (2.7V / (16 * 0.0001V)) - 1 = 1687
 // Over-voltage threshold for LTC6811
 #define VOV 2624U // (4.2V / (16 * 0.0001V)) - 1 = 2624
+
 // ADCOPT selects the ADC mode together with MD, but is in the CFG register
 #define ADCOPT 0
 /* End Configuration Register Group Parameters */
@@ -236,7 +232,7 @@ struct BTM_module {
     BTM_module_enable_t enable;
     uint16_t voltage;
     uint16_t temperature;
-    BTM_module_bal_status_t bal_status;
+    int status;
 };
 
 struct BTM_stack {
@@ -257,10 +253,12 @@ typedef struct {
     enum BTM_Error error;
     unsigned int device_num; // Device at which error occurred, if applicable.
     // 0 = N/A, 1 = first device in chain, 2 = second device...
-    // If there is no error (error == BTM_OK), device_num should be 0
+    // If there is no error (error == BTM_OK), device_num should be 0.
+    // The reason for the N/A option is not all operations have a means of
+    // differentiating responses of different LTC6811's in the chain.
 } BTM_Status_t;
 
-#define BTM_STATUS_DEVICE_NA 0  // device number not applicable value
+#define BTM_STATUS_DEVICE_NA 0  // "device number not applicable" value
                                 // for device_num attribute of BTM_Status_t
 
 /*============================================================================*/
@@ -280,7 +278,7 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command);
 void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][BTM_REG_GROUP_SIZE]);
 BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_REG_GROUP_SIZE]);
 BTM_Status_t BTM_readBatt(BTM_PackData_t * packData);
-float BTM_regValToVoltage(uint16_t raw_reading);
+float BTM_regValToVoltage(unsigned int raw_reading);
 void BTM_writeCS(CS_state_t new_state);
 
 #endif /* LTC6811_BTM_H_ */
