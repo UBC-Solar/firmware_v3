@@ -1,4 +1,4 @@
-//the main program that will run the BMS of Brightside
+//the main program that will run the BMS of the V3 car, Brightside.
 
 //TODO: review how compliers optimise code and how to avoid optimisations from getting rid of needed code. it might be a keyword or something, like "VOLATILE".
 
