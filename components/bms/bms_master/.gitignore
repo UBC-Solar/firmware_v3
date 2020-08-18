@@ -1,0 +1,9 @@
+# Files and folders to be left untracked, ignored and left out by git
+
+# Compiled binaries, etc.
+/Debug/
+/Release/
+# Eclipse project metadata
+/.settings/
+# Debug and Run Configuration
+*.launch
