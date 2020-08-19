@@ -10,10 +10,10 @@
 #define INC_FSM_H_
 
 #include "stm32f3xx_hal.h"
-#include "ltc6811_btm.h"
+#include "ltc6813_btm.h"
 #include "control.h"
-#include "thermistor.h"
-#include "ltc6811_btm_bal.h"
+#include "ltc6813_btm_temp.h"
+#include "ltc6813_btm_bal.h"
 #include "btm_bal_settings.h"
 #include "analysis.h"
 

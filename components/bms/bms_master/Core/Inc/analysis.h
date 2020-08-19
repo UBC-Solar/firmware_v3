@@ -9,7 +9,7 @@
 #ifndef INC_ANALYSIS_H_
 #define INC_ANALYSIS_H_
 
-#include "ltc6811_btm.h"
+#include "ltc6813_btm.h"
 
 /*============================================================================*/
 /* CONFIGURABLE PARAMETERS */

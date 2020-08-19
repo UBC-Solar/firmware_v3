@@ -8,8 +8,8 @@
 #ifndef INC_BTM_BAL_SETTINGS_H_
 #define INC_BTM_BAL_SETTINGS_H_
 
-#include "ltc6811_btm.h"
-#include "ltc6811_btm_bal.h"
+#include "ltc6813_btm.h"
+#include "ltc6813_btm_bal.h"
 
 void BTM_BAL_settings(
     BTM_PackData_t* pack,

@@ -12,7 +12,7 @@
 #ifndef LTC6811_BTM_BAL_H_
 #define LTC6811_BTM_BAL_H_
 
-#include "ltc6811_btm.h"
+#include "ltc6813_btm.h"
 
 /*============================================================================*/
 /* STRUCTURES */

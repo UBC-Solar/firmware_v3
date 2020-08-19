@@ -8,7 +8,7 @@
 #ifndef INC_LTC6813_BTM_TEMP_H_
 #define INC_LTC6813_BTM_TEMP_H_
 
-#include "ltc6811_btm.h"
+#include "ltc6813_btm.h"
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */

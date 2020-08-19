@@ -16,7 +16,7 @@
  *
  */
 
-#include "ltc6811_btm.h"
+#include "ltc6813_btm.h"
 
 #define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
 
