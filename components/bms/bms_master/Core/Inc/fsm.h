@@ -14,7 +14,7 @@
 #include "control.h"
 #include "thermistor.h"
 #include "ltc6811_btm_bal.h"
-#include "Balancing_Skeleton.h"
+#include "btm_bal_settings.h"
 #include "analysis.h"
 
 /*============================================================================*/

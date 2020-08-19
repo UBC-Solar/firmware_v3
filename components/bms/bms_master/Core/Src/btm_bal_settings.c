@@ -1,4 +1,4 @@
-#include "Balancing_Skeleton.h"
+#include "btm_bal_settings.h"
 
 // Private function prototypes
 void min_val(uint16_t* val, int* loc, uint16_t arr[], int size, int enable[]);

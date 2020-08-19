@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef INC_BALANCING_SKELETON_H_
-#define INC_BALANCING_SKELETON_H_
+#ifndef INC_BTM_BAL_SETTINGS_H_
+#define INC_BTM_BAL_SETTINGS_H_
 
 #include "ltc6811_btm.h"
 #include "ltc6811_btm_bal.h"
@@ -15,4 +15,4 @@ void BTM_BAL_settings(
     BTM_PackData_t* pack,
     BTM_BAL_dch_setting_pack_t* dch_setting_pack);
 
-#endif /* INC_BALANCING_SKELETON_H_ */
+#endif /* INC_BTM_BAL_SETTINGS_H_ */
