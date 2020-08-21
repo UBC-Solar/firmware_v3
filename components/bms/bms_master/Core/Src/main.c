@@ -22,7 +22,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
+#include "fsm.h"
+#include "ltc6813_btm.h"
+#include "control.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,6 +35,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define LED_BLINK_INTERVAL 500
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -79,6 +83,13 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 
+  // BMS Data structures
+  BTM_PackData_t pack;
+  BTM_BAL_dch_setting_pack_t dch_setting_pack;
+
+  unsigned int current_blink_tick = 0;
+  unsigned int last_blink_tick = 0;
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -106,12 +117,31 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
+  // Give the BMS functionality access to hardware resources
+  BTM_SPI_handle = &hspi2;
+  CONT_timer_handle = &htim3;
+
+  FSM_init();
+
+  HAL_GPIO_WritePin(LED_OUT_GPIO_Port, LED_OUT_Pin, GPIO_PIN_SET); // Turn LED on
+  current_blink_tick = HAL_GetTick();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    FSM_run(&pack, &dch_setting_pack);
+
+    // blink LED on master board
+    current_blink_tick = HAL_GetTick();
+    if (last_blink_tick - current_blink_tick >= LED_BLINK_INTERVAL)
+    {
+        HAL_GPIO_TogglePin(LED_OUT_GPIO_Port, LED_OUT_Pin);
+        last_blink_tick = current_blink_tick;
+    }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -457,6 +487,20 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+// Configure where printf() and putchar() output goes
+int __io_putchar(int ch)
+{
+    // Un-comment either (or both) function call to route debugging output
+
+    // Output on Serial Wire Output (SWO)
+    ITM_SendChar(ch);
+
+    // Output on UART
+    //HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
+
+    return (ch);
+}
 
 /* USER CODE END 4 */
 
