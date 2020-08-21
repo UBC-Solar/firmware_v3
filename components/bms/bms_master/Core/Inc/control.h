@@ -15,7 +15,8 @@
 #ifndef INC_CONTROL_H_
 #define INC_CONTROL_H_
 
-#include "stm32f3xx_hal.h"
+#include "main.h" // Included for port and pin definitions,
+                  //  plus HAL library inclusion (stm32f3xx_hal.h)
 
 /*============================================================================*/
 /* ENUMERATIONS */
@@ -28,23 +29,23 @@ typedef enum {
 /*============================================================================*/
 /* CONFIGURABLE PARAMETERS */
 
-#define CONT_BAL_PORT GPIOB
-#define CONT_BAL_PIN GPIO_PIN_12
+#define CONT_BAL_PORT BAL_OUT_GPIO_Port
+#define CONT_BAL_PIN BAL_OUT_Pin
 
-#define CONT_COM_PORT GPIOB
-#define CONT_COM_PIN GPIO_PIN_13
+#define CONT_COM_PORT COM_OUT_GPIO_Port
+#define CONT_COM_PIN COM_OUT_Pin
 
-#define CONT_FLT_PORT GPIOB
-#define CONT_FLT_PIN GPIO_PIN_14
+#define CONT_FLT_PORT FLT_OUT_GPIO_Port
+#define CONT_FLT_PIN FLT_OUT_Pin
 
-#define CONT_HLIM_PORT GPIOB
-#define CONT_HLIM_PIN GPIO_PIN_15
+#define CONT_HLIM_PORT HLIM_OUT_GPIO_Port
+#define CONT_HLIM_PIN HLIM_OUT_Pin
 
-#define CONT_LLIM_PORT GPIOA
-#define CONT_LLIM_PIN GPIO_PIN_8
+#define CONT_LLIM_PORT LLIM_OUT_GPIO_Port
+#define CONT_LLIM_PIN LLIM_OUT_Pin
 
-#define CONT_OT_PORT GPIOA
-#define CONT_OT_PIN GPIO_PIN_9
+#define CONT_OT_PORT OT_OUT_GPIO_Port
+#define CONT_OT_PIN OT_OUT_Pin
 
 // For all signals, this is the inactive pin state
 // For LLIM and HLIM, this is the pin state when contactors should be closed
@@ -55,8 +56,8 @@ typedef enum {
 #define CONT_LLIM_POLARITY 0
 #define CONT_OT_POLARITY 0
 
-#define CONT_TIM_CHANNEL TIM_CHANNEL_2 // must match the peripheral config
-#define PWM_DIVISIONS 320 // This should be equal to the value of the
+#define CONT_TIM_CHANNEL TIM_CHANNEL_3 // must match the peripheral config
+#define PWM_DIVISIONS 360 // This should be equal to the value of the
 // auto-reload register of the timer used for PWM generation + 1
 
 // Parameters for linear temp -> fan PWM calculation
