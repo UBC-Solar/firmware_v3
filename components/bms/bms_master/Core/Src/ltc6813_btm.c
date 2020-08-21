@@ -158,7 +158,7 @@ void BTM_init(BTM_PackData_t * pack)
         {
             pack->stack[ic_num].module[module_num].enable = MODULE_ENABLED;
             pack->stack[ic_num].module[module_num].voltage = 0;
-            pack->stack[ic_num].module[module_num].temperature = 0;
+            pack->stack[ic_num].module[module_num].temperature = 0.0;
             pack->stack[ic_num].module[module_num].status = 0; // clean code
         }
 

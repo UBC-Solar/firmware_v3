@@ -8,7 +8,6 @@
 #include "analysis.h"
 
 // Private function prototypes
-float BTM_TEMP_volts2temp(uint16_t); // TODO: remove later; here until thermistor code is available
 int findModuleVoltState(int status, uint16_t pack);
 int findModuleTempState(int status, float temp);
 
@@ -32,7 +31,7 @@ void ANA_analyzeModules(BTM_PackData_t * pack) {
             {
                 // Get key readings
                 voltage = module_p->voltage;
-                temp = BTM_TEMP_volts2temp(module_p->temperature);
+                temp = module_p->temperature;
                 // Get existing status
                 module_status = module_p->status;
                 // Update module status
@@ -154,8 +153,8 @@ int ANA_mergeModuleStatusCodes(BTM_PackData_t * pack) {
  * @return Floating point value in degrees C of the hottest module's temperature
  */
 float ANA_findHighestModuleTemp(BTM_PackData_t * pack) {
-    uint16_t temp_voltage = 0;
-    uint16_t max_temp_voltage = 0;
+    float temperature = 0;
+    float max_temperature = 0;
     struct BTM_module * module_p;
 
     for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++) {
@@ -165,12 +164,12 @@ float ANA_findHighestModuleTemp(BTM_PackData_t * pack) {
             // If module is enabled...
             if (module_p->enable)
             {
-                temp_voltage = module_p->temperature;
-                if(temp_voltage > max_temp_voltage)
-                    max_temp_voltage = temp_voltage;
+                temperature = module_p->temperature;
+                if(temperature > max_temperature)
+                    max_temperature = temperature;
             }
         }
     }
 
-    return BTM_TEMP_volts2temp(max_temp_voltage);
+    return max_temperature;
 }
