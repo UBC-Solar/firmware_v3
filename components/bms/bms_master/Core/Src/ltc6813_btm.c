@@ -1,16 +1,18 @@
 /**
- * 	@file ltc6811_btm.c
- *  @brief Driver for the LTC6811-1 battery monitor IC.
+ * 	@file ltc6813_btm.c
+ *  @brief Driver for the LTC6813-1 battery monitor IC
  *
  *  All functions associated with this driver are prefixed with "BTM"
  *
  *  Note on configuring the SPI peripheral:
- *  The LTC6811 uses SPI in mode 3 (CPOL 1, CPHA 1)
+ *  The LTC6813 uses SPI in mode 3 (CPOL 1, CPHA 1)
  *  The format is most significant bit (MSB) first.
- *  Max baud rate for LTC6811 is 1Mb/s, but run it slower if there
+ *  Max baud rate for LTC6813 is 1Mb/s, but run it slower if there
  *  are problems with noise, etc.
  *
- *  @date 2020/02/14
+ *  This file was originally modified from ltc6811_btm.c
+ *
+ *  @date 2020/08/18
  *  @author Andrew Hanlon (a2k-hanlon)
  *	@author Laila Khan (lailakhankhan)
  *
@@ -18,6 +20,8 @@
 
 #include "ltc6813_btm.h"
 
+#define NUM_CELL_VOLT_REGS 6
+#define READINGS_PER_REG 3
 #define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
 
 // Lookup table for PEC (Packet Error Code) CRC calculation
@@ -83,7 +87,7 @@ uint16_t BTM_calculatePec15(uint8_t *data, int len)
 }
 
 /**
- * @brief Toggles the CS line to wake up the entire chain of LTC6811's.
+ * @brief Toggles the CS line to wake up the entire chain of LTC6813's.
  *
  * Wakes up the daisy chain as per method described on pg. 52 of datasheet
  * (method 2)
@@ -93,8 +97,8 @@ void BTM_wakeup()
     // Using HAL_Delay() for this is not particularly ideal, since the
     // minimum delay is 1ms and the delays required are 300us and
     // 10us -ish (shorter than 1 ms)
-    // TODO: test with daisy chain of 3 LTC6811's to verify this timing works
-    // If it doens't, add another faster timer for more precise delays
+    // TODO: test with daisy chain of 3 LTC6813's to verify this timing works
+    // If it doesn't, add another faster timer for more precise delays
 	for (int i = 0; i < BTM_NUM_DEVICES; i++)
 	{
 		BTM_writeCS(CS_LOW);
@@ -107,7 +111,7 @@ void BTM_wakeup()
 }
 
 /**
- * @brief Initializes the LTC6811s and the data structures used for monitoring the battery
+ * @brief Initializes the LTC6813s and the data structures used for monitoring the battery
  *
  * WARNING: Disable modules via their "enable" attribute only AFTER calling this function,
  * otherwise these settings will be overwritten.
@@ -115,27 +119,38 @@ void BTM_wakeup()
  */
 void BTM_init(BTM_PackData_t * pack)
 {
-    uint8_t cfgr_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
+    uint8_t cfgra_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
+    uint8_t cfgrb_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 
-    // Refer to the LTC6811 datasheet pages 62 and 65 for format and content of config_val
-    uint8_t config_val[BTM_REG_GROUP_SIZE] =
+    // Refer to the LTC6813 datasheet pages 60 and 65 for format and content of config_val_a
+    uint8_t config_val_a[BTM_REG_GROUP_SIZE] =
     {
-        0xF8 | (REFON << 2) | ADCOPT, // GPIO 1-5 = 1, REFON, ADCOPT
+        0xF8 | (REFON << 2) | ADCOPT, // GPIO 1-5 pull-downs off, REFON, ADCOPT
         (VUV & 0xFF), // VUV[7:0]
+        0x00,
+        0x00,
+        0x00,
+        0x00
+    };
+	uint8_t config_val_b[BTM_REG_GROUP_SIZE] =
+    {
+        0x0F, // Discharge off for cells 13 through 16 GPIO 6-9 = 1
+        0x00, // FDRF = 0, PS = 0, Discharge off for cells 17 and 18, GPIO 9 Pull-down off
         ((uint8_t) (VOV << 4)) | (((uint8_t) (VUV >> 8)) & 0x0F), // VOV[4:0] | VUV[11:8]
         (VOV >> 4), // VOV[11:4]
         0x00, // Discharge off for cells 1 through 8
         0x00  // Discharge off for cells 9 through 12, Discharge timer disabled
     };
-
     // Initialize given PackData structure
     pack->pack_voltage = 0;
     for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
     {
         for(int reg_num = 0; reg_num < BTM_REG_GROUP_SIZE; reg_num++)
         {
-            pack->stack[ic_num].cfgr[reg_num] = config_val[reg_num];
-            cfgr_to_write[ic_num][reg_num] = config_val[reg_num]; // prepare tx data
+            pack->stack[ic_num].cfgra[reg_num] = config_val_a[reg_num];
+			cfgra_to_write[ic_num][reg_num] = config_val_a[reg_num]; // prepare tx data
+            pack->stack[ic_num].cfgrb[reg_num] = config_val_b[reg_num];
+            cfgrb_to_write[ic_num][reg_num] = config_val_b[reg_num]; // prepare tx data
         }
 
         pack->stack[ic_num].stack_voltage = 0;
@@ -149,8 +164,9 @@ void BTM_init(BTM_PackData_t * pack)
 
     }
 
-    BTM_wakeup(); // Wake up all LTC6811's in the chain
-    BTM_writeRegisterGroup(CMD_WRCFGA, cfgr_to_write); // Write to Config. Reg. Group
+    BTM_wakeup(); // Wake up all LTC6813's in the chain
+    BTM_writeRegisterGroup(CMD_WRCFGA, cfgra_to_write); // Write to Config. Reg. Group A
+    BTM_writeRegisterGroup(CMD_WRCFGB, cfgrb_to_write); // Write to Config. Reg. Group B
     return;
 }
 
@@ -179,13 +195,13 @@ void BTM_sendCmd(BTM_command_t command)
 }
 
 /**
- * @brief sends a polling-type command (eg. ADCV) and then polls the LTC6811
- * This function is blocking. It will wait for the LTC6811 to signal it is
+ * @brief sends a polling-type command (eg. ADCV) and then polls the LTC6813
+ * This function is blocking. It will wait for the LTC6813 to signal it is
  * finished; however, there is a timeout feature in case something goes wrong.
  * The timeout threshold is BTM_TIMEOUT_VAL.
  *
  * @param command The 2-byte (polling) command to send
- * @return 	Returns BTM_OK once LTC6811s have completed their conversions,
+ * @return 	Returns BTM_OK once LTC6813s have completed their conversions,
  			or BTM_ERROR_TIMEOUT upon timeout.
  */
 BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
@@ -220,7 +236,7 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 	} while (0xff == rx_buffer);
 
 	// ... then wait for MISO to go high;
-	// this signifies that the LTC6811s are done reading their ADCs.
+	// this signifies that the LTC6813s are done reading their ADCs.
 
 	// Must send at least BTM_NUM_DEVICES clock pulses before response is valid
 	// That's why there's an extra read initially - it's slight overkill but that's ok
@@ -251,7 +267,7 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 }
 
 /**
- * @brief Writes the 6 bytes of a configuration register group in the LTC6811
+ * @brief Writes the 6 bytes of a configuration register group in the LTC6813
  *
  * @param command 	A write command to specify which register group to write.
  * 					Write commands start with "WR"
@@ -283,7 +299,7 @@ void BTM_writeRegisterGroup(
 }
 
 /**
- * @brief Writes the 6 bytes of a configuration register group in the LTC6811
+ * @brief Writes the 6 bytes of a configuration register group in the LTC6813
  *
  * The data received will only be written to rx_data if the PEC matches.
  *
@@ -316,7 +332,7 @@ BTM_Status_t BTM_readRegisterGroup(
 		BTM_sendCmd(command);
 
 		// Read back the data, but stop between device data groups on error
-		// This will indicate to caller which LTC6811 is having problems, if problems are encountered
+		// This will indicate to caller which LTC6813 is having problems, if problems are encountered
 		ic_num = 0;
 		// reset status before a new try
 		status.error = BTM_OK;
@@ -360,7 +376,7 @@ BTM_Status_t BTM_readRegisterGroup(
 }
 
 /**
- * @brief Poll ADCs and read registers of LTC6811 for cell voltages
+ * @brief Poll ADCs and read registers of LTC6813 for cell voltages
  *
  * @attention If function returns BTM_OK, packData was updated. If function
  *  returns something else, packData was not updated.
@@ -372,8 +388,8 @@ BTM_Status_t BTM_readRegisterGroup(
  */
 BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 {
-	// 4x 6-byte sets (each from a different register group of the LTC6811)
-	uint8_t ADC_data[4][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
+	// 4x 6-byte sets (each from a different register group of the LTC6813)
+	uint8_t ADC_data[6][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 	uint16_t cell_voltage_raw = 0;
 	int cell_num = 0;
 	BTM_Status_t status = {BTM_OK, 0};
@@ -393,6 +409,12 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 	status = BTM_readRegisterGroup(CMD_RDCVD, ADC_data[3]);
 	if (status.error != BTM_OK) return status;
 
+	status = BTM_readRegisterGroup(CMD_RDCVE, ADC_data[4]);
+	if (status.error != BTM_OK) return status;
+
+	status = BTM_readRegisterGroup(CMD_RDCVF, ADC_data[5]);
+	if (status.error != BTM_OK) return status;
+
 	// Each cell voltage is provided as a 16-bit value where
 	// voltage = 0.0001V * raw value
 	// Each 6-byte Cell Voltage Register Group holds 3 cell voltages
@@ -400,16 +422,16 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 	// Last 2 bytes of Cell Voltage Register Group D is C12V
 	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
 	{
-		for (int reg_group = 0; reg_group < 4; reg_group++)
+		for (int reg_group = 0; reg_group < NUM_CELL_VOLT_REGS; reg_group++)
 		{
-			for (int reading_num = 0; reading_num < 3; reading_num++)
+			for (int reading_num = 0; reading_num < READINGS_PER_REG; reading_num++)
 			{
 				// Combine the 2 bytes of each cell voltage together
 				cell_voltage_raw =
 					((uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num + 1]) << 8)
 					| (uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num]);
 				// Store in pack data structure
-				cell_num = 3 * reg_group + reading_num;
+				cell_num = READINGS_PER_REG * reg_group + reading_num;
 				//voltages[ic_num][cell_num] = cell_voltage_raw;
 				packData->stack[ic_num].module[cell_num].voltage = cell_voltage_raw;
 			}
@@ -422,11 +444,11 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 }
 
 /**
- * @brief Converts a voltage reading from a register in the LTC6811 to a float
+ * @brief Converts a voltage reading from a register in the LTC6813 to a float
  * Each cell voltage is provided as a 16-bit value where
  * voltage = 0.0001V * raw value
  *
- * @param raw_reading The 16-bit reading from an LTC6811
+ * @param raw_reading The 16-bit reading from an LTC6813
  * @return Returns a properly scaled floating-point version of raw_reading
  */
 float BTM_regValToVoltage(unsigned int raw_reading)

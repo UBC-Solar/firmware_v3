@@ -478,8 +478,7 @@ void printMeasurements(BTM_PackData_t * pack)
 
         for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) {
             if (pack->stack[ic_num].module[module_num].enable) {
-                printf("%.3f\t", BTM_TEMP_volts2temp(
-                        pack->stack[ic_num].module[module_num].temperature));
+                printf("%.3f\t", pack->stack[ic_num].module[module_num].temperature);
             } else {
                 printf("x\t\t"); // Don't print the voltage for inactive modules
             }

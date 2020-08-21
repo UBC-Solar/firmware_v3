@@ -1,9 +1,17 @@
+/**
+ *  @file btm_bal_settings.c
+ *  @brief Module balancing algorithm
+ *
+ *  @date 2020/08/18
+ *  @author abooodeee
+ */
+
 #include "btm_bal_settings.h"
 
 // Private function prototypes
 void min_val(uint16_t* val, int* loc, uint16_t arr[], int size, int enable[]);
 
-/** @brief: skeleton for a function for controlling the flow of the balancing operation
+/** @brief skeleton for a function for controlling the flow of the balancing operation
  *
  * @param[in] pack The main pack data structure of the program that contains the voltage
  * of each module for each stack
@@ -92,13 +100,14 @@ void BTM_BAL_settings(
 
 }
 
-/** @brief a function that outputs the minimum value in an array and its location
+/**
+ * @brief a function that outputs the minimum value in an array and its location
  *
- *@param[in/out] val, pointer that gets the address and outputs the minimum value
- *@param[in/out] loc, pointer that gets the address and outputs the location of the minimum value
- *@param[in] arr, the array we want to extract the minimum value from
- *@param[in] size, the size of the array
- *@param[in] pack_modules_en, enable flag to check which modules are enabled
+ * @param[in/out] val, pointer that gets the address and outputs the minimum value
+ * @param[in/out] loc, pointer that gets the address and outputs the location of the minimum value
+ * @param[in] arr, the array we want to extract the minimum value from
+ * @param[in] size, the size of the array
+ * @param[in] pack_modules_en, enable flag to check which modules are enabled
 */	
 void min_val(uint16_t* val, int* loc, uint16_t arr[], int size, int enable[]) {
 	int temp_loc = 0;

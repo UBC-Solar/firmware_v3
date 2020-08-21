@@ -1,8 +1,21 @@
+/**
+ *  @file ltc6813_btm_temp.c
+ *  @brief Driver for LTC6813-1 temperature monitoring
+ *
+ *  This file was originally renamed from LTC6813_BTM_Thermistor.c,
+ *  which was modified from thermistor.c
+ *
+ *  @date 2020/08/18
+ *  @author abooodeee
+ */
+
 #include "ltc6813_btm_temp.h"
 #include "stm32f3xx_hal.h"
 #include <math.h>
 
-#define GPIO_5_TOGGLE 0b10000000 // For bitwise operations with CFGRB byte 0
+#define GPIO_5_TOGGLE 0b10000000 // For bitwise operations with CFGRA byte 0
+#define MUX_CHANNELS 2
+#define NUM_GPIOS 8
 
 // Private function prototypes:
 BTM_Status_t readThermistorVoltage(
@@ -36,11 +49,11 @@ BTM_Status_t Status from communication functions.
 Note: nothing new written to pack if return value != BTM_OK
 Internal functions:
 readThermistorVoltage()
-volts2temp
+volts2temp()
 */
 BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 {
-    uint16_t GPIO1_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0}; // add in header MUX_CHANNELS = 2
+    uint16_t GPIO1_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
     uint16_t GPIO2_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
     uint16_t GPIO3_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
     uint16_t GPIO4_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
@@ -49,7 +62,7 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
     uint16_t GPIO8_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
     uint16_t GPIO9_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
     uint16_t REF2_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
-    float temp_celsius[NUM_GPIOS][MUX_CHANNELS][BTM_NUM_DEVICES]; // add in header NUM_GPIOS = 8
+    float temp_celsius[NUM_GPIOS][MUX_CHANNELS][BTM_NUM_DEVICES];
     BTM_Status_t status = {BTM_OK, 0};
     uint8_t cfgra_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
     // For data copy to pack data:
@@ -69,7 +82,6 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
     }
 
     BTM_writeRegisterGroup(CMD_WRCFGA, cfgra_to_write);
-    // CMD_WRCFGB has to be added to the header file: CMD_WRCFGB = 0b000_0010_0100// CMD_WRCFGB has to be added to the header file: CMD_WRCFGB = 0b000_0010_0100
 
     // perform readings for channel 0
     status = readThermistorVoltage
@@ -100,7 +112,7 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
 
     // Switch to the other side of the muxes
     for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++) {
-        cfgrb_to_write[ic_num][0] |= GPIO_5_TOGGLE; // GPIO 9 = 1
+        cfgra_to_write[ic_num][0] |= GPIO_5_TOGGLE; // GPIO 5 = 1
         // update the stored configuration register
         pack->stack[ic_num].cfgra[0] = cfgra_to_write[ic_num][0];
     }
@@ -116,7 +128,7 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
         GPIO6_voltage[1],
         GPIO7_voltage[1],
         GPIO8_voltage[1],
-	GPIO9_voltage[1],
+        GPIO9_voltage[1],
         REF2_voltage[1]
     );
 
@@ -191,10 +203,10 @@ BTM_Status_t readThermistorVoltage(
     if (status.error != BTM_OK) return status; // There's a communication problem
     status = BTM_readRegisterGroup(CMD_RDAUXB, registerAUXB_voltages);
     if (status.error != BTM_OK) return status; // There's a communication problem
-    status = BTM_readRegisterGroup(CMD_RDAUXC, registerAUXC_voltages); // CMD_RDAUXC need to be added to the header file (CMD_RDAUXC  = 0x000D)
+    status = BTM_readRegisterGroup(CMD_RDAUXC, registerAUXC_voltages);
     if (status.error != BTM_OK) return status; // There's a communication problem
-    status = BTM_readRegisterGroup(CMD_RDAUXD, registerAUXD_voltages); // CMD_RDAUXD need to be added to the header file (CMD_RDAUXD  = 0x000F)
-    if (status.error != BTM_OK) return status; // There's a communication problem*/
+    status = BTM_readRegisterGroup(CMD_RDAUXD, registerAUXD_voltages);
+    if (status.error != BTM_OK) return status; // There's a communication problem
 
     //output reading by assigning to pointed array the first two bytes of registerAUXA_voltages
     for (int board = 0; board < BTM_NUM_DEVICES; board++)
@@ -248,6 +260,7 @@ BTM_Status_t readThermistorVoltage(
 
 /**
  * @brief Converts a raw thermistor voltage reading from an LTC6813 into a temperature in degrees celsius
+ *
  * @param[in] Vout the thermistor voltage reading to convert
  * @param[in] REF2[] the measured reference voltage
  * @return the temperature of the thermistor in degrees celcius

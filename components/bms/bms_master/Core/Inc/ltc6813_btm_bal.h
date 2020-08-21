@@ -1,24 +1,33 @@
 /**
- * @file ltc6811_btm_bal.h
- * @brief Header file for control of LTC6811s' balancing operations
+ * @file ltc6813_btm_bal.h
+ * @brief Header file for control of LTC6813s' balancing operations
  *
  * DCH is short for discharge, and this refers to discharging for balancing
  * rather than discharging in general.
  *
- * @date 2020/05/09
- * @author
+ *  This file was originally modified from ltc6811_btm_bal.h
+ *
+ * @date 2020/08/18
+ * @author Andrew Hanlon (a2k-hanlon)
  */
 
-#ifndef LTC6811_BTM_BAL_H_
-#define LTC6811_BTM_BAL_H_
+#ifndef INC_LTC6813_BTM_BAL_H_
+#define INC_LTC6813_BTM_BAL_H_
 
 #include "ltc6813_btm.h"
+
+/*============================================================================*/
+/* ENUMERATIONS */
+
+typedef enum {
+    DISCHARGE_OFF = 0,
+    DISCHARGE_ON  = 1
+} BTM_module_bal_status_t;
 
 /*============================================================================*/
 /* STRUCTURES */
 
 struct BTM_BAL_dch_setting_stack {
-    // See definition of BTM_module_bal_status_t in ltc6811_btm.h
     BTM_module_bal_status_t module_dch[BTM_NUM_MODULES];
 };
 
@@ -39,4 +48,4 @@ void BTM_BAL_setDischarge(
     BTM_BAL_dch_setting_pack_t* pack_dch_setting
 );
 
-#endif
+#endif /* INC_LTC6813_BTM_BAL_H_ */

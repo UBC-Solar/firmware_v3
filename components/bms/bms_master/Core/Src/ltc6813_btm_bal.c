@@ -1,12 +1,18 @@
 /**
- * @file ltc6811_btm_bal.c
- * @brief Functions for controlling LTC6811s' balancing operations
+ * @file ltc6813_btm_bal.c
+ * @brief Functions for controlling LTC6813s' balancing operations
  *
- * @date 2020/05/09
- * @author
+ *  This file was originally modified from ltc6811_btm_bal.c
+ *
+ * @date 2020/08/18
+ * @author Andrew Hanlon (a2k-hanlon)
  */
 
-#include <ltc6813_btm_bal.h>
+#include "ltc6813_btm_bal.h"
+#include "analysis.h"
+
+// Private function prototype
+void writeBalStatusBit(struct BTM_module * module, BTM_module_bal_status_t bal_status);
 
 
 /**
@@ -48,10 +54,13 @@ void BTM_BAL_copyDchPack(
 }
 
 /**
- * @brief Writes discharging settings to LTC6811s to trigger module discharging
+ * @brief Writes discharging settings to LTC6813s to trigger module discharging
  *
  * @attention dch_setting_pack must be complete. Every single module's discharge
  *  circuit will be turned on or off according to this structure.
+ *
+ * Disabled modules will always have their discharge settings turned off. Also
+ * note that the DCTO value in Config. Reg. Group. A will always be set to 0
  *
  * @param[in/out] pack The main pack data structure of the program to write
  *  balancing status flags to and read module enable flags from
@@ -61,39 +70,48 @@ void BTM_BAL_setDischarge(
     BTM_PackData_t* pack,
     BTM_BAL_dch_setting_pack_t* dch_setting_pack)
 {
-    uint8_t cfgr_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
+    uint8_t cfgra_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
+    uint8_t cfgrb_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
     BTM_module_bal_status_t module_bal_status = DISCHARGE_OFF;
     BTM_module_enable_t module_enable = MODULE_DISABLED;
     int module_i = 0; // index counter
 
     for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
     {
-        // Iterate through the bytes of the CFGR register value for each LTC6811
+        // Iterate through the bytes of both CFGR registers for each LTC6813
 
-        // Don't change the first 4 bytes of the CFGR register group,
-        // so copy the existing configuration
-        for(int byte_num = 0; byte_num < (BTM_REG_GROUP_SIZE - 2); byte_num++)
+        // Don't change all the bytes of the CFGRA/B register groups,
+        // so copy most of the existing configuration
+        for(int byte_num = 0; byte_num < BTM_REG_GROUP_SIZE; byte_num++)
         {
-            cfgr_to_write[ic_num][byte_num] =
-                pack->stack[ic_num].cfgr[byte_num];
+            if (byte_num < 4) { // First 4 bytes
+                cfgra_to_write[ic_num][byte_num] =
+                    pack->stack[ic_num].cfgra[byte_num];
+            }
+            cfgrb_to_write[ic_num][byte_num] =
+                pack->stack[ic_num].cfgrb[byte_num];
         }
+        // Clear DCC bits in CFGRB
+        cfgrb_to_write[ic_num][0] &= 0x0F; // Clear upper 4 bits of 1st byte
+        cfgrb_to_write[ic_num][1] &= 0xFC; // Clear lowest 2 bits of 2nd byte
 
-        // Do change the last 2 bytes of CFGR, the balancing settings
-        // 5th byte - DCH setting for first 8 modules
+        // Now change the DCC bits, the balancing (discharge) settings
+
+        // 5th byte of CFGRA - DCH setting for modules 1-8 (first 8 modules)
         for(int i = 0; i < 8; i++)
         {
             module_bal_status =
                 dch_setting_pack->stack[ic_num].module_dch[i];
             module_enable = pack->stack[ic_num].module[i].enable;
             // Set DCH bit for this module (cell)
-            // but only if module's enable flag is MODULE_ENABLED
-            cfgr_to_write[ic_num][BTM_REG_GROUP_SIZE - 2] |=
+            // but only if module is enabled
+            cfgra_to_write[ic_num][4] |=
                 (module_bal_status & module_enable) << i;
             // Update balancing status in pack data structure
-            pack->stack[ic_num].module[i].bal_status = module_bal_status;
+            writeBalStatusBit(&(pack->stack[ic_num].module[module_i]), module_bal_status);
         }
 
-        // 6th byte - DCH etting for last 4 modules
+        // 6th byte of CFGRA - DCH setting for modules 9-12
         for(int j = 0; j < 4; j++)
         {
             module_i = j + 8;
@@ -102,13 +120,55 @@ void BTM_BAL_setDischarge(
             module_enable = pack->stack[ic_num].module[module_i].enable;
             // Set DCH bit for this module (cell)
             // but only if module's enable flag is MODULE_ENABLED
-            cfgr_to_write[ic_num][BTM_REG_GROUP_SIZE - 1] |=
+            cfgra_to_write[ic_num][5] |=
                 (module_bal_status & module_enable) << j;
             // Update balancing status in pack data structure
-            pack->stack[ic_num].module[module_i].bal_status = module_bal_status;
+            writeBalStatusBit(&(pack->stack[ic_num].module[module_i]), module_bal_status);
+        }
+
+        // 1st byte of CFGRB - DCH setting for modules 13-16
+        for(int k = 0; k < 4; k++)
+        {
+            module_i = k + 12;
+            module_bal_status =
+                dch_setting_pack->stack[ic_num].module_dch[module_i];
+            module_enable = pack->stack[ic_num].module[module_i].enable;
+            // Set DCH bit for this module (cell)
+            // but only if module's enable flag is MODULE_ENABLED
+            cfgrb_to_write[ic_num][0] |=
+                (module_bal_status & module_enable) << (k + 4);
+            // Update balancing status in pack data structure
+            writeBalStatusBit(&(pack->stack[ic_num].module[module_i]), module_bal_status);
+        }
+
+        // 2nd byte of CFGRB - DCH setting for modules 17 and 18
+        for(int l = 0; l < 2; l++)
+        {
+            module_i = l + 16;
+            module_bal_status =
+                dch_setting_pack->stack[ic_num].module_dch[module_i];
+            module_enable = pack->stack[ic_num].module[module_i].enable;
+            // Set DCH bit for this module (cell)
+            // but only if module's enable flag is MODULE_ENABLED
+            cfgrb_to_write[ic_num][1] |=
+                (module_bal_status & module_enable) << l;
+            // Update balancing status in pack data structure
+            writeBalStatusBit(&(pack->stack[ic_num].module[module_i]), module_bal_status);
         }
     }
 
-    BTM_writeRegisterGroup(CMD_WRCFGA, cfgr_to_write);
+    BTM_writeRegisterGroup(CMD_WRCFGA, cfgra_to_write);
+    BTM_writeRegisterGroup(CMD_WRCFGA, cfgrb_to_write);
+
+    return;
+}
+
+
+void writeBalStatusBit(struct BTM_module * module, BTM_module_bal_status_t bal_status)
+{
+    if (bal_status == DISCHARGE_ON)
+        module->status |= BMS_TRIP_BAL; // Set TRIP_BAL bit
+    else
+        module->status &= ~BMS_TRIP_BAL; // Clear TRIP_BAL bit
     return;
 }
