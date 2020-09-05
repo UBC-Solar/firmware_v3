@@ -76,7 +76,6 @@ float stateOfChargeWithCurrent(uint32_t voltage100uV, uint32_t PH_CurrentFromCAN
         DoDchange, //percentage
         // should be >0
         voltage, //assume always positive because voltage100uV is unsiged
-        PH_time,
         DoDinstantaneous, //percentage
         DoDinitial = GLOBAL_SOC_DoDtotal, //percentage
         SoC, //percentage
@@ -84,15 +83,17 @@ float stateOfChargeWithCurrent(uint32_t voltage100uV, uint32_t PH_CurrentFromCAN
 
     //convert to volts
     //voltage = BTM_regValToVoltage(voltage100uV);
-    voltage = voltage100uV * 0.0001;
+    voltage = voltage100uV * 0.0001; //conversion from 'double' to 'float', possible loss of data
 
 
     //calculate state of charge.
 
-    BalancingCurrent = - numDischarge * 0.420; //the discharging current for
+    BalancingCurrent = - (float)numDischarge * 0.420; //the discharging current for
     //each cell is 0.420A
     TotalCurrent = PH_CurrentFromCAN + BalancingCurrent;
     SoH = 100; //the battery is in full health the first time is it used
+    SoC = 100-GLOBAL_SOC_DoDtotal; //the battery is in full health the first time is it used
+
     if (PH_CurrentFromCAN < 0) //discharge
      {
        if(voltage > MIN_VOLTAGE)
