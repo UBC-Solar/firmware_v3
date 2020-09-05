@@ -177,7 +177,7 @@ float calculateChangeDoD(float presentCurrent, float presentTime,
     float //signed value
       ChangeDoD;
 
-      ChangeDoD = ( (presentCurrent-pastCurrent)/2*(presentTime-pastTime) )
+      ChangeDoD = (-(presentCurrent+pastCurrent)/2*(presentTime-pastTime) )
                   / (3.5*32)*100;
 
       return ChangeDoD;
