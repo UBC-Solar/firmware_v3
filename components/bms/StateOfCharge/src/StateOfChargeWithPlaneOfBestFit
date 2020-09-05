@@ -1,0 +1,96 @@
+/*
+StateOfChargeWithPlaneOfBestFit.c
+
+This file contains functions for calculating the state of charge for UBC Solar's V3 solar car, Brightside.
+*/
+
+#include "StateOfChargeWithPlaneOfBestFit.h"
+#include <math.h>
+
+#ifdef STATEOFCHARGE_DEBUG
+void main()
+{
+    return;
+}
+#endif
+
+float stateOfCharge(uint32_t voltage100uV);
+
+/*
+Function Name: stateOfCharge
+Function purpose: takes in voltage and current measurements and outputs the estimated state of charge in units of percent.
+
+Parameters:
+    uint32t voltage100mV : Voltage as multiples of 100 millivolts.
+                           Units are for consistency with rest of code.
+                           Also, this function will internally
+                           convert the voltage to units of volts
+    uint32t PH_Current_From_CAN: Current from CAN messages converted to Ampers
+                                 Units are for consistency with rest of code.
+                                 Also, this function will internally
+                                 convert the voltage to units of volts.
+
+Return:
+    float SoCpercent : state of charge in units of percent.
+
+Design Notes:
+    Internally, the function will use floats or double in its calculations.
+    The units will be sensible, i.e. SI units of volts.
+    The decimal places will be maintained by the return type of float,
+    but this can and should be easily changed to an int type if needed.
+
+Algorithm:
+    1) Convert voltage paremeter to units of volts (if needed)
+    2) Calculate state-of-charge from voltage.
+    3) Check if state-of-charge percent is outside the range of 0% to 100%
+    3) Output state-of-charge.
+    WARNING: STM32 definitely can't calculate such a complex formula.
+    Use a lookup table to precalculate the values of SoC. Match new values
+    of voltage and current with the ones used in the precalculation.
+    >10,000 uint8 of points in the precalculation 10kB of 48kB available on STM.
+*/
+
+float stateOfCharge(uint32_t voltage100uV)
+{
+    float
+        voltage,
+        PH_CurrentFromCAN,
+        capacity,
+        SoCpercent;
+
+    //convert to volts
+    //voltage = BTM_regValToVoltage(voltage100uV);
+    voltage = voltage100uV * 0.0001;
+
+    //calculate state of charge using capacity Z as a function of
+      voltage X and current Y
+    capacity = P00 + P10*voltage + P01*PH_CurrentFromCAN + P20*powf(voltage,2) +
+               P11*voltage*PH_CurrentFromCAN + P02*powf(PH_CurrentFromCAN,2) +
+               P30*powf(voltage,3) + P21*powf(voltage,2)*PH_CurrentFromCAN +
+               P12*voltage*powf(PH_CurrentFromCAN,2) + P03*powf(PH_CurrentFromCAN,3) +
+               P40*powf(voltage,4) + P31*powf(voltage,3)*PH_CurrentFromCAN +
+               P22*powf(voltage,2)*powf(PH_CurrentFromCAN,2) + P13*voltage*powf(PH_CurrentFromCAN,3) +
+               P04*powf(PH_CurrentFromCAN,4) + P50*powf(voltage,5) + P41*powf(voltage,4)*PH_CurrentFromCAN
+               P32*powf(voltage,3)*powf(PH_CurrentFromCAN,2) + P23*powf(voltage,2)*powf(PH_CurrentFromCAN,3)
+               P14*voltage*powf(PH_CurrentFromCAN4) ;
+               //the coefficient PXY corresponds to the multiplier for the
+               Xth power of voltage and Yth power of current
+    SoCpercent = Capacity/(3.5*32);
+
+    /*
+    if for some reason the state of charge percent exceeds
+    the design limits of 0% to 100%, this function will return
+    +1337 if it exceeds 100%, else it will return -1337 if it
+    is below 0%.
+    */
+    if(SoCpercent > 100)
+    {
+        return 1337;
+    }
+    else if(SoCpercent < 0)
+    {
+        return -1337;
+    }
+
+    return SoCpercent;
+}

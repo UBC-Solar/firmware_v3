@@ -1,0 +1,30 @@
+/*
+StateOfChargeWithPlaneOfBestFit.h
+*/
+
+#ifndef STATEOFCHARGE_H_
+#define STATEOFCHARGE_H_
+#include <stdint.h>
+
+#define P00 4.145
+#define P10 -0.5519
+#define P01 -0.01183
+#define P20 1.239
+#define P11 -0.1508
+#define P02 -0.01052
+#define P30 -1.343
+#define P21 0.1154
+#define P12 0.02433
+#define P03 0.001323
+#define P40 0.5673
+#define P31 -0.05096
+#define P22 -0.01012
+#define P13 -0.0006218
+#define P04 -0.00005471
+#define P50 -0.08335
+#define P41 0.01121
+#define P32 -0.000832
+#define P23 0.0008371
+#define P14 -0.00008739
+
+#endif
