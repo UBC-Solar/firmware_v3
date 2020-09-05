@@ -1,5 +1,5 @@
 /*
-StateOfCharge.c
+StateOfChargeWithCurrent.c
 
 This file contains functions for calculating the state of charge for UBC Solar's
 V3 solar car, Brightside.
