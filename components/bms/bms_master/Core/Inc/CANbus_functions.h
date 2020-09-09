@@ -38,7 +38,7 @@ Purpose: Goes with CANbus_function.c
 #define CAN_BRIGHTSIDE_DATA_LENGTH 8 //8 bytes
 
 #define PH_SERIES_SIZE 2
-#define CAN_ELITHION_MESSAGE_SERIES_SIZE 4
+#define CAN_ELITHION_MESSAGE_SERIES_SIZE 4 //Should be the number of unique messages
 
 #define PH_TOTAL_MUX 32 //10 + 10 + 12 //to be replaced by another global constant that probably exists in another header file
 
@@ -46,7 +46,12 @@ Purpose: Goes with CANbus_function.c
 #define CAN_NOT_STALE 0
 
 #define CAN_REQUEST_ATTEMPT_MAX 3
+
+//configuration in preprocessor instructions
 #define CAN_ENABLE_REQUEST_QUEUE_REDUNDANCY 1
+
+
+
 //message addresses
 
 #define ADDRESS_622 622
@@ -123,7 +128,7 @@ extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries);
 
 /*
 Copied from analysis.h, created by Andrew Hanlon.
-Put here so that the code editor autocompletes.
+Put here so that the code editor autocompletes properly.
 */
 
 #ifdef SHAMELESSLY_COPIED_FROM_ANDREW_HANLON_ANALYSIS_H_

@@ -46,10 +46,10 @@ double BTM_TEMP_volts2temp(double vout);
 #endif //CODEWORD_DEBUG_BRIGHTSIDE
 
 //void CANstate_depreciated(Brightside_CAN_MessageSeries * pSeries);
-static inline int8_t CANstate_staleCheck();
-void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries);
+uint8_t CANstate_staleCheck();
+void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries); //PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
 HAL_StatusTypeDef CANstate_requestQueue();
-static inline CANstate_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries);
+void CANstate_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries); //PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
 
 void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int messageArraySize);
 
@@ -372,7 +372,7 @@ Return:
     returns 1 if there is stale data
     else, returns 0 if the mailboxes are empty, i.e. without stale data to send.
 */
-static inline uint8_t CANstate_staleCheck()
+uint8_t CANstate_staleCheck() //PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
 {
     if(HAL_CAN_GetTxMailboxesFreeLevel(Brightside_CAN_handle) != 3)
     {
@@ -414,17 +414,18 @@ Design Notes: This function should NOT reset the runningIndex.
 */
 HAL_StatusTypeDef CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
 {
-    if(messageIndex >= pSeries->messageSeriesSize)
-    {
-        return HAL_OK;
-    }
+
     //else
 
     HAL_StatusTypeDef
         status = HAL_OK;
     uint8_t attempt = 0;
 
-    messageIndex = pSeries -> runningIndex;
+    int messageIndex = pSeries -> runningIndex;
+    if(messageIndex >= pSeries->messageSeriesSize)
+    {
+        return HAL_OK;
+    }
     while
         (HAL_CAN_GetTxMailboxesFreeLevel(Brightside_CAN_handle) > 0
          && messageIndex < pSeries->messageSeriesSize)
@@ -442,7 +443,7 @@ HAL_StatusTypeDef CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
                     );
             attempt++;
         }
-        while(status != HAL_OK && attempt < CAN_REQUEST_ATTEMPT_MAX)
+        while(status != HAL_OK && attempt < CAN_REQUEST_ATTEMPT_MAX);
 
         //if all three transmission retrys fail.
         if(status != HAL_OK)
@@ -450,7 +451,6 @@ HAL_StatusTypeDef CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
             pSeries -> runningIndex = messageIndex;
             return status;
         }
-#endif
 
 #else
         status =
@@ -470,7 +470,7 @@ HAL_StatusTypeDef CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
     return status;
 }
 
-static inline CANstate_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries)
+void CANstate_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries)//PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
 {
     pSeries -> runningIndex = 0;
 }
@@ -507,12 +507,12 @@ void CAN_CompileMessage622(uint8_t aData_series622[CAN_BRIGHTSIDE_DATA_LENGTH], 
 
 
     int
-        status_var = pPACKDATA->status;
+        status_var = pPACKDATA->PH_status; //should access the variable that summarizes the whole pack's warning and fault flags
     /*
     Update stateBYTE.
     */
     //Bit 0: fault state.
-    if(status_var & CAN_FAULT_VALUES != 0)
+    if( (status_var & CAN_FAULT_VALUES) != 0)
     {
         stateBYTE |= CAN_BITFLAG_FAULT_STATE;
     }
@@ -532,18 +532,18 @@ void CAN_CompileMessage622(uint8_t aData_series622[CAN_BRIGHTSIDE_DATA_LENGTH], 
 Update levelFaultFlagsBYTE.
 */
     // Bit 7: Over voltage.
-    if(status_var & BMS_FAULT_OV != 0)
+    if((status_var & BMS_FAULT_OV) != 0)
     {
         levelFaultFlagsBYTE |= CAN_FAULTFLAG_OVERVOLTAGE;
     }
     // Bit 6: Under voltage.
-    if(status_var & BMS_FAULT_UV != 0)
+    if((status_var & BMS_FAULT_UV) != 0)
     {
         levelFaultFlagsBYTE |= CAN_FAULTFLAG_UNDERVOLTAGE;
     }
 
     // Bit 5: Over-temperature.
-    if(status_var & BMS_FAULT_OT != 0)
+    if((status_var & BMS_FAULT_OT) != 0)
     {
         levelFaultFlagsBYTE |= CAN_FAULTFLAG_OVERTEMP;
     }
@@ -552,7 +552,7 @@ Update levelFaultFlagsBYTE.
     // Bit 3: Charge overcurrent.
 
     // Bit 2: Communication fault with a bank or cell.
-    if(status_var & BMS_FAULT_COMM != 0)
+    if((status_var & BMS_FAULT_COMM) != 0)
     {
         levelFaultFlagsBYTE |= CAN_FAULTFLAG_COMMFAULT;
     }
@@ -566,13 +566,13 @@ Update levelFaultFlagsBYTE.
     // Bit 7 : isolation fault.
     // Bit 6 : low SOH.
     // Bit 5 : hot temperature.
-    if(status_var & BMS_WARNING_HIGH_T != 0)
+    if((status_var & BMS_WARNING_HIGH_T) != 0)
     {
         warningFlagsBYTE |= CAN_WARNFLAG_HIGHTEMP;
     }
 
     // Bit 4 : cold temperature.
-    if(status_var & BMS_WARNING_LOW_T != 0)
+    if((status_var & BMS_WARNING_LOW_T) != 0)
     {
         warningFlagsBYTE |= CAN_WARNFLAG_LOWTEMP;
     }
@@ -580,12 +580,12 @@ Update levelFaultFlagsBYTE.
     // Bit 3 : discharge overcurrent.
     // Bit 2 : charge overcurrent.
     // Bit 1 : high voltage.
-    if(status_var & BMS_WARNING_HIGH_V != 0)
+    if((status_var & BMS_WARNING_HIGH_V) != 0)
     {
         warningFlagsBYTE |= CAN_WARNFLAG_HIGHVOLTAGE;
     }
     // Bit 0 : low voltage.
-    if(status_var & BMS_WARNING_LOW_V != 0)
+    if((status_var & BMS_WARNING_LOW_V)) != 0)
     {
         warningFlagsBYTE |= CAN_WARNFLAG_LOWVOLTAGE;
     }
@@ -594,7 +594,7 @@ Update levelFaultFlagsBYTE.
     aData_series622[0] = stateBYTE;
     //aData_series623[1] = timerBYTE;
     //aData_series623[2] = timerBYTE;
-    aData_series622[3] = flagsBYTE;
+    //aData_series622[3] = flagsBYTE;
     aData_series622[4] = faultCodeBYTE;
     aData_series622[5] = levelFaultFlagsBYTE;
     aData_series622[6] = warningFlagsBYTE;
