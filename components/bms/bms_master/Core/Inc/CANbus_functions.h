@@ -18,6 +18,7 @@ Purpose: Goes with CANbus_function.c
 #include <stdint.h>
 #include "stm32f3xx_hal.h"
 #include "ltc6813_btm.h"
+#include "analysis.h"
 //#include "stm32f3xx_hal_can.h"
 #include <math.h>
 #include <stdio.h>
