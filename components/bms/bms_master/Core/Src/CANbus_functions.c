@@ -585,7 +585,7 @@ Update levelFaultFlagsBYTE.
         warningFlagsBYTE |= CAN_WARNFLAG_HIGHVOLTAGE;
     }
     // Bit 0 : low voltage.
-    if((status_var & BMS_WARNING_LOW_V)) != 0)
+    if((status_var & BMS_WARNING_LOW_V) != 0)
     {
         warningFlagsBYTE |= CAN_WARNFLAG_LOWVOLTAGE;
     }
