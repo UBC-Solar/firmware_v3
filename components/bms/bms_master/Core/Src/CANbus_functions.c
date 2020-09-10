@@ -52,6 +52,11 @@ HAL_StatusTypeDef CANstate_requestQueue();
 void CANstate_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries); //PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
 
 void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int messageArraySize);
+void CAN_InitMessageSeries_Dynamic(
+        Brightside_CAN_MessageSeries * seriesStruct,
+        Brightside_CAN_Message * messageWiseContent,
+        uint8_t messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH],
+        int messageSeriesSize);
 
 void CAN_CompileMessage622(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
 void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
@@ -1100,7 +1105,7 @@ uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * 
 
     else
     {
-        temperatureBYTE = (uint8_t)abs(temperatureDOUBLE);
+        temperatureBYTE = (uint8_t)fabs(temperatureDOUBLE);
         if(temperatureDOUBLE >= 0)
             return temperatureBYTE;
         else
