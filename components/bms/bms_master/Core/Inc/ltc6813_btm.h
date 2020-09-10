@@ -261,6 +261,12 @@ struct BTM_stack {
 typedef struct {
     unsigned int pack_voltage; // same format as module voltage attribute
     struct BTM_stack stack[BTM_NUM_DEVICES];
+
+    //PLACEHOLDER VARIABLES, TO ALLOW COMPILATION WITHOUT ERRORS.
+    //NOT NECESSARILY THE FINAL LOCATION OF THESE VARIABLES.
+    int PH_status; //intended to be the summary of fault/warning/trip flags
+    uint8_t PH_SOC_LOCATION; //intended to be the summary of state of charge of entire pack
+
 } BTM_PackData_t;
 
 // Status type for error reporting
