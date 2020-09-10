@@ -23,7 +23,7 @@ This file contains the suite of functions used for CAN functionality.
 static uint32_t STATIC_lastInterval;
 static uint32_t STATIC_lastSubInterval;
 static Brightside_CAN_MessageSeries STATIC_ElithionSeries;
-static Brightside_CAN_Message STATIC_messagesWiseContent;
+static Brightside_CAN_Message STATIC_messagesWiseContent[CAN_ELITHION_MESSAGE_SERIES_SIZE];
 static uint8_t STATIC_messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH] = {{0}};
 
 //uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
@@ -120,7 +120,7 @@ extern void CANstate_InitAll()
     //initialise message series structures
     CAN_InitMessageSeries_Dynamic(
         &STATIC_ElithionSeries,
-        &STATIC_messagesWiseContent,
+        STATIC_messagesWiseContent,
         STATIC_messageArrays,
         CAN_ELITHION_MESSAGE_SERIES_SIZE);
 }
@@ -195,9 +195,12 @@ void CAN_InitMessageSeries_Dynamic(
 
     CAN_InitHeaderStruct(messageWiseContent, messageSeriesSize);
 
+    //intended function: assign to the Message struct the first address of the 2nd dimension of the message array
     for (int series_i = 0; series_i < messageSeriesSize; ++series_i)
     {
-        messageWiseContent[series_i].dataFrame = &messageArrays[series_i];
+    	//reminder: only giving the first dimension effectively passes the first address
+    	//of a 1D array that contains the 2nd dimension's data.
+        messageWiseContent[series_i].dataFrame = messageArrays[series_i];
     }
 
     seriesStruct->message = messageWiseContent;
