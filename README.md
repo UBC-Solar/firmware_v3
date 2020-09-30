@@ -8,9 +8,11 @@ Each custom device on the car for which the team has written firmware has its ow
     - bms_master - firmware for the master board of the team's first in-house BMS
     - SPITest - the precursor to bms_master, a prototype project where much of the bms firmware was initially developed using development boards
 
+When adding a firmware project for another device on the car to this repository, start by placing a folder in the `/components/` directory named using the 3-letter identifier for the hardware eg. `bms`, `ecu`, `mcb`, if one does not already exist. Then, place the firmware projects in the corresponding 3-letter ID folder.
+
 ## Contributing
 
-The firmware projects in this repository (so far) are written in C and developed using STM32CubeIDE.
+The firmware project in this repository (so far) is written in C and developed using STM32CubeIDE.
 For information on getting set up to work on these projects, please visit the team's [tutorial on STM32CubeIDE](https://sites.google.com/ubcsolar.com/project-management/tutorials/stm32cubeide).
 
 So far, team members have utilized branches to facilitate work in parallel on this codebase, but as the repository grows we may switch to forks. Branches on the main repository should follow the naming scheme
