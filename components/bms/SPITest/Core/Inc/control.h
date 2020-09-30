@@ -112,7 +112,7 @@ unsigned int CONT_fanPwmFromTemp(float temp);
  * - Autoreload value: greater than 100.
  * - Prescaler: set in conjunction with the autoreload value so that
  *              the PWM frequency is 25kHz.
- *              Prescaler = Clock_Freq / ( 25000 * (autreload + 1)) - 1
+ *              Prescaler = Clock_Freq / ( 25000 * (autoreload + 1)) - 1
  * eg. for 8 MHz clock, could do autorelaod = 320 and a prescaler of 0
  * - Upcounting timer
  * - No internal clock division
