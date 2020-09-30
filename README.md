@@ -8,7 +8,7 @@ Each custom device on the car for which the team has written firmware has its ow
     - bms_master - firmware for the master board of the team's first in-house BMS
     - SPITest - the precursor to bms_master, a prototype project where much of the bms firmware was initially developed using development boards
 
-When adding a firmware project for another device on the car to this repository, start by placing a folder in the `/components/` directory named using the 3-letter identifier for the hardware eg. `bms`, `ecu`, `mcb`, if one does not already exist. Then, place the firmware projects in the corresponding 3-letter ID folder.
+When adding a firmware project for another device on the car to this repository, start by creating a folder in the `/components/` directory named using the 3-letter identifier for the device (eg. `bms`, `ecu`, `mcb`), if one does not already exist. Then, place the firmware project for the device in the corresponding 3-letter ID folder.
 
 ## Contributing
 
