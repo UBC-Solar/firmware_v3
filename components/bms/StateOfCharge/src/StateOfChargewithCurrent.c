@@ -15,7 +15,7 @@ void main()
 #endif
 
 //functions require calling each time a CAN transmits a new current to update SoC
-float stateOfChargeWithCurrent(uint32_t voltage100uV, uint32_t PH_CurrentFromCAN,
+float stateOfChargeWithCurrent(uint32_t voltage100uV, int32_t PH_CurrentFromCAN,
                                uint32_t numDischarge, uint32_t PH_time);
 float calculateChangeDoD(float presentCurrent, float presentTime,
                          float pastCurrent, float pastTime);
@@ -28,7 +28,7 @@ Function purpose: takes in voltage and current measurements with a time-stamp an
 
 Parameters:
     uint32t voltage100mV :       Voltage as multiples of 100 millivolts.
-    uint32t PH_Current_From_CAN: Current from CAN messages converted to Ampers
+    int32_t PH_Current_From_CAN: Current from CAN messages converted to Ampers
                                Units are for consistency with rest of code.
                                Also, this function will internally
                                convert the voltage to units of volts.
@@ -66,20 +66,20 @@ Algorithm:
     3) Output state-of-charge.
 */
 
-float stateOfChargeWithCurrent(uint32_t voltage100uV, uint32_t PH_CurrentFromCAN,
+float stateOfChargeWithCurrent(uint32_t voltage100uV, int32_t PH_CurrentFromCAN,
     	                         uint32_t numDischarge, uint32_t PH_time)
 {
     float //signed values
         // sign matters
-        BalancingCurrent,
-        TotalCurrent,
-        DoDchange, //percentage
+        BalancingCurrent = 0,
+        TotalCurrent = 0,
+        DoDchange = 0, //percentage
         // should be >0
-        voltage, //assume always positive because voltage100uV is unsiged
-        DoDinstantaneous, //percentage
+        voltage = 25000, //assume always positive because voltage100uV is unsiged
+        DoDinstantaneous = 0, //percentage
         DoDinitial = GLOBAL_SOC_DoDtotal, //percentage
-        SoC, //percentage
-        SoH;
+        SoC = 0, //percentage
+        SoH = 100;
 
     //convert to volts
     //voltage = BTM_regValToVoltage(voltage100uV);
@@ -90,7 +90,7 @@ float stateOfChargeWithCurrent(uint32_t voltage100uV, uint32_t PH_CurrentFromCAN
 
     BalancingCurrent = - (float)numDischarge * 0.420; //the discharging current for
     //each cell is 0.420A
-    TotalCurrent = PH_CurrentFromCAN + BalancingCurrent;
+    TotalCurrent = (float)PH_CurrentFromCAN + BalancingCurrent;
     SoH = 100; //the battery is in full health the first time is it used
     SoC = 100-GLOBAL_SOC_DoDtotal; //the battery is in full health the first time is it used
 
@@ -123,50 +123,50 @@ float stateOfChargeWithCurrent(uint32_t voltage100uV, uint32_t PH_CurrentFromCAN
        }
      }
 
-GLOBAL_SOC_DoDtotal = DoDinstantaneous; //update DoD globally
-GLOBAL_SOC_previousCurrent = TotalCurrent; //update current globally
-GLOBAL_SOC_previousTime = PH_time; //update time globally
+        GLOBAL_SOC_DoDtotal = DoDinstantaneous; //update DoD globally
+        GLOBAL_SOC_previousCurrent = TotalCurrent; //update current globally
+        GLOBAL_SOC_previousTime = PH_time; //update time globally
 
     /*
-    if for some reason the state of charge, indital and instantaneous deapth of
-    charge exceeds the design limits of 0% to 100% then return an error code
+    if for some reason the state of charge, initial and instantaneous depth of
+    discharge exceeds the design limits of 0% to 100% then return an error code
     */
 
-    if(DoDinitial > 100)
-    {
-        return -1;
-    }
-    else if(DoDinitial < 0)
-    {
-        return -2;
-    }
+  //  if(DoDinitial > 100)
+  //  {
+  //      return -1;
+  //  }
+  //  else if(DoDinitial < 0)
+  //  {
+  //      return -2; // this can occur when there are more modules discharging more current than what the battery's charging current -> check calculation of current
+  //  }
 
-    if(DoDinstantaneous > 100)
-    {
-        return -3;
-    }
-    else if(DoDinstantaneous < 0)
-    {
-        return -4;
-    }
+  //  if(DoDinstantaneous > 100)
+  //  {
+  //      return -3;
+  //  }
+  //  else if(DoDinstantaneous < 0)
+  //  {
+  //      return -4;
+  //  }
 
-  if(SoC > 100)
-  {
-      return -5;
-  }
-  else if(SoC < 0)
-  {
-      return -6;
-  }
+  //if(SoC > 100)
+  //{
+  //    return -5;
+  //}
+  //else if(SoC < 0)
+  //{
+  //    return -6;
+  //}
 
-  if(SoH > 100)
-  {
-      return -7;
-  }
-  else if(SoH < 0)
-  {
-      return -8;
-  }
+  //if(SoH > 100)
+  //{
+  //    return -7;
+  //}
+  //else if(SoH < 0)
+  //{
+  //    return -8;
+  //}
 
 return SoC;
 }
@@ -176,7 +176,7 @@ float calculateChangeDoD(float presentCurrent, float presentTime,
                           //function called in stateOfChargeWithCurrent above
 {
     float //signed value
-      ChangeDoD;
+      ChangeDoD = 0;
 
       ChangeDoD = (-(presentCurrent+pastCurrent)/2*(presentTime-pastTime)/1000 ) // divide time by 1, 000 to convert to s
                   / (3.5*3600*32)*100;
