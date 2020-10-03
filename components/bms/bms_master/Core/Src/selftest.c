@@ -3,7 +3,7 @@
  * @brief BMS startup self tests
  *
  * @date 2020/10/03
- * @author
+ * @author matthewjegan
  */
 
 #include "selftest.h"
@@ -14,6 +14,9 @@
  * @return If at least one LTC6813 has a die temperature nearing thermal shutdown
  * threshold, returns an error with the device index of the first overheating IC
  */
+
+
+
 BTM_Status_t ST_checkLTCtemp()
 {
     BTM_Status_t status = {BTM_OK, 0};
