@@ -16,6 +16,7 @@
 #include "ltc6813_btm_bal.h"
 #include "btm_bal_settings.h"
 #include "analysis.h"
+#include "selftest.h"
 
 /*============================================================================*/
 /* ENUMERATIONS */

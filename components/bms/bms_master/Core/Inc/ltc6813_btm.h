@@ -39,14 +39,15 @@
 /* ENUMERATIONS */
 
 enum BTM_Error {
-    BTM_OK                  = 0,
-    BTM_ERROR_PEC           = 1,
-    BTM_ERROR_TIMEOUT       = 2,
-    BTM_ERROR_HAL           = 3,
-    BTM_ERROR_HAL_BUSY      = 4,
-    BTM_ERROR_HAL_TIMEOUT   = 5
+    BTM_OK = 0,
+    BTM_ERROR_PEC,
+    BTM_ERROR_TIMEOUT,
+    BTM_ERROR_SELFTEST,
+    BTM_ERROR_HAL,
+    BTM_ERROR_HAL_BUSY,
+    BTM_ERROR_HAL_TIMEOUT
 };
-#define BTM_HAL_ERROR_OFFSET 2 // BTM_ERROR_HAL - HAL_ERROR
+#define BTM_HAL_ERROR_OFFSET (BTM_ERROR_HAL - HAL_ERROR)
 
 // LTC6813 ADC mode options
 // First freq applies when ADCOPT == 0, second when ADCOPT == 1
