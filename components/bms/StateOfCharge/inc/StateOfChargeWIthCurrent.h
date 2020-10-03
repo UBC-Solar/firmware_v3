@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 //global variables
-uint32_t GLOBAL_SOC_previousCurrent;
-uint32_t GLOBAL_SOC_previousTime;
-uint32_t GLOBAL_SOC_DoDtotal;
+float GLOBAL_SOC_previousCurrent = 0;
+int GLOBAL_SOC_previousTime = 0;
+float GLOBAL_SOC_DoDtotal = 0;
 
 //local variables
 #define MIN_VOLTAGE 2.5*32 //voltage of all 32 modules when fully discharged

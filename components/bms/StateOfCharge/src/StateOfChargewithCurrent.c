@@ -98,7 +98,7 @@ float stateOfChargeWithCurrent(uint32_t voltage100uV, uint32_t PH_CurrentFromCAN
      {
        if(voltage > MIN_VOLTAGE)
        {
-         DoDchange = calculateChangeDoD(PH_CurrentFromCAN, PH_time,
+         DoDchange = calculateChangeDoD(TotalCurrent, PH_time,
                      GLOBAL_SOC_previousCurrent, GLOBAL_SOC_previousTime);
          DoDinstantaneous = DoDinitial + PH_DISCHARGE_EFFICIENCY*DoDchange;
          SoC = SoH - DoDinstantaneous;
@@ -112,7 +112,7 @@ float stateOfChargeWithCurrent(uint32_t voltage100uV, uint32_t PH_CurrentFromCAN
      {
        if(voltage < MAX_VOLTAGE)
        {
-         DoDchange = calculateChangeDoD(PH_CurrentFromCAN, PH_time,
+         DoDchange = calculateChangeDoD(TotalCurrent, PH_time,
                      GLOBAL_SOC_previousCurrent, GLOBAL_SOC_previousTime);
          DoDinstantaneous = DoDinitial + PH_CHARGE_EFFICIENCY*DoDchange;
          SoC = SoH - DoDinstantaneous;
@@ -124,7 +124,7 @@ float stateOfChargeWithCurrent(uint32_t voltage100uV, uint32_t PH_CurrentFromCAN
      }
 
 GLOBAL_SOC_DoDtotal = DoDinstantaneous; //update DoD globally
-GLOBAL_SOC_previousCurrent = PH_CurrentFromCAN; //update current globally
+GLOBAL_SOC_previousCurrent = TotalCurrent; //update current globally
 GLOBAL_SOC_previousTime = PH_time; //update time globally
 
     /*
@@ -178,8 +178,8 @@ float calculateChangeDoD(float presentCurrent, float presentTime,
     float //signed value
       ChangeDoD;
 
-      ChangeDoD = (-(presentCurrent+pastCurrent)/2*(presentTime-pastTime) )
-                  / (3.5*32)*100;
+      ChangeDoD = (-(presentCurrent+pastCurrent)/2*(presentTime-pastTime)/1000 ) // divide time by 1, 000 to convert to s
+                  / (3.5*3600*32)*100;
 
       return ChangeDoD;
 }
