@@ -126,7 +126,9 @@ typedef enum {
 // Self Test Mode Selection
 // #define ST 1 // TODO: Add enumeration if ST commands are needed
 /* Pull-Up/Pull-Down Current for Open Wire Conversions */
-#define PUP 0 // 0 = Pull down, 1 = Pull up
+#define PUP 1 // 1 = Pull up
+#define PDOWN 0 // 0 = Pull down
+
 
 /*============================================================================*/
 /* COMMAND DEFINITIONS */
@@ -162,7 +164,8 @@ typedef enum {
     // Start Cell Voltage ADC Conversion and Poll Status
     CMD_ADCV    = 0x0260 | (MD << 7) | (DCP << 4), // CH set to 0 = all cells
     // Start Open Wire ADC Conversion and Poll Status
-    CMD_ADOW    = 0x0228 | (MD << 7) | (PUP << 6) | (DCP << 4), // CH set to 0
+    CMD_ADOW_PUP    = 0x0228 | (MD << 7) | (PUP << 6) | (DCP << 4), // CH set to 0
+	CMD_ADOW_PDOWN    = 0x0228 | (MD << 7) | (PDOWN << 6) | (DCP << 4), // CH set to 0
 
     // Start Self Test Cell Voltage Conversion and Poll Status
     //CMD_CVST    = 0x0207 | (MD << 7) | (ST << 5),
