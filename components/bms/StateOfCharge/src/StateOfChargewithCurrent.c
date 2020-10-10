@@ -7,19 +7,17 @@ V3 solar car, Brightside.
 
 #include "StateOfChargeWithCurrent.h"
 
-#ifdef STATEOFCHARGEWITHCURRENT_DEBUG
-void main()
+/**
+ * @brief Iniitialize state of charge global variables
+ *
+ * This function must be called prior to using state of charge functions.
+ */
+void stateOfChargeWithCurrentInit()
 {
-    return;
+    GLOBAL_SOC_DoDtotal = 0; //update DoD globally
+    GLOBAL_SOC_previousCurrent = 0; //update current globally
+    GLOBAL_SOC_previousTime = 0; //update time globally
 }
-#endif
-
-//functions require calling each time a CAN transmits a new current to update SoC
-float stateOfChargeWithCurrent(uint32_t voltage100uV, int32_t PH_CurrentFromCAN,
-                               uint32_t numDischarge, uint32_t PH_time);
-float calculateChangeDoD(float presentCurrent, float presentTime,
-                         float pastCurrent, float pastTime);
-                         //function called in stateOfChargeWithCurrent above
 
 /*
 Function Name: stateOfCharge
@@ -28,7 +26,7 @@ Function purpose: takes in voltage and current measurements with a time-stamp an
 
 Parameters:
     uint32t voltage100mV :       Voltage as multiples of 100 millivolts.
-    int32_t PH_Current_From_CAN: Current from CAN messages converted to Ampers
+    int32_t PH_Current_From_CAN: Current from CAN messages converted to Amps
                                Units are for consistency with rest of code.
                                Also, this function will internally
                                convert the voltage to units of volts.
@@ -179,7 +177,7 @@ float calculateChangeDoD(float presentCurrent, float presentTime,
       ChangeDoD = 0;
 
       ChangeDoD = (-(presentCurrent+pastCurrent)/2*(presentTime-pastTime)/1000 ) // divide time by 1, 000 to convert to s
-                  / (3.5*3600*32)*100;
+                  / (3.5*3600*32)*100; // EDIT: PLEASE VERIFY AND DEFINE CONSTANTS FOR THIS
 
       return ChangeDoD;
 }

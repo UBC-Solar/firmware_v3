@@ -5,20 +5,18 @@
 */
 
 #define _CRT_SECURE_NO_WARNINGS
-#include "StateOfChargeWithCurrent.c" //watch out if the file is "missing" from a branch in Github
 #include "StateOfChargeWithCurrent.h" //watch out if the file is "missing" from a branch in Github
 
 #include <stdio.h>
 #include <stdint.h>
 
 //test     inputs and outputs of function calculating State of Charge by Coulomb counting
-//float    stateOfChargeWithCurrent(uint32_t voltage100uV, uint32_t PH_CurrentFromCAN, 
-//uint32_t numDischarge, uint32_t PH_time); 
+//float    stateOfChargeWithCurrent(uint32_t voltage100uV, uint32_t PH_CurrentFromCAN,
+//uint32_t numDischarge, uint32_t PH_time);
 
 void loopStateOfChargeWithCurrent(int Initial, int Final, int increment, char variable, int timeIncrement,
                                   int defaultVoltage, int defaultCurrent, int defaultdischargingModules);
                                   //change timeIncrement (in ms) and default values between tests
-void resetGLOBALvariables();
 
 int main()
 {
@@ -28,12 +26,15 @@ int main()
     uint32_t time = 0;
     uint32_t dischargingModules = 0; //min number of modules discharging during balancing
 
+    stateOfChargeWithCurrentInit();
     loopStateOfChargeWithCurrent( 23000, 44000, 1000, 'V', 250, 30000, 5, 16); // Voltage / every 250ms
     printf("\n");
-    resetGLOBALvariables();
-    loopStateOfChargeWithCurrent( -12  , 12   , 1   , 'I', 250, 30000, 5, 16); // Current / every 250ms 
+
+    stateOfChargeWithCurrentInit();
+    loopStateOfChargeWithCurrent( -12  , 12   , 1   , 'I', 250, 30000, 5, 16); // Current / every 250ms
     printf("\n");
-    resetGLOBALvariables();
+
+    stateOfChargeWithCurrentInit();
     loopStateOfChargeWithCurrent( 0    , 32   , 1   , 'd', 250, 30000, 5, 16); //number of discharging modules / every 250ms
     printf("\n");
     return 0;
@@ -48,8 +49,8 @@ void loopStateOfChargeWithCurrent(int Initial, int Final, int increment, char va
     float SoC=20;
     for (quantity = Initial; quantity < Final; quantity = quantity + increment)
     {
-        
-        
+
+
         //check which variable is changing and make other two varaibles constants
         if (variable == 'V')
         {
@@ -72,11 +73,4 @@ void loopStateOfChargeWithCurrent(int Initial, int Final, int increment, char va
         time = time + timeIncrement;
     }
 
-}
-
-void resetGLOBALvariables()
-{
-    GLOBAL_SOC_DoDtotal = 0; //update DoD globally
-    GLOBAL_SOC_previousCurrent = 0; //update current globally	
-    GLOBAL_SOC_previousTime = 0; //update time globally
 }
