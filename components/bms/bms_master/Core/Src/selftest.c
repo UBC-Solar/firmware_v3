@@ -15,7 +15,7 @@
  * threshold, returns an error with the device index of the first overheating IC
 **/
 
-
+void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
 
 BTM_Status_t ST_checkLTCtemp()
 {
@@ -41,18 +41,16 @@ BTM_Status_t ST_checkLTCtemp()
     
     for (int board = 0; board < BTM_NUM_DEVICES; board++){
         // Combine 2 bytes of die temperature reading
-        temp_reading = ( ((uint16_t) registerSTATA[board][1]) << 8)
+        itmp[board] = ( ((uint16_t) registerSTATA[board][1]) << 8)
             | registerSTATA[board][0];
-        
-        // Store in given array
-        itmp[board] = temp_reading;
     }
     
     itmpConversion(itmp, temp_celsius);
     
     for (int board = 0; board <  BTM_NUM_DEVICES; board++){
     	if (temp_celsius[board] >= LTC_TEMPLIMIT){
-    		status = {BTM_ERROR_SELFTEST} // check with Andrew if this is proper syntax
+    		status.error = BTM_ERROR_SELFTEST;
+    		status.device_num = board;
     	}
     }
     
@@ -60,9 +58,28 @@ BTM_Status_t ST_checkLTCtemp()
 }
 
 
+/**
+ * @brief Checks for any open wires between the ADCs of the LTC6813-1 and the external cells, making use of the ADOW
+ *	 	  command (see data sheets p.31).
+ *
+ * @return void
+**/
+BTM_Status_t ST_checkOpenWire()
+{
+	// 4x 6-byte sets (each from a different register group of the LTC6813)
+	uint8_t ADC_data[6][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
+	uint16_t cell_voltage_raw = 0;
+	int cell_num = 0;
+	BTM_Status_t status = {BTM_OK, 0};
 
-BTM_Status_t ST_checkOpenWire(){
-	
+	// Send Open Wire Check Command Twice
+	status = BTM_sendCmdAndPoll(CMD_ADOW);
+	if (status.error != BTM_OK) return status;
+
+	status = BTM_sendCmdAndPoll(CMD_ADOW);
+	if (status.error != BTM_OK) return status;
+
+
 }
 
 

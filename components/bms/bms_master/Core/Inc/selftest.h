@@ -14,6 +14,7 @@
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 BTM_Status_t ST_checkLTCtemp(void);
+BTM_Status_t ST_checkOpenWire(void);
 
 /*============================================================================*/
 /* CONFIGURABLE PARAMETERS */
