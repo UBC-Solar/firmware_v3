@@ -19,6 +19,10 @@ float GLOBAL_SOC_DoDtotal;
                              //subject to (experimental) change
 #define PH_CHARGE_EFFICIENCY 0.85 //according to http://large.stanford.edu/courses/2010/ph240/sun1/
                           //subject to (experimental) change
+#define RATED_CAPACITY (3.5*3600*13) // the capacity of each cell is
+                                     //3.5Ah=3.5C/s*h=3.5C * 3600s/h.
+                                     //There are 13cells in parallel per modules
+                                     // the 32 modules do not add in capacity.
 
 
 /*============================================================================*/

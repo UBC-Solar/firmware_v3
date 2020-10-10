@@ -126,7 +126,7 @@ float stateOfChargeWithCurrent(uint32_t voltage100uV, int32_t PH_CurrentFromCAN,
         GLOBAL_SOC_previousTime = PH_time; //update time globally
 
     /*
-    if for some reason the state of charge, initial and instantaneous depth of
+    FOR DEBUGGING PURPOSE ONLY: if for some reason the state of charge, initial and instantaneous depth of
     discharge exceeds the design limits of 0% to 100% then return an error code
     */
 
@@ -177,7 +177,7 @@ float calculateChangeDoD(float presentCurrent, float presentTime,
       ChangeDoD = 0;
 
       ChangeDoD = (-(presentCurrent+pastCurrent)/2*(presentTime-pastTime)/1000 ) // divide time by 1, 000 to convert to s
-                  / (3.5*3600*32)*100; // EDIT: PLEASE VERIFY AND DEFINE CONSTANTS FOR THIS
+                  / RATED_CAPACITY*100;
 
       return ChangeDoD;
 }
