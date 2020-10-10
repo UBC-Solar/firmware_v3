@@ -15,4 +15,9 @@
 /* FUNCTION PROTOTYPES */
 BTM_Status_t ST_checkLTCtemp(void);
 
+/*============================================================================*/
+/* CONFIGURABLE PARAMETERS */
+#define LTC_TEMPLIMIT 100
+
+
 #endif /* INC_SELFTEST_H_ */
