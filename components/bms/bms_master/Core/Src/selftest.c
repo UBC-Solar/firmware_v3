@@ -16,6 +16,9 @@
 **/
 
 void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
+BTM_Status_t readAllModules(BTM_Status_t status,
+							  uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
+							  float moduleVoltage[BTM_NUM_DEVICES][BTM_NUM_MODULES]);
 
 BTM_Status_t ST_checkLTCtemp()
 {
@@ -50,7 +53,7 @@ BTM_Status_t ST_checkLTCtemp()
     for (int board = 0; board <  BTM_NUM_DEVICES; board++){
     	if (temp_celsius[board] >= LTC_TEMPLIMIT){
     		status.error = BTM_ERROR_SELFTEST;
-    		status.device_num = board;
+    		status.device_num = board + 1;
     	}
     }
     
@@ -60,7 +63,9 @@ BTM_Status_t ST_checkLTCtemp()
 
 /**
  * @brief Checks for any open wires between the ADCs of the LTC6813-1 and the external cells, making use of the ADOW
- *	 	  command (see data sheets p.31).
+ *	 	  command (see data sheets p.31). Returns 3-digit error code:
+ *	 	  1st digit is the board where the open wire is found, other 2 indicate the module number of the open wire.
+ *	 	  (e.g. returns an device_ num of 214 for an error on module 14 of the 2nd board).
  *
  * @return void
 **/
@@ -68,15 +73,12 @@ BTM_Status_t ST_checkOpenWire()
 {
 	// 4x 6-byte sets (each from a different register group of the LTC6813)
 	uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
-	uint16_t cell_voltage_raw = 0;
-	float converted_voltage = 0;
 
 	// Stores converted voltage values measured at each pin on the LTC6813-1 for both slave boards
 	float moduleVoltage_PUP[BTM_NUM_DEVICES][BTM_NUM_MODULES];
 	float moduleVoltage_PDOWN[BTM_NUM_DEVICES][BTM_NUM_MODULES];
 	float moduleVoltage_DELTA = 0;
 
-	int module_count = 0;
 	BTM_Status_t status = {BTM_OK, 0};
 
 	// Send open wire check command twice for PDOWN to allow capacitors to fully charge before
@@ -88,51 +90,8 @@ BTM_Status_t ST_checkOpenWire()
 	if (status.error != BTM_OK) return status;
 
 	// Read cell voltages from register after pull-down current is applied.
-
-	status = BTM_readRegisterGroup(CMD_RDCVA, ADC_data[0]);
+	status = readAllModules(status, ADC_data, moduleVoltage_PDOWN);
 	if (status.error != BTM_OK) return status;
-
-	status = BTM_readRegisterGroup(CMD_RDCVB, ADC_data[1]);
-	if (status.error != BTM_OK) return status;
-
-	status = BTM_readRegisterGroup(CMD_RDCVC, ADC_data[2]);
-	if (status.error != BTM_OK) return status;
-
-	status = BTM_readRegisterGroup(CMD_RDCVD, ADC_data[3]);
-	if (status.error != BTM_OK) return status;
-
-	status = BTM_readRegisterGroup(CMD_RDCVE, ADC_data[4]);
-	if (status.error != BTM_OK) return status;
-
-	status = BTM_readRegisterGroup(CMD_RDCVF, ADC_data[5]);
-	if (status.error != BTM_OK) return status;
-
-	// Each cell voltage is provided as a 16-bit value where
-	// voltage = 0.0001V * raw value
-	// Each 6-byte Cell Voltage Register Group holds 3 cell voltages
-	// First 2 bytes of Cell Voltage Register Group A is C1V
-	// Last 2 bytes of Cell Voltage Register Group D is C12V
-	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
-		{
-			module_count = 0;
-			for (int reg_group = 0; reg_group < NUM_CELL_VOLT_REGS; reg_group++)
-			{
-				for (int reading_num = 0; reading_num < READINGS_PER_REG; reading_num++)
-				{
-					// Combine the 2 bytes of each cell voltage together
-					cell_voltage_raw =
-						((uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num + 1]) << 8)
-						| (uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num]);
-
-					// Convert to volts
-					converted_voltage = BTM_VOLTAGE_CONVERSION_FACTOR * cell_voltage_raw;
-
-					// Add module voltage to array for specified ic_num
-					moduleVoltage_PDOWN[ic_num][module_count] = converted_voltage;
-					module_count++;
-				}
-			}
-		}
 
 	// Send open wire check command twice for PUP to allow capacitors to fully charge before
 	// reading voltage register data.
@@ -142,61 +101,20 @@ BTM_Status_t ST_checkOpenWire()
 	status = BTM_sendCmdAndPoll(CMD_ADOW_PUP);
 	if (status.error != BTM_OK) return status;
 
-	// Read cell voltages from register after pull-down current is applied.
-
-	status = BTM_readRegisterGroup(CMD_RDCVA, ADC_data[0]);
+	// Read cell voltages from register after pull-up current is applied.
+	status = readAllModules(status, ADC_data, moduleVoltage_PUP);
 	if (status.error != BTM_OK) return status;
-
-	status = BTM_readRegisterGroup(CMD_RDCVB, ADC_data[1]);
-	if (status.error != BTM_OK) return status;
-
-	status = BTM_readRegisterGroup(CMD_RDCVC, ADC_data[2]);
-	if (status.error != BTM_OK) return status;
-
-	status = BTM_readRegisterGroup(CMD_RDCVD, ADC_data[3]);
-	if (status.error != BTM_OK) return status;
-
-	status = BTM_readRegisterGroup(CMD_RDCVE, ADC_data[4]);
-	if (status.error != BTM_OK) return status;
-
-	status = BTM_readRegisterGroup(CMD_RDCVF, ADC_data[5]);
-	if (status.error != BTM_OK) return status;
-
-	// Each cell voltage is provided as a 16-bit value where
-	// voltage = 0.0001V * raw value
-	// Each 6-byte Cell Voltage Register Group holds 3 cell voltages
-	// First 2 bytes of Cell Voltage Register Group A is C1V
-	// Last 2 bytes of Cell Voltage Register Group D is C12V
-	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
-		{
-			module_count = 0;
-			for (int reg_group = 0; reg_group < NUM_CELL_VOLT_REGS; reg_group++)
-			{
-				for (int reading_num = 0; reading_num < READINGS_PER_REG; reading_num++)
-				{
-					// Combine the 2 bytes of each cell voltage together
-					cell_voltage_raw =
-						((uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num + 1]) << 8)
-						| (uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num]);
-
-					// Convert to volts
-					converted_voltage = BTM_VOLTAGE_CONVERSION_FACTOR * cell_voltage_raw;
-
-					// Add module voltage to array for specified ic_num
-					moduleVoltage_PUP[ic_num][module_count] = converted_voltage;
-					module_count++;
-				}
-			}
-		}
 
 	// Take the difference between pull-up and pull-down measurements for cells 2 to 18. If this difference
 	// is < -400mV at module = n, then module = n-1 is open.
+
 	for (int board = 0; board < BTM_NUM_DEVICES; board++){
 		for (int module = 1; module < BTM_NUM_MODULES; module++){
 			moduleVoltage_DELTA = moduleVoltage_PUP[board][module] - moduleVoltage_PDOWN[board][module];
 			if (moduleVoltage_DELTA < OPEN_WIRE_VOLTAGE_THRESHOLD){
 				status.error = BTM_ERROR_SELFTEST;
-				status.device_num = board;
+				status.device_num = 100 * (board + 1) + module;
+				return status;
 			}
 		}
 	}
@@ -205,7 +123,8 @@ BTM_Status_t ST_checkOpenWire()
 	for (int board = 0; board < BTM_NUM_DEVICES; board++){
 		if (moduleVoltage_PUP[board][0] == 0.0000){
 			status.error = BTM_ERROR_SELFTEST;
-			status.device_num = board;
+			status.device_num = 100 * (board + 1);
+			return status;
 		}
 	}
 
@@ -213,13 +132,84 @@ BTM_Status_t ST_checkOpenWire()
 	for (int board = 0; board < BTM_NUM_DEVICES; board++){
 		if (moduleVoltage_PUP[board][BTM_NUM_MODULES - 1] == 0.0000){
 			status.error = BTM_ERROR_SELFTEST;
-			status.device_num = board;
+			status.device_num = 100 * (board + 1);
+			return status;
 		}
 	}
 
 	return status;
 }
 
+
+/**
+ * @brief Uses ADOL command to measure Cell 7 with ADC1 and ADC2. Then it simultaneously measures
+ *		  Cell 13 with both ADC2 and ADC3. This function compares the results of these measurements
+ *		  and reports any inconsistency as an error.
+ *
+ * @return OK if overlapping measurements are in agreement. Error status if ADCs do not produce the same
+ * 		   voltage reading for each cell measured.
+ */
+BTM_Status_t ST_checkOverlapVoltage(void){
+	// 4x 6-byte sets (each from a different register group of the LTC6813)
+	uint8_t ADC_data[OVERLAP_TEST_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
+	float overlapVoltage[BTM_NUM_DEVICES][OVERLAP_READINGS_PER_BOARD];
+	BTM_Status_t status = {BTM_OK, 0};
+
+	uint16_t cell_voltage_raw = 0;
+	float converted_voltage = 0;
+
+	status = BTM_sendCmdAndPoll(CMD_ADOL);
+	if (status.error != BTM_OK) return status;
+
+	status = BTM_readRegisterGroup(CMD_RDCVC, ADC_data[0]);
+	if (status.error != BTM_OK) return status;
+
+	status = BTM_readRegisterGroup(CMD_RDCVE, ADC_data[1]);
+	if (status.error != BTM_OK) return status;
+
+	// Each cell voltage is provided as a 16-bit value where
+	// voltage = 0.0001V * raw value
+	// Each 6-byte Cell Voltage Register Group holds 3 cell voltages
+	// First 2 bytes of Cell Voltage Register Group C is C7V
+	// Last 2 bytes of Cell Voltage Register Group E is C13V
+	for (int board = 0; board < BTM_NUM_DEVICES; board++)
+		{
+			for (int reg_group = 0; reg_group < OVERLAP_TEST_REGS; reg_group++)
+			{
+				for (int reading_num = 0; reading_num < OVERLAP_READINGS_PER_REG; reading_num++)
+				{
+					// Combine the 2 bytes of each cell voltage together
+					cell_voltage_raw =
+						((uint16_t) (ADC_data[reg_group][board][2 * reading_num + 1]) << 8)
+						| (uint16_t) (ADC_data[reg_group][board][2 * reading_num]);
+
+					// Convert to volts
+					converted_voltage = BTM_VOLTAGE_CONVERSION_FACTOR * cell_voltage_raw;
+
+					overlapVoltage[board][1 * reading_num + 2 * reg_group] = converted_voltage;
+				}
+			}
+		}
+
+	// Check if overlap readings agree within delta
+	for (int board = 0; board < BTM_NUM_DEVICES; board++){
+		for (int cell = 0; cell < NUM_TEST_CELLS; cell++){
+
+			float ADC1_voltage = overlapVoltage[board][2 * cell];
+			float ADC2_voltage = overlapVoltage[board][2 * cell + 1];
+			float delta = ADC1_voltage - ADC2_voltage;
+
+			if (delta < 0) {delta = delta * (-1);}
+
+			if (delta > OVERLAP_DELTA){
+				status.error = BTM_ERROR_SELFTEST;
+				status.device_num = board + 1;
+			}
+		}
+	}
+
+	return status;
+}
 
 /**
  * @brief Converts unsigned int from register ADSTATA to a die temperature value in degrees Celsius.
@@ -243,3 +233,69 @@ void itmpConversion(uint16_t ITMP[], float temp_celsius[])
 		 temp_celsius[board] = celsiusTemp;
 	}
 }
+
+/**
+ * @brief Converts all 2-byte raw cell voltage readings stored in registers A-F to a float voltage value and stores them
+ * 		  in the moduleVoltage array for their respective board.
+ *
+ * @return OK if reading successful, otherwise returns error status.
+**/
+BTM_Status_t readAllModules(BTM_Status_t status,
+							  uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
+							  float moduleVoltage[BTM_NUM_DEVICES][BTM_NUM_MODULES]){
+
+	uint16_t cell_voltage_raw = 0;
+	float converted_voltage = 0;
+	int module_count = 0;
+
+	status = BTM_readRegisterGroup(CMD_RDCVA, ADC_data[0]);
+	if (status.error != BTM_OK) return status;
+
+	status = BTM_readRegisterGroup(CMD_RDCVB, ADC_data[1]);
+	if (status.error != BTM_OK) return status;
+
+	status = BTM_readRegisterGroup(CMD_RDCVC, ADC_data[2]);
+	if (status.error != BTM_OK) return status;
+
+	status = BTM_readRegisterGroup(CMD_RDCVD, ADC_data[3]);
+	if (status.error != BTM_OK) return status;
+
+	status = BTM_readRegisterGroup(CMD_RDCVE, ADC_data[4]);
+	if (status.error != BTM_OK) return status;
+
+	status = BTM_readRegisterGroup(CMD_RDCVF, ADC_data[5]);
+	if (status.error != BTM_OK) return status;
+
+	// Each cell voltage is provided as a 16-bit value where
+	// voltage = 0.0001V * raw value
+	// Each 6-byte Cell Voltage Register Group holds 3 cell voltages
+	// First 2 bytes of Cell Voltage Register Group A is C1V
+	// Last 2 bytes of Cell Voltage Register Group D is C12V
+	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+		{
+			module_count = 0;
+			for (int reg_group = 0; reg_group < NUM_CELL_VOLT_REGS; reg_group++)
+			{
+				for (int reading_num = 0; reading_num < READINGS_PER_REG; reading_num++)
+				{
+					// Combine the 2 bytes of each cell voltage together
+					cell_voltage_raw =
+						((uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num + 1]) << 8)
+						| (uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num]);
+
+					// Convert to volts
+					converted_voltage = BTM_VOLTAGE_CONVERSION_FACTOR * cell_voltage_raw;
+
+					// Add module voltage to array for specified ic_num
+					moduleVoltage[ic_num][module_count] = converted_voltage;
+					module_count++;
+				}
+			}
+		}
+
+	return status;
+}
+
+
+
+

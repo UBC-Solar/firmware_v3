@@ -15,10 +15,17 @@
 /* FUNCTION PROTOTYPES */
 BTM_Status_t ST_checkLTCtemp(void);
 BTM_Status_t ST_checkOpenWire(void);
+BTM_Status_t ST_checkOverlapVoltage(void);
 
 /*============================================================================*/
 /* CONFIGURABLE PARAMETERS */
 #define LTC_TEMPLIMIT 100
+
+#define OVERLAP_TEST_REGS 2
+#define NUM_TEST_CELLS 2
+#define OVERLAP_READINGS_PER_REG 2
+#define OVERLAP_READINGS_PER_BOARD 4
+#define OVERLAP_DELTA 0.003
 
 #define NUM_CELL_VOLT_REGS 6
 #define READINGS_PER_REG 3
