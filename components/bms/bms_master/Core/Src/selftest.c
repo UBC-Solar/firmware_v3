@@ -8,18 +8,17 @@
 
 #include "selftest.h"
 
-/**
- * @brief Checks internal die temperature of LTC6813's for safe operating condition
- *
- * @return If at least one LTC6813 has a die temperature nearing thermal shutdown
- * threshold, returns an error with the device index of the first overheating IC
-**/
-
 void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
 BTM_Status_t readAllModules(BTM_Status_t status,
 							  uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
 							  float moduleVoltage[BTM_NUM_DEVICES][BTM_NUM_MODULES]);
 
+/**
+* @brief Checks internal die temperature of LTC6813's for safe operating condition
+*
+* @return If at least one LTC6813 has a die temperature nearing thermal shutdown
+* threshold, returns an error with the device index of the first overheating IC
+**/
 BTM_Status_t ST_checkLTCtemp()
 {
     BTM_Status_t status = {BTM_OK, 0};
@@ -34,29 +33,29 @@ BTM_Status_t ST_checkLTCtemp()
     uint8_t registerSTATA[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
     uint16_t itmp[BTM_NUM_DEVICES];
     float temp_celsius[BTM_NUM_DEVICES];
-    
+
     status = BTM_sendCmdAndPoll(CMD_ADSTAT_ITMP);
     if (status.error != BTM_OK) return status;
-    
+
     //Retrieve register reading
     status = BTM_readRegisterGroup(CMD_RDSTATA, registerSTATA);
     if (status.error != BTM_OK) return status;
-    
+
     for (int board = 0; board < BTM_NUM_DEVICES; board++){
         // Combine 2 bytes of die temperature reading
         itmp[board] = ( ((uint16_t) registerSTATA[board][1]) << 8)
             | registerSTATA[board][0];
     }
-    
+
     itmpConversion(itmp, temp_celsius);
-    
+
     for (int board = 0; board <  BTM_NUM_DEVICES; board++){
     	if (temp_celsius[board] >= LTC_TEMPLIMIT){
     		status.error = BTM_ERROR_SELFTEST;
     		status.device_num = board + 1;
     	}
     }
-    
+
     return status;
 }
 
@@ -172,6 +171,8 @@ BTM_Status_t ST_checkOverlapVoltage(void){
 	// Each 6-byte Cell Voltage Register Group holds 3 cell voltages
 	// First 2 bytes of Cell Voltage Register Group C is C7V
 	// Last 2 bytes of Cell Voltage Register Group E is C13V
+
+	// ANDREW: Ah, C13V is the FIRST 2 bytes of Cell Voltage Register Group E
 	for (int board = 0; board < BTM_NUM_DEVICES; board++)
 		{
 			for (int reg_group = 0; reg_group < OVERLAP_TEST_REGS; reg_group++)
@@ -184,8 +185,12 @@ BTM_Status_t ST_checkOverlapVoltage(void){
 						| (uint16_t) (ADC_data[reg_group][board][2 * reading_num]);
 
 					// Convert to volts
+					// ANDREW: just for consistency with other parts of the code,
+					// I'd suggest using BTM_regValToVoltage() here and remove the redefinition of
+					// BTM_VOLTAGE_CONVERSION_FACTOR in selftest.h
 					converted_voltage = BTM_VOLTAGE_CONVERSION_FACTOR * cell_voltage_raw;
 
+					// ANDREW: No need to multiply by 1...
 					overlapVoltage[board][1 * reading_num + 2 * reg_group] = converted_voltage;
 				}
 			}
@@ -194,6 +199,10 @@ BTM_Status_t ST_checkOverlapVoltage(void){
 	// Check if overlap readings agree within delta
 	for (int board = 0; board < BTM_NUM_DEVICES; board++){
 		for (int cell = 0; cell < NUM_TEST_CELLS; cell++){
+
+			// ANDREW: If you want to, you can do away with floats here and stick to integers
+			// because the storage format of the raw data as integers isn't actually
+			// hard to deal with - I can explain if you're curious
 
 			float ADC1_voltage = overlapVoltage[board][2 * cell];
 			float ADC2_voltage = overlapVoltage[board][2 * cell + 1];
@@ -217,19 +226,21 @@ BTM_Status_t ST_checkOverlapVoltage(void){
  *
  * @return void
 **/
-
+// ANDREW: I'd suggest in general, all-uppercase names should only be used for
+// symbolic constants. I know ITMP is all caps in many places, but I'd say stick
+// to the coding convention of lowercase variable names all the same!
 void itmpConversion(uint16_t ITMP[], float temp_celsius[])
 {
 	const float itmp_coefficient = 0.013158;
 	const float conversion_const = 276.0;
-	
+
 	unsigned int raw_reading;
 	float celsiusTemp;
-	
+
 	for (int board = 0; board < BTM_NUM_DEVICES; board++){
 		 raw_reading = ITMP[board];
 		 celsiusTemp = itmp_coefficient * raw_reading - conversion_const;
-		 
+
 		 temp_celsius[board] = celsiusTemp;
 	}
 }
@@ -284,6 +295,9 @@ BTM_Status_t readAllModules(BTM_Status_t status,
 						| (uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num]);
 
 					// Convert to volts
+					// ANDREW: [copied from above] just for consistency with other parts of the code,
+					// I'd suggest using BTM_regValToVoltage() here and remove the redefinition of
+					// BTM_VOLTAGE_CONVERSION_FACTOR in selftest.h
 					converted_voltage = BTM_VOLTAGE_CONVERSION_FACTOR * cell_voltage_raw;
 
 					// Add module voltage to array for specified ic_num
@@ -295,7 +309,3 @@ BTM_Status_t readAllModules(BTM_Status_t status,
 
 	return status;
 }
-
-
-
-

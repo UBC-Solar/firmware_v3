@@ -19,6 +19,10 @@ BTM_Status_t ST_checkOverlapVoltage(void);
 
 /*============================================================================*/
 /* CONFIGURABLE PARAMETERS */
+
+// ANDREW: To avoid overwriting constants, I'd suggest prefixing any constants
+// in the header file here with "ST_". Just don't forget to change them where
+// they're used if you do this!
 #define LTC_TEMPLIMIT 100
 
 #define OVERLAP_TEST_REGS 2
