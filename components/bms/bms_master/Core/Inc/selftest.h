@@ -23,18 +23,21 @@ BTM_Status_t ST_checkOverlapVoltage(void);
 // ANDREW: To avoid overwriting constants, I'd suggest prefixing any constants
 // in the header file here with "ST_". Just don't forget to change them where
 // they're used if you do this!
-#define LTC_TEMPLIMIT 100
+#define ST_LTC_TEMPLIMIT 100
 
 #define OVERLAP_TEST_REGS 2
 #define NUM_TEST_CELLS 2
 #define OVERLAP_READINGS_PER_REG 2
 #define OVERLAP_READINGS_PER_BOARD 4
-#define OVERLAP_DELTA 0.003
+#define ST_OVERLAP_DELTA 0.003
 
 #define NUM_CELL_VOLT_REGS 6
 #define READINGS_PER_REG 3
-#define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
-#define OPEN_WIRE_VOLTAGE_THRESHOLD -0.400
+#define ST_VOLTAGE_CONVERSION_FACTOR 0.0001
+#define ST_OPEN_WIRE_VOLTAGE -0.400
 
+#define ST_VREF_READINGS_PER_REG 1
+#define ST_VREF_LOWERBOUND 2.990
+#define ST_VREF_UPPERBOUND 3.014
 
 #endif /* INC_SELFTEST_H_ */

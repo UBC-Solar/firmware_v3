@@ -50,13 +50,53 @@ BTM_Status_t ST_checkLTCtemp()
     itmpConversion(itmp, temp_celsius);
 
     for (int board = 0; board <  BTM_NUM_DEVICES; board++){
-    	if (temp_celsius[board] >= LTC_TEMPLIMIT){
+    	if (temp_celsius[board] >= ST_LTC_TEMPLIMIT){
     		status.error = BTM_ERROR_SELFTEST;
     		status.device_num = board + 1;
     	}
     }
 
     return status;
+}
+
+BTM_Status_t ST_checkVREF2(){
+	uint8_t registerAUXB[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
+	uint16_t cell_voltage_raw = 0;
+	float converted_voltage = 0;
+
+	BTM_Status_t status = {BTM_OK, 0};
+
+	status = BTM_sendCmdAndPoll(CMD_ADAX_VREF2);
+	if (status.error != BTM_OK) return status;
+
+	status = BTM_readRegisterGroup(CMD_RDAUXB, registerAUXB);
+	if (status.error != BTM_OK) return status;
+
+
+	// Each cell voltage is provided as a 16-bit value where
+	// voltage = 0.0001V * raw value
+	// Each 6-byte Cell Voltage Register Group holds 3 cell voltages
+	// First 2 bytes of Auxiliary Voltage Register Group B is VREF2
+	for (int board = 0; board < BTM_NUM_DEVICES; board++)
+		{
+			// Combine the 2 bytes of each cell voltage together
+			cell_voltage_raw =
+				((uint16_t) (registerAUXB[board][5]) << 8)
+				| (uint16_t) (registerAUXB[board][4]);
+
+			// Convert to volts and store
+			converted_voltage = BTM_regValToVoltage(cell_voltage_raw);
+
+			if (converted_voltage < ST_VREF_LOWERBOUND ||
+				converted_voltage > ST_VREF_UPPERBOUND)
+			{
+				status.error = BTM_ERROR_SELFTEST;
+				status.device_num = board;
+				return status;
+			}
+		}
+
+	return status;
 }
 
 
@@ -110,7 +150,7 @@ BTM_Status_t ST_checkOpenWire()
 	for (int board = 0; board < BTM_NUM_DEVICES; board++){
 		for (int module = 1; module < BTM_NUM_MODULES; module++){
 			moduleVoltage_DELTA = moduleVoltage_PUP[board][module] - moduleVoltage_PDOWN[board][module];
-			if (moduleVoltage_DELTA < OPEN_WIRE_VOLTAGE_THRESHOLD){
+			if (moduleVoltage_DELTA < ST_OPEN_WIRE_VOLTAGE){
 				status.error = BTM_ERROR_SELFTEST;
 				status.device_num = 100 * (board + 1) + module;
 				return status;
@@ -170,9 +210,7 @@ BTM_Status_t ST_checkOverlapVoltage(void){
 	// voltage = 0.0001V * raw value
 	// Each 6-byte Cell Voltage Register Group holds 3 cell voltages
 	// First 2 bytes of Cell Voltage Register Group C is C7V
-	// Last 2 bytes of Cell Voltage Register Group E is C13V
-
-	// ANDREW: Ah, C13V is the FIRST 2 bytes of Cell Voltage Register Group E
+	// First 2 bytes of Cell Voltage Register Group E is C13V
 	for (int board = 0; board < BTM_NUM_DEVICES; board++)
 		{
 			for (int reg_group = 0; reg_group < OVERLAP_TEST_REGS; reg_group++)
@@ -185,13 +223,9 @@ BTM_Status_t ST_checkOverlapVoltage(void){
 						| (uint16_t) (ADC_data[reg_group][board][2 * reading_num]);
 
 					// Convert to volts
-					// ANDREW: just for consistency with other parts of the code,
-					// I'd suggest using BTM_regValToVoltage() here and remove the redefinition of
-					// BTM_VOLTAGE_CONVERSION_FACTOR in selftest.h
-					converted_voltage = BTM_VOLTAGE_CONVERSION_FACTOR * cell_voltage_raw;
+					converted_voltage = BTM_regValToVoltage(cell_voltage_raw);
 
-					// ANDREW: No need to multiply by 1...
-					overlapVoltage[board][1 * reading_num + 2 * reg_group] = converted_voltage;
+					overlapVoltage[board][reading_num + 2 * reg_group] = converted_voltage;
 				}
 			}
 		}
@@ -210,7 +244,7 @@ BTM_Status_t ST_checkOverlapVoltage(void){
 
 			if (delta < 0) {delta = delta * (-1);}
 
-			if (delta > OVERLAP_DELTA){
+			if (delta > ST_OVERLAP_DELTA){
 				status.error = BTM_ERROR_SELFTEST;
 				status.device_num = board + 1;
 			}
@@ -226,10 +260,7 @@ BTM_Status_t ST_checkOverlapVoltage(void){
  *
  * @return void
 **/
-// ANDREW: I'd suggest in general, all-uppercase names should only be used for
-// symbolic constants. I know ITMP is all caps in many places, but I'd say stick
-// to the coding convention of lowercase variable names all the same!
-void itmpConversion(uint16_t ITMP[], float temp_celsius[])
+void itmpConversion(uint16_t itmp[], float temp_celsius[])
 {
 	const float itmp_coefficient = 0.013158;
 	const float conversion_const = 276.0;
@@ -238,7 +269,7 @@ void itmpConversion(uint16_t ITMP[], float temp_celsius[])
 	float celsiusTemp;
 
 	for (int board = 0; board < BTM_NUM_DEVICES; board++){
-		 raw_reading = ITMP[board];
+		 raw_reading = itmp[board];
 		 celsiusTemp = itmp_coefficient * raw_reading - conversion_const;
 
 		 temp_celsius[board] = celsiusTemp;
@@ -295,10 +326,7 @@ BTM_Status_t readAllModules(BTM_Status_t status,
 						| (uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num]);
 
 					// Convert to volts
-					// ANDREW: [copied from above] just for consistency with other parts of the code,
-					// I'd suggest using BTM_regValToVoltage() here and remove the redefinition of
-					// BTM_VOLTAGE_CONVERSION_FACTOR in selftest.h
-					converted_voltage = BTM_VOLTAGE_CONVERSION_FACTOR * cell_voltage_raw;
+					converted_voltage = BTM_regValToVoltage(cell_voltage_raw);
 
 					// Add module voltage to array for specified ic_num
 					moduleVoltage[ic_num][module_count] = converted_voltage;
