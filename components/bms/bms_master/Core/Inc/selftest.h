@@ -33,7 +33,6 @@ BTM_Status_t ST_checkOverlapVoltage(void);
 
 #define NUM_CELL_VOLT_REGS 6
 #define READINGS_PER_REG 3
-#define ST_VOLTAGE_CONVERSION_FACTOR 0.0001
 #define ST_OPEN_WIRE_VOLTAGE -0.400
 
 #define ST_VREF_READINGS_PER_REG 1
