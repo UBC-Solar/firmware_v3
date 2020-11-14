@@ -120,7 +120,7 @@ typedef enum {
 /* End Configuration Register Group Parameters */
 
 // Discharge Permitted during cell measurement
-#define DCP 0 // 0 = Discharge Not Permitted, 1 = Discharge Permitted
+#define DCP 0 // 0 = Discharge Not Permitted 1 = Discharge Permitted
 // ADC Mode (speed)
 #define MD MD_7KHZ_3KHZ // Normal mode
 // Self Test Mode Selection

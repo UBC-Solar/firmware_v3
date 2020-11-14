@@ -7,6 +7,7 @@
  */
 
 #include "selftest.h"
+#include "ltc6813_btm_bal.h"
 
 void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
 BTM_Status_t readAllModules(BTM_Status_t status,
@@ -17,19 +18,11 @@ BTM_Status_t readAllModules(BTM_Status_t status,
 * @brief Checks internal die temperature of LTC6813's for safe operating condition
 *
 * @return If at least one LTC6813 has a die temperature nearing thermal shutdown
-* threshold, returns an error with the device index of the first overheating IC
+* threshold, returns an error with the device index of the first overheating IC.
 **/
 BTM_Status_t ST_checkLTCtemp()
 {
     BTM_Status_t status = {BTM_OK, 0};
-
-    // ...
-    // Maybe use CMD_ADSTAT_ITMP
-
-    // Remember most things with the LTC6813 are accomplished in 2 steps:
-    // a) Send a command to have it perform on operation
-    // b) Read a register to get the results from that operation
-
     uint8_t registerSTATA[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
     uint16_t itmp[BTM_NUM_DEVICES];
     float temp_celsius[BTM_NUM_DEVICES];
@@ -59,6 +52,14 @@ BTM_Status_t ST_checkLTCtemp()
     return status;
 }
 
+/**
+ * @brief Measures independent reference voltage VREF2 to verify measurement of ADC1.
+ * Readings outside the range 2.990V to 3.014V indicate the system is out of its specified tolerance.
+ * Accuracy of ADC2 measurement is verified separately using ST_checkOverlapVoltage() command.
+ *
+ * @return OK if reading is within tolerance range. BTM_ERROR_SELFTEST if ADC1 measurement is outside
+ * 		   tolerance range.
+ */
 BTM_Status_t ST_checkVREF2(){
 	uint8_t registerAUXB[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 	uint16_t cell_voltage_raw = 0;
@@ -76,7 +77,7 @@ BTM_Status_t ST_checkVREF2(){
 	// Each cell voltage is provided as a 16-bit value where
 	// voltage = 0.0001V * raw value
 	// Each 6-byte Cell Voltage Register Group holds 3 cell voltages
-	// First 2 bytes of Auxiliary Voltage Register Group B is VREF2
+	// Last 2 bytes of Auxiliary Voltage Register Group B is VREF2
 	for (int board = 0; board < BTM_NUM_DEVICES; board++)
 		{
 			// Combine the 2 bytes of each cell voltage together
@@ -104,7 +105,7 @@ BTM_Status_t ST_checkVREF2(){
  * @brief Checks for any open wires between the ADCs of the LTC6813-1 and the external cells, making use of the ADOW
  *	 	  command (see data sheets p.31). Returns 3-digit error code:
  *	 	  1st digit is the board where the open wire is found, other 2 indicate the module number of the open wire.
- *	 	  (e.g. returns an device_ num of 214 for an error on module 14 of the 2nd board).
+ *	 	  (e.g. returns an device_num of 214 for an error on module 14 of the 2nd board).
  *
  * @return void
 **/
@@ -255,6 +256,47 @@ BTM_Status_t ST_checkOverlapVoltage(void){
 }
 
 /**
+ *
+ * @brief
+ */
+BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
+	// 4x 6-byte sets (each from a different register group of the LTC6813)
+	uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
+
+	// Stores converted voltage values measured at each pin on the LTC6813-1 for both slave boards
+	// for initial measurement will all discharge pins disabled.
+	float initial_voltage[BTM_NUM_DEVICES][BTM_NUM_MODULES];
+
+	BTM_Status_t status = {BTM_OK, 0};
+
+	BTM_BAL_dch_setting_pack_t ST_dch_pack;
+
+	// Initialize discharge pack with all discharge (S) pins set to OFF
+	BTM_BAL_initDchPack(&ST_dch_pack);
+
+	// Write discharge settings to LTC6813s
+	BTM_BAL_setDischarge(pack, &ST_dch_pack);
+
+	// Read voltage with discharging disabled
+	status = readAllModules(status, ADC_data, initial_voltage);
+	if (status.error != BTM_OK) return status;
+
+	BTM_module_bal_status_t dch_off = {DISCHARGE_OFF};
+	BTM_module_bal_status_t dch_on = {DISCHARGE_ON};
+	BTM_module_bal_status_t s_pin_set[BTM_NUM_MODULES] = {dch_off, dch_off, dch_on,
+														  dch_on, dch_on, dch_off,
+									         		      dch_off, dch_off, dch_on,
+														  dch_on, dch_on, dch_off,
+														  dch_off, dch_off, dch_on,
+														  dch_on, dch_on, dch_off};
+
+
+
+    return status;
+}
+
+
+/**
  * @brief Converts unsigned int from register ADSTATA to a die temperature value in degrees Celsius.
  *        Conversion constants sourced from LTC6813 Data Sheets p.26
  *
@@ -336,4 +378,39 @@ BTM_Status_t readAllModules(BTM_Status_t status,
 		}
 
 	return status;
+}
+
+/**
+ * @brief
+ *
+ * @param module_dch
+ */
+void shift_dch_status(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]){
+	BTM_module_bal_status_t end_status = module_dch[BTM_NUM_MODULES - 1];
+
+	for (int module = 1; module < BTM_NUM_MODULES; module++){
+		module_dch[module] = module_dch[module - 1];
+	}
+
+	module_dch[0] = end_status;
+
+	return;
+}
+
+/**
+ * @brief
+ *
+ * @param dch_pack
+ * @param new_module_dch
+ */
+void set_dch_pack(BTM_BAL_dch_setting_pack_t* dch_pack,
+				  BTM_module_bal_status_t new_module_dch[BTM_NUM_MODULES]){
+    for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
+    {
+        for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+        {
+            dch_pack->stack[stack_num].module_dch[module_num] = new_module_dch[module_num];
+        }
+    }
+    return;
 }

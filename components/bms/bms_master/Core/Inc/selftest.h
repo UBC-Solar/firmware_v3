@@ -39,4 +39,7 @@ BTM_Status_t ST_checkOverlapVoltage(void);
 #define ST_VREF_LOWERBOUND 2.990
 #define ST_VREF_UPPERBOUND 3.014
 
+#define DCPERMITTED 1
+#define ST_NUM_S_PINS 18
+
 #endif /* INC_SELFTEST_H_ */
