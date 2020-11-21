@@ -59,6 +59,17 @@ enum BTM_MD_e {
     MD_26HZ_2KHZ   = 0x3	// filtered
 };
 
+// LTC6813 ADC Cell Measurement Options
+enum BTM_CH_e {
+	CH_ALL = 0x0,
+	CH_1 = 0x1, // Measure Cells 1, 7, 13
+	CH_2 = 0x2, // Measure Cells 2, 8, 14
+	CH_3 = 0x3, // Measure Cells 3, 9, 15
+	CH_4 = 0x4, // Measure Cells 4, 10, 16
+	CH_5 = 0x5, // Measure Cells 5, 11, 17
+	CH_6 = 0x6  // Measure Cells 6, 12, 18
+};
+
 // LTC6813 GPIO selection for ADC conversion
 enum BTM_CHG_e {
     CHG_ALL     = 0x0,    // GPIO 1 through 5, VREF2 and GPIO 6 through 9
@@ -163,6 +174,13 @@ typedef enum {
 
     // Start Cell Voltage ADC Conversion and Poll Status
     CMD_ADCV    = 0x0260 | (MD << 7) | (DCP << 4), // CH set to 0 = all cells
+	CMD_ADCV_CH1 = 0x0260 | (MD << 7) | (DCP << 4) | CH_1,
+	CMD_ADCV_CH2 = 0x0260 | (MD << 7) | (DCP << 4) | CH_2,
+	CMD_ADCV_CH3 = 0x0260 | (MD << 7) | (DCP << 4) | CH_3,
+	CMD_ADCV_CH4 = 0x0260 | (MD << 7) | (DCP << 4) | CH_4,
+	CMD_ADCV_CH5 = 0x0260 | (MD << 7) | (DCP << 4) | CH_5,
+	CMD_ADCV_CH6 = 0x0260 | (MD << 7) | (DCP << 4) | CH_6,
+
     // Start Open Wire ADC Conversion and Poll Status
     CMD_ADOW_PUP    = 0x0228 | (MD << 7) | (PUP << 6) | (DCP << 4), // CH set to 0
 	CMD_ADOW_PDOWN    = 0x0228 | (MD << 7) | (PDOWN << 6) | (DCP << 4), // CH set to 0

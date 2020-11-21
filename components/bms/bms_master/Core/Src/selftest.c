@@ -10,10 +10,12 @@
 #include "ltc6813_btm_bal.h"
 
 void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
-BTM_Status_t readAllModules(BTM_Status_t status,
+BTM_Status_t readAllRegisters(BTM_Status_t status,
 							  uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
 							  float moduleVoltage[BTM_NUM_DEVICES][BTM_NUM_MODULES]);
-
+void shift_dch_status(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]);
+void set_dch_pack(BTM_BAL_dch_setting_pack_t* dch_pack,
+				  BTM_module_bal_status_t new_module_dch[BTM_NUM_MODULES]);
 /**
 * @brief Checks internal die temperature of LTC6813's for safe operating condition
 *
@@ -130,7 +132,7 @@ BTM_Status_t ST_checkOpenWire()
 	if (status.error != BTM_OK) return status;
 
 	// Read cell voltages from register after pull-down current is applied.
-	status = readAllModules(status, ADC_data, moduleVoltage_PDOWN);
+	status = readAllRegisters(status, ADC_data, moduleVoltage_PDOWN);
 	if (status.error != BTM_OK) return status;
 
 	// Send open wire check command twice for PUP to allow capacitors to fully charge before
@@ -142,7 +144,7 @@ BTM_Status_t ST_checkOpenWire()
 	if (status.error != BTM_OK) return status;
 
 	// Read cell voltages from register after pull-up current is applied.
-	status = readAllModules(status, ADC_data, moduleVoltage_PUP);
+	status = readAllRegisters(status, ADC_data, moduleVoltage_PUP);
 	if (status.error != BTM_OK) return status;
 
 	// Take the difference between pull-up and pull-down measurements for cells 2 to 18. If this difference
@@ -241,9 +243,7 @@ BTM_Status_t ST_checkOverlapVoltage(void){
 
 			float ADC1_voltage = overlapVoltage[board][2 * cell];
 			float ADC2_voltage = overlapVoltage[board][2 * cell + 1];
-			float delta = ADC1_voltage - ADC2_voltage;
-
-			if (delta < 0) {delta = delta * (-1);}
+			float delta = abs(ADC1_voltage - ADC2_voltage);
 
 			if (delta > ST_OVERLAP_DELTA){
 				status.error = BTM_ERROR_SELFTEST;
@@ -257,7 +257,7 @@ BTM_Status_t ST_checkOverlapVoltage(void){
 
 /**
  *
- * @brief
+ * @brief TODO
  */
 BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
 	// 4x 6-byte sets (each from a different register group of the LTC6813)
@@ -266,6 +266,7 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
 	// Stores converted voltage values measured at each pin on the LTC6813-1 for both slave boards
 	// for initial measurement will all discharge pins disabled.
 	float initial_voltage[BTM_NUM_DEVICES][BTM_NUM_MODULES];
+	float discharge_voltage[BTM_NUM_DEVICES][BTM_NUM_MODULES];
 
 	BTM_Status_t status = {BTM_OK, 0};
 
@@ -278,19 +279,58 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
 	BTM_BAL_setDischarge(pack, &ST_dch_pack);
 
 	// Read voltage with discharging disabled
-	status = readAllModules(status, ADC_data, initial_voltage);
+	status = BTM_sendCmdAndPoll(CMD_ADCV);
+	if (status.error != BTM_OK) return status;
+
+	status = readAllRegisters(status, ADC_data, initial_voltage);
 	if (status.error != BTM_OK) return status;
 
 	BTM_module_bal_status_t dch_off = {DISCHARGE_OFF};
 	BTM_module_bal_status_t dch_on = {DISCHARGE_ON};
-	BTM_module_bal_status_t s_pin_set[BTM_NUM_MODULES] = {dch_off, dch_off, dch_on,
-														  dch_on, dch_on, dch_off,
-									         		      dch_off, dch_off, dch_on,
-														  dch_on, dch_on, dch_off,
-														  dch_off, dch_off, dch_on,
-														  dch_on, dch_on, dch_off};
 
+	// Set initial discharge pin settings (see p.77 on LTC6813-1 Datasheet)
+	// Start by turning on S1, S7, S13
+	BTM_module_bal_status_t s_pin_set[BTM_NUM_MODULES] = {dch_on, dch_off, dch_off,
+														  dch_off, dch_off, dch_off,
+									         		      dch_on, dch_off, dch_off,
+														  dch_off, dch_off, dch_off,
+														  dch_on, dch_off, dch_off,
+														  dch_off, dch_off, dch_off};
 
+	// Run ADC Cell Voltage Measurement command. Bitwise OR selects for
+	// 3 cells to measure, CH1 measures cells 1, 7 and 13,
+	// CH2 measures cells 2, 8, 14
+	// ... CH6 measures cells 6, 12, 18.
+	for (int i = 1; i <= 6; i++){
+		set_dch_pack(&ST_dch_pack, s_pin_set);
+		BTM_BAL_setDischarge(pack, &ST_dch_pack);
+
+		status = BTM_sendCmdAndPoll(CMD_ADCV | i);
+		if (status.error != BTM_OK) return status;
+
+		shift_dch_status(s_pin_set);
+	}
+
+	status = readAllRegisters(status, ADC_data, discharge_voltage);
+	if (status.error != BTM_OK) return status;
+
+	// Check if ratio of initial and discharge readings agree with expected percentage
+	// defined by Rfilter and Rdischarge.
+
+	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++){
+		for (int module = 0; module < BTM_NUM_MODULES; module++){
+
+			float v_init_next = initial_voltage[ic_num][module];
+			float v_dch_next = discharge_voltage[ic_num][module];
+			float ratio =  v_dch_next / v_init_next;
+			float delta = abs(ratio - ST_DCH_COMPARE_PCT);
+
+			if (delta > ST_DCH_PCT_DELTA){
+				status.error = BTM_ERROR_SELFTEST;
+				status.device_num = ic_num + 1;
+			}
+		}
+	}
 
     return status;
 }
@@ -324,7 +364,7 @@ void itmpConversion(uint16_t itmp[], float temp_celsius[])
  *
  * @return OK if reading successful, otherwise returns error status.
 **/
-BTM_Status_t readAllModules(BTM_Status_t status,
+BTM_Status_t readAllRegisters(BTM_Status_t status,
 							  uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
 							  float moduleVoltage[BTM_NUM_DEVICES][BTM_NUM_MODULES]){
 
@@ -381,7 +421,9 @@ BTM_Status_t readAllModules(BTM_Status_t status,
 }
 
 /**
- * @brief
+ * @brief Takes a BTM_module_bal_status_t structure and shifts all discharge pin settings
+ * 		  in the array to the right such that module_dch[n] = module_dch[n-1]. The last
+ * 		  discharge bit in the input array is shifted to the 0 index.
  *
  * @param module_dch
  */
@@ -398,7 +440,9 @@ void shift_dch_status(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]){
 }
 
 /**
- * @brief
+ * @brief Takes a pointer to an existing BTM_BAL_dch_setting_pack_t structure and
+ * 		  and an array of discharge pin settings provided by new_module_dch. Sets
+ * 		  discharge pins on each LTC6813 board according to the provided settings.
  *
  * @param dch_pack
  * @param new_module_dch
