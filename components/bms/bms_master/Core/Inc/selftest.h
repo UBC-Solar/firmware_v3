@@ -27,6 +27,12 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack);
 // they're used if you do this!
 #define ST_LTC_TEMPLIMIT 100 // Maximum Acceptable Die Temperature for LTC6813
 
+
+#define ST_SC_CELLS 2 // Pins C18 and C12 on LTC6813-1 Slave Board should be shorted.
+#define ST_SC_REGS 2  // Their voltages are stored in Registers D and F
+#define EXPECTED_SC_VOLTAGE 0.0
+#define ST_SC_DELTA 0.003
+
 #define OVERLAP_TEST_REGS 2 // Number of registers overlap voltage is read from.
 							// One register to compare ADC 1 and ADC 2 (Group C),
 							// and another to compare ADC 2 and ADC 3 (Group E).

@@ -8,6 +8,7 @@
 
 #include "selftest.h"
 #include "ltc6813_btm_bal.h"
+#include "stdlib.h"
 
 void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
 BTM_Status_t readAllRegisters(BTM_Status_t status,
@@ -102,6 +103,56 @@ BTM_Status_t ST_checkVREF2(){
 	return status;
 }
 
+/**
+ * @brief Verifies that pin connections C12 and C18 are not measuring any voltage as neither
+ * 		  pin will be connected to an active cell in the Battery Pack.
+ *
+ * @return OK if a voltage of 0 +/- 0.003 V is measured. BTM_ERROR_SELFTEST if the measured
+ * 		   cell voltage is outside of this range.
+ */
+BTM_Status_t ST_shortedCells(){
+	// 4x 6-byte sets (each from a different register group of the LTC6813)
+	uint8_t ADC_data[ST_SC_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
+	BTM_Status_t status = {BTM_OK, 0};
+
+	uint16_t cell_voltage_raw = 0;
+	float converted_voltage = 0;
+
+	status = BTM_sendCmdAndPoll(CMD_ADCV);
+	if (status.error != BTM_OK) return status;
+
+	status = BTM_readRegisterGroup(CMD_RDCVD, ADC_data[0]);
+	if (status.error != BTM_OK) return status;
+
+	status = BTM_readRegisterGroup(CMD_RDCVF, ADC_data[1]);
+	if (status.error != BTM_OK) return status;
+
+	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+		{
+			for (int reg_group = 0; reg_group < ST_SC_REGS; reg_group++)
+			{
+				int reading_num = 3; // C12 and C18 are the 3rd voltage value stored
+									 // in their respective registers.
+
+				// Combine the 2 bytes of each cell voltage together
+				cell_voltage_raw =
+					((uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num + 1]) << 8)
+					| (uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num]);
+
+				// Convert to volts
+				converted_voltage = BTM_regValToVoltage(cell_voltage_raw);
+
+				float delta = abs(converted_voltage - EXPECTED_SC_VOLTAGE);
+				if (delta > ST_SC_DELTA){
+					status.error = BTM_ERROR_SELFTEST;
+					status.device_num = ic_num + 1;
+					return status;
+				}
+			}
+		}
+
+	return status;
+}
 
 /**
  * @brief Checks for any open wires between the ADCs of the LTC6813-1 and the external cells, making use of the ADOW
