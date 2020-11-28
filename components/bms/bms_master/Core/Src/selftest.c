@@ -17,11 +17,12 @@ BTM_Status_t readAllRegisters(BTM_Status_t status,
 void shift_dch_status(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]);
 void set_dch_pack(BTM_BAL_dch_setting_pack_t* dch_pack,
 				  BTM_module_bal_status_t new_module_dch[BTM_NUM_MODULES]);
+
 /**
 * @brief Checks internal die temperature of LTC6813's for safe operating condition
 *
 * @return If at least one LTC6813 has a die temperature nearing thermal shutdown
-* threshold, returns an error with the device index of the first overheating IC.
+* 		  threshold, returns an error with the device index of the first overheating IC.
 **/
 BTM_Status_t ST_checkLTCtemp()
 {
@@ -57,8 +58,8 @@ BTM_Status_t ST_checkLTCtemp()
 
 /**
  * @brief Measures independent reference voltage VREF2 to verify measurement of ADC1.
- * Readings outside the range 2.990V to 3.014V indicate the system is out of its specified tolerance.
- * Accuracy of ADC2 measurement is verified separately using ST_checkOverlapVoltage() command.
+ * 		  Readings outside the range 2.990V to 3.014V indicate the system is out of its specified tolerance.
+ * 		  Accuracy of ADC2 measurement is verified separately using ST_checkOverlapVoltage() command.
  *
  * @return OK if reading is within tolerance range. BTM_ERROR_SELFTEST if ADC1 measurement is outside
  * 		   tolerance range.
@@ -235,9 +236,10 @@ BTM_Status_t ST_checkOpenWire()
 
 
 /**
- * @brief Uses ADOL command to measure Cell 7 with ADC1 and ADC2. Then it simultaneously measures
- *		  Cell 13 with both ADC2 and ADC3. This function compares the results of these measurements
- *		  and reports any inconsistency as an error.
+ * @brief Verifies that measurements taken using ADC1, ADC2 and ADC3 all agree within a certain
+ * 		  range defined by ST_OVERLAP_DELTA. Uses ADOL command to measure Cell 7 with ADC1 and ADC2.
+ * 		  Then it simultaneously measures Cell 13 with both ADC2 and ADC3. This function compares
+ * 		  the results of these measurements and reports any inconsistency as an error.
  *
  * @return OK if overlapping measurements are in agreement. Error status if ADCs do not produce the same
  * 		   voltage reading for each cell measured.
@@ -307,8 +309,17 @@ BTM_Status_t ST_checkOverlapVoltage(void){
 }
 
 /**
+ * @brief Tests functionality of discharge circuits by conducting cell measurements and comparing measured
+ * 		  voltages when discharge is on and off. When measuring a cell with discharge enabled, the CH bit of
+ * 		  CMD_ADCV is used to isolate for 3 cells at a time, ensuring that only the cells to be measured and
+ * 		  their adjacent cells are able to discharge.
  *
- * @brief TODO
+ * 		  With discharge enabled, each cell voltage measurement should have decreased by a fixed percentage
+ * 		  defined by the discharge resistance values Rdischarge1 and Rdischarge 2 (Values still TBD).
+ *
+ * @return BTM_OK if the ratio of all initial and discharge enabled readings are equal to the
+ * 		   expected ST_DCH_COMPARE_PCT +/- ST_DCH_PCT_DELTA. BTM_ERROR_SELFTEST if the measured
+ * 		   cell voltage ratio is outside of this range.
  */
 BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
 	// 4x 6-byte sets (each from a different register group of the LTC6813)
