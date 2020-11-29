@@ -23,11 +23,55 @@ void FSM_run () {
 }
 
 /**
+ * @brief Runs at the start of every FSM run. Turns fans off, opens all contactors.
+ * 
+ * Exit Condition: V_Supp > 10.5 volts.
+ * Exit Action: -
+ * Exit State: WAIT_FOR_BMS_POWERUP
+ * 
+ * Exit Condition: V_Supp < 10.5 volts.
+ * Exit Action: Turn on supp low LED.
+ * Exit State: WAIT_FOR_BMS_POWERUP
+ */
+void FSM_reset () {
+    // TODO Implement this
+    return;
+}
+
+/**
+ * @brief Wait until the condition for BMS being powered on is met // TODO Hash out the details of when BMS is considered 'ON'
+ * 
+ * Exit Condition: FLT High.
+ * Exit Action: Start timer
+ * Exit State: WAIT_FOR_BMS_READY
+ */
+void BMS_powerup () {
+    // TODO Implement this
+    return;
+}
+
+/**
+ * @brief Waits for the BMS to be in a ready-to-operate condition FLT pin going low means OK, if it doesn't within 5s, fault.
+ * 
+ * Exit Condition: FLT Low && timer < 5 seconds
+ * Exit Action: Reset timer, Close DCDC-.
+ * Exit State: PC_DCDC
+ * 
+ * Exit Condition: Timer surpasses 5 seconds.
+ * Exit Action: Stop timer
+ * Exit State: FAULT
+ */
+void BMS_ready () {
+    // TODO Implement this
+    return;
+}
+
+/**
  * @brief Waits for the DCDC- to fully pre-charge.
  * 
  * Exit Condition: Timer surpasses 0.2 seconds.
  * Exit Action: Reset timer, Close DCDC+.
- * Exit State: DCDC+
+ * Exit State: DCDC_PLUS
  */
 void DCDC_Minus () {
     // TODO Implement this
@@ -42,7 +86,7 @@ void DCDC_Minus () {
  * Exit State: DISABLE_MDU_DCH
  */
 void DCDC_Plus () {
-    // @TODO Implement this
+    // TODO Implement this
     return;
 }
 
@@ -54,7 +98,7 @@ void DCDC_Plus () {
  * Exit State: CLOSE_NEG
  */
 void disable_MDU_DCH () {
-    // @TODO Implement this
+    // TODO Implement this
     return;
 }
 
@@ -70,7 +114,7 @@ void disable_MDU_DCH () {
  * Exit State CHECK_HLIM
  */
 void close_NEG () {
-    // @TODO Implement this
+    // TODO Implement this
     return;
 }
 
@@ -82,7 +126,7 @@ void close_NEG () {
  * Exit State: LLIM_CLOSED
  */
 void pc_wait () {
-    // @TODO Implement this
+    // TODO Implement this
     return;
 }
 
@@ -94,7 +138,7 @@ void pc_wait () {
  * Exit State: CHECK_HLIM
  */
 void LLIM_Closed () {
-    // @TODO Implement this
+    // TODO Implement this
     return;
 }
 
@@ -122,15 +166,19 @@ void check_HLIM () {
  * Exit State: MONITOR
  */
 void LVS_On () {
-    // @TODO Implement this
+    // TODO Implement this
     return;
 }
 
 /**
  * @brief Monitors ECU for any faults, voltage levels.
+ * 
+ * Exit Condition: Fault // TODO Figure out the details here
+ * Exit Action: Go to fault?
+ * Exit State: FAULT
  */
 void ECU_Monitor () {
-    // @TODO Implement this
+    // TODO Implement this
     return;
 }
 
@@ -138,6 +186,6 @@ void ECU_Monitor () {
  * @brief FAULT! OH NO!
  */
 void fault () {
-    // @TODO Implement this
+    // TODO Implement this
     return;
 }
