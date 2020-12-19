@@ -96,7 +96,7 @@ BTM_Status_t ST_checkVREF2(){
 				converted_voltage > ST_VREF_UPPERBOUND)
 			{
 				status.error = BTM_ERROR_SELFTEST;
-				status.device_num = board;
+				status.device_num = board + 1;
 				return status;
 			}
 		}
@@ -112,7 +112,7 @@ BTM_Status_t ST_checkVREF2(){
  * 		   cell voltage is outside of this range.
  */
 BTM_Status_t ST_shortedCells(){
-	// 4x 6-byte sets (each from a different register group of the LTC6813)
+	// 2x 6-byte sets (each from a different register group of the LTC6813) for each LTC6813
 	uint8_t ADC_data[ST_SC_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 	BTM_Status_t status = {BTM_OK, 0};
 
@@ -163,9 +163,12 @@ BTM_Status_t ST_shortedCells(){
  *
  * @return void
 **/
+// ANDREW: we might consider adding a "module" attribute to the status structure instead of this error format,
+// though we may just keep this because adding an attribute would mean changing code pretty much everywhere
+// the BTM_Status_t type is used.
 BTM_Status_t ST_checkOpenWire()
 {
-	// 4x 6-byte sets (each from a different register group of the LTC6813)
+	// 6x 6-byte sets (each from a different register group of the LTC6813) for each LTC6813
 	uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 
 	// Stores converted voltage values measured at each pin on the LTC6813-1 for both slave boards
@@ -174,6 +177,10 @@ BTM_Status_t ST_checkOpenWire()
 	float moduleVoltage_DELTA = 0;
 
 	BTM_Status_t status = {BTM_OK, 0};
+
+	// ANDREW: Consider making the number of times to send the ADOW command
+	// a configurable parameter, since the datasheet says "at least twice"
+	// and we may have to repeat it more to get reliable results
 
 	// Send open wire check command twice for PDOWN to allow capacitors to fully charge before
 	// reading voltage register data.
@@ -245,7 +252,7 @@ BTM_Status_t ST_checkOpenWire()
  * 		   voltage reading for each cell measured.
  */
 BTM_Status_t ST_checkOverlapVoltage(void){
-	// 4x 6-byte sets (each from a different register group of the LTC6813)
+	// 2x 6-byte sets (each from a different register group of the LTC6813) for each LTC6813
 	uint8_t ADC_data[OVERLAP_TEST_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 	float overlapVoltage[BTM_NUM_DEVICES][OVERLAP_READINGS_PER_BOARD];
 	BTM_Status_t status = {BTM_OK, 0};
@@ -322,7 +329,7 @@ BTM_Status_t ST_checkOverlapVoltage(void){
  * 		   cell voltage ratio is outside of this range.
  */
 BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
-	// 4x 6-byte sets (each from a different register group of the LTC6813)
+	// 6x 6-byte sets (each from a different register group of the LTC6813)
 	uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 
 	// Stores converted voltage values measured at each pin on the LTC6813-1 for both slave boards
@@ -378,6 +385,7 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
 
 	// Check if ratio of initial and discharge readings agree with expected percentage
 	// defined by Rfilter and Rdischarge.
+	// TODO: ANDREW: confirm expected results of this process considering the shorted pins
 
 	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++){
 		for (int module = 0; module < BTM_NUM_MODULES; module++){
@@ -390,6 +398,8 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
 			if (delta > ST_DCH_PCT_DELTA){
 				status.error = BTM_ERROR_SELFTEST;
 				status.device_num = ic_num + 1;
+				// ANDREW: would be great to include the problem module in the error,
+				// like in ST_checkOpenWire()
 			}
 		}
 	}
@@ -429,7 +439,7 @@ void itmpConversion(uint16_t itmp[], float temp_celsius[])
 BTM_Status_t readAllRegisters(BTM_Status_t status,
 							  uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
 							  float moduleVoltage[BTM_NUM_DEVICES][BTM_NUM_MODULES]){
-
+    // ANDREW: I don't think passing in a status parameter is necessary. Just declaring one here would suffice.
 	uint16_t cell_voltage_raw = 0;
 	float converted_voltage = 0;
 	int module_count = 0;
@@ -489,6 +499,8 @@ BTM_Status_t readAllRegisters(BTM_Status_t status,
  *
  * @param module_dch
  */
+// ANDREW: Could consider calling this shiftDchStatus to stick to the existing naming conventions
+// but because it's a helper function it's alright if you'd rather leave it
 void shift_dch_status(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]){
 	BTM_module_bal_status_t end_status = module_dch[BTM_NUM_MODULES - 1];
 
@@ -503,12 +515,14 @@ void shift_dch_status(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]){
 
 /**
  * @brief Takes a pointer to an existing BTM_BAL_dch_setting_pack_t structure and
- * 		  and an array of discharge pin settings provided by new_module_dch. Sets
+ * 		  an array of discharge pin settings provided by new_module_dch. Sets
  * 		  discharge pins on each LTC6813 board according to the provided settings.
  *
  * @param dch_pack
  * @param new_module_dch
  */
+// ANDREW: Could consider calling this setDchPack to stick to the existing naming conventions
+// but because it's a helper function it's alright if you'd rather leave it
 void set_dch_pack(BTM_BAL_dch_setting_pack_t* dch_pack,
 				  BTM_module_bal_status_t new_module_dch[BTM_NUM_MODULES]){
     for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
