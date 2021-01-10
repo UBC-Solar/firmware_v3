@@ -11,11 +11,10 @@
 #include "stdlib.h"
 
 void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
-BTM_Status_t readAllRegisters(BTM_Status_t status,
-							  uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
+BTM_Status_t readAllRegisters(uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
 							  float moduleVoltage[BTM_NUM_DEVICES][BTM_NUM_MODULES]);
-void shift_dch_status(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]);
-void set_dch_pack(BTM_BAL_dch_setting_pack_t* dch_pack,
+void shiftDchStatus(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]);
+void setDchPack(BTM_BAL_dch_setting_pack_t* dch_pack,
 				  BTM_module_bal_status_t new_module_dch[BTM_NUM_MODULES]);
 
 /**
@@ -182,16 +181,15 @@ BTM_Status_t ST_checkOpenWire()
 	// a configurable parameter, since the datasheet says "at least twice"
 	// and we may have to repeat it more to get reliable results
 
-	// Send open wire check command twice for PDOWN to allow capacitors to fully charge before
+	// Send open wire check command PDOWN_REPS times for PDOWN to allow capacitors to fully charge before
 	// reading voltage register data.
-	status = BTM_sendCmdAndPoll(CMD_ADOW_PDOWN);
-	if (status.error != BTM_OK) return status;
-
-	status = BTM_sendCmdAndPoll(CMD_ADOW_PDOWN);
-	if (status.error != BTM_OK) return status;
+	for (int i = 0; i < PDOWN_REPS; i++){
+		status = BTM_sendCmdAndPoll(CMD_ADOW_PDOWN);
+		if (status.error != BTM_OK) return status;
+	}
 
 	// Read cell voltages from register after pull-down current is applied.
-	status = readAllRegisters(status, ADC_data, moduleVoltage_PDOWN);
+	status = readAllRegisters(ADC_data, moduleVoltage_PDOWN);
 	if (status.error != BTM_OK) return status;
 
 	// Send open wire check command twice for PUP to allow capacitors to fully charge before
@@ -203,7 +201,7 @@ BTM_Status_t ST_checkOpenWire()
 	if (status.error != BTM_OK) return status;
 
 	// Read cell voltages from register after pull-up current is applied.
-	status = readAllRegisters(status, ADC_data, moduleVoltage_PUP);
+	status = readAllRegisters(ADC_data, moduleVoltage_PUP);
 	if (status.error != BTM_OK) return status;
 
 	// Take the difference between pull-up and pull-down measurements for cells 2 to 18. If this difference
@@ -351,7 +349,7 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
 	status = BTM_sendCmdAndPoll(CMD_ADCV);
 	if (status.error != BTM_OK) return status;
 
-	status = readAllRegisters(status, ADC_data, initial_voltage);
+	status = readAllRegisters(ADC_data, initial_voltage);
 	if (status.error != BTM_OK) return status;
 
 	BTM_module_bal_status_t dch_off = {DISCHARGE_OFF};
@@ -371,16 +369,16 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
 	// CH2 measures cells 2, 8, 14
 	// ... CH6 measures cells 6, 12, 18.
 	for (int i = 1; i <= 6; i++){
-		set_dch_pack(&ST_dch_pack, s_pin_set);
+		setDchPack(&ST_dch_pack, s_pin_set);
 		BTM_BAL_setDischarge(pack, &ST_dch_pack);
 
 		status = BTM_sendCmdAndPoll(CMD_ADCV | i);
 		if (status.error != BTM_OK) return status;
 
-		shift_dch_status(s_pin_set);
+		shiftDchStatus(s_pin_set);
 	}
 
-	status = readAllRegisters(status, ADC_data, discharge_voltage);
+	status = readAllRegisters(ADC_data, discharge_voltage);
 	if (status.error != BTM_OK) return status;
 
 	// Check if ratio of initial and discharge readings agree with expected percentage
@@ -436,10 +434,10 @@ void itmpConversion(uint16_t itmp[], float temp_celsius[])
  *
  * @return OK if reading successful, otherwise returns error status.
 **/
-BTM_Status_t readAllRegisters(BTM_Status_t status,
-							  uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
+BTM_Status_t readAllRegisters(uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
 							  float moduleVoltage[BTM_NUM_DEVICES][BTM_NUM_MODULES]){
     // ANDREW: I don't think passing in a status parameter is necessary. Just declaring one here would suffice.
+	BTM_Status_t status = {BTM_OK, 0};
 	uint16_t cell_voltage_raw = 0;
 	float converted_voltage = 0;
 	int module_count = 0;
@@ -499,9 +497,7 @@ BTM_Status_t readAllRegisters(BTM_Status_t status,
  *
  * @param module_dch
  */
-// ANDREW: Could consider calling this shiftDchStatus to stick to the existing naming conventions
-// but because it's a helper function it's alright if you'd rather leave it
-void shift_dch_status(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]){
+void shiftDchStatus(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]){
 	BTM_module_bal_status_t end_status = module_dch[BTM_NUM_MODULES - 1];
 
 	for (int module = 1; module < BTM_NUM_MODULES; module++){
@@ -521,9 +517,7 @@ void shift_dch_status(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]){
  * @param dch_pack
  * @param new_module_dch
  */
-// ANDREW: Could consider calling this setDchPack to stick to the existing naming conventions
-// but because it's a helper function it's alright if you'd rather leave it
-void set_dch_pack(BTM_BAL_dch_setting_pack_t* dch_pack,
+void setDchPack(BTM_BAL_dch_setting_pack_t* dch_pack,
 				  BTM_module_bal_status_t new_module_dch[BTM_NUM_MODULES]){
     for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
     {

@@ -56,6 +56,8 @@ header file if necessary.
 							// One register to compare ADC 1 and ADC 2 (Group C),
 							// and another to compare ADC 2 and ADC 3 (Group E).
 
+#define PDOWN_REPS 2		// Number of times CMD_ADOW_PDOWN command is called in ST_checkOpenWire,
+							// LTC-6813 data sheet recommends >= 2 repetitions
 #define NUM_TEST_CELLS 2	// Overlap Voltage test reads cells 7 and 13
 #define OVERLAP_READINGS_PER_REG 2 // A voltage reading from each ADC is stored in the same register
 #define OVERLAP_READINGS_PER_BOARD 4 // 2 bytes combine to represent a single voltage reading
