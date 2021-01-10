@@ -44,35 +44,18 @@ Then, consider separating the category a) and category b) constants here in the
 header file if necessary.
 */
 
+// CONFIGURABLE PARAMETERS
 #define ST_LTC_TEMPLIMIT 100 // Maximum Acceptable Die Temperature for LTC6813
 
+#define ST_SC_DELTA 0.003 // Tolerated error (in volts) between shorted pin voltage
+						  // and expected voltage of 0 V
 
-#define ST_SC_CELLS 2 // Pins C18 and C12 on LTC6813-1 Slave Board should be shorted.
-#define ST_SC_REGS 2  // Their voltages are stored in Registers D and F
-#define EXPECTED_SC_VOLTAGE 0.0
-#define ST_SC_DELTA 0.003 // ANDREW: a comment here on what this is for would be helpful
-
-#define OVERLAP_TEST_REGS 2 // Number of registers overlap voltage is read from.
-							// One register to compare ADC 1 and ADC 2 (Group C),
-							// and another to compare ADC 2 and ADC 3 (Group E).
-
-#define PDOWN_REPS 2		// Number of times CMD_ADOW_PDOWN command is called in ST_checkOpenWire,
-							// LTC-6813 data sheet recommends >= 2 repetitions
-#define NUM_TEST_CELLS 2	// Overlap Voltage test reads cells 7 and 13
-#define OVERLAP_READINGS_PER_REG 2 // A voltage reading from each ADC is stored in the same register
-#define OVERLAP_READINGS_PER_BOARD 4 // 2 bytes combine to represent a single voltage reading
 #define ST_OVERLAP_DELTA 0.003 // Maximum tolerated measurement difference (in V) between ADCs
-
-#define NUM_CELL_VOLT_REGS 6 // ANDREW: also defined in ltc_btm.c - should unify
-#define READINGS_PER_REG 3 // ANDREW: also defined in ltc_btm.c - should unify
-#define ST_OPEN_WIRE_VOLTAGE -0.400
-
-#define ST_VREF_LOWERBOUND 2.990 // Establishes range of acceptable voltages for VREF2 measurement.
-#define ST_VREF_UPPERBOUND 3.014 // (specified on p.30 of LTC6813-1 datasheet)
 
 #define ST_DCH_COMPARE_PCT 0.50 // *This is a placeholder value. The actual percentage will be dependent
 								// on the resistance values chosen for Rfilter and Rdischarge in the
 								// next PCB design revision (currently v3).
+
 #define ST_DCH_PCT_DELTA 0.01   // Tolerated difference between measured and expected percentage
 
 #endif /* INC_SELFTEST_H_ */

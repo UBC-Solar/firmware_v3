@@ -20,8 +20,6 @@
 
 #include "ltc6813_btm.h"
 
-#define NUM_CELL_VOLT_REGS 6
-#define READINGS_PER_REG 3
 #define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
 
 // Lookup table for PEC (Packet Error Code) CRC calculation

@@ -250,6 +250,8 @@ typedef enum {
 
 #define BTM_NUM_MODULES 18
 #define BTM_REG_GROUP_SIZE 6 // All of the LTC6813 register groups consist of 6 bytes
+#define NUM_CELL_VOLT_REGS 6
+#define READINGS_PER_REG 3
 
 /*============================================================================*/
 /* STRUCTURES FOR GATHERED DATA */

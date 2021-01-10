@@ -10,6 +10,24 @@
 #include "ltc6813_btm_bal.h"
 #include "stdlib.h"
 
+#define ST_SC_CELLS 2 // Pins C18 and C12 on LTC6813-1 Slave Board should be shorted.
+#define EXPECTED_SC_VOLTAGE 0.0
+#define ST_SC_REGS 2  // Their voltages are stored in Registers D and F
+
+#define OVERLAP_TEST_REGS 2 // Number of registers overlap voltage is read from.
+							// One register to compare ADC 1 and ADC 2 (Group C),
+							// and another to compare ADC 2 and ADC 3 (Group E).
+#define PDOWN_REPS 2		// Number of times CMD_ADOW_PDOWN command is called in ST_checkOpenWire,
+							// LTC-6813 data sheet recommends >= 2 repetitions
+#define NUM_TEST_CELLS 2	// Overlap Voltage test reads cells 7 and 13
+#define OVERLAP_READINGS_PER_REG 2 // A voltage reading from each ADC is stored in the same register
+#define OVERLAP_READINGS_PER_BOARD 4 // 2 bytes combine to represent a single voltage reading
+#define ST_OPEN_WIRE_VOLTAGE -0.400 // If the difference between PUP and PDOWN voltage measurements
+									// is less than -400 mV, there is an open wire at the measured cell.
+
+#define ST_VREF_LOWERBOUND 2.990 // Establishes range of acceptable voltages for VREF2 measurement.
+#define ST_VREF_UPPERBOUND 3.014 // (specified on p.30 of LTC6813-1 datasheet)
+
 void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
 BTM_Status_t readAllRegisters(uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
 							  float moduleVoltage[BTM_NUM_DEVICES][BTM_NUM_MODULES]);
@@ -322,6 +340,10 @@ BTM_Status_t ST_checkOverlapVoltage(void){
  * 		  With discharge enabled, each cell voltage measurement should have decreased by a fixed percentage
  * 		  defined by the discharge resistance values Rdischarge1 and Rdischarge 2 (Values still TBD).
  *
+ * 		  Returns 3-digit error code:
+ *	 	  1st digit is the board where the open wire is found, other 2 indicate the module number of the open wire.
+ *	 	  (e.g. returns an device_num of 214 for an error on module 14 of the 2nd board).
+ *
  * @return BTM_OK if the ratio of all initial and discharge enabled readings are equal to the
  * 		   expected ST_DCH_COMPARE_PCT +/- ST_DCH_PCT_DELTA. BTM_ERROR_SELFTEST if the measured
  * 		   cell voltage ratio is outside of this range.
@@ -395,9 +417,7 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
 
 			if (delta > ST_DCH_PCT_DELTA){
 				status.error = BTM_ERROR_SELFTEST;
-				status.device_num = ic_num + 1;
-				// ANDREW: would be great to include the problem module in the error,
-				// like in ST_checkOpenWire()
+				status.device_num = 100 * (ic_num + 1) + module;
 			}
 		}
 	}
@@ -436,7 +456,6 @@ void itmpConversion(uint16_t itmp[], float temp_celsius[])
 **/
 BTM_Status_t readAllRegisters(uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
 							  float moduleVoltage[BTM_NUM_DEVICES][BTM_NUM_MODULES]){
-    // ANDREW: I don't think passing in a status parameter is necessary. Just declaring one here would suffice.
 	BTM_Status_t status = {BTM_OK, 0};
 	uint16_t cell_voltage_raw = 0;
 	float converted_voltage = 0;
