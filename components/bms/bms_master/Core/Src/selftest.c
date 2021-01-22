@@ -10,23 +10,27 @@
 #include "ltc6813_btm_bal.h"
 #include "stdlib.h"
 
-#define ST_SC_CELLS 2 // Pins C18 and C12 on LTC6813-1 Slave Board should be shorted.
-#define EXPECTED_SC_VOLTAGE 0.0
-#define ST_SC_REGS 2  // Their voltages are stored in Registers D and F
+#define ST_SC_CELLS 2 					// Pins C18 and C12 on LTC6813-1 Slave Board should be shorted.
+#define EXPECTED_SC_VOLTAGE 0.0			// Voltage @ shorted pins should be 0
+#define ST_SC_REGS 2  					// Voltages at pins C12 and C18 are stored in Registers D and F respectively
 
-#define OVERLAP_TEST_REGS 2 // Number of registers overlap voltage is read from.
-							// One register to compare ADC 1 and ADC 2 (Group C),
-							// and another to compare ADC 2 and ADC 3 (Group E).
-#define PDOWN_REPS 2		// Number of times CMD_ADOW_PDOWN command is called in ST_checkOpenWire,
-							// LTC-6813 data sheet recommends >= 2 repetitions
-#define NUM_TEST_CELLS 2	// Overlap Voltage test reads cells 7 and 13
-#define OVERLAP_READINGS_PER_REG 2 // A voltage reading from each ADC is stored in the same register
-#define OVERLAP_READINGS_PER_BOARD 4 // 2 bytes combine to represent a single voltage reading
-#define ST_OPEN_WIRE_VOLTAGE -0.400 // If the difference between PUP and PDOWN voltage measurements
-									// is less than -400 mV, there is an open wire at the measured cell.
+#define OVERLAP_TEST_REGS 2 			// Number of registers overlap voltage is read from.
+										// One register to compare ADC 1 and ADC 2 (Group C),
+										// and another to compare ADC 2 and ADC 3 (Group E).
 
-#define ST_VREF_LOWERBOUND 2.990 // Establishes range of acceptable voltages for VREF2 measurement.
-#define ST_VREF_UPPERBOUND 3.014 // (specified on p.30 of LTC6813-1 datasheet)
+#define PDOWN_REPS 2					// Number of times CMD_ADOW_PDOWN command is called in ST_checkOpenWire,
+										// LTC-6813 data sheet recommends >= 2 repetitions
+
+#define NUM_TEST_CELLS 2				// Overlap Voltage test reads cells 7 and 13
+
+#define OVERLAP_READINGS_PER_REG 2  	// A voltage reading from each ADC is stored in the same register
+#define OVERLAP_READINGS_PER_BOARD 4 	// 2 bytes combine to represent a single voltage reading
+
+#define ST_OPEN_WIRE_VOLTAGE -0.400 	// If the difference between PUP and PDOWN voltage measurements
+										// is less than -400 mV, there is an open wire at the measured cell.
+
+#define ST_VREF_LOWERBOUND 2.990 		// Establishes range of acceptable voltages for VREF2 measurement.
+#define ST_VREF_UPPERBOUND 3.014 		// (specified on p.30 of LTC6813-1 datasheet)
 
 void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
 BTM_Status_t readAllRegisters(uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
