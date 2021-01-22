@@ -3,7 +3,7 @@
  * @brief Header file for BMS startup self tests
  *
  * @date 2020/10/03
- * @author
+ * @author matthewjegan
  */
 
 #ifndef INC_SELFTEST_H_
@@ -45,12 +45,12 @@ header file if necessary.
 */
 
 // CONFIGURABLE PARAMETERS
-#define ST_LTC_TEMPLIMIT 100 // Maximum Acceptable Die Temperature for LTC6813
+#define ST_LTC_TEMPLIMIT 100 	// Maximum Acceptable Die Temperature for LTC6813
 
-#define ST_SC_DELTA 0.003 // Tolerated error (in volts) between shorted pin voltage
-						  // and expected voltage of 0 V
+#define ST_SC_DELTA 0.003 		// Tolerated error (in volts) between shorted pin voltage
+						  	  	// and expected voltage of 0 V
 
-#define ST_OVERLAP_DELTA 0.003 // Maximum tolerated measurement difference (in V) between ADCs
+#define ST_OVERLAP_DELTA 0.003  // Maximum tolerated measurement difference (in V) between ADCs
 
 #define ST_DCH_COMPARE_PCT 0.50 // *This is a placeholder value. The actual percentage will be dependent
 								// on the resistance values chosen for Rfilter and Rdischarge in the

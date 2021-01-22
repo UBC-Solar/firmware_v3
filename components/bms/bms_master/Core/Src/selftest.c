@@ -78,7 +78,7 @@ BTM_Status_t ST_checkLTCtemp()
 }
 
 /**
- * @brief Measures independent reference voltage VREF2 to verify measurement of ADC1.
+ * @brief Measures independent reference voltage VREF2 to verify measurement of ADC1 (LTC6813-1 p.30).
  * 		  Readings outside the range 2.990V to 3.014V indicate the system is out of its specified tolerance.
  * 		  Accuracy of ADC2 measurement is verified separately using ST_checkOverlapVoltage() command.
  *
@@ -178,11 +178,11 @@ BTM_Status_t ST_shortedCells(){
 
 /**
  * @brief Checks for any open wires between the ADCs of the LTC6813-1 and the external cells, making use of the ADOW
- *	 	  command (see data sheets p.31). Returns 3-digit error code:
+ *	 	  command (see datasheet p.32). Returns 3-digit error code:
  *	 	  1st digit is the board where the open wire is found, other 2 indicate the module number of the open wire.
  *	 	  (e.g. returns an device_num of 214 for an error on module 14 of the 2nd board).
  *
- * @return void
+ * @return OK if no open wires detected. Error code as described above if detected.
 **/
 // ANDREW: we might consider adding a "module" attribute to the status structure instead of this error format,
 // though we may just keep this because adding an attribute would mean changing code pretty much everywhere
@@ -266,12 +266,12 @@ BTM_Status_t ST_checkOpenWire()
  * @brief Verifies that measurements taken using ADC1, ADC2 and ADC3 all agree within a certain
  * 		  range defined by ST_OVERLAP_DELTA. Uses ADOL command to measure Cell 7 with ADC1 and ADC2.
  * 		  Then it simultaneously measures Cell 13 with both ADC2 and ADC3. This function compares
- * 		  the results of these measurements and reports any inconsistency as an error.
+ * 		  the results of these measurements and reports any inconsistency as an error. (LTC6813-1 p. 30)
  *
  * @return OK if overlapping measurements are in agreement. Error status if ADCs do not produce the same
  * 		   voltage reading for each cell measured.
  */
-BTM_Status_t ST_checkOverlapVoltage(void){
+BTM_Status_t ST_checkOverlapVoltage(){
 	// 2x 6-byte sets (each from a different register group of the LTC6813) for each LTC6813
 	uint8_t ADC_data[OVERLAP_TEST_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 	float overlapVoltage[BTM_NUM_DEVICES][OVERLAP_READINGS_PER_BOARD];
@@ -432,7 +432,7 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
 
 /**
  * @brief Converts unsigned int from register ADSTATA to a die temperature value in degrees Celsius.
- *        Conversion constants sourced from LTC6813 Data Sheets p.26
+ *        Conversion constants sourced from LTC6813 Data Sheets p.27
  *
  * @return void
 **/
