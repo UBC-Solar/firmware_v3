@@ -26,8 +26,8 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack);
 #define ST_VOLTAGE_ERROR 0.003 	// Tolerated error (in volts) for all voltage measurements
 
 #define ST_DCH_COMPARE_PCT 0.50 // *This is a placeholder value. The actual percentage will be dependent
-								// on the resistance values chosen for Rdischarge in the
-								// next PCB design revision (currently v3).
+                                // on the resistance values chosen for Rdischarge in the
+                                // next PCB design revision (currently v3).
 
 #define ST_DCH_PCT_DELTA 0.01   // Tolerated difference between measured and expected percentage
 
