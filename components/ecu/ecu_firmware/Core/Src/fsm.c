@@ -6,17 +6,18 @@
  * @author Blake Shular (blake-shular)
  */
 
+#include "main.h"
 
+unsigned int last_uptime_tick;
+unsigned int last_update_tick;
 
-
-
-
-// There is probably an FSM initialization function that goes here.
+#define NUM_LVS_BOARDS 6
 
 /**
  * @brief Main loop of the FSM.
  */
 void FSM_run () {
+    unsigned int current_tick
     //FSM State table here
     //timer also here
 
@@ -35,6 +36,26 @@ void FSM_run () {
  */
 void FSM_reset () {
     // TODO Implement this
+
+    // Turn fans off
+    HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, GPIO_PIN_RESET); // What is the 0 actually supposed to be
+    HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(MDUFAN_CTRL_GPIO_Port, MDUFAN_CTRL_Pin, GPIO_PIN_RESET); // Is this necessary?
+
+    // Open all contactors
+    HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(DCDC_M_CTRL_GPIO_Port, DCDC_M_CTRL_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_RESET);
+    
+    // Read supplemental battery voltage
+    // Convert suppVoltage into a voltage level we can use.
+    // if suppVoltage > 10.5V, state = WAITBMS
+    // else supp low, state = WAITBMS
+
     return;
 }
 
@@ -47,6 +68,10 @@ void FSM_reset () {
  */
 void BMS_powerup () {
     // TODO Implement this
+    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == GPIO_PIN_SET) {
+        // start timer
+        // set state to WAITFOR..
+    }
     return;
 }
 
@@ -75,6 +100,13 @@ void BMS_ready () {
  */
 void DCDC_Minus () {
     // TODO Implement this
+
+    // Wait for 0.2 seconds
+    // Reset timer
+
+    HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, GPIO_PIN_SET); // What should this 1 be?
+
+    // Change exit state
     return;
 }
 
@@ -87,6 +119,20 @@ void DCDC_Minus () {
  */
 void DCDC_Plus () {
     // TODO Implement this
+
+    // Wait for 0.25 seconds
+    // Reset timer
+
+    // Enable Battery Fans
+    HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, GPIO_PIN_SET); // What is the 1 actually supposed to be
+    HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, GPIO_PIN_SET);
+
+    // Set MDU Discharge pin high
+    HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, GPIO_PIN_SET);
+
+    // Change exit state
+
     return;
 }
 
@@ -99,6 +145,15 @@ void DCDC_Plus () {
  */
 void disable_MDU_DCH () {
     // TODO Implement this
+
+    // Wait 0.5 seconds
+
+    // Set MDU Discharge pin low
+    HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, GPIO_PIN_RESET);
+
+    // Close negative contactor
+    HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, GPIO_PIN_SET);
+
     return;
 }
 
@@ -115,6 +170,15 @@ void disable_MDU_DCH () {
  */
 void close_NEG () {
     // TODO Implement this
+
+    // Read LLIM voltage
+    if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_RESET) // 0 or what {
+        // Close Pre-charge contactor
+        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_SET);
+        // Start timer
+    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_SET) {
+        // change state
+    }
     return;
 }
 
@@ -127,6 +191,12 @@ void close_NEG () {
  */
 void pc_wait () {
     // TODO Implement this
+
+    // Wait 0.35 seconds
+    // Reset timer
+
+    // Close LLIM
+    HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, GPIO_PIN_SET);
     return;
 }
 
@@ -139,6 +209,16 @@ void pc_wait () {
  */
 void LLIM_Closed () {
     // TODO Implement this
+
+    // Wait 0.25 seconds
+
+    // Open pre-charge contactor
+    HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_RESET);
+
+    // Timer
+
+    // Change state
+
     return;
 }
 
@@ -154,7 +234,16 @@ void LLIM_Closed () {
  * Exit State: LVS_ON
  */
 void check_HLIM () {
-    // @TODO Implement this
+    // TODO Implement this
+
+    // Check HLIM pin
+    if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == GPIO_PIN_SET) // 1 or what {
+        // Change state
+    } else if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == GPIO_PIN_RESET) {
+        // Close HLIM
+        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, GPIO_PIN_SET);
+        // Change state
+    }
     return;
 }
 
@@ -167,6 +256,19 @@ void check_HLIM () {
  */
 void LVS_On () {
     // TODO Implement this
+    for (int i = 0; i < NUM_LVS_BOARDS; i++) {
+        if (i == 0) {
+            // Turn on the first few boards
+        } else if (i == 1) {
+            // next
+        } else if (i == 2) {
+            
+        } //etc...
+        HAL_DELAY(200);
+    }
+
+    // Change state
+    
     return;
 }
 
@@ -179,6 +281,11 @@ void LVS_On () {
  */
 void ECU_Monitor () {
     // TODO Implement this
+    
+    // While (state != FAULT) 
+        // Monitor
+        // If (something goes wrong)
+            // Change state to FAULT
     return;
 }
 
