@@ -7,3 +7,4 @@
 /.settings/
 # Debug and Run Configuration
 *.launch
+/.metadata/

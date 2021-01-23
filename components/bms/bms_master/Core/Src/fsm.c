@@ -117,7 +117,7 @@ void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pa
 
     // Initialize control signals
     CONT_init();
-    // initialize the LTC6811 and system data
+    // initialize the LTC6813 and system data
     BTM_init(pack);
     BTM_BAL_initDchPack(dch_setting_pack);
     // Initialize CAN
