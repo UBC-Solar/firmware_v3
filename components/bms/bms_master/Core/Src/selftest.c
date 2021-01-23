@@ -10,27 +10,29 @@
 #include "ltc6813_btm_bal.h"
 #include "stdlib.h"
 
-#define ST_SC_CELLS 2 					// Pins C18 and C12 on LTC6813-1 Slave Board should be shorted.
-#define EXPECTED_SC_VOLTAGE 0.0			// Voltage @ shorted pins should be 0
-#define ST_SC_REGS 2  					// Voltages at pins C12 and C18 are stored in Registers D and F respectively
+#define SC_CELLS 2                      // Pins C18 and C12 on LTC6813-1 Slave Board should be shorted.
+#define EXPECTED_SC_VOLTAGE 0.0         // Voltage @ shorted pins should be 0
+#define SC_REGS 2                       // Voltages at pins C12 and C18 are stored in Registers D and F respectively
 
-#define OVERLAP_TEST_REGS 2 			// Number of registers overlap voltage is read from.
-										// One register to compare ADC 1 and ADC 2 (Group C),
-										// and another to compare ADC 2 and ADC 3 (Group E).
+#define OVERLAP_TEST_REGS 2             // Number of registers overlap voltage is read from.
+                                        // One register to compare ADC 1 and ADC 2 (Group C),
+                                        // and another to compare ADC 2 and ADC 3 (Group E).
 
-#define PDOWN_REPS 2					// Number of times CMD_ADOW_PDOWN command is called in ST_checkOpenWire,
-										// LTC-6813 data sheet recommends >= 2 repetitions
+#define PDOWN_REPS 2                    // Number of times CMD_ADOW_PDOWN command is called in ST_checkOpenWire,
+                                        // LTC-6813 data sheet recommends >= 2 repetitions
+#define PUP_REPS 2
 
-#define NUM_TEST_CELLS 2				// Overlap Voltage test reads cells 7 and 13
 
-#define OVERLAP_READINGS_PER_REG 2  	// A voltage reading from each ADC is stored in the same register
-#define OVERLAP_READINGS_PER_BOARD 4 	// 2 bytes combine to represent a single voltage reading
+#define NUM_TEST_CELLS 2                // Overlap Voltage test reads cells 7 and 13
 
-#define ST_OPEN_WIRE_VOLTAGE -0.400 	// If the difference between PUP and PDOWN voltage measurements
-										// is less than -400 mV, there is an open wire at the measured cell.
+#define OVERLAP_READINGS_PER_REG 2      // A voltage reading from each ADC is stored in the same register
+#define OVERLAP_READINGS_PER_BOARD 4    // 2 bytes combine to represent a single voltage reading
 
-#define ST_VREF_LOWERBOUND 2.990 		// Establishes range of acceptable voltages for VREF2 measurement.
-#define ST_VREF_UPPERBOUND 3.014 		// (specified on p.30 of LTC6813-1 datasheet)
+#define OPEN_WIRE_VOLTAGE -0.400        // If the difference between PUP and PDOWN voltage measurements
+                                        // is less than -400 mV, there is an open wire at the measured cell.
+
+#define VREF_LOWERBOUND 2.990     		// Establishes range of acceptable voltages for VREF2 measurement.
+#define VREF_UPPERBOUND 3.014 		    // (specified on p.30 of LTC6813-1 datasheet)
 
 void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
 BTM_Status_t readAllRegisters(uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
@@ -113,8 +115,8 @@ BTM_Status_t ST_checkVREF2(){
 			// Convert to volts and store
 			converted_voltage = BTM_regValToVoltage(cell_voltage_raw);
 
-			if (converted_voltage < ST_VREF_LOWERBOUND ||
-				converted_voltage > ST_VREF_UPPERBOUND)
+			if (converted_voltage < VREF_LOWERBOUND ||
+				converted_voltage > VREF_UPPERBOUND)
 			{
 				status.error = BTM_ERROR_SELFTEST;
 				status.device_num = board + 1;
@@ -134,7 +136,7 @@ BTM_Status_t ST_checkVREF2(){
  */
 BTM_Status_t ST_shortedCells(){
 	// 2x 6-byte sets (each from a different register group of the LTC6813) for each LTC6813
-	uint8_t ADC_data[ST_SC_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
+	uint8_t ADC_data[SC_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 	BTM_Status_t status = {BTM_OK, 0};
 
 	uint16_t cell_voltage_raw = 0;
@@ -151,7 +153,7 @@ BTM_Status_t ST_shortedCells(){
 
 	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
 		{
-			for (int reg_group = 0; reg_group < ST_SC_REGS; reg_group++)
+			for (int reg_group = 0; reg_group < SC_REGS; reg_group++)
 			{
 				int reading_num = 3; // C12 and C18 are the 3rd voltage value stored
 									 // in their respective registers.
@@ -165,7 +167,7 @@ BTM_Status_t ST_shortedCells(){
 				converted_voltage = BTM_regValToVoltage(cell_voltage_raw);
 
 				float delta = abs(converted_voltage - EXPECTED_SC_VOLTAGE);
-				if (delta > ST_SC_DELTA){
+				if (delta > ST_VOLTAGE_ERROR){
 					status.error = BTM_ERROR_SELFTEST;
 					status.device_num = ic_num + 1;
 					return status;
@@ -203,6 +205,17 @@ BTM_Status_t ST_checkOpenWire()
 	// a configurable parameter, since the datasheet says "at least twice"
 	// and we may have to repeat it more to get reliable results
 
+	// Send open wire check command at least twice for PUP to allow capacitors to fully charge before
+	// reading voltage register data.
+	for (int i = 0; i < PUP_REPS; i++){
+		status = BTM_sendCmdAndPoll(CMD_ADOW_PUP);
+		if (status.error != BTM_OK) return status;
+	}
+
+	// Read cell voltages from register after pull-up current is applied.
+	status = readAllRegisters(ADC_data, moduleVoltage_PUP);
+	if (status.error != BTM_OK) return status;
+
 	// Send open wire check command PDOWN_REPS times for PDOWN to allow capacitors to fully charge before
 	// reading voltage register data.
 	for (int i = 0; i < PDOWN_REPS; i++){
@@ -214,25 +227,13 @@ BTM_Status_t ST_checkOpenWire()
 	status = readAllRegisters(ADC_data, moduleVoltage_PDOWN);
 	if (status.error != BTM_OK) return status;
 
-	// Send open wire check command twice for PUP to allow capacitors to fully charge before
-	// reading voltage register data.
-	status = BTM_sendCmdAndPoll(CMD_ADOW_PUP);
-	if (status.error != BTM_OK) return status;
-
-	status = BTM_sendCmdAndPoll(CMD_ADOW_PUP);
-	if (status.error != BTM_OK) return status;
-
-	// Read cell voltages from register after pull-up current is applied.
-	status = readAllRegisters(ADC_data, moduleVoltage_PUP);
-	if (status.error != BTM_OK) return status;
-
 	// Take the difference between pull-up and pull-down measurements for cells 2 to 18. If this difference
 	// is < -400mV at module = n, then module = n-1 is open.
 
 	for (int board = 0; board < BTM_NUM_DEVICES; board++){
 		for (int module = 1; module < BTM_NUM_MODULES; module++){
 			moduleVoltage_DELTA = moduleVoltage_PUP[board][module] - moduleVoltage_PDOWN[board][module];
-			if (moduleVoltage_DELTA < ST_OPEN_WIRE_VOLTAGE){
+			if (moduleVoltage_DELTA < OPEN_WIRE_VOLTAGE){
 				status.error = BTM_ERROR_SELFTEST;
 				status.device_num = 100 * (board + 1) + module;
 				return status;
@@ -264,7 +265,7 @@ BTM_Status_t ST_checkOpenWire()
 
 /**
  * @brief Verifies that measurements taken using ADC1, ADC2 and ADC3 all agree within a certain
- * 		  range defined by ST_OVERLAP_DELTA. Uses ADOL command to measure Cell 7 with ADC1 and ADC2.
+ * 		  range defined by ST_VOLTAGE_ERROR. Uses ADOL command to measure Cell 7 with ADC1 and ADC2.
  * 		  Then it simultaneously measures Cell 13 with both ADC2 and ADC3. This function compares
  * 		  the results of these measurements and reports any inconsistency as an error. (LTC6813-1 p. 30)
  *
@@ -325,7 +326,7 @@ BTM_Status_t ST_checkOverlapVoltage(){
 			float ADC2_voltage = overlapVoltage[board][2 * cell + 1];
 			float delta = abs(ADC1_voltage - ADC2_voltage);
 
-			if (delta > ST_OVERLAP_DELTA){
+			if (delta > ST_VOLTAGE_ERROR){
 				status.error = BTM_ERROR_SELFTEST;
 				status.device_num = board + 1;
 			}
@@ -362,7 +363,6 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
 	float discharge_voltage[BTM_NUM_DEVICES][BTM_NUM_MODULES];
 
 	BTM_Status_t status = {BTM_OK, 0};
-
 	BTM_BAL_dch_setting_pack_t ST_dch_pack;
 
 	// Initialize discharge pack with all discharge (S) pins set to OFF
