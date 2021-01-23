@@ -22,7 +22,6 @@
                                         // LTC-6813 data sheet recommends >= 2 repetitions
 #define PUP_REPS 2
 
-
 #define NUM_TEST_CELLS 2                // Overlap Voltage test reads cells 7 and 13
 
 #define OVERLAP_READINGS_PER_REG 2      // A voltage reading from each ADC is stored in the same register
@@ -186,9 +185,6 @@ BTM_Status_t ST_shortedCells(){
  *
  * @return OK if no open wires detected. Error code as described above if detected.
 **/
-// ANDREW: we might consider adding a "module" attribute to the status structure instead of this error format,
-// though we may just keep this because adding an attribute would mean changing code pretty much everywhere
-// the BTM_Status_t type is used.
 BTM_Status_t ST_checkOpenWire()
 {
 	// 6x 6-byte sets (each from a different register group of the LTC6813) for each LTC6813
@@ -200,10 +196,6 @@ BTM_Status_t ST_checkOpenWire()
 	float moduleVoltage_DELTA = 0;
 
 	BTM_Status_t status = {BTM_OK, 0};
-
-	// ANDREW: Consider making the number of times to send the ADOW command
-	// a configurable parameter, since the datasheet says "at least twice"
-	// and we may have to repeat it more to get reliable results
 
 	// Send open wire check command at least twice for PUP to allow capacitors to fully charge before
 	// reading voltage register data.
@@ -340,7 +332,7 @@ BTM_Status_t ST_checkOverlapVoltage(){
  * @brief Tests functionality of discharge circuits by conducting cell measurements and comparing measured
  * 		  voltages when discharge is on and off. When measuring a cell with discharge enabled, the CH bit of
  * 		  CMD_ADCV is used to isolate for 3 cells at a time, ensuring that only the cells to be measured and
- * 		  their adjacent cells are able to discharge.
+ * 		  their adjacent cells are able to discharge. (LTC6813-1 Data Sheet p.75-77)
  *
  * 		  With discharge enabled, each cell voltage measurement should have decreased by a fixed percentage
  * 		  defined by the discharge resistance values Rdischarge1 and Rdischarge 2 (Values still TBD).
@@ -409,8 +401,6 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
 
 	// Check if ratio of initial and discharge readings agree with expected percentage
 	// defined by Rfilter and Rdischarge.
-	// TODO: ANDREW: confirm expected results of this process considering the shorted pins
-
 	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++){
 		for (int module = 0; module < BTM_NUM_MODULES; module++){
 

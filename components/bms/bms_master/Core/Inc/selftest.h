@@ -21,30 +21,6 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack);
 
 /*============================================================================*/
 /* CONFIGURABLE PARAMETERS */
-
-// ANDREW: To avoid overwriting constants, I'd suggest prefixing any constants
-// in the header file here with "ST_". Just don't forget to change them where
-// they're used if you do this!
-
-/*
-ANDREW: The way define statements in this program have been organized so far
-is in 3 categories as follows:
-
-a) Configurable parameters, in .h files - eg. ST_LTC_TEMPLIMIT
-b) "Public constants", in .h files - constants that are needed by code that calls
-   functions declared here, but should not ever need to be changed; eg. some array sizes
-c) "Private constants", in .c files - constants that are only needed within
-   the selftest functions, and should not be configurable
-
-I think all the constants that don't have ST_ at the beginning, plus
-ST_SC_CELLS, ST_SC_REGS, ST_OPEN_WIRE_VOLTAGE, ST_VREF_LOWERBOUND, ST_VREF_UPPERBOUND
-could be moved to selftest.c since they are category c) constants as above.
-
-Then, consider separating the category a) and category b) constants here in the
-header file if necessary.
-*/
-
-// CONFIGURABLE PARAMETERS
 #define ST_LTC_TEMPLIMIT 100 	// Maximum Acceptable Die Temperature for LTC6813
 
 #define ST_VOLTAGE_ERROR 0.003 	// Tolerated error (in volts) for all voltage measurements
