@@ -8,16 +8,22 @@
 
 #include "main.h"
 
-unsigned int last_uptime_tick;
-unsigned int last_update_tick;
+unsigned int last_tick;
 
 #define NUM_LVS_BOARDS 6
 
 /**
- * @brief Main loop of the FSM.
+ * @brief Initialization of FSM.
+ */
+void FSM_init() {
+    last_tick = HAL_GetTick();
+    // set state
+}
+
+/**
+ * @brief Main loop of the FSM. Will be called in main.c
  */
 void FSM_run () {
-    unsigned int current_tick
     //FSM State table here
     //timer also here
 
@@ -38,7 +44,7 @@ void FSM_reset () {
     // TODO Implement this
 
     // Turn fans off
-    HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, GPIO_PIN_RESET); // What is the 0 actually supposed to be
+    HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(MDUFAN_CTRL_GPIO_Port, MDUFAN_CTRL_Pin, GPIO_PIN_RESET); // Is this necessary?
@@ -88,6 +94,17 @@ void BMS_powerup () {
  */
 void BMS_ready () {
     // TODO Implement this
+    unsigned int current_tick = HAL_GetTick();
+    if (current_tick - last_tick >= 5000) {
+        // change to fault state
+    } else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == GPIO_PIN_RESET
+            && current_tick - last_tick <= 5000) {
+                last_tick = current_tick;
+
+                HAL_GPIO_WritePin(DCDC_M_CTRL_GPIO_Port, DCDC_M_CTRL_Pin, GPIO_PIN_SET);
+
+                // change state
+            }
     return;
 }
 
@@ -100,13 +117,13 @@ void BMS_ready () {
  */
 void DCDC_Minus () {
     // TODO Implement this
-
+    unsigned int current_tick = HAL_GetTick();
     // Wait for 0.2 seconds
-    // Reset timer
-
-    HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, GPIO_PIN_SET); // What should this 1 be?
-
-    // Change exit state
+    if (current_tick - last_tick >= 200) {
+        last_tick = current_tick;
+        HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, GPIO_PIN_SET);
+        // change exit state
+    }
     return;
 }
 
@@ -119,20 +136,18 @@ void DCDC_Minus () {
  */
 void DCDC_Plus () {
     // TODO Implement this
-
-    // Wait for 0.25 seconds
-    // Reset timer
-
-    // Enable Battery Fans
-    HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, GPIO_PIN_SET); // What is the 1 actually supposed to be
-    HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, GPIO_PIN_SET);
-
-    // Set MDU Discharge pin high
-    HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, GPIO_PIN_SET);
-
-    // Change exit state
-
+    unsigned int current_tick = HAL_GetTick();
+    if (current_tick - last_tick >= 250) {
+        last_tick = current_tick;
+        
+        HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, GPIO_PIN_SET);
+        
+        HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, GPIO_PIN_SET);
+        
+        // change exit state
+    }
     return;
 }
 
@@ -145,15 +160,16 @@ void DCDC_Plus () {
  */
 void disable_MDU_DCH () {
     // TODO Implement this
+    unsigned int current_tick = HAL_GetTick();
+    if (current_tick - last_tick >= 500) {
+        last_tick = current_tick;
+        
+        HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, GPIO_PIN_RESET);
 
-    // Wait 0.5 seconds
-
-    // Set MDU Discharge pin low
-    HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, GPIO_PIN_RESET);
-
-    // Close negative contactor
-    HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, GPIO_PIN_SET);
-
+        HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, GPIO_PIN_SET);
+        
+        // change exit state
+    }
     return;
 }
 
@@ -172,7 +188,7 @@ void close_NEG () {
     // TODO Implement this
 
     // Read LLIM voltage
-    if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_RESET) // 0 or what {
+    if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_RESET) {
         // Close Pre-charge contactor
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_SET);
         // Start timer
@@ -191,12 +207,14 @@ void close_NEG () {
  */
 void pc_wait () {
     // TODO Implement this
-
-    // Wait 0.35 seconds
-    // Reset timer
-
-    // Close LLIM
-    HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, GPIO_PIN_SET);
+    unsigned int current_tick = HAL_GetTick();
+    if (current_tick - last_tick >= 350) {
+        last_tick = current_tick;
+        
+        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, GPIO_PIN_SET);
+        
+        // change exit state
+    }
     return;
 }
 
@@ -209,16 +227,14 @@ void pc_wait () {
  */
 void LLIM_Closed () {
     // TODO Implement this
-
-    // Wait 0.25 seconds
-
-    // Open pre-charge contactor
-    HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_RESET);
-
-    // Timer
-
-    // Change state
-
+    unsigned int current_tick = HAL_GetTick();
+    if (current_tick - last_tick >= 250) {
+        last_tick = current_tick;
+        
+        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_RESET);
+        
+        // change exit state
+    }
     return;
 }
 
@@ -237,7 +253,7 @@ void check_HLIM () {
     // TODO Implement this
 
     // Check HLIM pin
-    if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == GPIO_PIN_SET) // 1 or what {
+    if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == GPIO_PIN_SET) {
         // Change state
     } else if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == GPIO_PIN_RESET) {
         // Close HLIM
