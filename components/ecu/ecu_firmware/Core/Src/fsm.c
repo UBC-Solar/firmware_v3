@@ -7,10 +7,33 @@
  */
 
 #include "main.h"
+#include <stdbool.h>
 
 unsigned int last_tick;
 
 #define NUM_LVS_BOARDS 6
+
+
+/*============================================================================*/
+/* PRIVATE FUNCTION PROTOTYPES */
+
+// State Functions:
+void FSM_reset();
+void BMS_powerup();
+void BMS_ready();
+void DCDC_Minus();
+void DCDC_Plus();
+void disable_MDU_DCH();
+void close_NEG();
+void pc_wait();
+void LLIM_Closed();
+void check_HLIM();
+void LVS_On();
+void ECU_Monitor();
+void fault();
+
+// Helper Functions
+bool timer_check(unsigned int millis);
 
 /**
  * @brief Initialization of FSM.
@@ -41,8 +64,6 @@ void FSM_run () {
  * Exit State: WAIT_FOR_BMS_POWERUP
  */
 void FSM_reset () {
-    // TODO Implement this
-
     // Turn fans off
     HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, GPIO_PIN_RESET);
@@ -73,7 +94,6 @@ void FSM_reset () {
  * Exit State: WAIT_FOR_BMS_READY
  */
 void BMS_powerup () {
-    // TODO Implement this
     if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == GPIO_PIN_SET) {
         // start timer
         // set state to WAITFOR..
@@ -92,19 +112,17 @@ void BMS_powerup () {
  * Exit Action: Stop timer
  * Exit State: FAULT
  */
+
+// TODO Running into an issue here... how to change last_tick here. could make new function
 void BMS_ready () {
-    // TODO Implement this
     unsigned int current_tick = HAL_GetTick();
-    if (current_tick - last_tick >= 5000) {
+    if (timer_check(5000)) {
         // change to fault state
-    } else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == GPIO_PIN_RESET
-            && current_tick - last_tick <= 5000) {
-                last_tick = current_tick;
-
-                HAL_GPIO_WritePin(DCDC_M_CTRL_GPIO_Port, DCDC_M_CTRL_Pin, GPIO_PIN_SET);
-
-                // change state
-            }
+    } else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == GPIO_PIN_RESET) {
+        last_tick = current_tick;
+        HAL_GPIO_WritePin(DCDC_M_CTRL_GPIO_Port, DCDC_M_CTRL_Pin, GPIO_PIN_SET);
+        // change state
+    }
     return;
 }
 
@@ -116,11 +134,7 @@ void BMS_ready () {
  * Exit State: DCDC_PLUS
  */
 void DCDC_Minus () {
-    // TODO Implement this
-    unsigned int current_tick = HAL_GetTick();
-    // Wait for 0.2 seconds
-    if (current_tick - last_tick >= 200) {
-        last_tick = current_tick;
+    if (timer_check(200)) {
         HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, GPIO_PIN_SET);
         // change exit state
     }
@@ -135,11 +149,7 @@ void DCDC_Minus () {
  * Exit State: DISABLE_MDU_DCH
  */
 void DCDC_Plus () {
-    // TODO Implement this
-    unsigned int current_tick = HAL_GetTick();
-    if (current_tick - last_tick >= 250) {
-        last_tick = current_tick;
-        
+    if (timer_check(250)) {
         HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, GPIO_PIN_SET);
         HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, GPIO_PIN_SET);
         HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, GPIO_PIN_SET);
@@ -159,11 +169,7 @@ void DCDC_Plus () {
  * Exit State: CLOSE_NEG
  */
 void disable_MDU_DCH () {
-    // TODO Implement this
-    unsigned int current_tick = HAL_GetTick();
-    if (current_tick - last_tick >= 500) {
-        last_tick = current_tick;
-        
+    if (timer_check(500)) {
         HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, GPIO_PIN_RESET);
 
         HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, GPIO_PIN_SET);
@@ -185,8 +191,6 @@ void disable_MDU_DCH () {
  * Exit State CHECK_HLIM
  */
 void close_NEG () {
-    // TODO Implement this
-
     // Read LLIM voltage
     if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_RESET) {
         // Close Pre-charge contactor
@@ -206,11 +210,7 @@ void close_NEG () {
  * Exit State: LLIM_CLOSED
  */
 void pc_wait () {
-    // TODO Implement this
-    unsigned int current_tick = HAL_GetTick();
-    if (current_tick - last_tick >= 350) {
-        last_tick = current_tick;
-        
+    if (timer_check(350)) {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, GPIO_PIN_SET);
         
         // change exit state
@@ -226,11 +226,7 @@ void pc_wait () {
  * Exit State: CHECK_HLIM
  */
 void LLIM_Closed () {
-    // TODO Implement this
-    unsigned int current_tick = HAL_GetTick();
-    if (current_tick - last_tick >= 250) {
-        last_tick = current_tick;
-        
+    if (timer_check(250)) {
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_RESET);
         
         // change exit state
@@ -250,8 +246,6 @@ void LLIM_Closed () {
  * Exit State: LVS_ON
  */
 void check_HLIM () {
-    // TODO Implement this
-
     // Check HLIM pin
     if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == GPIO_PIN_SET) {
         // Change state
@@ -271,7 +265,6 @@ void check_HLIM () {
  * Exit State: MONITOR
  */
 void LVS_On () {
-    // TODO Implement this
     for (int i = 0; i < NUM_LVS_BOARDS; i++) {
         if (i == 0) {
             // Turn on the first few boards
@@ -311,4 +304,16 @@ void ECU_Monitor () {
 void fault () {
     // TODO Implement this
     return;
+}
+
+
+
+// Helper functions
+bool timer_check(unsigned int millis) {
+    unsigned int current_tick = HAL_GetTick();
+    if (current_tick - last_tick >= millis) {
+        last_tick = current_tick;
+        return true;
+    }
+    return false;
 }
