@@ -8,6 +8,8 @@
 
 #include "main.h"
 #include <stdbool.h>
+#include "adc.h"
+#include "can.h"
 
 unsigned int last_tick;
 
