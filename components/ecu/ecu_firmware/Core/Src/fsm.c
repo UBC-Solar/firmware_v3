@@ -10,11 +10,28 @@
 #include <stdbool.h>
 #include "adc.h"
 #include "can.h"
+#include "fsm.h"
+
+typedef enum {
+    FSM_RESET = 0,
+    WAIT_FOR_BMS_POWERUP,
+    WAIT_FOR_BMS_READY,
+    PC_DCDC,
+    DCDC_PLUS,
+    DISABLE_MDU_DCH,
+    CLOSE_NEG,
+    WAIT_FOR_PC,
+    LLIM_CLOSED,
+    CHECK_HLIM,
+    LVS_ON,
+    MONITORING,
+    FAULT
+} FSM_state_t;
 
 unsigned int last_tick;
+FSM_state_t FSM_state;
 
 #define NUM_LVS_BOARDS 6
-
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
@@ -34,6 +51,22 @@ void LVS_On();
 void ECU_Monitor();
 void fault();
 
+void (*FSM_state_table[])(void) = {
+    FSM_reset,
+    BMS_powerup,
+    BMS_ready,
+    DCDC_Minus,
+    DCDC_Plus,
+    disable_MDU_DCH,
+    close_NEG,
+    pc_wait,
+    LLIM_Closed,
+    check_HLIM,
+    LVS_On,
+    ECU_Monitor,
+    fault
+};
+
 // Helper Functions
 bool timer_check(unsigned int millis);
 
@@ -42,6 +75,7 @@ bool timer_check(unsigned int millis);
  */
 void FSM_init() {
     last_tick = HAL_GetTick();
+    FSM_state = RESET;
     // set state
 }
 
@@ -50,6 +84,7 @@ void FSM_init() {
  */
 void FSM_run () {
     //FSM State table here
+    FSM_state_table[FSM_state]();
     //timer also here
 
 }
@@ -275,7 +310,7 @@ void LVS_On () {
         } else if (i == 2) {
             
         } //etc...
-        HAL_DELAY(200);
+        HAL_Delay(200);
     }
 
     // Change state
