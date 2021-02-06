@@ -6,11 +6,19 @@
  * @author Blake Shular (blake-shular)
  */
 
+
+/*============================================================================*/
+/* FILE IMPORTS */
+
 #include "main.h"
 #include <stdbool.h>
 #include "adc.h"
 #include "can.h"
 #include "fsm.h"
+
+
+/*============================================================================*/
+/* STATE MACHINE STATES */
 
 typedef enum {
     FSM_RESET = 0,
@@ -28,10 +36,35 @@ typedef enum {
     FAULT
 } FSM_state_t;
 
+
+/*============================================================================*/
+/* GLOBAL VARIABLES */
+
 unsigned int last_tick;
 FSM_state_t FSM_state;
 
 #define NUM_LVS_BOARDS 6
+
+
+/*============================================================================*/
+/* STATE TABLE */
+
+void (*FSM_state_table[])(void) = {
+    FSM_reset,
+    BMS_powerup,
+    BMS_ready,
+    DCDC_Minus,
+    DCDC_Plus,
+    disable_MDU_DCH,
+    close_NEG,
+    pc_wait,
+    LLIM_Closed,
+    check_HLIM,
+    LVS_On,
+    ECU_Monitor,
+    fault
+};
+
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
@@ -51,24 +84,12 @@ void LVS_On();
 void ECU_Monitor();
 void fault();
 
-void (*FSM_state_table[])(void) = {
-    FSM_reset,
-    BMS_powerup,
-    BMS_ready,
-    DCDC_Minus,
-    DCDC_Plus,
-    disable_MDU_DCH,
-    close_NEG,
-    pc_wait,
-    LLIM_Closed,
-    check_HLIM,
-    LVS_On,
-    ECU_Monitor,
-    fault
-};
-
 // Helper Functions
 bool timer_check(unsigned int millis);
+
+
+/*============================================================================*/
+/* STATE MACHINE FUNCTIONS */
 
 /**
  * @brief Initialization of FSM.
@@ -76,14 +97,12 @@ bool timer_check(unsigned int millis);
 void FSM_init() {
     last_tick = HAL_GetTick();
     FSM_state = RESET;
-    // set state
 }
 
 /**
  * @brief Main loop of the FSM. Will be called in main.c
  */
 void FSM_run () {
-    //FSM State table here
     FSM_state_table[FSM_state]();
     //timer also here
 
@@ -120,11 +139,14 @@ void FSM_reset () {
     // if suppVoltage > 10.5V, state = WAITBMS
     // else supp low, state = WAITBMS
 
+    FSM_state = WAIT_FOR_BMS_POWERUP;
+
     return;
 }
 
+// TODO Hash out the details of when BMS is considered 'ON', have a timeout here if FLT doesnt go high?
 /**
- * @brief Wait until the condition for BMS being powered on is met // TODO Hash out the details of when BMS is considered 'ON'
+ * @brief Wait until the condition for BMS being powered on is met
  * 
  * Exit Condition: FLT High.
  * Exit Action: Start timer
@@ -132,8 +154,8 @@ void FSM_reset () {
  */
 void BMS_powerup () {
     if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == GPIO_PIN_SET) {
-        // start timer
-        // set state to WAITFOR..
+        last_tick = HAL_GetTick();
+        FSM_state = WAIT_FOR_BMS_READY;
     }
     return;
 }
@@ -150,15 +172,13 @@ void BMS_powerup () {
  * Exit State: FAULT
  */
 
-// TODO Running into an issue here... how to change last_tick here. could make new function
 void BMS_ready () {
-    unsigned int current_tick = HAL_GetTick();
     if (timer_check(5000)) {
-        // change to fault state
+        FSM_state = FAULT;
     } else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == GPIO_PIN_RESET) {
-        last_tick = current_tick;
+        last_tick = HAL_GetTick();
         HAL_GPIO_WritePin(DCDC_M_CTRL_GPIO_Port, DCDC_M_CTRL_Pin, GPIO_PIN_SET);
-        // change state
+        FSM_state = PC_DCDC;
     }
     return;
 }
@@ -173,7 +193,7 @@ void BMS_ready () {
 void DCDC_Minus () {
     if (timer_check(200)) {
         HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, GPIO_PIN_SET);
-        // change exit state
+        FSM_state = DCDC_PLUS;
     }
     return;
 }
@@ -190,10 +210,8 @@ void DCDC_Plus () {
         HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, GPIO_PIN_SET);
         HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, GPIO_PIN_SET);
         HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, GPIO_PIN_SET);
-        
         HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, GPIO_PIN_SET);
-        
-        // change exit state
+        FSM_state = DISABLE_MDU_DCH;
     }
     return;
 }
@@ -208,10 +226,8 @@ void DCDC_Plus () {
 void disable_MDU_DCH () {
     if (timer_check(500)) {
         HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, GPIO_PIN_RESET);
-
         HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, GPIO_PIN_SET);
-        
-        // change exit state
+        FSM_state = CLOSE_NEG;
     }
     return;
 }
@@ -230,11 +246,11 @@ void disable_MDU_DCH () {
 void close_NEG () {
     // Read LLIM voltage
     if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_RESET) {
-        // Close Pre-charge contactor
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_SET);
-        // Start timer
+        last_tick = HAL_GetTick();
+        FSM_state = WAIT_FOR_PC
     } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_SET) {
-        // change state
+        FSM_state = CHECK_HLIM;
     }
     return;
 }
@@ -249,8 +265,7 @@ void close_NEG () {
 void pc_wait () {
     if (timer_check(350)) {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, GPIO_PIN_SET);
-        
-        // change exit state
+        FSM_state = LLIM_CLOSED;
     }
     return;
 }
@@ -265,8 +280,7 @@ void pc_wait () {
 void LLIM_Closed () {
     if (timer_check(250)) {
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_RESET);
-        
-        // change exit state
+        FSM_state = CHECK_HLIM;
     }
     return;
 }
@@ -283,13 +297,11 @@ void LLIM_Closed () {
  * Exit State: LVS_ON
  */
 void check_HLIM () {
-    // Check HLIM pin
     if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == GPIO_PIN_SET) {
-        // Change state
+        FSM_state = LVS_ON;
     } else if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == GPIO_PIN_RESET) {
-        // Close HLIM
         HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, GPIO_PIN_SET);
-        // Change state
+        FSM_state = LVS_ON;
     }
     return;
 }
@@ -321,7 +333,7 @@ void LVS_On () {
 /**
  * @brief Monitors ECU for any faults, voltage levels.
  * 
- * Exit Condition: Fault // TODO Figure out the details here
+ * Exit Condition: Fault
  * Exit Action: Go to fault?
  * Exit State: FAULT
  */
@@ -344,8 +356,12 @@ void fault () {
 }
 
 
+/*============================================================================*/
+/* HELPER FUNCTIONS */
 
-// Helper functions
+/**
+ * @brief returns true if we have passed the timer threshold
+ */
 bool timer_check(unsigned int millis) {
     unsigned int current_tick = HAL_GetTick();
     if (current_tick - last_tick >= millis) {
