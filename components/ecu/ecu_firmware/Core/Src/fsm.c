@@ -248,7 +248,7 @@ void close_NEG () {
     if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_RESET) {
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_SET);
         last_tick = HAL_GetTick();
-        FSM_state = WAIT_FOR_PC
+        FSM_state = WAIT_FOR_PC;
     } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_SET) {
         FSM_state = CHECK_HLIM;
     }
