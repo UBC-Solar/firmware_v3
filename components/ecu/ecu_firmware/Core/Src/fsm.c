@@ -97,6 +97,10 @@ bool timer_check(unsigned int millis);
 void FSM_init() {
     last_tick = HAL_GetTick();
     FSM_state = RESET;
+
+    ADC_supp_batt_adc = &hadc1;
+    ADC_motor_adc = &hadc2;
+    ADC_array_adc = &hadc3;
 }
 
 /**
