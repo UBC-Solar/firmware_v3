@@ -15,14 +15,17 @@ Purpose: Goes with CANbus_function.c
 //#include "CANbus_TESTING_ONLY.h"
 
 #ifndef CANBUS_TESTING_ONLY_H_
-#include <stdint.h>
+#ifndef UNIT_TEST
 #include "stm32f3xx_hal.h"
+//#include "stm32f3xx_hal_can.h"
+#endif /* UNIT_TEST */
+
+#include <stdint.h>
 #include "ltc6813_btm.h"
 #include "analysis.h"
-//#include "stm32f3xx_hal_can.h"
 #include <math.h>
 #include <stdio.h>
-#endif
+#endif /* CANBUS_TESTING_ONLY_H_ */
 
 #define TRUE  1
 #define FALSE 0
@@ -84,6 +87,7 @@ Purpose: Goes with CANbus_function.c
 #define CAN_TEMPERATURE_MINIMUM -128 //twos complement; 0x1000'0000
 #define CAN_TEMPERATURE_MAXIMUM 127 //twos complement; 0x0111'1111
 
+#ifndef UNIT_TEST
 
 /************************
 Global variables
@@ -116,7 +120,7 @@ typedef struct
     int messageSeriesSize;
 }
 Brightside_CAN_MessageSeries;
-
+#endif /* UNIT_TEST */
 
 #endif
 
@@ -124,8 +128,10 @@ Brightside_CAN_MessageSeries;
 /************************
 external function prototypes
 ************************/
+#ifndef UNIT_TEST
 extern void CANstate_InitAll();
 extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries);
+#endif /* UNIT_TEST */
 
 /*
 Copied from analysis.h, created by Andrew Hanlon.

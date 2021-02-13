@@ -13,11 +13,16 @@
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
+
+#ifndef UNIT_TEST
 BTM_Status_t ST_checkLTCtemp(void);
 BTM_Status_t ST_checkOpenWire(void);
 BTM_Status_t ST_checkOverlapVoltage(void);
 BTM_Status_t ST_checkVREF2(void);
 BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack);
+#endif /* UNIT_TEST */
+
+void itmpConversion(uint16_t itmp[], float temp_celsius[]);
 
 /*============================================================================*/
 /* CONFIGURABLE PARAMETERS */

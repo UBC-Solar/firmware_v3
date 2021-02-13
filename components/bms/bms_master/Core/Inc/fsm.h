@@ -9,7 +9,10 @@
 #ifndef INC_FSM_H_
 #define INC_FSM_H_
 
+#ifndef UNIT_TEST
 #include "stm32f3xx_hal.h"
+#endif
+
 #include "ltc6813_btm.h"
 #include "control.h"
 #include "ltc6813_btm_temp.h"
@@ -44,8 +47,9 @@ unsigned int uptime; // time in seconds since FSM started
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
-
+#ifndef UNIT_TEST
 void FSM_init(void);
 void FSM_run(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
+#endif /* UNIT_TEST */
 
 #endif /* INC_FSM_H_ */

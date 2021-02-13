@@ -16,8 +16,8 @@
  *  @date 2020/04/29
  *  @author Andrew Hanlon (a2k-hanlon)
  */
-
 #include "control.h"
+#ifndef UNIT_TEST
 
 void CONT_init()
 {
@@ -130,3 +130,4 @@ unsigned int CONT_fanPwmFromTemp(float temp) {
 
     return new_fan_PWM; // a cast to unsigned happens here
 }
+#endif /* UNIT_TEST */

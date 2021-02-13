@@ -6,15 +6,14 @@ Author: Edward Ma (Github: RootBeer1313)
 This file contains the suite of functions used for CAN functionality.
 
 */
-
 #ifdef ATOM_SYMBOLS_LABELLING
 #define Include_statements
 #endif
 
-#include "CANbus_functions.h"
 //#include <stdbool.h>
 
-
+#ifndef UNIT_TEST
+#include "CANbus_functions.h"
 
 #ifdef ATOM_SYMBOLS_LABELLING
 #define static_and_global_variables
@@ -1163,7 +1162,7 @@ uint8_t celciusAverage(BTM_PackData_t * pPACKDATA){
     }
 
 }
-
+#endif
     //placeholder code, to see the format of struct calls.
     //Looks really clean
     //retreving voltage of module 12 of stack 3 (note the off-by-one array index)

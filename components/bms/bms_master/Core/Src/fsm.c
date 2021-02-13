@@ -16,6 +16,8 @@
  * more distinctly.
  */
 
+
+
 // Comment out the line below to disable printf debugging
 #define PRINTF_DEBUG
 
@@ -26,7 +28,7 @@
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
-
+#ifndef UNIT_TEST
 // State functions:
 void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
 void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
@@ -487,3 +489,4 @@ void printMeasurements(BTM_PackData_t * pack)
     }
 }
 #endif
+#endif /* UNIT_TEST */

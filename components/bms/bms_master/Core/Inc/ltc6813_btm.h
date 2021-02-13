@@ -33,7 +33,11 @@
 #ifndef INC_LTC6813_BTM_H_
 #define INC_LTC6813_BTM_H_
 
+#include "stdint.h"
+
+#ifndef UNIT_TEST
 #include "stm32f3xx_hal.h"
+#endif
 
 /*============================================================================*/
 /* ENUMERATIONS */
@@ -311,10 +315,13 @@ typedef struct {
 
 // BTM_SPI_handle - must set this variable to the HAL SPI handle corresponding
 // to the SPI peripheral to which the LTC devices are connected
+#ifndef UNIT_TEST
 SPI_HandleTypeDef * BTM_SPI_handle;
+#endif /* UNIT_TEST */
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
+#ifndef UNIT_TEST
 uint16_t BTM_calculatePec15(uint8_t* data, int len);
 void BTM_init(BTM_PackData_t * pack);
 void BTM_wakeup(void);
@@ -325,5 +332,6 @@ BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_
 BTM_Status_t BTM_readBatt(BTM_PackData_t * packData);
 float BTM_regValToVoltage(unsigned int raw_reading);
 void BTM_writeCS(CS_state_t new_state);
+#endif /* UNIT_TEST */
 
 #endif /* INC_LTC6813_BTM_H_ */

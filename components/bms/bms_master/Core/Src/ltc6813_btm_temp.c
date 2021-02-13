@@ -8,10 +8,11 @@
  *  @date 2020/08/18
  *  @author abooodeee
  */
-
 #include "ltc6813_btm_temp.h"
+#include "math.h"
+
+#ifndef UNIT_TEST
 #include "stm32f3xx_hal.h"
-#include <math.h>
 
 #define GPIO_5_TOGGLE 0b10000000 // For bitwise operations with CFGRA byte 0
 #define MUX_CHANNELS 2
@@ -288,3 +289,4 @@ void volts2temp(uint16_t ADC[], uint16_t REF2[], float temp_celsius[])
         temp_celsius[board] = temp_kelvin - 273.15;
     }
 }
+#endif /* UNIT_TEST */

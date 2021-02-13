@@ -73,6 +73,7 @@ typedef enum {
 #define FAN_FULL 100
 #define FAN_RAMP_SLOPE  ((FAN_FULL - MIN_FAN_PWM) / (FAN_FULL_TEMP - FAN_OFF_TEMP))
 
+#ifndef UNIT_TEST
 /*============================================================================*/
 /* PUBLIC VARAIBLES */
 
@@ -100,6 +101,7 @@ void CONT_LLIM_switch(CONT_signal_state_t new_state);
 void CONT_OT_switch(CONT_signal_state_t new_state);
 void CONT_FAN_PWM_set(unsigned int pwm_val);
 unsigned int CONT_fanPwmFromTemp(float temp);
+#endif /* UNIT_TEST */
 
 #endif /* INC_CONTROL_H_ */
 

@@ -59,8 +59,10 @@
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
+#ifndef UNIT_TEST
 void ANA_analyzeModules(BTM_PackData_t * pack);
 int ANA_mergeModuleStatusCodes(BTM_PackData_t * pack);
 float ANA_findHighestModuleTemp(BTM_PackData_t * pack);
+#endif /* UNIT_TEST */
 
 #endif /* INC_ANALYSIS_H_ */

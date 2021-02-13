@@ -23,10 +23,12 @@
 #ifndef __MAIN_H
 #define __MAIN_H
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#ifndef UNIT_TEST
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f3xx_hal.h"
 
@@ -85,6 +87,8 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
+
+#endif /* UNIT_TEST */
 
 #ifdef __cplusplus
 }

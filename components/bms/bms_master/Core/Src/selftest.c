@@ -6,6 +6,7 @@
  * @author matthewjegan
  */
 
+
 #include "selftest.h"
 #include "ltc6813_btm_bal.h"
 #include "stdlib.h"
@@ -33,7 +34,7 @@
 #define VREF_LOWERBOUND 2.990     		// Establishes range of acceptable voltages for VREF2 measurement.
 #define VREF_UPPERBOUND 3.014 		    // (specified on p.30 of LTC6813-1 datasheet)
 
-void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
+#ifndef UNIT_TEST
 BTM_Status_t readAllRegisters(uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE], float moduleVoltage[BTM_NUM_DEVICES][BTM_NUM_MODULES]);
 void shiftDchStatus(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]);
 void setDchPack(BTM_BAL_dch_setting_pack_t* dch_pack, BTM_module_bal_status_t new_module_dch[BTM_NUM_MODULES]);
@@ -418,27 +419,7 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
 }
 
 
-/**
- * @brief Converts unsigned int from register ADSTATA to a die temperature value in degrees Celsius.
- *        Conversion constants sourced from LTC6813 Data Sheets p.27
- *
- * @return void
- **/
-void itmpConversion(uint16_t itmp[], float temp_celsius[])
-{
-    const float itmp_coefficient = 0.013158;
-    const float conversion_const = 276.0;
 
-    unsigned int raw_reading;
-    float celsiusTemp;
-
-    for (int board = 0; board < BTM_NUM_DEVICES; board++){
-        raw_reading = itmp[board];
-        celsiusTemp = itmp_coefficient * raw_reading - conversion_const;
-
-        temp_celsius[board] = celsiusTemp;
-    }
-}
 
 /**
  * @brief Converts all 2-byte raw cell voltage readings stored in registers A-F to a float voltage value and stores them
@@ -538,4 +519,27 @@ void setDchPack(BTM_BAL_dch_setting_pack_t* dch_pack,
         }
     }
     return;
+}
+#endif /* UNIT_TEST */
+
+/**
+ * @brief Converts unsigned int from register ADSTATA to a die temperature value in degrees Celsius.
+ *        Conversion constants sourced from LTC6813 Data Sheets p.27
+ *
+ * @return void
+ **/
+void itmpConversion(uint16_t itmp[], float temp_celsius[])
+{
+    const float itmp_coefficient = 0.013159;
+    const float conversion_const = 276.0;
+
+    int raw_reading;
+    float celsiusTemp;
+
+    for (int board = 0; board < BTM_NUM_DEVICES; board++){
+        raw_reading = (int) itmp[board];
+        celsiusTemp = itmp_coefficient * raw_reading - conversion_const;
+
+        temp_celsius[board] = celsiusTemp;
+    }
 }

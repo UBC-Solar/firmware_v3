@@ -67,6 +67,8 @@
   * @{
   */
 
+#ifndef UNIT_TEST
+
 #include "stm32f3xx.h"
 
 /**
@@ -268,5 +270,6 @@ void SystemCoreClockUpdate (void)
   * @}
   */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 
+#endif
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

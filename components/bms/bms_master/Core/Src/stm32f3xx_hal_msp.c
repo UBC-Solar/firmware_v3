@@ -19,6 +19,8 @@
   */
 /* USER CODE END Header */
 
+#ifndef UNIT_TEST
+
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 /* USER CODE BEGIN Includes */
@@ -417,4 +419,5 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
 
 /* USER CODE END 1 */
 
+#endif
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

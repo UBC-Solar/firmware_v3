@@ -5,9 +5,9 @@
  *  @date 2020/08/18
  *  @author abooodeee
  */
-
 #include "btm_bal_settings.h"
 
+#ifndef UNIT_TEST
 // Private function prototypes
 void min_val(uint16_t* val, int* loc, uint16_t arr[], int size, int enable[]);
 
@@ -125,3 +125,4 @@ void min_val(uint16_t* val, int* loc, uint16_t arr[], int size, int enable[]) {
 	*loc = temp_loc;
 	return;
 }
+#endif

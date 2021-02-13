@@ -11,6 +11,7 @@
 #include "ltc6813_btm_bal.h"
 #include "analysis.h"
 
+#ifndef UNIT_TEST
 // Private function prototype
 void writeBalStatusBit(struct BTM_module * module, BTM_module_bal_status_t bal_status);
 
@@ -172,3 +173,4 @@ void writeBalStatusBit(struct BTM_module * module, BTM_module_bal_status_t bal_s
         module->status &= ~BMS_TRIP_BAL; // Clear TRIP_BAL bit
     return;
 }
+#endif /* UNIT_TEST */

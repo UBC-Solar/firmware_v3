@@ -35,6 +35,7 @@ typedef struct {
     struct BTM_BAL_dch_setting_stack stack[BTM_NUM_DEVICES];
 } BTM_BAL_dch_setting_pack_t;
 
+#ifndef UNIT_TEST
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
@@ -47,5 +48,6 @@ void BTM_BAL_setDischarge(
     BTM_PackData_t* pack,
     BTM_BAL_dch_setting_pack_t* pack_dch_setting
 );
+#endif /* UNIT_TEST */
 
 #endif /* INC_LTC6813_BTM_BAL_H_ */

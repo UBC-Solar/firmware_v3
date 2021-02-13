@@ -7,6 +7,7 @@
  */
 #include "analysis.h"
 
+#ifndef UNIT_TEST
 // Private function prototypes
 int findModuleVoltState(int status, uint16_t pack);
 int findModuleTempState(int status, float temp);
@@ -173,3 +174,4 @@ float ANA_findHighestModuleTemp(BTM_PackData_t * pack) {
 
     return max_temperature;
 }
+#endif

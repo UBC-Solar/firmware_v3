@@ -20,6 +20,8 @@
 
 #include "ltc6813_btm.h"
 
+#ifndef UNIT_TEST
+
 #define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
 
 // Lookup table for PEC (Packet Error Code) CRC calculation
@@ -538,3 +540,4 @@ void init_PEC15_Table() {
     }
 }
 */
+#endif /* UNIT_TEST */

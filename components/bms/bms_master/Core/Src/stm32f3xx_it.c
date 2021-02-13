@@ -17,6 +17,7 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
+#ifndef UNIT_TEST
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -201,4 +202,6 @@ void SysTick_Handler(void)
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */
+
+#endif
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
