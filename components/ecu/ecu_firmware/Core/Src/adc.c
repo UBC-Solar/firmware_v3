@@ -5,10 +5,12 @@
  * These functions need to average out the ADC readings for accuracy.
  * 
  * @date 2021/01/30
- * @author 
+ * @author Forbes Choy 
  */
 
 #include "adc.h"
+#define max_volt_reading 3.3
+#define adc_resolution 4095
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
@@ -21,13 +23,44 @@
  * 
  * The supplemental battery voltage is provided as an unsigned integer
  * with units of millivolts (mV).
- * The voltage is averaged over XXX seconds OR XXX readings.
+ * The voltage is averaged over XXX seconds OR XXX readings. Cache of like 10 ADCs? Take the average and we can use the "immediate" value for "checking" (fault state)
+ * ADC function could return the average and instant value (we can take in two pointers and overwrite them)
+ * Expect several calls in one second
+ * Supp battery only for startup not really in driving
  * 
  * @param supp_voltage Pointer to variable to which result will be written
  * @retval 0 if reading is successful, else 1 (due to eg. ADC saturated)
  */
 int ADC_getSuppBattVoltage(unsigned int * supp_voltage)
 {
+    //initialize variables
+    int volt_raw, i;
+    float volt_adc = 0;
+    int num_reads = 10;
+
+    //reading a set of ADC voltages
+
+    for (i = 0; i < num_reads; i ++) {
+        
+        //read raw value from ADC
+        HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+        volt_raw = HAL_GetValue(&hadc1);
+
+        //check if the ADC is saturated
+        if (volt_raw >= adc_resolution)
+            return 1;
+        
+        volt_adc += volt_raw;        
+    }
+
+    //convert ADC raw values to average voltage
+    volt_adc = ((float) volt_raw / num_reads) * max_volt_reading / adc_resolution;
+
+    //assign the average ADC voltage to supp_voltage
+    //adc voltage comes from a voltage divider made of R1=10k and R2=1k (v_adc = 1/11 * v_supp)
+
+    *supp_voltage = volt_adc * 11 * 1000; 
+
     return 0;
 }
 
@@ -36,13 +69,44 @@ int ADC_getSuppBattVoltage(unsigned int * supp_voltage)
  * 
  * Current is averaged over 1 second. The result is provided as a
  * signed integer with units of 100ths of an amp (cA).
+ * 
  * Current flowing **OUT** of the pack is positive.
+ * Hardware exists to detect overcurrent
+ * Output pins are wired to comparators to a set voltage
  * 
  * @param motor_current Pointer to variable to which result will be written
  * @retval 0 if reading is successful, else 1 (due to eg. ADC saturated)
  */
 int ADC_getMotorCurrent(int * motor_current)
 {
+    //initialize variables
+    int volt_raw, num_reads;
+    float volt_adc = 0;
+
+    //read a set of ADC values for 1 second
+    last_tick = HAL_GetTick();
+    while (!(HAL_GetTick() - last_tick == 1000)) {
+
+        //read raw value from ADC
+        HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY);
+        volt_raw = HAL_GetValue(&hadc2);
+        
+        if (volt_raw >= adc_resolution)
+            return 1;
+        
+        count ++;
+        volt_adc += volt_raw;
+    }
+
+    //convert ADC raw values to average voltage
+    volt_adc = ((float) volt_raw / num_reads) * max_volt_reading / adc_resolution;
+
+    //convert volt readings into current
+    //good references: https://www.lem.com/sites/default/files/products_datasheets/hass_50_600-s.pdf 
+    //file:///C:/Users/Forbes/Downloads/Isolated%20current%20and%20voltage%20transducers%20characteristics_1.pdf 
+
+    *motor_current = (volt_adc - 2.5) * 80 * 100; //output in cA
+
     return 0;
 }
 
@@ -58,6 +122,34 @@ int ADC_getMotorCurrent(int * motor_current)
  */
 int ADC_getArrayCurrent(int * array_current)
 {
+    //initialize variables
+    int volt_raw, num_reads;
+    float volt_adc = 0;
+
+    //read a set of ADC values for 1 second
+    last_tick = HAL_GetTick();
+    while (!(HAL_GetTick() - last_tick == 1000)) {
+
+        //read raw value from ADC
+        HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY);
+        volt_raw = HAL_GetValue(&hadc2);
+        
+        if (volt_raw >= adc_resolution)
+            return 1;
+        
+        count ++;
+        volt_adc += volt_raw;
+    }
+
+    //convert ADC raw values to average voltage
+    volt_adc = ((float) volt_raw / num_reads) * max_volt_reading / adc_resolution;
+
+    //convert volt readings into current
+    //good references: https://www.lem.com/sites/default/files/products_datasheets/hass_50_600-s.pdf 
+    //file:///C:/Users/Forbes/Downloads/Isolated%20current%20and%20voltage%20transducers%20characteristics_1.pdf 
+
+    *array_current = (volt_adc - 2.5) * 80 * 100; //output in cA
+
     return 0;
 }
 

@@ -13,6 +13,14 @@
 #include "stm32f1xx_hal.h"
 
 /*============================================================================*/
+/* Global Variables */
+
+ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc2;
+ADC_HandleTypeDef hadc3;
+unsigned int last_tick;
+
+/*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
 int ADC_getSuppBattVoltage(unsigned int * supp_voltage);
