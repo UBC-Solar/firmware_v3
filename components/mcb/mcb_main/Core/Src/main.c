@@ -1,3 +1,4 @@
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file           : main.c
@@ -8,31 +9,106 @@
   * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
+  * This software component is licensed by ST under Ultimate Liberty license
+  * SLA0044, the "License"; You may not use this file except in compliance with
+  * the License. You may obtain a copy of the License at:
+  *                             www.st.com/SLA0044
   *
   ******************************************************************************
   */
-
+/* USER CODE END Header */
+/* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+
 #include "encoder.h"
-#include "timer.h"
+
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+
+/* USER CODE BEGIN PD */
+
+#define ENCODER_TIMER_TICKS (uint32_t) 1
+
+#define DATA_FRAME_LEN 8
+
+#define DRIVER_CONTROLS_BASE_ADDRESS 0x400
+#define BATTERY_FULL_MSG 0x622
+#define BATT_BASE 0x620
+#define MOTOR_CTRL_BASE 0x500
+
+#define ADC_MAX 0xFFF
+#define ADC_MIN 0
+
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
 
 CAN_HandleTypeDef hcan;
 TIM_HandleTypeDef htim3;
 
-/* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
-void initializeGPIO(void);
-void MX_CAN_Init(void);
+osThreadId_t defaultTaskHandle;
 
-#define DRIVER_CONTROLS_BASE_ADDRESS 0x400
-#define DATA_FRAME_LEN 8
+/* Definitions for defaultTask */
+const osThreadAttr_t defaultTask_attributes = {
+  .name = "defaultTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4
+};
 
-// motor needs to be sent a CAN message every 250ms so timeout value is a conservative 200ms
-#define MOTOR_TIMEOUT_MS 200
+/* USER CODE BEGIN PV */
+
+osThreadId_t readEncoderTaskHandle;
+
+// TODO: change up some of these values (could optimize stack size)
+const osThreadAttr_t readEncoderTask_attributes = {
+    .name = "readEncoder",
+    .priority = (osPriority_t) osPriorityHigh,
+    .stack_size = 128 * 4
+};
+
+
+osThreadId_t sendMotorCommandTaskHandle;
+
+// TODO: change up some of these values (could optimize stack size)
+const osThreadAttr_t sendMotorCommand_attributes = {
+    .name = "sendMotorCommand",
+    .priority = (osPriority_t) osPriorityHigh,
+    .stack_size = 128 * 4
+};
+
+
+// send cruise control drive command message
+
+
+// write CAN status to the appropriate LED
+
+
+
+osTimerId_t encoderTimerHandle;
+
+const osTimerAttr_t encoderTimer_attributes = {
+    .name = "encoderTimer",
+    .attr_bits = 0,
+    .cb_mem = NULL,
+    .cb_size = 0
+};
 
 union {
 	float float_value;
@@ -44,84 +120,106 @@ union {
 	uint8_t bytes[4];
 } velocity;
 
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+static void MX_CAN_Init(void);
+static void MX_TIM3_Init(void);
+void StartDefaultTask(void *argument);
+
+/* USER CODE BEGIN PFP */
+
+// <----- Thread entry function prototypes ----->
+
+void readEncoderTask(void *argument);
+void sendMotorCommandTask(void *argument);
+
+// <----- Timer callback function prototypes ----->
+
+static void encoderTimerCallback(void *argument);
+
+/* USER CODE END PFP */
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void)
 {
+  /* MCU Configuration--------------------------------------------------------*/
+
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
   SystemClock_Config();
 
-  /* Initialize all configured peripherals */
-  initializeGPIO();
-  MX_CAN_Init();
-  MX_TIM3_Init(MOTOR_TIMEOUT_MS);
+  /* USER CODE BEGIN SysInit */
 
-  volatile uint16_t encoder_reading;
-  uint16_t old_encoder_reading = 0x0000;
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+
+  MX_GPIO_Init();
+  MX_CAN_Init();
+  MX_TIM3_Init();
+
+  /* USER CODE BEGIN 2 */
 
   HAL_CAN_Start(&hcan);
 
-  // starts TIM3 with interrupts being sent at every update event
-  HAL_TIM_Base_Start_IT(&htim3);
-
-  // set the priority of the TIM3 interrupt
-  HAL_NVIC_SetPriority(TIM3_IRQn, 1, 0);
-
-  // enabling interrupts
-  HAL_NVIC_EnableIRQ(TIM3_IRQn);
-
-  /* Create CAN header struct for drive command */
-  // TODO: might have to initialize all the values inside the struct
   CAN_TxHeaderTypeDef drive_command_header;
   drive_command_header.StdId = DRIVER_CONTROLS_BASE_ADDRESS + 1;
   drive_command_header.IDE = CAN_ID_STD;
 
-  /* CAN Mailbox variable (stores the mailbox that the CAN message was sent to) */
   uint32_t can_mailbox;
 
-  /* Initialize velocity and motor current values */
-  velocity.float_value = 100.0;
-  current.float_value = 0.0;
+  /* USER CODE END 2 */
 
-  // convert encoder reading to interrupt
-  while (1)
-  {
-    encoder_reading = EncoderRead();
+  /* Init scheduler */
+  osKernelInitialize();
 
-    // checks if the RVRS_EN pin is enabled
-    if (HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin)) {
-    	velocity.float_value = -100.0;
-    } else {
-    	velocity.float_value = 100.0;
-    }
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
 
-    // if the encoder reading changes, send the correct CAN message, and restart the timer
-    if (old_encoder_reading != encoder_reading) {
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* USER CODE END RTOS_SEMAPHORES */
 
-    	// linear scaling for encoder
-    	current.float_value = ((float) encoder_reading / (float) PEDAL_MAX);
+  /* USER CODE BEGIN RTOS_TIMERS */
 
-    	/* send a new drive command */
+  encoderTimerHandle = osTimerNew(encoderTimerCallback, osTimerPeriodic, NULL, &encoderTimer_attributes);
 
-    	uint8_t data_send[DATA_FRAME_LEN];
+  // OS kernel is running at a tick rate of 1000Hz
+  // Therefore, 1 tick = 1ms
+  osTimerStart(encoderTimerHandle, ENCODER_TIMER_TICKS);
 
-    	// inserting the velocity and current values into the data_send array
-    	// TODO: make this a function?
-    	for (int i = 0; i < DATA_FRAME_LEN / 2; i++) {
-    		data_send[i] = velocity.bytes[i];
-    		data_send[i + 4] = current.bytes[i];
-    	}
+  /* USER CODE END RTOS_TIMERS */
 
-    	// adds a CAN message to the transmit mailbox
-    	// TODO: add some sort of error handling if the CAN message isn't sent properly
-    	HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* USER CODE END RTOS_QUEUES */
 
-    	// restart timer
+  /* Create the thread(s) */
 
-    }
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-    old_encoder_reading = encoder_reading;
+  /* USER CODE BEGIN RTOS_THREADS */
 
-  }
+  readEncoderTaskHandle = osThreadNew(readEncoderTask, NULL, &readEncoderTask_attributes);
+  sendMotorCommandHandle = osThreadNew(sendMotorCommandTask, NULL, &sendMotorCommand_attributes);
+
+  /* USER CODE END RTOS_THREADS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
+  while (1) {}
 }
 
 /**
@@ -167,8 +265,9 @@ void SystemClock_Config(void)
   * @param None
   * @retval None
   */
-void MX_CAN_Init(void)
+static void MX_CAN_Init(void)
 {
+
   hcan.Instance = CAN1;
   hcan.Init.Prescaler = 16;
   hcan.Init.Mode = CAN_MODE_NORMAL;
@@ -181,10 +280,47 @@ void MX_CAN_Init(void)
   hcan.Init.AutoRetransmission = DISABLE;
   hcan.Init.ReceiveFifoLocked = DISABLE;
   hcan.Init.TransmitFifoPriority = DISABLE;
+
   if (HAL_CAN_Init(&hcan) != HAL_OK)
   {
     Error_Handler();
   }
+
+}
+
+/**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 7199;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 65535;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
 }
 
 /**
@@ -192,7 +328,7 @@ void MX_CAN_Init(void)
   * @param None
   * @retval None
   */
-void initializeGPIO(void)
+static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
@@ -231,13 +367,106 @@ void initializeGPIO(void)
 
 }
 
+/* USER CODE BEGIN 4 */
+
+void readEncoderTask(void *argument)
+{
+    uint16_t encoder_reading;
+
+    EncoderInit();
+
+    while (1)
+    {
+    	// waits for flags to be set by the timer callback method
+    	osThreadFlagsWait(0x0001, osFlagsWaitAny, osWaitForever);
+
+        encoder_reading = EncoderRead();
+
+        // TODO: what do we do with this encoder value?
+        // some options: write it to some memory pool, send it to some task's queue
+        
+        osThreadYield(); 
+    }
+}
+
+// encoder timer callback function
+static void encoderTimerCallback(void *argument) {
+
+	uint32_t flags;
+
+	// 0x0001 = it is time to read the encoder
+	flags = osThreadFlagsSet(readEncoderTaskHandle, 0x0001U);
+}
+
+
+// sending a CAN message thread
+void sendMotorCommandTask(void *argument) {
+	// TODO: retrieve current and voltage from queue perhaps
+	velocity.float_value = 0.0;
+	current.float_value = 0.0;
+
+
+
+	while (1) {
+
+	}
+
+
+}
+
+
+/* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_StartDefaultTask */
+/**
+  * @brief  Function implementing the defaultTask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_StartDefaultTask */
+void StartDefaultTask(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+
+  }
+  /* USER CODE END 5 */
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM8 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM8) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
+
 /**
   * @brief  This function is executed in case of error occurrence.
+  * @retval None
   */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+
+  /* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT
