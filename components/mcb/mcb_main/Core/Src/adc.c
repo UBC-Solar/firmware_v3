@@ -14,10 +14,12 @@ void ADCInit(void){
 	// Enable ADC clock
 	RCC->APB2ENR |= RCC_APB2ENR_ADC2EN;
 
-	// Enable config registers
+	// Change control registers
 	// By default, CR1 is set correctly
 	ADC2->CR2 |= ADC_CR2_CONT;
 
+	// Change the sample time register 2
+	// sets a sample time of 239.5 cycles for channel 0 of the ADCs
 	ADC2->SMPR2 |= 0x7UL;
 
 	// Start ADC
