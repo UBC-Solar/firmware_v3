@@ -47,26 +47,6 @@ FSM_state_t FSM_state;
 
 
 /*============================================================================*/
-/* STATE TABLE */
-
-void (*FSM_state_table[])(void) = {
-    FSM_reset,
-    BMS_powerup,
-    BMS_ready,
-    DCDC_Minus,
-    DCDC_Plus,
-    disable_MDU_DCH,
-    close_NEG,
-    pc_wait,
-    LLIM_Closed,
-    check_HLIM,
-    LVS_On,
-    ECU_Monitor,
-    fault
-};
-
-
-/*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
 
 // State Functions:
@@ -86,6 +66,26 @@ void fault();
 
 // Helper Functions
 bool timer_check(unsigned int millis);
+
+
+/*============================================================================*/
+/* STATE TABLE */
+
+void (*FSM_state_table[])(void) = {
+    FSM_reset,
+    BMS_powerup,
+    BMS_ready,
+    DCDC_Minus,
+    DCDC_Plus,
+    disable_MDU_DCH,
+    close_NEG,
+    pc_wait,
+    LLIM_Closed,
+    check_HLIM,
+    LVS_On,
+    ECU_Monitor,
+    fault
+};
 
 
 /*============================================================================*/
