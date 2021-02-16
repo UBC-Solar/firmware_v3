@@ -10,12 +10,6 @@
 #define __FSM_H
 
 /*============================================================================*/
-/* Global Variables */
-unsigned int * ADC_supp_batt_adc;
-unsigned int * ADC_motor_adc;
-unsigned int * ADC_array_adc;
-
-/*============================================================================*/
 /* FUNCTION PROTOTYPES */
 void FSM_init();
 void FSM_run();

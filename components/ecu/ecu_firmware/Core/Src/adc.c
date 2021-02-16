@@ -9,8 +9,8 @@
  */
 
 #include "adc.h"
-#define max_volt_reading 3.3
-#define adc_resolution 4095
+#define MAX_VOLT_READING 3.3
+#define ADC_RESOLUTION 4095
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
@@ -43,18 +43,18 @@ int ADC_getSuppBattVoltage(unsigned int * supp_voltage)
     for (i = 0; i < num_reads; i ++) {
         
         //read raw value from ADC
-        HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-        volt_raw = HAL_GetValue(&hadc1);
+        HAL_ADC_PollForConversion(ADC_supp_batt_volt, HAL_MAX_DELAY);
+        volt_raw = HAL_GetValue(ADC_supp_batt_volt);
 
         //check if the ADC is saturated
-        if (volt_raw >= adc_resolution)
+        if (volt_raw >= )
             return 1;
         
         volt_adc += volt_raw;        
     }
 
     //convert ADC raw values to average voltage
-    volt_adc = ((float) volt_raw / num_reads) * max_volt_reading / adc_resolution;
+    volt_adc = ((float) volt_raw / num_reads) * MAX_VOLT_READING / ADC_RESOLUTION;
 
     //assign the average ADC voltage to supp_voltage
     //adc voltage comes from a voltage divider made of R1=10k and R2=1k (v_adc = 1/11 * v_supp)
@@ -85,13 +85,17 @@ int ADC_getMotorCurrent(int * motor_current)
 
     //read a set of ADC values for 1 second
     last_tick = HAL_GetTick();
+
+    //interrupts
+    //timer reset function
+    //sets volt_adc back to 0 whenever
     while (!(HAL_GetTick() - last_tick == 1000)) {
 
         //read raw value from ADC
-        HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY);
-        volt_raw = HAL_GetValue(&hadc2);
+        HAL_ADC_PollForConversion(ADC_motor_current, HAL_MAX_DELAY);
+        volt_raw = HAL_GetValue(ADC_motor_current);
         
-        if (volt_raw >= adc_resolution)
+        if (volt_raw >= )
             return 1;
         
         count ++;
@@ -99,7 +103,7 @@ int ADC_getMotorCurrent(int * motor_current)
     }
 
     //convert ADC raw values to average voltage
-    volt_adc = ((float) volt_raw / num_reads) * max_volt_reading / adc_resolution;
+    volt_adc = ((float) volt_raw / num_reads) * MAX_VOLT_READING / ADC_RESOLUTION;
 
     //convert volt readings into current
     //good references: https://www.lem.com/sites/default/files/products_datasheets/hass_50_600-s.pdf 
@@ -131,10 +135,10 @@ int ADC_getArrayCurrent(int * array_current)
     while (!(HAL_GetTick() - last_tick == 1000)) {
 
         //read raw value from ADC
-        HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY);
-        volt_raw = HAL_GetValue(&hadc2);
+        HAL_ADC_PollForConversion(ADC_array_current, HAL_MAX_DELAY);
+        volt_raw = HAL_GetValue(ADC_array_current);
         
-        if (volt_raw >= adc_resolution)
+        if (volt_raw >= )
             return 1;
         
         count ++;
@@ -142,7 +146,7 @@ int ADC_getArrayCurrent(int * array_current)
     }
 
     //convert ADC raw values to average voltage
-    volt_adc = ((float) volt_raw / num_reads) * max_volt_reading / adc_resolution;
+    volt_adc = ((float) volt_raw / num_reads) * MAX_VOLT_READING / ADC_RESOLUTION;
 
     //convert volt readings into current
     //good references: https://www.lem.com/sites/default/files/products_datasheets/hass_50_600-s.pdf 

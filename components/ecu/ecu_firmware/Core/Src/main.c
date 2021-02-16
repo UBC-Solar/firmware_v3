@@ -23,6 +23,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "fsm.h"
+#include "adc.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -91,7 +93,7 @@ int main(void)
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
-
+  
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_ADC1_Init();
@@ -99,6 +101,11 @@ int main(void)
   MX_ADC3_Init();
   MX_CAN_Init();
   /* USER CODE BEGIN 2 */
+
+  ADC_supp_batt_volt= &hadc1;
+  ADC_motor_current = &hadc2; //match names from adc.h
+  ADC_array_current = &hadc3;
+
   FSM_init();
   /* USER CODE END 2 */
 

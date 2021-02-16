@@ -15,10 +15,9 @@
 /*============================================================================*/
 /* Global Variables */
 
-ADC_HandleTypeDef hadc1;
-ADC_HandleTypeDef hadc2;
-ADC_HandleTypeDef hadc3;
-unsigned int last_tick;
+ADC_HandleTypeDef * ADC_supp_batt_volt;
+ADC_HandleTypeDef * ADC_motor_current; 
+ADC_HandleTypeDef * ADC_array_current;     
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
