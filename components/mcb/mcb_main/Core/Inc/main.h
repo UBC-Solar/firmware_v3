@@ -37,12 +37,32 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+
 extern TIM_HandleTypeDef htim3;
+
+extern union float_bytes {
+	float float_value;
+	uint8_t bytes[4];
+} current, velocity;
+
+// this struct is updated when an external interrupt comes in
+extern struct input_flags {
+  uint8_t regen_enable;
+  uint8_t reverse_enable;
+  uint8_t brake_in;
+} event_flags;
+
+extern uint32_t regen_value;
+
+extern CAN_TxHeaderTypeDef drive_command_header;
+extern uint32_t can_mailbox;
 
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
+
+#define DATA_FRAME_LEN 8
 
 /* USER CODE END EC */
 
@@ -63,10 +83,13 @@ void Error_Handler(void);
 #define REGEN_VAL_GPIO_Port GPIOA
 #define REGEN_EN_Pin GPIO_PIN_1
 #define REGEN_EN_GPIO_Port GPIOA
+#define REGEN_EN_EXTI_IRQn EXTI1_IRQn
 #define BRK_IN_Pin GPIO_PIN_2
 #define BRK_IN_GPIO_Port GPIOA
+#define BRK_IN_EXTI_IRQn EXTI2_IRQn
 #define RVRS_EN_Pin GPIO_PIN_3
 #define RVRS_EN_GPIO_Port GPIOA
+#define RVRS_EN_EXTI_IRQn EXTI3_IRQn
 #define CRUISE_EN_Pin GPIO_PIN_4
 #define CRUISE_EN_GPIO_Port GPIOA
 #define CRUISE_DIS_Pin GPIO_PIN_5
