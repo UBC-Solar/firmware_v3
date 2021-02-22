@@ -13,9 +13,27 @@
       <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/.cproject" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/.cproject" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/.mxproject" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/.mxproject" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/.settings/language.settings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/.settings/language.settings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Inc/adc.h" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Inc/adc.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Inc/main.h" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Inc/main.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Inc/stm32f1xx_hal_conf.h" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Inc/stm32f1xx_hal_conf.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Inc/stm32f1xx_it.h" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Inc/stm32f1xx_it.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/adc.c" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/adc.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/encoder.c" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/encoder.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/freertos.c" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/freertos.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/main.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/stm32f1xx_hal_msp.c" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/stm32f1xx_hal_msp.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/stm32f1xx_hal_timebase_tim.c" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/stm32f1xx_hal_timebase_tim.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/stm32f1xx_it.c" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/stm32f1xx_it.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/timer.c" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.c" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Release/Core/Src/subdir.mk" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Release/Core/Src/subdir.mk" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Release/Drivers/STM32F1xx_HAL_Driver/Src/subdir.mk" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Release/Drivers/STM32F1xx_HAL_Driver/Src/subdir.mk" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Release/compile_commands.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Release/makefile" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Release/makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Release/mcb_main.bin" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Release/mcb_main.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Release/mcb_main.list" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Release/mcb_main.list" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Release/objects.list" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Release/objects.list" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Release/sources.mk" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Release/sources.mk" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/mcb_main.ioc" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/mcb_main.ioc" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -39,7 +57,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="cf.first.check.clang-format" value="false" />
-    <property name="last_opened_file_path" value="$USER_HOME$/CLionProjects/UniversalC" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -51,6 +69,7 @@
       <updated>1611417426834</updated>
       <workItem from="1611417430208" duration="3334000" />
       <workItem from="1612343476859" duration="43000" />
+      <workItem from="1613966080898" duration="346000" />
     </task>
     <task id="LOCAL-00001" summary="Add various project and driver files">
       <created>1611417791601</created>
