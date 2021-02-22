@@ -29,12 +29,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "attributes.h"
+
 /* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
@@ -43,11 +40,6 @@
 #define ENCODER_QUEUE_MSG_SIZE 2    /* 2 bytes (uint16_t) */
 
 /* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
@@ -61,44 +53,6 @@ osTimerId_t encoderTimerHandle;
 
 osMessageQueueId_t encoderQueueHandle;
 
-// <----- Attribute structs ----->
-
-const osThreadAttr_t readEncoderTask_attributes = {
-        .name = "readEncoder",
-        .priority = (osPriority_t) osPriorityHigh,
-        .stack_size = 128 * 4
-};
-
-const osThreadAttr_t sendMotorCommand_attributes = {
-        .name = "sendMotorCommand",
-        .priority = (osPriority_t) osPriorityHigh,
-        .stack_size = 128 * 4
-};
-
-const osTimerAttr_t encoderTimer_attributes = {
-        .name = "encoderTimer",
-        .attr_bits = 0,
-        .cb_mem = NULL,
-        .cb_size = 0
-};
-
-const osThreadAttr_t readRegenValueTask_attributes = {
-        .name = "readRegenValue",
-        .priority = (osPriority_t) osPriorityHigh,
-        .stack_size = 128 * 4
-};
-
-const osThreadAttr_t updateEventFlagsTask_attributes = {
-        .name = "updateEventFlags",
-        .priority = (osPriority_t) osPriorityHigh,
-        .stack_size = 128 * 4
-};
-
-const osMessageQueueAttr_t encoderQueue_attributes = {
-        .name = "encoderQueue"
-};
-
-
 /* USER CODE END Variables */
 
 /* Definitions for defaultTask */
@@ -110,14 +64,13 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 
 /* Private function prototypes -----------------------------------------------*/
+
 /* USER CODE BEGIN FunctionPrototypes */
 
 // <----- Thread prototypes ----->
 
 void readEncoderTask(void *argument);
-
 void sendMotorCommandTask(void *argument);
-
 void updateEventFlagsTask(void *argument);
 
 // <----- Timer callback prototypes ----->
@@ -138,44 +91,17 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
     /* USER CODE BEGIN Init */
 
-    /* USER CODE END Init */
-
-    /* USER CODE BEGIN RTOS_MUTEX */
-    /* add mutexes, ... */
-    /* USER CODE END RTOS_MUTEX */
-
-    /* USER CODE BEGIN RTOS_SEMAPHORES */
-    /* add semaphores, ... */
-    /* USER CODE END RTOS_SEMAPHORES */
-
-    /* USER CODE BEGIN RTOS_TIMERS */
-
     encoderTimerHandle = osTimerNew(encoderTimerCallback, osTimerPeriodic, NULL, &encoderTimer_attributes);
-
-    /* USER CODE END RTOS_TIMERS */
-
-    /* USER CODE BEGIN RTOS_QUEUES */
 
     encoderQueueHandle = osMessageQueueNew(ENCODER_QUEUE_MSG_CNT, ENCODER_QUEUE_MSG_SIZE, &encoderQueue_attributes);
 
-    /* USER CODE END RTOS_QUEUES */
-
-    /* USER CODE BEGIN RTOS_THREADS */
-
     defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
-
     readEncoderTaskHandle = osThreadNew(readEncoderTask, NULL, &readEncoderTask_attributes);
-    sendMotorCommandTaskHandle = osThreadNew(sendMotorCommandTask, NULL, &sendMotorCommand_attributes);
+    sendMotorCommandTaskHandle = osThreadNew(sendMotorCommandTask, NULL, &sendMotorCommandTask_attributes);
     updateEventFlagsTaskHandle = osThreadNew(updateEventFlagsTask, NULL, &updateEventFlagsTask_attributes);
-
     //  readRegenValueTaskHandle = osThreadNew(readRegenValueTask, NULL, &readRegenValueTask_attributes);
 
-    /* USER CODE END RTOS_THREADS */
-
-    /* USER CODE BEGIN RTOS_EVENTS */
-    /* add events, ... */
-    /* USER CODE END RTOS_EVENTS */
-
+    /* USER CODE END Init */
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -232,7 +158,6 @@ void sendMotorCommandTask(void *argument) {
 
     while (1) {
         // blocks thread waiting for encoder value to be added to queue
-//		event = osMessageGet(encoder_queue_id, osWaitForever);
         status = osMessageQueueGet(encoderQueueHandle, &encoder_value, NULL, 0U);
 
         if (status == osOK) {
