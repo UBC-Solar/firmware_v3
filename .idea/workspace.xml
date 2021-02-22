@@ -9,14 +9,8 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a9eaac94-871b-4e8c-b5b4-fc90fc52b97f" name="Default Changelist" comment="Implement external interrupt service routines">
-      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Inc/adc.h" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Inc/adc.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Inc/main.h" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Inc/main.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/adc.c" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/adc.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/encoder.c" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/encoder.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/freertos.c" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/freertos.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/main.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/mcb/mcb_main/Core/Src/timer.c" beforeDir="false" />
+    <list default="true" id="a9eaac94-871b-4e8c-b5b4-fc90fc52b97f" name="Default Changelist" comment="Re-indent files">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,7 +45,7 @@
       <updated>1611417426834</updated>
       <workItem from="1611417430208" duration="3334000" />
       <workItem from="1612343476859" duration="43000" />
-      <workItem from="1613966080898" duration="1053000" />
+      <workItem from="1613966080898" duration="1862000" />
     </task>
     <task id="LOCAL-00001" summary="Add various project and driver files">
       <created>1611417791601</created>
@@ -95,7 +89,70 @@
       <option name="project" value="LOCAL" />
       <updated>1613967095958</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Implement encoder related tasks and queues">
+      <created>1613967218487</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1613967218487</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Simplify main.c file and move certain variables and functions elsewhere">
+      <created>1613967277209</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1613967277209</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Remove TIM3 initialisation and callback functions">
+      <created>1613967327041</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1613967327042</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Replace previous ADC code with HAL function calls">
+      <created>1613967449120</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1613967449120</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Add project file">
+      <created>1613967469753</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1613967469753</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Move CAN initialisation to separate file">
+      <created>1613967510931</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1613967510931</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Introduce DMA initialisation function">
+      <created>1613967563816</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1613967563816</updated>
+    </task>
+    <task id="LOCAL-00014" summary="Introduce GPIO initialisation function">
+      <created>1613967590701</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1613967590701</updated>
+    </task>
+    <task id="LOCAL-00015" summary="Re-indent files">
+      <created>1613967822382</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1613967822382</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -120,6 +177,15 @@
     <MESSAGE value="Implement timer to send CAN message to motor controller every 200ms" />
     <MESSAGE value="Add project files and library code" />
     <MESSAGE value="Implement external interrupt service routines" />
-    <option name="LAST_COMMIT_MESSAGE" value="Implement external interrupt service routines" />
+    <MESSAGE value="Implement encoder related tasks and queues" />
+    <MESSAGE value="Simplify main.c file and move certain variables and functions elsewhere" />
+    <MESSAGE value="Remove TIM3 initialisation and callback functions" />
+    <MESSAGE value="Replace previous ADC code with HAL function calls" />
+    <MESSAGE value="Add project file" />
+    <MESSAGE value="Move CAN initialisation to separate file" />
+    <MESSAGE value="Introduce DMA initialisation function" />
+    <MESSAGE value="Introduce GPIO initialisation function" />
+    <MESSAGE value="Re-indent files" />
+    <option name="LAST_COMMIT_MESSAGE" value="Re-indent files" />
   </component>
 </project>
