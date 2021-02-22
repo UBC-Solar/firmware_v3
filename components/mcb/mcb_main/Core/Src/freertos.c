@@ -40,7 +40,7 @@
 /* USER CODE BEGIN PD */
 
 #define ENCODER_QUEUE_MSG_CNT 5
-#define ENCODER_QUEUE_MSG_SIZE 2	/* 2 bytes (uint16_t) */
+#define ENCODER_QUEUE_MSG_SIZE 2    /* 2 bytes (uint16_t) */
 
 /* USER CODE END PD */
 
@@ -64,38 +64,38 @@ osMessageQueueId_t encoderQueueHandle;
 // <----- Attribute structs ----->
 
 const osThreadAttr_t readEncoderTask_attributes = {
-    .name = "readEncoder",
-    .priority = (osPriority_t) osPriorityHigh,
-    .stack_size = 128 * 4
+        .name = "readEncoder",
+        .priority = (osPriority_t) osPriorityHigh,
+        .stack_size = 128 * 4
 };
 
 const osThreadAttr_t sendMotorCommand_attributes = {
-    .name = "sendMotorCommand",
-    .priority = (osPriority_t) osPriorityHigh,
-    .stack_size = 128 * 4
+        .name = "sendMotorCommand",
+        .priority = (osPriority_t) osPriorityHigh,
+        .stack_size = 128 * 4
 };
 
 const osTimerAttr_t encoderTimer_attributes = {
-    .name = "encoderTimer",
-    .attr_bits = 0,
-    .cb_mem = NULL,
-    .cb_size = 0
+        .name = "encoderTimer",
+        .attr_bits = 0,
+        .cb_mem = NULL,
+        .cb_size = 0
 };
 
 const osThreadAttr_t readRegenValueTask_attributes = {
-    .name = "readRegenValue",
-    .priority = (osPriority_t) osPriorityHigh,
-    .stack_size = 128 * 4
+        .name = "readRegenValue",
+        .priority = (osPriority_t) osPriorityHigh,
+        .stack_size = 128 * 4
 };
 
 const osThreadAttr_t updateEventFlagsTask_attributes = {
-    .name = "updateEventFlags",
-    .priority = (osPriority_t) osPriorityHigh,
-    .stack_size = 128 * 4
+        .name = "updateEventFlags",
+        .priority = (osPriority_t) osPriorityHigh,
+        .stack_size = 128 * 4
 };
 
 const osMessageQueueAttr_t encoderQueue_attributes = {
-	.name = "encoderQueue"
+        .name = "encoderQueue"
 };
 
 
@@ -104,9 +104,9 @@ const osMessageQueueAttr_t encoderQueue_attributes = {
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
+        .name = "defaultTask",
+        .priority = (osPriority_t) osPriorityNormal,
+        .stack_size = 128 * 4
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -115,7 +115,9 @@ const osThreadAttr_t defaultTask_attributes = {
 // <----- Thread prototypes ----->
 
 void readEncoderTask(void *argument);
+
 void sendMotorCommandTask(void *argument);
+
 void updateEventFlagsTask(void *argument);
 
 // <----- Timer callback prototypes ----->
@@ -134,45 +136,45 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   * @retval None
   */
 void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+    /* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+    /* USER CODE END Init */
 
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
+    /* USER CODE BEGIN RTOS_MUTEX */
+    /* add mutexes, ... */
+    /* USER CODE END RTOS_MUTEX */
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+    /* USER CODE BEGIN RTOS_SEMAPHORES */
+    /* add semaphores, ... */
+    /* USER CODE END RTOS_SEMAPHORES */
 
-  /* USER CODE BEGIN RTOS_TIMERS */
+    /* USER CODE BEGIN RTOS_TIMERS */
 
-  encoderTimerHandle = osTimerNew(encoderTimerCallback, osTimerPeriodic, NULL, &encoderTimer_attributes);
+    encoderTimerHandle = osTimerNew(encoderTimerCallback, osTimerPeriodic, NULL, &encoderTimer_attributes);
 
-  /* USER CODE END RTOS_TIMERS */
+    /* USER CODE END RTOS_TIMERS */
 
-  /* USER CODE BEGIN RTOS_QUEUES */
+    /* USER CODE BEGIN RTOS_QUEUES */
 
-  encoderQueueHandle = osMessageQueueNew(ENCODER_QUEUE_MSG_CNT, ENCODER_QUEUE_MSG_SIZE, &encoderQueue_attributes);
+    encoderQueueHandle = osMessageQueueNew(ENCODER_QUEUE_MSG_CNT, ENCODER_QUEUE_MSG_SIZE, &encoderQueue_attributes);
 
-  /* USER CODE END RTOS_QUEUES */
+    /* USER CODE END RTOS_QUEUES */
 
-  /* USER CODE BEGIN RTOS_THREADS */
+    /* USER CODE BEGIN RTOS_THREADS */
 
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  readEncoderTaskHandle = osThreadNew(readEncoderTask, NULL, &readEncoderTask_attributes);
-  sendMotorCommandTaskHandle = osThreadNew(sendMotorCommandTask, NULL, &sendMotorCommand_attributes);
-  updateEventFlagsTaskHandle = osThreadNew(updateEventFlagsTask, NULL, &updateEventFlagsTask_attributes);
+    readEncoderTaskHandle = osThreadNew(readEncoderTask, NULL, &readEncoderTask_attributes);
+    sendMotorCommandTaskHandle = osThreadNew(sendMotorCommandTask, NULL, &sendMotorCommand_attributes);
+    updateEventFlagsTaskHandle = osThreadNew(updateEventFlagsTask, NULL, &updateEventFlagsTask_attributes);
 
-  //  readRegenValueTaskHandle = osThreadNew(readRegenValueTask, NULL, &readRegenValueTask_attributes);
+    //  readRegenValueTaskHandle = osThreadNew(readRegenValueTask, NULL, &readRegenValueTask_attributes);
 
-  /* USER CODE END RTOS_THREADS */
+    /* USER CODE END RTOS_THREADS */
 
-  /* USER CODE BEGIN RTOS_EVENTS */
-  /* add events, ... */
-  /* USER CODE END RTOS_EVENTS */
+    /* USER CODE BEGIN RTOS_EVENTS */
+    /* add events, ... */
+    /* USER CODE END RTOS_EVENTS */
 
 }
 
@@ -183,99 +185,96 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
-{
-  /* USER CODE BEGIN StartDefaultTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartDefaultTask */
+void StartDefaultTask(void *argument) {
+    /* USER CODE BEGIN StartDefaultTask */
+    /* Infinite loop */
+    for (;;) {
+        osDelay(1);
+    }
+    /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
 // reads the encoder and places the value in the encoder queue every 1ms
-void readEncoderTask(void *argument)
-{
+void readEncoderTask(void *argument) {
     uint16_t encoder_reading;
     uint16_t old_encoder_reading = 0x0000;
 
     EncoderInit();
 
-    while (1)
-    {
-      // waits for flags to be set by the timer callback method
-      osThreadFlagsWait(0x0001U, osFlagsWaitAny, osWaitForever);
+    while (1) {
+        // waits for flags to be set by the timer callback method
+        osThreadFlagsWait(0x0001U, osFlagsWaitAny, osWaitForever);
 
-      encoder_reading = EncoderRead();
+        encoder_reading = EncoderRead();
 
-      // if the encoder value has changed, then put it in the encoder value queue
-      if (encoder_reading != old_encoder_reading) {
-    	  osMessageQueuePut(encoderQueueHandle, &encoder_reading, 0U, 0U);
-      }
+        // if the encoder value has changed, then put it in the encoder value queue
+        if (encoder_reading != old_encoder_reading) {
+            osMessageQueuePut(encoderQueueHandle, &encoder_reading, 0U, 0U);
+        }
 
-      old_encoder_reading = encoder_reading;
+        old_encoder_reading = encoder_reading;
 
-      osThreadYield();
+        osThreadYield();
     }
 }
 
 // sending a CAN message thread
 void sendMotorCommandTask(void *argument) {
-	uint8_t data_send[DATA_FRAME_LEN];
-	osStatus_t status;
-	uint16_t encoder_value;
+    uint8_t data_send[DATA_FRAME_LEN];
+    osStatus_t status;
+    uint16_t encoder_value;
 
-	// velocity is set to unattainable value for motor torque-control mode
-	velocity.float_value = 100.0;
+    // velocity is set to unattainable value for motor torque-control mode
+    velocity.float_value = 100.0;
 
-	for(;;) {
-		// blocks thread waiting for encoder value to be added to queue
+    while (1) {
+        // blocks thread waiting for encoder value to be added to queue
 //		event = osMessageGet(encoder_queue_id, osWaitForever);
-		status = osMessageQueueGet(encoderQueueHandle, &encoder_value, NULL, 0U);
+        status = osMessageQueueGet(encoderQueueHandle, &encoder_value, NULL, 0U);
 
-		if (status == osOK) {
-			// current is linearly scaled to pedal position
-			current.float_value = (float) encoder_value / (PEDAL_MAX - PEDAL_MIN);
-		} else {
-			// FIXME: change this to better deal with a failure to retrieve value from queue
-			osThreadYield();
-		}
+        if (status == osOK) {
+            // current is linearly scaled to pedal position
+            current.float_value = (float) encoder_value / (PEDAL_MAX - PEDAL_MIN);
+        } else {
+            // FIXME: change this to better deal with a failure to retrieve value from queue
+            osThreadYield();
+        }
 
-		// writing data into data_send array which will be sent as a CAN message
-		for (int i = 0; i < DATA_FRAME_LEN / 2; i++) {
-		  data_send[i] = velocity.bytes[i];
-		  data_send[i + 4] = current.bytes[i];
-		}
+        // writing data into data_send array which will be sent as a CAN message
+        for (int i = 0; i < DATA_FRAME_LEN / 2; i++) {
+            data_send[i] = velocity.bytes[i];
+            data_send[i + 4] = current.bytes[i];
+        }
 
-		HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
+        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
 
-		osThreadYield();
-	}
+        osThreadYield();
+    }
 }
 
 // updates specific flags to decide which thread will send a CAN message
 void updateEventFlagsTask(void *argument) {
-	while (1) {
-		// waits for the EXTI ISRs to set the thread flag
-		osThreadFlagsWait(0x0001U, osFlagsWaitAny, osWaitForever);
+    while (1) {
+        // waits for the EXTI ISRs to set the thread flag
+        osThreadFlagsWait(0x0001U, osFlagsWaitAny, osWaitForever);
 
-		// value has been written to the struct, convert this into a number
-		uint32_t input_flags = (event_flags.reverse_enable << 2) | (event_flags.brake_in << 1) | (event_flags.regen_enable);
+        // value has been written to the struct, convert this into a number
+        uint32_t input_flags =
+                (event_flags.reverse_enable << 2) | (event_flags.brake_in << 1) | (event_flags.regen_enable);
 
-		// now use event flags to signal the above number
-		// TODO: finish this
+        // now use event flags to signal the above number
+        // TODO: finish this
 
-	}
+    }
 }
 
 // encoder timer callback function
 static void encoderTimerCallback(void *argument) {
-	// 0x0001 => it is time to read the encoder
-	osThreadFlagsSet(readEncoderTaskHandle, 0x0001U);
+    // 0x0001 => it is time to read the encoder
+    osThreadFlagsSet(readEncoderTaskHandle, 0x0001U);
 }
 
 /* USER CODE END Application */
