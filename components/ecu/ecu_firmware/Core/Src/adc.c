@@ -11,9 +11,11 @@
 #include "adc.h"
 #define MAX_VOLT_READING 3.3
 #define ADC_RESOLUTION 4095
+#define ADC_AVG_SIZE 10
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
+int ADC_getAverage (volatile int [] buffer);
 
 /*============================================================================*/
 /* PUBLIC FUNCTIONS */
@@ -34,27 +36,20 @@
 int ADC_getSuppBattVoltage(unsigned int * supp_voltage)
 {
     //initialize variables
-    int volt_raw, i;
     float volt_adc = 0;
-    int num_reads = 10;
 
-    //reading a set of ADC voltages
+    //reading a set of ADC voltages using ISR
 
-    for (i = 0; i < num_reads; i ++) {
-        
-        //read raw value from ADC
-        HAL_ADC_PollForConversion(ADC_supp_batt_volt, HAL_MAX_DELAY);
-        volt_raw = HAL_GetValue(ADC_supp_batt_volt);
+    if (!ADC_getAverage(ADC_supp_batt_volt_buff)) {
 
-        //check if the ADC is saturated
-        if (volt_raw >= )
-            return 1;
-        
-        volt_adc += volt_raw;        
+        //convert ADC raw values to average voltage
+        volt_adc = ((float) ADC_raw_average) * MAX_VOLT_READING / ADC_RESOLUTION;
+
+    } else {
+
+        //return 1 when one of the ADC readings is saturated
+        return 1;
     }
-
-    //convert ADC raw values to average voltage
-    volt_adc = ((float) volt_raw / num_reads) * MAX_VOLT_READING / ADC_RESOLUTION;
 
     //assign the average ADC voltage to supp_voltage
     //adc voltage comes from a voltage divider made of R1=10k and R2=1k (v_adc = 1/11 * v_supp)
@@ -80,30 +75,20 @@ int ADC_getSuppBattVoltage(unsigned int * supp_voltage)
 int ADC_getMotorCurrent(int * motor_current)
 {
     //initialize variables
-    int volt_raw, num_reads;
     float volt_adc = 0;
 
-    //read a set of ADC values for 1 second
-    last_tick = HAL_GetTick();
+    //reading a set of ADC voltages using ISR
 
-    //interrupts
-    //timer reset function
-    //sets volt_adc back to 0 whenever
-    while (!(HAL_GetTick() - last_tick == 1000)) {
+    if (!ADC_getAverage(ADC_motor_current_buff)) {
 
-        //read raw value from ADC
-        HAL_ADC_PollForConversion(ADC_motor_current, HAL_MAX_DELAY);
-        volt_raw = HAL_GetValue(ADC_motor_current);
-        
-        if (volt_raw >= )
-            return 1;
-        
-        count ++;
-        volt_adc += volt_raw;
+        //convert ADC raw values to average voltage
+        volt_adc = ((float) ADC_raw_average) * MAX_VOLT_READING / ADC_RESOLUTION;
+
+    } else {
+
+        //return 1 when one of the ADC readings is saturated
+        return 1;
     }
-
-    //convert ADC raw values to average voltage
-    volt_adc = ((float) volt_raw / num_reads) * MAX_VOLT_READING / ADC_RESOLUTION;
 
     //convert volt readings into current
     //good references: https://www.lem.com/sites/default/files/products_datasheets/hass_50_600-s.pdf 
@@ -127,27 +112,20 @@ int ADC_getMotorCurrent(int * motor_current)
 int ADC_getArrayCurrent(int * array_current)
 {
     //initialize variables
-    int volt_raw, num_reads;
+    int volt_raw_avg;
     float volt_adc = 0;
 
-    //read a set of ADC values for 1 second
-    last_tick = HAL_GetTick();
-    while (!(HAL_GetTick() - last_tick == 1000)) {
+    if (!ADC_getAverage(ADC_array_current_buff)) {
 
-        //read raw value from ADC
-        HAL_ADC_PollForConversion(ADC_array_current, HAL_MAX_DELAY);
-        volt_raw = HAL_GetValue(ADC_array_current);
-        
-        if (volt_raw >= )
-            return 1;
-        
-        count ++;
-        volt_adc += volt_raw;
+        //convert ADC raw values to average voltage
+        volt_adc = ((float) ADC_raw_average) * MAX_VOLT_READING / ADC_RESOLUTION;
+
+    } else {
+
+        //return 1 when one of the ADC readings is saturated
+        return 1;
     }
-
-    //convert ADC raw values to average voltage
-    volt_adc = ((float) volt_raw / num_reads) * MAX_VOLT_READING / ADC_RESOLUTION;
-
+    
     //convert volt readings into current
     //good references: https://www.lem.com/sites/default/files/products_datasheets/hass_50_600-s.pdf 
     //file:///C:/Users/Forbes/Downloads/Isolated%20current%20and%20voltage%20transducers%20characteristics_1.pdf 
@@ -176,3 +154,25 @@ int ADC_netCurrentOut(int motor_current, int array_current)
 
 /*============================================================================*/
 /* PRIVATE FUNCTIONS */
+int ADC_getAverage (volatile int [] buffer)
+{
+    int i = 0;
+    int avg_index = ADC_buffer_index - 1;
+
+    for (i = 0; i < ADC_AVG_SIZE; i++) {
+
+        if (buffer[avg_index] <= ADC_RESOLUTION) 
+            ADC_raw_average += buffer[avg_index];
+        else 
+            return 1;
+
+        if (avg_index != 0) //read the most recent values
+            avg_index --;
+        else 
+            avg_index = ADC_BUFFER_SIZE - 1; //wrapping in the circular buffer
+    }
+
+    ADC_raw_average /= ADC_AVG_SIZE;
+    
+    return 0;
+}

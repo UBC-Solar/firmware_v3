@@ -19,6 +19,14 @@ ADC_HandleTypeDef * ADC_supp_batt_volt;
 ADC_HandleTypeDef * ADC_motor_current; 
 ADC_HandleTypeDef * ADC_array_current;     
 
+//circular buffers for ADC average readings
+volatile int ADC_supp_batt_volt_buff [BUFFER_SIZE] = {0};
+volatile int ADC_motor_current_buff [BUFFER_SIZE] = {0};
+volatile int ADC_array_current_buff [BUFFER_SIZE] = {0};
+int ADC_buffer_index = 0;
+int ADC_raw_average = 0;
+int ADC_BUFFER_SIZE = 100;
+
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
