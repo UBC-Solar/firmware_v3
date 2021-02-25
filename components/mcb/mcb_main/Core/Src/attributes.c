@@ -33,6 +33,12 @@ const osThreadAttr_t updateEventFlagsTask_attributes = {
         .stack_size = 128 * 4
 };
 
+const osThreadAttr_t sendRegenCommandTask_attributes = {
+        .name = "sendRegenCommand",
+        .priority = (osPriority_t) osPriorityHigh,
+        .stack_size = 128 * 4
+};
+
 const osTimerAttr_t encoderTimer_attributes = {
         .name = "encoderTimer",
         .attr_bits = 0,
