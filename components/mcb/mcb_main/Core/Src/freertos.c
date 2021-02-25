@@ -46,7 +46,7 @@
 
 osThreadId_t readEncoderTaskHandle;
 osThreadId_t sendMotorCommandTaskHandle;
-osThreadId_t readRegenValueTaskHandle;
+osThreadId_t sendRegenCommandTaskHandle;
 osThreadId_t updateEventFlagsTaskHandle;
 
 osTimerId_t encoderTimerHandle;
@@ -76,7 +76,7 @@ void readEncoderTask(void *argument);
 void updateEventFlagsTask(void *argument);
 
 void sendMotorCommandTask(void *argument);
-void updateEventFlagsTask(void *argument);
+void sendRegenCommandTask(void *argument);
 
 // <----- Timer callback prototypes ----->
 
@@ -101,8 +101,12 @@ void MX_FREERTOS_Init(void) {
     encoderQueueHandle = osMessageQueueNew(ENCODER_QUEUE_MSG_CNT, ENCODER_QUEUE_MSG_SIZE, &encoderQueue_attributes);
 
     defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
     readEncoderTaskHandle = osThreadNew(readEncoderTask, NULL, &readEncoderTask_attributes);
+    
     sendMotorCommandTaskHandle = osThreadNew(sendMotorCommandTask, NULL, &sendMotorCommandTask_attributes);
+    sendRegenCommandTaskHandle = osThreadNew(sendRegenCommandTask, NULL, &sendRegenCommandTask_attributes);
+
     updateEventFlagsTaskHandle = osThreadNew(updateEventFlagsTask, NULL, &updateEventFlagsTask_attributes);
 
 
@@ -176,6 +180,32 @@ void sendMotorCommandTask(void *argument) {
             // FIXME: change this to better deal with a failure to retrieve value from queue
             osThreadYield();
         }
+
+        // writing data into data_send array which will be sent as a CAN message
+        for (int i = 0; i < DATA_FRAME_LEN / 2; i++) {
+            data_send[i] = velocity.bytes[i];
+            data_send[i + 4] = current.bytes[i];
+        }
+
+        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
+
+        osThreadYield();
+    }
+}
+
+// thread to send regen command (velocity control) CAN message
+void sendRegenCommandTask(void *argument) {
+    uint8_t data_send[DATA_FRAME_LEN];
+
+    // velocity is set to zero for regen CAN command
+    velocity.float_value = 0.0;
+
+    while (1) {
+        // waits for event flag that signals the decision to send a regen command
+        osEventFlagsWait(inputEventFlagsHandle, 0x0002U, osFlagsWaitAll, osWaitForever);
+        
+        // current is linearly scaled with the read regen value
+        current.float_value = (float) regen_value / (ADC_MAX - ADC_MIN);
 
         // writing data into data_send array which will be sent as a CAN message
         for (int i = 0; i < DATA_FRAME_LEN / 2; i++) {
