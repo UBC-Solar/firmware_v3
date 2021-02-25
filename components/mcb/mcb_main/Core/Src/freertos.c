@@ -167,14 +167,18 @@ void readEncoderTask(void *argument) {
     }
 }
 
-// sending a CAN message thread
+// thread to send motor command (torque-control) CAN message
 void sendMotorCommandTask(void *argument) {
     uint8_t data_send[DATA_FRAME_LEN];
     osStatus_t status;
     uint16_t encoder_value;
 
     // velocity is set to unattainable value for motor torque-control mode
-    velocity.float_value = 100.0;
+    if (event_flags.reverse_enable) {
+        velocity.float_value = -100.0;
+    } else {
+        velocity.float_value = 100.0;
+    }
 
     while (1) {
         // blocks thread waiting for encoder value to be added to queue
