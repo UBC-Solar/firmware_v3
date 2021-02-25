@@ -170,12 +170,13 @@ void SystemClock_Config(void) {
 /* USER CODE BEGIN 4 */
 
 void HAL_ADC_ConvCplt_Callback(ADC_HandleTypeDef *hadc) {
-    // TODO: complete this function and maybe move it elsewhere
-
-    // what should we do once an ADC conversion is complete?
-
     // could set some flags to start some other thread, or even just put the value in a queue
 
+    // change the event flags struct
+    event_flags.regen_value_zero = (regen_value == 0);
+
+    // send flag to the updateEventFlags task
+    osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
 }
 
 /* USER CODE END 4 */
