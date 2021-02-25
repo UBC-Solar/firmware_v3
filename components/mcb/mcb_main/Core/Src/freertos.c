@@ -53,6 +53,8 @@ osTimerId_t encoderTimerHandle;
 
 osMessageQueueId_t encoderQueueHandle;
 
+osEventFlagsId_t inputEventFlagsHandle;
+
 /* USER CODE END Variables */
 
 /* Definitions for defaultTask */
@@ -70,6 +72,9 @@ const osThreadAttr_t defaultTask_attributes = {
 // <----- Thread prototypes ----->
 
 void readEncoderTask(void *argument);
+
+void updateEventFlagsTask(void *argument);
+
 void sendMotorCommandTask(void *argument);
 void updateEventFlagsTask(void *argument);
 
@@ -99,7 +104,11 @@ void MX_FREERTOS_Init(void) {
     readEncoderTaskHandle = osThreadNew(readEncoderTask, NULL, &readEncoderTask_attributes);
     sendMotorCommandTaskHandle = osThreadNew(sendMotorCommandTask, NULL, &sendMotorCommandTask_attributes);
     updateEventFlagsTaskHandle = osThreadNew(updateEventFlagsTask, NULL, &updateEventFlagsTask_attributes);
-    //  readRegenValueTaskHandle = osThreadNew(readRegenValueTask, NULL, &readRegenValueTask_attributes);
+
+
+    inputEventFlagsHandle = osEventFlagsNew(NULL);
+
+    osTimerStart(encoderTimerHandle, ENCODER_TIMER_TICKS);
 
     /* USER CODE END Init */
 }
@@ -182,23 +191,38 @@ void sendMotorCommandTask(void *argument) {
 
 // updates specific flags to decide which thread will send a CAN message
 void updateEventFlagsTask(void *argument) {
+    uint32_t flags_to_signal;
+
     while (1) {
         // waits for the EXTI ISRs to set the thread flag
         osThreadFlagsWait(0x0001U, osFlagsWaitAny, osWaitForever);
 
         // value has been written to the struct, convert this into a number
-        uint32_t input_flags =
-                (event_flags.reverse_enable << 2) | (event_flags.brake_in << 1) | (event_flags.regen_enable);
+
+        // should send a regen command if the regen is enabled and either of two things is true:
+        // 1) the encoder value is zero OR 2) the encoder value and the regen value is not zero 
+
+        event_flags.send_regen_command = (event_flags.regen_enable & event_flags.encoder_value_zero)
+                                         | (event_flags.regen_enable & ~(event_flags.encoder_value_zero) & ~(event_flags.regen_value_zero));
+        event_flags.send_drive_command = !event_flags.send_regen_command;
+
+        // flag_to_signal = 0x0001U -> send normal drive command
+        // flag_to_signal = 0x0002U -> send regen drive command
+        if (event_flags.send_drive_command) {
+            flags_to_signal = 0x0001U;
+        } else {
+            flags_to_signal = 0x0002U;
+        }
 
         // now use event flags to signal the above number
-        // TODO: finish this
-
+        osEventFlagsSet(inputEventFlagsHandle, flags_to_signal);
     }
 }
 
 // encoder timer callback function
 static void encoderTimerCallback(void *argument) {
     // 0x0001 => it is time to read the encoder
+    // TODO: change this to a semaphore to make it easier to understand
     osThreadFlagsSet(readEncoderTaskHandle, 0x0001U);
 }
 
