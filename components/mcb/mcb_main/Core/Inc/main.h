@@ -46,10 +46,16 @@ extern union float_bytes {
 } current, velocity;
 
 // this struct is updated when an external interrupt comes in
+// this struct combines a bunch of boolean flags that helps to decide whether to send a regen
+// command or a normal motor command
 extern struct input_flags {
   uint8_t regen_enable;
   uint8_t reverse_enable;
   uint8_t brake_in;
+  uint8_t regen_value_zero;
+  uint8_t encoder_value_zero;
+  uint8_t send_regen_command;
+  uint8_t send_drive_command;
 } event_flags;
 
 extern uint32_t regen_value;
@@ -61,8 +67,6 @@ extern uint32_t can_mailbox;
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-
-#define DATA_FRAME_LEN 8
 
 /* USER CODE END EC */
 
