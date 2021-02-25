@@ -116,7 +116,15 @@ void Error_Handler(void);
 #define ENC_ZS_GPIO_Port GPIOA
 #define ENC_YS_Pin GPIO_PIN_3
 #define ENC_YS_GPIO_Port GPIOB
+
 /* USER CODE BEGIN Private defines */
+
+#define DATA_FRAME_LEN 8
+
+#define ADC_MAX 0xFFF
+#define ADC_MIN 0
+
+#define ENCODER_TIMER_TICKS (uint32_t) 1
 
 /* USER CODE END Private defines */
 

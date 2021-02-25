@@ -35,10 +35,6 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define ENCODER_TIMER_TICKS (uint32_t) 1
-
-#define ADC_MAX 0xFFF
-#define ADC_MIN 0
 
 /* USER CODE END PD */
 
@@ -67,7 +63,6 @@ uint32_t can_mailbox;
 /* Private function prototypes -----------------------------------------------*/
 
 void SystemClock_Config(void);
-
 void MX_FREERTOS_Init(void);
 
 /* USER CODE BEGIN PFP */
@@ -83,7 +78,6 @@ void MX_FREERTOS_Init(void);
 int main(void) {
     /* USER CODE BEGIN 1 */
 
-    // required by FreeRTOS
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
 
     /* USER CODE END 1 */
