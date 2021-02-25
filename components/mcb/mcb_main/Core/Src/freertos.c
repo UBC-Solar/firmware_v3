@@ -139,7 +139,7 @@ void StartDefaultTask(void *argument) {
 // reads the encoder and places the value in the encoder queue every 1ms
 void readEncoderTask(void *argument) {
     uint16_t encoder_reading;
-    uint16_t old_encoder_reading = 0x0000;
+    uint16_t old_encoder_reading = 0x0000U;
 
     EncoderInit();
 
@@ -148,6 +148,13 @@ void readEncoderTask(void *argument) {
         osThreadFlagsWait(0x0001U, osFlagsWaitAny, osWaitForever);
 
         encoder_reading = EncoderRead();
+
+        // update the flags struct
+        event_flags.encoder_value_zero = (encoder_reading == 0);
+
+        // wait for event flag that suggests a normal motor command will be sent
+        // only then should the encoder value be added to the thread queue
+        osEventFlagsWait(inputEventFlagsHandle, 0x0001U, osFlagsWaitAll, osWaitForever);
 
         // if the encoder value has changed, then put it in the encoder value queue
         if (encoder_reading != old_encoder_reading) {
