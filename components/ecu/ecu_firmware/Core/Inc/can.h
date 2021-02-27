@@ -3,7 +3,7 @@
  * @brief Header file for CAN communication functions for ECU
  * 
  * @date 2021/01/30
- * @author 
+ * @author Blake Shular (blake-shular)
  */
 
 #ifndef __CAN_H
@@ -13,10 +13,9 @@
 
 #define CAN_TIMEOUT 50 // (ms)
 
-void CAN_send_current(int currentVal);
-
 CAN_HandleTypeDef *CAN_hcan;
 
-HAL_CAN_AddTxMessage (CAN_HandleTypeDef *hcan, CAN_TxHeaderTypeDef *pHeader, uint8_t aData[], uint32_t *pTxMailbox);
+void CAN_send_current(int currentVal);
+HAL_StatusTypeDef HAL_CAN_AddTxMessage(CAN_HandleTypeDef *hcan, CAN_TxHeaderTypeDef *pHeader, uint8_t aData[], uint32_t *pTxMailbox);
 
 #endif /* __CAN_H */

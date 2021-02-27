@@ -134,11 +134,13 @@ void FSM_reset () {
     HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_RESET);
-    
-    // Read supplemental battery voltage
-    // Convert suppVoltage into a voltage level we can use.
-    // if suppVoltage > 10.5V, state = WAITBMS
-    // else supp low, state = WAITBMS
+
+    // Read supplemental battery
+    int supp_voltage = 0;
+    if (ADC_getSuppBattVoltage(&supp_voltage) < 10500
+        && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) != GPIO_PIN_SET) {
+        HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, GPIO_PIN_SET);
+    }
 
     FSM_state = WAIT_FOR_BMS_POWERUP;
 
@@ -340,13 +342,15 @@ void LVS_On () {
  * Exit State: FAULT
  */
 void ECU_Monitor () {
-    // TODO Implement this
-    // is HLIM or LLIM high?
+    
+    // LLIM or HLIM High? 
+    // TODO Do we need to go into a precharge state somewhere here?
     if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == GPIO_PIN_SET) {
         HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, GPIO_PIN_RESET);
     } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_SET) {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, GPIO_PIN_RESET);
     }
+
 
     if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == GPIO_PIN_SET
         || HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == GPIO_PIN_SET
@@ -355,7 +359,7 @@ void ECU_Monitor () {
     } else if (HAL_GPIO_ReadPin(ESTOP_5V_IN_GPIO_Port, ESTOP_5V_IN_Pin) == GPIO_PIN_SET) {
 
     }
-
+    
     if (timer_check(MESSAGE_INTERVAL)) {
         // send CAN message with current values to BMS
             int motor_current = 0;
@@ -365,15 +369,14 @@ void ECU_Monitor () {
             CAN_send_current(ADC_netCurrentOut(motor_current, array_current));
     }    
     
-    // if (V_supp < 10.5V)
-    // Turn on supp_low LED
+    int supp_voltage = 0;
+    if (ADC_getSuppBattVoltage(&supp_voltage) < 10500
+        && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) != GPIO_PIN_SET) {
+        HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, GPIO_PIN_SET);
+    }
 
     return;
 }
-
-// CAN message here^ and there v
-// Can message in Monitor for sending current values
-// Can message in fault with time, fault type
 
 /**
  * @brief FAULT! OH NO!
