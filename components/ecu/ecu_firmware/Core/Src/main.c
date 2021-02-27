@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "fsm.h"
 #include "adc.h"
+#include "can.h"
 
 /* USER CODE END Includes */
 
@@ -101,10 +102,13 @@ int main(void)
   MX_ADC3_Init();
   MX_CAN_Init();
   /* USER CODE BEGIN 2 */
+  CAN_hcan = &hcan;
 
   ADC_supp_batt_volt= &hadc1;
   ADC_motor_current = &hadc2; //match names from adc.h
   ADC_array_current = &hadc3;
+
+  HAL_CAN_Start (&hcan);
 
   FSM_init();
   /* USER CODE END 2 */

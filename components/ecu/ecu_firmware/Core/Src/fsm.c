@@ -44,7 +44,7 @@ unsigned int last_tick;
 FSM_state_t FSM_state;
 
 #define NUM_LVS_BOARDS 6
-
+#define MESSAGE_INTERVAL 1000
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
@@ -327,6 +327,7 @@ void LVS_On () {
     }
 
     // Change state
+    // restart timer
     
     return;
 }
@@ -340,19 +341,57 @@ void LVS_On () {
  */
 void ECU_Monitor () {
     // TODO Implement this
+    // is HLIM or LLIM high?
+    if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == GPIO_PIN_SET) {
+        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, GPIO_PIN_RESET);
+    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_SET) {
+        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, GPIO_PIN_RESET);
+    }
+
+    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == GPIO_PIN_SET
+        || HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == GPIO_PIN_SET
+        || HAL_GPIO_ReadPin(OT_OUT_GPIO_Port, OT_OUT_Pin) == GPIO_PIN_SET) {
+            FSM_state = FAULT;
+    } else if (HAL_GPIO_ReadPin(ESTOP_5V_IN_GPIO_Port, ESTOP_5V_IN_Pin) == GPIO_PIN_SET) {
+
+    }
+
+    if (timer_check(MESSAGE_INTERVAL)) {
+        // send CAN message with current values to BMS
+            int motor_current = 0;
+            int array_current = 0;
+            ADC_getArrayCurrent(&array_current);
+            ADC_getMotorCurrent(&motor_current);
+            CAN_send_current(ADC_netCurrentOut(motor_current, array_current));
+    }    
     
-    // While (state != FAULT) 
-        // Monitor
-        // If (something goes wrong)
-            // Change state to FAULT
+    // if (V_supp < 10.5V)
+    // Turn on supp_low LED
+
     return;
 }
+
+// CAN message here^ and there v
+// Can message in Monitor for sending current values
+// Can message in fault with time, fault type
 
 /**
  * @brief FAULT! OH NO!
  */
 void fault () {
     // TODO Implement this
+    
+    // switch to SUPP
+    
+    // blink fault light 120 times per min
+
+    // Open all contactors
+    HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(DCDC_M_CTRL_GPIO_Port, DCDC_M_CTRL_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_RESET);
     return;
 }
 
