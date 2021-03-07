@@ -42,9 +42,11 @@ typedef enum {
 
 unsigned int last_tick;
 FSM_state_t FSM_state;
+bool LVS_power = false;
 
-#define NUM_LVS_BOARDS 6
+#define NUM_LVS_BOARDS 4
 #define MESSAGE_INTERVAL 1000
+
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
@@ -147,7 +149,7 @@ void FSM_reset () {
     return;
 }
 
-// TODO Hash out the details of when BMS is considered 'ON', have a timeout here if FLT doesnt go high?
+// TODO Hash out the details of when BMS is considered 'ON', have a timeout here if FLT doesnt go high? just have 5s timer rn
 /**
  * @brief Wait until the condition for BMS being powered on is met
  * 
@@ -156,7 +158,9 @@ void FSM_reset () {
  * Exit State: WAIT_FOR_BMS_READY
  */
 void BMS_powerup () {
-    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == GPIO_PIN_SET) {
+    if(timer_check(5000)) {
+        FSM_state = FAULT;
+    } else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == GPIO_PIN_SET) {
         last_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_BMS_READY;
     }
@@ -210,9 +214,12 @@ void DCDC_Minus () {
  */
 void DCDC_Plus () {
     if (timer_check(250)) {
+        HAL_GPIO_WritePin(SWAP_EN_GPIO_Port, SWAP_EN_Pin, GPIO_PIN_SET);
+
         HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, GPIO_PIN_SET);
         HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, GPIO_PIN_SET);
         HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, GPIO_PIN_SET);
+
         HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, GPIO_PIN_SET);
         FSM_state = DISABLE_MDU_DCH;
     }
@@ -277,7 +284,7 @@ void pc_wait () {
  * @brief 
  * 
  * Exit Condition: Timer surpasses 0.25 seconds.
- * Exit Action: Open pre-charge contactor, stop(reset?) timer.
+ * Exit Action: Open pre-charge contactor, reset timer.
  * Exit State: CHECK_HLIM
  */
 void LLIM_Closed () {
@@ -317,20 +324,22 @@ void check_HLIM () {
  * Exit State: MONITOR
  */
 void LVS_On () {
-    for (int i = 0; i < NUM_LVS_BOARDS; i++) {
-        if (i == 0) {
-            // Turn on the first few boards
-        } else if (i == 1) {
-            // next
-        } else if (i == 2) {
-            
-        } //etc...
-        HAL_Delay(200);
+    if (!LVS_power) {
+        for (int i = 0; i < NUM_LVS_BOARDS; i++) {
+            // if (i == 0) {
+            //     HAL_GPIO_WritePin(DASH_MCB_EN_GPIO_Port, DASH_MCB_EN_Pin, GPIO_PIN_SET);
+            // } else if (i == 1) {
+            //     HAL_GPIO_WritePin(MDU_EN_GPIO_Port, MDU_EN_Pin, GPIO_PIN_SET);
+            // } else if (i == 2) {
+            //     HAL_GPIO_WritePin(TEL_SPAR1_EN_GPIO_Port, TEL_SPAR1_EN_Pin, GPIO_PIN_SET);
+            // } else if (i == 3) {
+            //     HAL_GPIO_WritePin(AMB_SPAR2_EN_GPIO_Port, AMB_SPAR2_EN_Pin, GPIO_PIN_SET);
+            // }
+            HAL_Delay(200); // using delay here because it is a for loop, using the timer check function wont work
+        }
+        LVS_power = true; // this was to work around being able to keep the same structure for the precharge sequence
     }
-
-    // Change state
-    // restart timer
-    
+    FSM_state = MONITORING;    
     return;
 }
 
@@ -342,14 +351,19 @@ void LVS_On () {
  * Exit State: FAULT
  */
 void ECU_Monitor () {
-    
-    // LLIM or HLIM High? 
-    // TODO Do we need to go into a precharge state somewhere here?
+    // Check battery capacity
     if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == GPIO_PIN_SET) {
         HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, GPIO_PIN_RESET);
     } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_SET) {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, GPIO_PIN_RESET);
+    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_RESET) {
+        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_SET);
+        last_tick = HAL_GetTick();
+        FSM_state = WAIT_FOR_PC;
+        return;
     }
+
+    // TODO ^^^need to check if LLIM was high then went low, dont want pc running every time llim is low (which is most of the time)
 
 
     if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == GPIO_PIN_SET
@@ -383,10 +397,17 @@ void ECU_Monitor () {
  */
 void fault () {
     // TODO Implement this
+
+    // send fault message via CAN
     
     // switch to SUPP
-    
+    HAL_GPIO_WritePin(SWAP_EN_GPIO_Port, SWAP_EN_Pin, GPIO_PIN_RESET);
+
     // blink fault light 120 times per min
+    // flt out
+    
+    // MDU off
+    // HAL_GPIO_WritePin(MDU_EN_GPIO_Port, MDU_EN_Pin, GPIO_PIN_RESET);
 
     // Open all contactors
     HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, GPIO_PIN_RESET);
