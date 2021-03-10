@@ -51,11 +51,14 @@ extern union float_bytes {
 extern struct input_flags {
   uint8_t regen_enable;
   uint8_t reverse_enable;
+  uint8_t cruise_enable;
   uint8_t brake_in;
   uint8_t regen_value_zero;
   uint8_t encoder_value_zero;
   uint8_t send_regen_command;
   uint8_t send_drive_command;
+  uint8_t send_cruise_command;
+  uint8_t cruise_value_set;
 } event_flags;
 
 extern uint32_t regen_value;

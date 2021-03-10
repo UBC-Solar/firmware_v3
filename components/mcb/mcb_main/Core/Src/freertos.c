@@ -242,17 +242,23 @@ void updateEventFlagsTask(void *argument) {
 
         // should send a regen command if the regen is enabled and either of two things is true:
         // 1) the encoder value is zero OR 2) the encoder value and the regen value is not zero 
+        // self note: for cruise: acc to max, velocity to desired speed --> encoder must be non_zero
 
         event_flags.send_regen_command = (event_flags.regen_enable & event_flags.encoder_value_zero)
                                          | (event_flags.regen_enable & ~(event_flags.encoder_value_zero) & ~(event_flags.regen_value_zero));
-        event_flags.send_drive_command = !event_flags.send_regen_command;
+        event_flag.send_cruise_command = event_flags.cruise_enable & ~(event_flags.encoder_value_zero);
+        event_flags.send_drive_command = !event_flags.send_regen_command & !event_flags.send_cruise_command;
 
         // flag_to_signal = 0x0001U -> send normal drive command
         // flag_to_signal = 0x0002U -> send regen drive command
         if (event_flags.send_drive_command) {
             flags_to_signal = 0x0001U;
-        } else {
+        } 
+        else if (event_flags.send_regen_command) {
             flags_to_signal = 0x0002U;
+        }
+        else {
+            flags_to_signal = 0x0003U;
         }
 
         // now use event flags to signal the above number
