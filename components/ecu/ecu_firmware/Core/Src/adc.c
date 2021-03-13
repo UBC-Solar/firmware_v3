@@ -15,10 +15,17 @@
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
-int ADC_getAverage (volatile int [] buffer);
+int ADC_getAverage (volatile int buffer[]);
 
 /*============================================================================*/
 /* PUBLIC FUNCTIONS */
+
+void ADC_init(void)
+{
+    ADC_buffer_index = 0;
+    ADC_raw_average = 0;
+    return;
+}
 
 /**
  * @brief Provides the voltage of the supplemental Battery
@@ -112,7 +119,6 @@ int ADC_getMotorCurrent(int * motor_current)
 int ADC_getArrayCurrent(int * array_current)
 {
     //initialize variables
-    int volt_raw_avg;
     float volt_adc = 0;
 
     if (!ADC_getAverage(ADC_array_current_buff)) {
@@ -152,9 +158,51 @@ int ADC_netCurrentOut(int motor_current, int array_current)
     return motor_current - array_current;
 }
 
+void ADC_supp_batt_volt_runInterrupt(void)
+{
+
+  HAL_ADC_PollForConversion(ADC_supp_batt_volt, HAL_MAX_DELAY);
+  int volt_raw = HAL_ADC_GetValue(ADC_supp_batt_volt);
+
+  ADC_supp_batt_volt_buff[ADC_buffer_index] = volt_raw;
+  ADC_buffer_index++;
+
+  if (ADC_buffer_index >= ADC_BUFFER_SIZE - 1) {
+    ADC_buffer_index = 0;
+  }
+}
+
+void ADC_motor_current_runInterrupt(void)
+{
+
+  HAL_ADC_PollForConversion(ADC_motor_current, HAL_MAX_DELAY);
+  int volt_raw = HAL_ADC_GetValue(ADC_motor_current);
+
+  ADC_motor_current_buff[ADC_buffer_index] = volt_raw;
+  ADC_buffer_index++;
+
+  if (ADC_buffer_index >= ADC_BUFFER_SIZE - 1) {
+    ADC_buffer_index = 0;
+  }
+}
+
+void ADC_array_current_runInterrupt(void)
+{
+
+  HAL_ADC_PollForConversion(ADC_array_current, HAL_MAX_DELAY);
+  int volt_raw = HAL_ADC_GetValue(ADC_array_current);
+
+  ADC_array_current_buff[ADC_buffer_index] = volt_raw;
+  ADC_buffer_index ++;
+
+  if (ADC_buffer_index >= ADC_BUFFER_SIZE) {
+    ADC_buffer_index = 0;
+  }
+}
+
 /*============================================================================*/
 /* PRIVATE FUNCTIONS */
-int ADC_getAverage (volatile int [] buffer)
+int ADC_getAverage(volatile int buffer[])
 {
     int i = 0;
     int avg_index = ADC_buffer_index - 1;

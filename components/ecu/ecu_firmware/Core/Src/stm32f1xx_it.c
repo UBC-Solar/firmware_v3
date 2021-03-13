@@ -220,44 +220,5 @@ void SysTick_Handler(void)
 
 /* USER CODE BEGIN 1 */
 
-void ADC_supp_batt_volt_runInterrupt(void) {
-
-  HAL_ADC_PollForConversion(ADC_supp_batt_volt, HAL_MAX_DELAY);
-  int volt_raw = HAL_GetValue(ADC_supp_batt_volt);
-
-  ADC_supp_batt_volt_buff[ADC_buffer_index] = volt_raw;
-  ADC_buffer_index ++;
-
-  if (ADC_buffer_index >= ADC_BUFFER_SIZE) {
-    ADC_buffer_index = 0;
-  }
-}
-
-void ADC_motor_current_runInterrupt(void) {
-
-  HAL_ADC_PollForConversion(ADC_motor_current, HAL_MAX_DELAY);
-  int volt_raw = HAL_GetValue(ADC_motor_current);
-
-  ADC_motor_current_buff[ADC_buffer_index] = volt_raw;
-  ADC_buffer_index ++;
-
-  if (ADC_buffer_index >= ADC_BUFFER_SIZE) {
-    ADC_buffer_index = 0;
-  }
-}
-
-void ADC_array_current_runInterrupt(void) {
-
-  HAL_ADC_PollForConversion(ADC_array_current, HAL_MAX_DELAY);
-  int volt_raw = HAL_GetValue(ADC_array_current);
-
-  ADC_array_current_buff[ADC_buffer_index] = volt_raw;
-  ADC_buffer_index ++;
-
-  if (ADC_buffer_index >= ADC_BUFFER_SIZE) {
-    ADC_buffer_index = 0;
-  }
-}
-
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

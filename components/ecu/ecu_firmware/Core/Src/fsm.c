@@ -154,7 +154,7 @@ void FSM_reset () {
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_RESET);
 
     // Read supplemental battery
-    int supp_voltage = 0;
+    unsigned int supp_voltage = 0;
     ADC_getSuppBattVoltage(&supp_voltage);
     if (supp_voltage < SUPP_LIMIT && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) != GPIO_PIN_SET) {
         HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, GPIO_PIN_SET);
@@ -443,7 +443,7 @@ void ECU_monitor () {
     }    
     
     // check supplemental battery voltage
-    int supp_voltage = 0;
+    unsigned int supp_voltage = 0;
     if (ADC_getSuppBattVoltage(&supp_voltage) < SUPP_LIMIT
         && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) != GPIO_PIN_SET) {
         HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, GPIO_PIN_SET);

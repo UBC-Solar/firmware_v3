@@ -110,6 +110,7 @@ int main(void)
 
   HAL_CAN_Start (&hcan);
 
+  ADC_init();
   FSM_init();
   /* USER CODE END 2 */
 
