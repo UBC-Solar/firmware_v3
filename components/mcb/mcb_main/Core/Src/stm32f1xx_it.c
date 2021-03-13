@@ -217,14 +217,14 @@ void EXTI3_IRQHandler(void) {
   * @brief This function handles EXTI line3 interrupt.
   */
 void EXTI4_IRQHandler(void) {
-    /* USER CODE BEGIN EXTI3_IRQn 0 */
+    /* USER CODE BEGIN EXTI4_IRQn 0 */
 
     // EXTI3 corresponds to the CRUISE_EN value
 
-    event_flags.reverse_enable = HAL_GPIO_ReadPin(CRUISE_EN_GPIO_Port, RVRS_EN_Pin);
+    event_flags.cruise_enable = HAL_GPIO_ReadPin(CRUISE_EN_GPIO_Port, CRUISE_EN_Pin);
 
     /* USER CODE END EXTI3_IRQn 0 */
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
     /* USER CODE BEGIN EXTI3_IRQn 1 */
 
     // flag unblocks the updateFlagsTask
@@ -232,6 +232,29 @@ void EXTI4_IRQHandler(void) {
 
     /* USER CODE END EXTI3_IRQn 1 */
 }
+
+/**
+  * @brief This function handles EXTI line3 interrupt.
+  */
+void EXTI5_IRQHandler(void) {
+    /* USER CODE BEGIN EXTI4_IRQn 0 */
+
+    // EXTI3 corresponds to the CRUISE_EN value
+
+    event_flags.cruise_enable = !(HAL_GPIO_ReadPin(CRUISE_DIS_GPIO_Port, CRUISE_DIS_Pin));
+
+    /* USER CODE END EXTI3_IRQn 0 */
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
+    /* USER CODE BEGIN EXTI3_IRQn 1 */
+
+    // flag unblocks the updateFlagsTask
+    // do we need to update flags here ??
+    
+    uint32_t flags = osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
+
+    /* USER CODE END EXTI3_IRQn 1 */
+}
+
 /**
   * @brief This function handles DMA1 channel1 global interrupt.
   */

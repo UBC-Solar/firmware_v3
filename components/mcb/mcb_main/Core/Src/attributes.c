@@ -27,6 +27,12 @@ const osThreadAttr_t readRegenValueTask_attributes = {
         .stack_size = 128 * 4
 };
 
+const osThreadAttr_t sendCruiseCommandTask_attributes = {
+        .name = "readRegenValue",
+        .priority = (osPriority_t) osPriorityHigh,
+        .stack_size = 128 * 4
+};
+
 const osThreadAttr_t updateEventFlagsTask_attributes = {
         .name = "updateEventFlags",
         .priority = (osPriority_t) osPriorityHigh,
