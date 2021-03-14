@@ -49,12 +49,15 @@ bool LVS_power = false;
 bool last_HLIM_status;
 bool last_LLIM_status;
 
+/*============================================================================*/
+/* DEFINED CONSTANTS */
+
 #define BMS_STARTUP_INTERVAL 5000
 #define MESSAGE_INTERVAL 1000
 #define MDU_DCH_INTERVAL 500
-#define LVS_INTERVAL 200
 #define SHORT_INTERVAL 300
 #define FLT_BLINK_INTERVAL 250
+#define LVS_INTERVAL 200
 #define SUPP_LIMIT 10500
 #define LOW false
 #define HIGH true
@@ -140,26 +143,26 @@ void FSM_run () {
  */
 void FSM_reset () {
     // Turn fans off
-    HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(MDUFAN_CTRL_GPIO_Port, MDUFAN_CTRL_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(MDUFAN_CTRL_GPIO_Port, MDUFAN_CTRL_Pin, LOW);
 
     // Open all contactors
-    HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(DCDC_M_CTRL_GPIO_Port, DCDC_M_CTRL_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(DCDC_M_CTRL_GPIO_Port, DCDC_M_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, LOW);
 
     // Read supplemental battery
     unsigned int supp_voltage = 0;
     ADC_getSuppBattVoltage(&supp_voltage);
-    if (supp_voltage < SUPP_LIMIT && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) != GPIO_PIN_SET) {
-        HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, GPIO_PIN_SET);
+    if (supp_voltage < SUPP_LIMIT && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) == LOW) {
+        HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, HIGH);
     } else {
-        HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, LOW);
     }
 
     FSM_state = WAIT_FOR_BMS_POWERUP;
@@ -178,7 +181,7 @@ void FSM_reset () {
 void BMS_powerup () {
     if (timer_check(BMS_STARTUP_INTERVAL)) {
         FSM_state = FAULT;
-    } else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == GPIO_PIN_SET) {
+    } else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH) {
         last_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_BMS_READY;
     }
@@ -199,9 +202,9 @@ void BMS_powerup () {
 void BMS_ready () {
     if (timer_check(BMS_STARTUP_INTERVAL)) {
         FSM_state = FAULT;
-    } else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == GPIO_PIN_RESET) {
+    } else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == LOW) {
         last_tick = HAL_GetTick();
-        HAL_GPIO_WritePin(DCDC_M_CTRL_GPIO_Port, DCDC_M_CTRL_Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(DCDC_M_CTRL_GPIO_Port, DCDC_M_CTRL_Pin, HIGH);
         FSM_state = PC_DCDC;
     }
     return;
@@ -216,7 +219,7 @@ void BMS_ready () {
  */
 void DCDC_minus () {
     if (timer_check(SHORT_INTERVAL)) {
-        HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, HIGH);
         FSM_state = DCDC_PLUS;
     }
     return;
@@ -231,11 +234,11 @@ void DCDC_minus () {
  */
 void DCDC_plus () {
     if (timer_check(SHORT_INTERVAL)) {
-        HAL_GPIO_WritePin(SWAP_EN_GPIO_Port, SWAP_EN_Pin, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(SWAP_EN_GPIO_Port, SWAP_EN_Pin, HIGH);
+        HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, HIGH);
+        HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, HIGH);
+        HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, HIGH);
+        HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, HIGH);
         FSM_state = DISABLE_MDU_DCH;
     }
     return;
@@ -250,8 +253,8 @@ void DCDC_plus () {
  */
 void disable_MDU_DCH () {
     if (timer_check(MDU_DCH_INTERVAL)) {
-        HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, LOW);
+        HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, HIGH);
         FSM_state = CLOSE_NEG;
     }
     return;
@@ -269,13 +272,12 @@ void disable_MDU_DCH () {
  * Exit State CHECK_HLIM
  */
 void close_NEG () {
-    // Read LLIM voltage
-    if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_RESET) {
+    if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == LOW) {
         last_LLIM_status = LOW;
-        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, HIGH);
         last_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_PC;
-    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_SET) {
+    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == HIGH) {
         last_LLIM_status = HIGH;
         FSM_state = CHECK_HLIM;
     }
@@ -291,7 +293,7 @@ void close_NEG () {
  */
 void PC_wait () {
     if (timer_check(SHORT_INTERVAL)) {
-        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, HIGH);
         FSM_state = LLIM_CLOSED;
     }
     return;
@@ -306,7 +308,7 @@ void PC_wait () {
  */
 void LLIM_closed () {
     if (timer_check(SHORT_INTERVAL)) {
-        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, LOW);
         FSM_state = CHECK_HLIM;
     }
     return;
@@ -324,13 +326,14 @@ void LLIM_closed () {
  * Exit State: LVS_ON
  */
 void check_HLIM () {
-    if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == GPIO_PIN_SET) {
+    if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == HIGH) {
         last_HLIM_status = HIGH;
-    } else if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == GPIO_PIN_RESET) {
+        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, HIGH);
+    } else if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == LOW) {
         last_HLIM_status = LOW;
-        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, GPIO_PIN_SET);
     }
 
+// TODO consider this flag var, switch statement?
     if (LVS_power) {
         FSM_state = MONITORING;
     } else {
@@ -348,7 +351,7 @@ void check_HLIM () {
  */
 void DASH_MCB_on() {
     if(timer_check(LVS_INTERVAL)) {
-        // HAL_GPIO_WritePin(DASH_MCB_EN_GPIO_Port, DASH_MCB_EN_Pin, GPIO_PIN_SET);
+        // HAL_GPIO_WritePin(DASH_MCB_EN_GPIO_Port, DASH_MCB_EN_Pin, HIGH);
     }
     FSM_state = MDU_ON;
     return;
@@ -362,7 +365,7 @@ void DASH_MCB_on() {
  */
 void MDU_on() {
     if(timer_check(LVS_INTERVAL)) {
-        // HAL_GPIO_WritePin(MDU_EN_GPIO_Port, MDU_EN_Pin, GPIO_PIN_SET);
+        // HAL_GPIO_WritePin(MDU_EN_GPIO_Port, MDU_EN_Pin, HIGH);
     }
     FSM_state = TELEM_ON;
     return;
@@ -376,7 +379,7 @@ void MDU_on() {
  */
 void TELEM_on() {
     if(timer_check(LVS_INTERVAL)) {
-        // HAL_GPIO_WritePin(TEL_SPAR1_EN_GPIO_Port, TEL_SPAR1_EN_Pin, GPIO_PIN_SET);
+        // HAL_GPIO_WritePin(TEL_SPAR1_EN_GPIO_Port, TEL_SPAR1_EN_Pin, HIGH);
     }
     FSM_state = AMB_ON;
     return;
@@ -390,7 +393,7 @@ void TELEM_on() {
  */
 void AMB_on() {
     if(timer_check(LVS_INTERVAL)) {
-        // HAL_GPIO_WritePin(AMB_SPAR2_EN_GPIO_Port, AMB_SPAR2_EN_Pin, GPIO_PIN_SET);
+        // HAL_GPIO_WritePin(AMB_SPAR2_EN_GPIO_Port, AMB_SPAR2_EN_Pin, HIGH);
     }
     LVS_power = true;
     FSM_state = MONITORING;
@@ -406,27 +409,28 @@ void AMB_on() {
  */
 void ECU_monitor () {
     // Check battery capacity
-    if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == GPIO_PIN_SET && last_HLIM_status == LOW) {
-        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, GPIO_PIN_RESET);
+    if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == HIGH && last_HLIM_status == LOW) {
+        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, HIGH);
         last_HLIM_status = HIGH;
-    } else if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == GPIO_PIN_RESET && last_HLIM_status == HIGH) {
-        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, GPIO_PIN_SET);
+    } else if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == LOW && last_HLIM_status == HIGH) {
+        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, LOW);
         last_HLIM_status = LOW;
-    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_SET && last_LLIM_status == LOW) {
-        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, GPIO_PIN_RESET);
+    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == HIGH && last_LLIM_status == LOW) {
+        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, LOW);
         last_LLIM_status = HIGH;
-    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == GPIO_PIN_RESET && last_LLIM_status == HIGH) {
-        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_SET);
+    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == LOW && last_LLIM_status == HIGH) {
+        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, HIGH);
         last_LLIM_status = LOW;
         last_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_PC;
         return;
     }
 
-    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == GPIO_PIN_SET
-        || HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == GPIO_PIN_SET
-        || HAL_GPIO_ReadPin(OT_OUT_GPIO_Port, OT_OUT_Pin) == GPIO_PIN_SET
-        || HAL_GPIO_ReadPin(ESTOP_5V_IN_GPIO_Port, ESTOP_5V_IN_Pin) == GPIO_PIN_SET) {
+    // Fault checking
+    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH
+        || HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH
+        || HAL_GPIO_ReadPin(OT_OUT_GPIO_Port, OT_OUT_Pin) == HIGH
+        || HAL_GPIO_ReadPin(ESTOP_5V_IN_GPIO_Port, ESTOP_5V_IN_Pin) == HIGH) {
             FSM_state = FAULT;
             return;
     }
@@ -444,9 +448,10 @@ void ECU_monitor () {
     
     // check supplemental battery voltage
     unsigned int supp_voltage = 0;
-    if (ADC_getSuppBattVoltage(&supp_voltage) < SUPP_LIMIT
-        && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) != GPIO_PIN_SET) {
-        HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, GPIO_PIN_SET);
+    if (ADC_getSuppBattVoltage(&supp_voltage) < SUPP_LIMIT && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) == LOW) {
+        HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, HIGH);
+    } else{
+        HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, LOW);
     }
     return;
 }
@@ -461,7 +466,7 @@ void fault() {
     // also send current message via CAN?
     
     // switch to SUPP
-    HAL_GPIO_WritePin(SWAP_EN_GPIO_Port, SWAP_EN_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(SWAP_EN_GPIO_Port, SWAP_EN_Pin, LOW);
 
     // blink fault light at 2Hz minimum
     if (timer_check(FLT_BLINK_INTERVAL)) {
@@ -469,15 +474,15 @@ void fault() {
     }
     
     // MDU off
-    // HAL_GPIO_WritePin(MDU_EN_GPIO_Port, MDU_EN_Pin, GPIO_PIN_RESET);
+    // HAL_GPIO_WritePin(MDU_EN_GPIO_Port, MDU_EN_Pin, LOW);
 
     // Open all contactors
-    HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(DCDC_M_CTRL_GPIO_Port, DCDC_M_CTRL_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(DCDC_M_CTRL_GPIO_Port, DCDC_M_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, LOW);
     return;
 }
 
