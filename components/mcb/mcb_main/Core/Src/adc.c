@@ -126,6 +126,15 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 
 /* USER CODE BEGIN 1 */
 
+void HAL_ADC_ConvCplt_Callback(ADC_HandleTypeDef *hadc) {
+    // change the event flags struct
+    event_flags.regen_value_zero = (regen_value == 0);
+
+    // send flag to the updateEventFlags task
+    osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
+
+}
+
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
