@@ -23,15 +23,20 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
-#include "encoder.h"
-#include "can.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
 #include "attributes.h"
+#include "can.h"
+#include "encoder.h"
 
 /* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
@@ -39,7 +44,15 @@
 #define ENCODER_QUEUE_MSG_CNT 5
 #define ENCODER_QUEUE_MSG_SIZE 2    /* 2 bytes (uint16_t) */
 
+#define CAN_FIFO0 0
+#define CAN_FIFO1 1
+
 /* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
@@ -56,17 +69,15 @@ osMessageQueueId_t encoderQueueHandle;
 osEventFlagsId_t inputEventFlagsHandle;
 
 /* USER CODE END Variables */
-
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-        .name = "defaultTask",
-        .priority = (osPriority_t) osPriorityNormal,
-        .stack_size = 128 * 4
+  .name = "defaultTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4
 };
 
 /* Private function prototypes -----------------------------------------------*/
-
 /* USER CODE BEGIN FunctionPrototypes */
 
 // <----- Thread prototypes ----->
@@ -94,11 +105,17 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   * @retval None
   */
 void MX_FREERTOS_Init(void) {
-    /* USER CODE BEGIN Init */
+  /* USER CODE BEGIN Init */
+
+    // <----- Timer object handles ----->
 
     encoderTimerHandle = osTimerNew(encoderTimerCallback, osTimerPeriodic, NULL, &encoderTimer_attributes);
 
+    // <----- Queue object handles ----->
+
     encoderQueueHandle = osMessageQueueNew(ENCODER_QUEUE_MSG_CNT, ENCODER_QUEUE_MSG_SIZE, &encoderQueue_attributes);
+
+    // <----- Thread object handles ----->
 
     defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
@@ -109,12 +126,19 @@ void MX_FREERTOS_Init(void) {
 
     updateEventFlagsTaskHandle = osThreadNew(updateEventFlagsTask, NULL, &updateEventFlagsTask_attributes);
 
+    // <----- Event flag object handles ----->
 
     inputEventFlagsHandle = osEventFlagsNew(NULL);
 
+    // FIXME: this needs to be moved to its own thread or the timer won't start
     osTimerStart(encoderTimerHandle, ENCODER_TIMER_TICKS);
 
-    /* USER CODE END Init */
+  /* USER CODE END Init */
+
+  /* Create the thread(s) */
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -124,13 +148,14 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument) {
-    /* USER CODE BEGIN StartDefaultTask */
+void StartDefaultTask(void *argument)
+{
+  /* USER CODE BEGIN StartDefaultTask */
     /* Infinite loop */
     for (;;) {
         osDelay(1);
     }
-    /* USER CODE END StartDefaultTask */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -233,6 +258,7 @@ void sendRegenCommandTask(void *argument) {
 // updates specific flags to decide which thread will send a CAN message
 void updateEventFlagsTask(void *argument) {
     uint32_t flags_to_signal;
+    uint8_t battery_soc;
 
     while (1) {
         // waits for the EXTI ISRs to set the thread flag
@@ -240,11 +266,17 @@ void updateEventFlagsTask(void *argument) {
 
         // value has been written to the struct, convert this into a number
 
+        // read battery CAN message here
+        HAL_CAN_GetRxMessage(&hcan, CAN_FIFO0, &CAN_receive_header, CAN_receive_data);
+
+        battery_soc = CAN_receive_data[0];
+
         // should send a regen command if the regen is enabled and either of two things is true:
         // 1) the encoder value is zero OR 2) the encoder value and the regen value is not zero 
-
-        event_flags.send_regen_command = (event_flags.regen_enable & event_flags.encoder_value_zero)
-                                         | (event_flags.regen_enable & ~(event_flags.encoder_value_zero) & ~(event_flags.regen_value_zero));
+        // FIXME: this seems a bit wonky, might need to change it in the future
+        event_flags.send_regen_command = ((event_flags.regen_enable & event_flags.encoder_value_zero)
+                                         | (event_flags.regen_enable & ~event_flags.encoder_value_zero
+                                        	& ~event_flags.regen_value_zero)) & (battery_soc < 98);
         event_flags.send_drive_command = !event_flags.send_regen_command;
 
         // flag_to_signal = 0x0001U -> send normal drive command
@@ -255,7 +287,7 @@ void updateEventFlagsTask(void *argument) {
             flags_to_signal = 0x0002U;
         }
 
-        // now use event flags to signal the above number
+        // now use event flags to signal the appropriate flag
         osEventFlagsSet(inputEventFlagsHandle, flags_to_signal);
     }
 }
