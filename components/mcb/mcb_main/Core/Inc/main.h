@@ -33,6 +33,8 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "cmsis_os.h"
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -62,6 +64,14 @@ extern uint32_t regen_value;
 
 extern CAN_TxHeaderTypeDef drive_command_header;
 extern uint32_t can_mailbox;
+extern CAN_RxHeaderTypeDef CAN_receive_header;
+
+extern uint8_t CAN_receive_data[8];
+
+extern osThreadId_t readEncoderTaskHandle;
+extern osThreadId_t sendMotorCommandTaskHandle;
+extern osThreadId_t readRegenValueTaskHandle;
+extern osThreadId_t updateEventFlagsTaskHandle;
 
 /* USER CODE END ET */
 
@@ -116,7 +126,6 @@ void Error_Handler(void);
 #define ENC_ZS_GPIO_Port GPIOA
 #define ENC_YS_Pin GPIO_PIN_3
 #define ENC_YS_GPIO_Port GPIOB
-
 /* USER CODE BEGIN Private defines */
 
 #define DATA_FRAME_LEN 8
@@ -125,6 +134,9 @@ void Error_Handler(void);
 #define ADC_MIN 0
 
 #define ENCODER_TIMER_TICKS (uint32_t) 1
+
+#define PEDAL_MAX 0xD0
+#define PEDAL_MIN 0x0F
 
 /* USER CODE END Private defines */
 
