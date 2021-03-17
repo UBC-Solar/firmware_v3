@@ -27,7 +27,7 @@ typedef enum {
     PC_DCDC,
     DCDC_PLUS,
     DISABLE_MDU_DCH,
-    CLOSE_NEG,
+    CHECK_LLIM,
     WAIT_FOR_PC,
     LLIM_CLOSED,
     CHECK_HLIM,
@@ -73,7 +73,7 @@ void BMS_ready();
 void DCDC_minus();
 void DCDC_plus();
 void disable_MDU_DCH();
-void close_NEG();
+void check_LLIM();
 void PC_wait();
 void LLIM_closed();
 void check_HLIM();
@@ -98,7 +98,7 @@ void (*FSM_state_table[])(void) = {
     DCDC_minus,
     DCDC_plus,
     disable_MDU_DCH,
-    close_NEG,
+    check_LLIM,
     PC_wait,
     LLIM_closed,
     check_HLIM,
@@ -255,7 +255,7 @@ void disable_MDU_DCH () {
     if (timer_check(MDU_DCH_INTERVAL)) {
         HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, LOW);
         HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, HIGH);
-        FSM_state = CLOSE_NEG;
+        FSM_state = CHECK_LLIM;
     }
     return;
 }
@@ -271,15 +271,15 @@ void disable_MDU_DCH () {
  * Exit Action: -
  * Exit State CHECK_HLIM
  */
-void close_NEG () {
+void check_LLIM () {
     if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == LOW) {
         last_LLIM_status = LOW;
+        FSM_state = CHECK_HLIM;
+    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == HIGH) {
+        last_LLIM_status = HIGH;
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, HIGH);
         last_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_PC;
-    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == HIGH) {
-        last_LLIM_status = HIGH;
-        FSM_state = CHECK_HLIM;
     }
     return;
 }
@@ -329,11 +329,10 @@ void check_HLIM () {
     if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == HIGH) {
         last_HLIM_status = HIGH;
         HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, HIGH);
-    } else if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == LOW) {
+    } else {
         last_HLIM_status = LOW;
     }
 
-// TODO consider this flag var, switch statement?
     if (LVS_power) {
         FSM_state = MONITORING;
     } else {
@@ -352,8 +351,8 @@ void check_HLIM () {
 void DASH_MCB_on() {
     if(timer_check(LVS_INTERVAL)) {
         // HAL_GPIO_WritePin(DASH_MCB_EN_GPIO_Port, DASH_MCB_EN_Pin, HIGH);
+        FSM_state = MDU_ON;
     }
-    FSM_state = MDU_ON;
     return;
 }
 
@@ -366,8 +365,8 @@ void DASH_MCB_on() {
 void MDU_on() {
     if(timer_check(LVS_INTERVAL)) {
         // HAL_GPIO_WritePin(MDU_EN_GPIO_Port, MDU_EN_Pin, HIGH);
+        FSM_state = TELEM_ON;
     }
-    FSM_state = TELEM_ON;
     return;
 }
 
@@ -380,8 +379,8 @@ void MDU_on() {
 void TELEM_on() {
     if(timer_check(LVS_INTERVAL)) {
         // HAL_GPIO_WritePin(TEL_SPAR1_EN_GPIO_Port, TEL_SPAR1_EN_Pin, HIGH);
+        FSM_state = AMB_ON;
     }
-    FSM_state = AMB_ON;
     return;
 }
 
@@ -394,9 +393,9 @@ void TELEM_on() {
 void AMB_on() {
     if(timer_check(LVS_INTERVAL)) {
         // HAL_GPIO_WritePin(AMB_SPAR2_EN_GPIO_Port, AMB_SPAR2_EN_Pin, HIGH);
+        LVS_power = true;
+        FSM_state = MONITORING;
     }
-    LVS_power = true;
-    FSM_state = MONITORING;
     return;
 }
 
@@ -404,7 +403,7 @@ void AMB_on() {
  * @brief Monitors ECU for any faults, monitors voltage levels.
  * 
  * Exit Condition: Fault
- * Exit Action: Go to fault?
+ * Exit Action: Go to fault? Go to fault.
  * Exit State: FAULT
  */
 void ECU_monitor () {
@@ -416,14 +415,14 @@ void ECU_monitor () {
         HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, LOW);
         last_HLIM_status = LOW;
     } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == HIGH && last_LLIM_status == LOW) {
-        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, LOW);
+        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, HIGH);
         last_LLIM_status = HIGH;
-    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == LOW && last_LLIM_status == HIGH) {
-        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, HIGH);
-        last_LLIM_status = LOW;
         last_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_PC;
         return;
+    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == LOW && last_LLIM_status == HIGH) {
+        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, LOW);
+        last_LLIM_status = LOW;
     }
 
     // Fault checking
