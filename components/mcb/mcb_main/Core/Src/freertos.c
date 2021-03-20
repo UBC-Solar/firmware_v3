@@ -277,6 +277,11 @@ void updateEventFlagsTask(void *argument) {
 
         battery_soc = CAN_receive_data[0];
 
+        // if the battery is out of range set it to 100% as a safety measure
+        if (battery_soc < 0 || battery_soc > 100) {
+            battery_soc = 100;
+        }
+
         // should send a regen command if the regen is enabled and either of two things is true:
         // 1) the encoder value is zero OR 2) the encoder value and the regen value is not zero 
         // FIXME: this seems a bit wonky, might need to change it in the future
