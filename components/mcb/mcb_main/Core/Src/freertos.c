@@ -36,8 +36,10 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define ENCODER_QUEUE_MSG_CNT 5
-#define ENCODER_QUEUE_MSG_SIZE 2    /* 2 bytes (uint16_t) */
+#define ENCODER_QUEUE_MSG_CNT   5
+#define ENCODER_QUEUE_MSG_SIZE  2    /* 2 bytes (uint16_t) */
+#define DEFAULT_CRUISE_SPEED    10     /* To be edited */
+#define NUM_MEM_OBJECTS         1
 
 /* USER CODE END PD */
 
@@ -47,7 +49,11 @@
 osThreadId_t readEncoderTaskHandle;
 osThreadId_t sendMotorCommandTaskHandle;
 osThreadId_t sendRegenCommandTaskHandle;
+osThreadId_t sendCruiseCommandTaskHandle;
 osThreadId_t updateEventFlagsTaskHandle;
+
+osMemoryPoolId_t eventMemPoolHandle;
+event_flags *event_Mem;
 
 osTimerId_t encoderTimerHandle;
 
@@ -73,10 +79,17 @@ const osThreadAttr_t defaultTask_attributes = {
 
 void readEncoderTask(void *argument);
 
+void readRegenTask(void *argument);
+
 void updateEventFlagsTask(void *argument);
 
 void sendMotorCommandTask(void *argument);
+
 void sendRegenCommandTask(void *argument);
+
+void sendCruiseCommandTask (void *argument);
+
+void sendCruiseCommandTask(void *argument);
 
 // <----- Timer callback prototypes ----->
 
@@ -95,8 +108,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
     /* USER CODE BEGIN Init */
-
-    encoderTimerHandle = osTimerNew(encoderTimerCallback, osTimerPeriodic, NULL, &encoderTimer_attributes);
+    osStatus_t timer_status;
 
     encoderQueueHandle = osMessageQueueNew(ENCODER_QUEUE_MSG_CNT, ENCODER_QUEUE_MSG_SIZE, &encoderQueue_attributes);
 
@@ -105,14 +117,32 @@ void MX_FREERTOS_Init(void) {
     readEncoderTaskHandle = osThreadNew(readEncoderTask, NULL, &readEncoderTask_attributes);
     
     sendMotorCommandTaskHandle = osThreadNew(sendMotorCommandTask, NULL, &sendMotorCommandTask_attributes);
+
     sendRegenCommandTaskHandle = osThreadNew(sendRegenCommandTask, NULL, &sendRegenCommandTask_attributes);
+
+    sendCruiseCommandTaskHandle = osThreadNew(sendCruiseCommandTask, NULL, &sendCruiseCommandTask_attributes);
 
     updateEventFlagsTaskHandle = osThreadNew(updateEventFlagsTask, NULL, &updateEventFlagsTask_attributes);
 
 
     inputEventFlagsHandle = osEventFlagsNew(NULL);
 
-    osTimerStart(encoderTimerHandle, ENCODER_TIMER_TICKS);
+    eventMemPoolHandle = osMemoryPoolNew(NUM_MEM_OBJECTS, sizeof(event_flags), NULL);
+    event_Mem = osMemoryPoolAlloc(eventMemPoolHandle, 0U);
+
+
+    encoderTimerHandle = osTimerNew(encoderTimerCallback, osTimerPeriodic, NULL, &encoderTimer_attributes);
+    
+    if (encoderTimerHandle != NULL){
+        timer_status = osTimerStart(encoderTimerHandle, ENCODER_TIMER_TICKS);
+        if (timer_status != osOK){
+            // error
+        }
+    }
+    else{
+        // error
+    }
+    
 
     /* USER CODE END Init */
 }
@@ -145,12 +175,13 @@ void readEncoderTask(void *argument) {
 
     while (1) {
         // waits for flags to be set by the timer callback method
+        // Q: Do we want to wait forever? Or wait set amount of ticks before error
         osThreadFlagsWait(0x0001U, osFlagsWaitAny, osWaitForever);
 
         encoder_reading = EncoderRead();
 
         // update the flags struct
-        event_flags.encoder_value_zero = (encoder_reading == 0);
+        event_Mem->encoder_value_zero = (encoder_reading == 0);
 
         // wait for event flag that suggests a normal motor command will be sent
         // only then should the encoder value be added to the thread queue
@@ -174,7 +205,7 @@ void sendMotorCommandTask(void *argument) {
     uint16_t encoder_value;
 
     // velocity is set to unattainable value for motor torque-control mode
-    if (event_flags.reverse_enable) {
+    if (event_Mem->reverse_enable) {
         velocity.float_value = -100.0;
     } else {
         velocity.float_value = 100.0;
@@ -230,6 +261,31 @@ void sendRegenCommandTask(void *argument) {
     }
 }
 
+// thread to send cruise command (velocity-control) CAN message
+void sendCruiseCommandTask (void *argument) {
+    uint8_t data_send[DATA_FRAME_LEN];
+
+    // velocity is set to zero for regen CAN command
+    current.float_value = 100.0;
+
+    while (1) {
+        // waits for event flag that signals the decision to send a regen command
+        osEventFlagsWait(inputEventFlagsHandle, 0x0003U, osFlagsWaitAll, osWaitForever);
+        
+        // current is linearly scaled with the read regen value
+        velocity.float_value = (float) cruise_value;
+
+        // writing data into data_send array which will be sent as a CAN message
+        for (int i = 0; i < DATA_FRAME_LEN / 2; i++) {
+            data_send[i] = velocity.bytes[i];
+            data_send[i + 4] = current.bytes[i];
+        }
+
+        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
+
+        osThreadYield();
+    }
+}
 // updates specific flags to decide which thread will send a CAN message
 void updateEventFlagsTask(void *argument) {
     uint32_t flags_to_signal;
@@ -242,19 +298,23 @@ void updateEventFlagsTask(void *argument) {
 
         // should send a regen command if the regen is enabled and either of two things is true:
         // 1) the encoder value is zero OR 2) the encoder value and the regen value is not zero 
+
         // self note: for cruise: acc to max, velocity to desired speed --> encoder must be non_zero
 
-        event_flags.send_regen_command = (event_flags.regen_enable & event_flags.encoder_value_zero)
-                                         | (event_flags.regen_enable & ~(event_flags.encoder_value_zero) & ~(event_flags.regen_value_zero));
-        event_flag.send_cruise_command = event_flags.cruise_enable & ~(event_flags.encoder_value_zero);
-        event_flags.send_drive_command = !event_flags.send_regen_command & !event_flags.send_cruise_command;
+        event_Mem->send_regen_command = (event_Mem->regen_enable & event_Mem->encoder_value_zero)
+                                         | (event_Mem->regen_enable & ~(event_Mem->encoder_value_zero) 
+                                         & ~(event_Mem->regen_value_zero));
+
+        event_Mem->send_cruise_command = event_Mem->cruise_enable & ~(event_Mem->encoder_value_zero);
+
+        event_Mem->send_drive_command = !event_Mem->send_regen_command & !event_Mem->send_cruise_command;
 
         // flag_to_signal = 0x0001U -> send normal drive command
         // flag_to_signal = 0x0002U -> send regen drive command
-        if (event_flags.send_drive_command) {
+        if (event_Mem->send_drive_command) {
             flags_to_signal = 0x0001U;
         } 
-        else if (event_flags.send_regen_command) {
+        else if (event_Mem->send_regen_command) {
             flags_to_signal = 0x0002U;
         }
         else {

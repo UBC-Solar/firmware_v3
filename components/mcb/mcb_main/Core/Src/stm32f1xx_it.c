@@ -36,6 +36,8 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+#define INC_VALUE 1.0
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -161,7 +163,7 @@ void EXTI1_IRQHandler(void) {
     /* USER CODE BEGIN EXTI1_IRQn 0 */
 
     // EXTI1 corresponds to the REGEN_EN value
-    event_flags.regen_enable = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+    event_Mem->regen_enable = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
 
     /* USER CODE END EXTI1_IRQn 0 */
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
@@ -181,7 +183,7 @@ void EXTI2_IRQHandler(void) {
 
     // EXTI2 corresponds to the BRK_IN value
 
-    event_flags.brake_in = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
+    event_Mem->brake_in = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
 
     /* USER CODE END EXTI2_IRQn 0 */
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
@@ -201,7 +203,7 @@ void EXTI3_IRQHandler(void) {
 
     // EXTI3 corresponds to the RVRS_EN value
 
-    event_flags.reverse_enable = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin);
+    event_Mem->reverse_enable = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin);
 
     /* USER CODE END EXTI3_IRQn 0 */
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
@@ -221,39 +223,89 @@ void EXTI4_IRQHandler(void) {
 
     // EXTI3 corresponds to the CRUISE_EN value
 
-    event_flags.cruise_enable = HAL_GPIO_ReadPin(CRUISE_EN_GPIO_Port, CRUISE_EN_Pin);
+    event_Mem->cruise_enable = HAL_GPIO_ReadPin(CRUISE_EN_GPIO_Port, CRUISE_EN_Pin);
 
-    /* USER CODE END EXTI3_IRQn 0 */
+    /* USER CODE END EXTI4_IRQn 0 */
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
-    /* USER CODE BEGIN EXTI3_IRQn 1 */
+    /* USER CODE BEGIN EXTI4_IRQn 1 */
 
     // flag unblocks the updateFlagsTask
     uint32_t flags = osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
 
-    /* USER CODE END EXTI3_IRQn 1 */
+    /* USER CODE END EXTI4_IRQn 1 */
 }
 
 /**
-  * @brief This function handles EXTI line3 interrupt.
+  * @brief This function handles EXTI line5 interrupt.
   */
 void EXTI5_IRQHandler(void) {
-    /* USER CODE BEGIN EXTI4_IRQn 0 */
+    /* USER CODE BEGIN EXTI5_IRQn 0 */
 
     // EXTI3 corresponds to the CRUISE_EN value
 
-    event_flags.cruise_enable = !(HAL_GPIO_ReadPin(CRUISE_DIS_GPIO_Port, CRUISE_DIS_Pin));
+    event_Mem->cruise_enable = !(HAL_GPIO_ReadPin(CRUISE_DIS_GPIO_Port, CRUISE_DIS_Pin));
 
-    /* USER CODE END EXTI3_IRQn 0 */
+    /* USER CODE END EXTI5_IRQn 0 */
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
-    /* USER CODE BEGIN EXTI3_IRQn 1 */
+    /* USER CODE BEGIN EXTI5_IRQn 1 */
 
     // flag unblocks the updateFlagsTask
     // do we need to update flags here ??
     
     uint32_t flags = osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
 
-    /* USER CODE END EXTI3_IRQn 1 */
+    /* USER CODE END EXTI5_IRQn 1 */
 }
+
+/**
+  * @brief This function handles EXTI line6 interrupt.
+  */
+void EXTI6_IRQHandler(void) {
+    /* USER CODE BEGIN EXTI6_IRQn 0 */
+
+    // EXTI3 corresponds to the CRUISE_EN value
+
+    if(HAL_GPIO_ReadPin(CRUISE_UP_GPIO_Port, CRUISE_UP_Pin)){
+      event_Mem->cruise_value += INC_VALUE;
+    }
+
+    /* USER CODE END EXTI6_IRQn 0 */
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
+    /* USER CODE BEGIN EXTI6_IRQn 1 */
+
+    // flag unblocks the updateFlagsTask
+    // do we need to update flags here ??
+    
+    uint32_t flags = osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
+
+    /* USER CODE END EXTI6_IRQn 1 */
+}
+
+
+/**
+  * @brief This function handles EXTI line7 interrupt.
+  */
+void EXTI7_IRQHandler(void) {
+    /* USER CODE BEGIN EXTI7_IRQn 0 */
+
+    // EXTI3 corresponds to the CRUISE_EN value
+
+    if(HAL_GPIO_ReadPin(CRUISE_DOWN_GPIO_Port, CRUISE_DOWN_Pin)){
+      event_Mem->cruise_value -= INC_VALUE;
+    }
+
+    /* USER CODE END EXTI7_IRQn 0 */
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
+    /* USER CODE BEGIN EXTI7_IRQn 1 */
+
+    // flag unblocks the updateFlagsTask
+    // do we need to update flags here ??
+    
+    uint32_t flags = osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
+
+    /* USER CODE END EXTI7_IRQn 1 */
+}
+
 
 /**
   * @brief This function handles DMA1 channel1 global interrupt.
