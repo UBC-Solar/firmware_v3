@@ -41,6 +41,8 @@ void MX_ADC1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
+void HAL_ADC_ConvCplt_Callback(ADC_HandleTypeDef *hadc);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

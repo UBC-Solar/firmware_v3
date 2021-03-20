@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "cmsis_os.h"
+
 /* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/
@@ -48,6 +50,7 @@ void MX_DMA_Init(void) {
 }
 
 /* USER CODE BEGIN 2 */
+
 
 /* USER CODE END 2 */
 

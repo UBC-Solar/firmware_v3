@@ -170,7 +170,7 @@ void EXTI1_IRQHandler(void) {
     /* USER CODE BEGIN EXTI1_IRQn 1 */
 
     // flag unblocks the updateFlagsTask
-    uint32_t flags = osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
+    osSemaphoreRelease(eventFlagsSemaphoreHandle);
 
     /* USER CODE END EXTI1_IRQn 1 */
 }
@@ -190,7 +190,8 @@ void EXTI2_IRQHandler(void) {
     /* USER CODE BEGIN EXTI2_IRQn 1 */
 
     // flag unblocks the updateFlagsTask
-    uint32_t flags = osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
+    // uint32_t flags = osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
+    osSemaphoreRelease(eventFlagsSemaphoreHandle);
 
     /* USER CODE END EXTI2_IRQn 1 */
 }
@@ -209,8 +210,7 @@ void EXTI3_IRQHandler(void) {
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
     /* USER CODE BEGIN EXTI3_IRQn 1 */
 
-    // flag unblocks the updateFlagsTask
-    uint32_t flags = osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
+    osSemaphoreRelease(eventFlagsSemaphoreHandle);
 
     /* USER CODE END EXTI3_IRQn 1 */
 }

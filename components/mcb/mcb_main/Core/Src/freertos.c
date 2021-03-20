@@ -23,15 +23,20 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
-#include "encoder.h"
-#include "can.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
 #include "attributes.h"
+#include "can.h"
+#include "encoder.h"
 
 /* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
@@ -41,7 +46,17 @@
 #define DEFAULT_CRUISE_SPEED    10     /* To be edited */
 #define NUM_MEM_OBJECTS         1
 
+#define CAN_FIFO0 0
+#define CAN_FIFO1 1
+
+#define INIT_SEMAPHORE_VALUE 0
+
 /* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
@@ -61,8 +76,9 @@ osMessageQueueId_t encoderQueueHandle;
 
 osEventFlagsId_t inputEventFlagsHandle;
 
-/* USER CODE END Variables */
+osSemaphoreId_t eventFlagsSemaphoreHandle;
 
+/* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
@@ -72,7 +88,6 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 
 /* Private function prototypes -----------------------------------------------*/
-
 /* USER CODE BEGIN FunctionPrototypes */
 
 // <----- Thread prototypes ----->
@@ -110,12 +125,16 @@ void MX_FREERTOS_Init(void) {
     /* USER CODE BEGIN Init */
     osStatus_t timer_status;
 
+    // <----- Queue object handles ----->
+
     encoderQueueHandle = osMessageQueueNew(ENCODER_QUEUE_MSG_CNT, ENCODER_QUEUE_MSG_SIZE, &encoderQueue_attributes);
+
+    // <----- Thread object handles ----->
 
     defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
     readEncoderTaskHandle = osThreadNew(readEncoderTask, NULL, &readEncoderTask_attributes);
-    
+
     sendMotorCommandTaskHandle = osThreadNew(sendMotorCommandTask, NULL, &sendMotorCommandTask_attributes);
 
     sendRegenCommandTaskHandle = osThreadNew(sendRegenCommandTask, NULL, &sendRegenCommandTask_attributes);
@@ -124,15 +143,18 @@ void MX_FREERTOS_Init(void) {
 
     updateEventFlagsTaskHandle = osThreadNew(updateEventFlagsTask, NULL, &updateEventFlagsTask_attributes);
 
+    // <----- Event flag object handles ----->
 
     inputEventFlagsHandle = osEventFlagsNew(NULL);
 
     eventMemPoolHandle = osMemoryPoolNew(NUM_MEM_OBJECTS, sizeof(event_flags), NULL);
     event_Mem = osMemoryPoolAlloc(eventMemPoolHandle, 0U);
 
+    eventFlagsSemaphoreHandle = osSemaphoreNew(1, INIT_SEMAPHORE_VALUE, NULL);
+
 
     encoderTimerHandle = osTimerNew(encoderTimerCallback, osTimerPeriodic, NULL, &encoderTimer_attributes);
-    
+
     if (encoderTimerHandle != NULL){
         timer_status = osTimerStart(encoderTimerHandle, ENCODER_TIMER_TICKS);
         if (timer_status != osOK){
@@ -142,9 +164,14 @@ void MX_FREERTOS_Init(void) {
     else{
         // error
     }
-    
+
 
     /* USER CODE END Init */
+
+    /* Create the thread(s) */
+    /* creation of defaultTask */
+    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -245,7 +272,7 @@ void sendRegenCommandTask(void *argument) {
     while (1) {
         // waits for event flag that signals the decision to send a regen command
         osEventFlagsWait(inputEventFlagsHandle, 0x0002U, osFlagsWaitAll, osWaitForever);
-        
+
         // current is linearly scaled with the read regen value
         current.float_value = (float) regen_value / (ADC_MAX - ADC_MIN);
 
@@ -271,7 +298,7 @@ void sendCruiseCommandTask (void *argument) {
     while (1) {
         // waits for event flag that signals the decision to send a regen command
         osEventFlagsWait(inputEventFlagsHandle, 0x0003U, osFlagsWaitAll, osWaitForever);
-        
+
         // current is linearly scaled with the read regen value
         velocity.float_value = (float) cruise_value;
 
@@ -289,12 +316,21 @@ void sendCruiseCommandTask (void *argument) {
 // updates specific flags to decide which thread will send a CAN message
 void updateEventFlagsTask(void *argument) {
     uint32_t flags_to_signal;
+    uint8_t battery_soc;
 
     while (1) {
-        // waits for the EXTI ISRs to set the thread flag
-        osThreadFlagsWait(0x0001U, osFlagsWaitAny, osWaitForever);
+        // waits for the EXTI ISRs to release semaphore (this only happens when the value changes)
+        osSemaphoreAcquire(eventFlagsSemaphoreHandle, osWaitForever);
 
-        // value has been written to the struct, convert this into a number
+        // read battery CAN message here
+        HAL_CAN_GetRxMessage(&hcan, CAN_FIFO0, &CAN_receive_header, CAN_receive_data);
+
+        battery_soc = CAN_receive_data[0];
+
+        // if the battery is out of range set it to 100% as a safety measure
+        if (battery_soc < 0 || battery_soc > 100) {
+            battery_soc = 100;
+        }
 
         // should send a regen command if the regen is enabled and either of two things is true:
         // 1) the encoder value is zero OR 2) the encoder value and the regen value is not zero 
@@ -302,7 +338,7 @@ void updateEventFlagsTask(void *argument) {
         // self note: for cruise: acc to max, velocity to desired speed --> encoder must be non_zero
 
         event_Mem->send_regen_command = (event_Mem->regen_enable & event_Mem->encoder_value_zero)
-                                         | (event_Mem->regen_enable & ~(event_Mem->encoder_value_zero) 
+                                         | (event_Mem->regen_enable & ~(event_Mem->encoder_value_zero)
                                          & ~(event_Mem->regen_value_zero));
 
         event_Mem->send_cruise_command = event_Mem->cruise_enable & ~(event_Mem->encoder_value_zero);
@@ -313,7 +349,7 @@ void updateEventFlagsTask(void *argument) {
         // flag_to_signal = 0x0002U -> send regen drive command
         if (event_Mem->send_drive_command) {
             flags_to_signal = 0x0001U;
-        } 
+        }
         else if (event_Mem->send_regen_command) {
             flags_to_signal = 0x0002U;
         }
@@ -321,7 +357,7 @@ void updateEventFlagsTask(void *argument) {
             flags_to_signal = 0x0003U;
         }
 
-        // now use event flags to signal the above number
+        // now use event flags to signal the appropriate flag
         osEventFlagsSet(inputEventFlagsHandle, flags_to_signal);
     }
 }
