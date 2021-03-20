@@ -76,9 +76,9 @@ osSemaphoreId_t eventFlagsSemaphoreHandle;
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
+        .name = "defaultTask",
+        .priority = (osPriority_t) osPriorityNormal,
+        .stack_size = 128 * 4
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -91,6 +91,7 @@ void readEncoderTask(void *argument);
 void updateEventFlagsTask(void *argument);
 
 void sendMotorCommandTask(void *argument);
+
 void sendRegenCommandTask(void *argument);
 
 // <----- Timer callback prototypes ----->
@@ -109,7 +110,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   * @retval None
   */
 void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+    /* USER CODE BEGIN Init */
 
     // <----- Timer object handles ----->
 
@@ -124,7 +125,7 @@ void MX_FREERTOS_Init(void) {
     defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
     readEncoderTaskHandle = osThreadNew(readEncoderTask, NULL, &readEncoderTask_attributes);
-    
+
     sendMotorCommandTaskHandle = osThreadNew(sendMotorCommandTask, NULL, &sendMotorCommandTask_attributes);
     sendRegenCommandTaskHandle = osThreadNew(sendRegenCommandTask, NULL, &sendRegenCommandTask_attributes);
 
@@ -156,14 +157,13 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
-{
-  /* USER CODE BEGIN StartDefaultTask */
+void StartDefaultTask(void *argument) {
+    /* USER CODE BEGIN StartDefaultTask */
     /* Infinite loop */
     for (;;) {
         osDelay(1);
     }
-  /* USER CODE END StartDefaultTask */
+    /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -247,7 +247,7 @@ void sendRegenCommandTask(void *argument) {
     while (1) {
         // waits for event flag that signals the decision to send a regen command
         osEventFlagsWait(inputEventFlagsHandle, 0x0002U, osFlagsWaitAll, osWaitForever);
-        
+
         // current is linearly scaled with the read regen value
         current.float_value = (float) regen_value / (ADC_MAX - ADC_MIN);
 
@@ -281,8 +281,8 @@ void updateEventFlagsTask(void *argument) {
         // 1) the encoder value is zero OR 2) the encoder value and the regen value is not zero 
         // FIXME: this seems a bit wonky, might need to change it in the future
         event_flags.send_regen_command = ((event_flags.regen_enable & event_flags.encoder_value_zero)
-                                         | (event_flags.regen_enable & ~event_flags.encoder_value_zero
-                                        	& ~event_flags.regen_value_zero)) & (battery_soc < 98);
+                                          | (event_flags.regen_enable & ~event_flags.encoder_value_zero
+                                             & ~event_flags.regen_value_zero)) & (battery_soc < 98);
         event_flags.send_drive_command = !event_flags.send_regen_command;
 
         // flag_to_signal = 0x0001U -> send normal drive command
