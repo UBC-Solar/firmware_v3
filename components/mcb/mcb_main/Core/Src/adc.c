@@ -131,7 +131,7 @@ void HAL_ADC_ConvCplt_Callback(ADC_HandleTypeDef *hadc) {
     event_flags.regen_value_zero = (regen_value == 0);
 
     // send flag to the updateEventFlags task
-    osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
+    osSemaphoreRelease(eventFlagsSemaphoreHandle);
 
 }
 

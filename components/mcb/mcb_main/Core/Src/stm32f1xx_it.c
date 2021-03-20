@@ -174,12 +174,12 @@ void EXTI1_IRQHandler(void)
     // EXTI1 corresponds to the REGEN_EN value
     event_flags.regen_enable = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
 
-  /* USER CODE END EXTI1_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
-  /* USER CODE BEGIN EXTI1_IRQn 1 */
+    /* USER CODE END EXTI1_IRQn 0 */
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
+    /* USER CODE BEGIN EXTI1_IRQn 1 */
 
     // flag unblocks the updateFlagsTask
-    uint32_t flags = osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
+    osSemaphoreRelease(eventFlagsSemaphoreHandle);
 
   /* USER CODE END EXTI1_IRQn 1 */
 }
@@ -189,18 +189,19 @@ void EXTI1_IRQHandler(void)
   */
 void EXTI2_IRQHandler(void)
 {
-  /* USER CODE BEGIN EXTI2_IRQn 0 */
+	/* USER CODE BEGIN EXTI2_IRQn 0 */
 
     // EXTI2 corresponds to the BRK_IN value
 
     event_flags.brake_in = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
 
-  /* USER CODE END EXTI2_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
-  /* USER CODE BEGIN EXTI2_IRQn 1 */
+    /* USER CODE END EXTI2_IRQn 0 */
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
+    /* USER CODE BEGIN EXTI2_IRQn 1 */
 
     // flag unblocks the updateFlagsTask
-    uint32_t flags = osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
+    // uint32_t flags = osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
+    osSemaphoreRelease(eventFlagsSemaphoreHandle);
 
   /* USER CODE END EXTI2_IRQn 1 */
 }
@@ -216,12 +217,11 @@ void EXTI3_IRQHandler(void)
 
     event_flags.reverse_enable = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin);
 
-  /* USER CODE END EXTI3_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
-  /* USER CODE BEGIN EXTI3_IRQn 1 */
+    /* USER CODE END EXTI3_IRQn 0 */
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
+    /* USER CODE BEGIN EXTI3_IRQn 1 */
 
-    // flag unblocks the updateFlagsTask
-    uint32_t flags = osThreadFlagsSet(updateEventFlagsTaskHandle, 0x0001U);
+    osSemaphoreRelease(eventFlagsSemaphoreHandle);
 
   /* USER CODE END EXTI3_IRQn 1 */
 }

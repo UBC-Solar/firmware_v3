@@ -73,6 +73,8 @@ extern osThreadId_t sendMotorCommandTaskHandle;
 extern osThreadId_t readRegenValueTaskHandle;
 extern osThreadId_t updateEventFlagsTaskHandle;
 
+extern osSemaphoreId_t eventFlagsSemaphoreHandle;
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

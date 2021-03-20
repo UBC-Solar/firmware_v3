@@ -47,6 +47,8 @@
 #define CAN_FIFO0 0
 #define CAN_FIFO1 1
 
+#define INIT_SEMAPHORE_VALUE 0
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -67,6 +69,8 @@ osTimerId_t encoderTimerHandle;
 osMessageQueueId_t encoderQueueHandle;
 
 osEventFlagsId_t inputEventFlagsHandle;
+
+osSemaphoreId_t eventFlagsSemaphoreHandle;
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -130,14 +134,18 @@ void MX_FREERTOS_Init(void) {
 
     inputEventFlagsHandle = osEventFlagsNew(NULL);
 
+    // <----- Semaphore object handles ----->
+
+    eventFlagsSemaphoreHandle = osSemaphoreNew(1, INIT_SEMAPHORE_VALUE, NULL);
+
     // FIXME: this needs to be moved to its own thread or the timer won't start
     osTimerStart(encoderTimerHandle, ENCODER_TIMER_TICKS);
 
-  /* USER CODE END Init */
+    /* USER CODE END Init */
 
-  /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+    /* Create the thread(s) */
+    /* creation of defaultTask */
+    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
 }
 
@@ -261,10 +269,8 @@ void updateEventFlagsTask(void *argument) {
     uint8_t battery_soc;
 
     while (1) {
-        // waits for the EXTI ISRs to set the thread flag
-        osThreadFlagsWait(0x0001U, osFlagsWaitAny, osWaitForever);
-
-        // value has been written to the struct, convert this into a number
+        // waits for the EXTI ISRs to release semaphore (this only happens when the value changes)
+        osSemaphoreAcquire(eventFlagsSemaphoreHandle, osWaitForever);
 
         // read battery CAN message here
         HAL_CAN_GetRxMessage(&hcan, CAN_FIFO0, &CAN_receive_header, CAN_receive_data);
