@@ -17,6 +17,15 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
+
+/* Extra Notes
+ * Function of the AMB:
+ * 1. Get voltage, current, temperatures from the solar array using thermistors etc.
+ * 2. Package into CAN messages
+ * 3. Send over the CAN bus.
+ *
+ */
+
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
@@ -38,7 +47,7 @@
  *
  *
  */
-#define ADC_BUF_SIZE	8
+#define ADC_BUF_SIZE	12
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -51,11 +60,22 @@ ADC_HandleTypeDef hadc1;
 
 TIM_HandleTypeDef htim1;
 
+/*
+ * ----ADC1_IN Values----
+ * ADC1_IN0-3: TEMP_1-4
+ * ADC1_IN4: ISENSE2
+ * ADC1_IN5: VSENSE2
+ * ADC1_IN6: VSENSE1
+ * ADC1_IN7: I1
+ * ADC1_IN14-15: TEMP_5-6
+ * ADC1_IN8-9: TEMP_7-8
+ */
+
 /* USER CODE BEGIN PV */
-uint16_t temperatures[ADC_BUF_SIZE]; // array to hold the temperatures
+uint16_t adc_data[ADC_BUF_SIZE]; // array to hold the temperature readings, and voltage and current readings
 uint8_t conv_flag = 0; // flag to indicate when to convert the raw data from ADC to temperature
-uint8_t index = 0; // index for converting values in array
-/* USER CODE END PV */
+uint8_t idx = 0; // index for converting values in array
+/* USER CODE END PV */ // add computation for modifying values in 'while(1)' loop
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -123,7 +143,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+	  // WIP: add functionality for converting values here
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -272,6 +292,8 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
 }
 
