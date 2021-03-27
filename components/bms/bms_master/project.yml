@@ -35,7 +35,6 @@
     - -:test/support
   :source:
     - Core/Src/**
-    - Core/Inc/**
   :support:
     - test/support
   :libraries: []
@@ -99,4 +98,9 @@
   :enabled:
     - stdout_pretty_tests_report
     - module_generator
+    
+:module_generator:
+  :project_root: ./
+  :source_root: Core/Src/
+  :test_root: test/
 ...
