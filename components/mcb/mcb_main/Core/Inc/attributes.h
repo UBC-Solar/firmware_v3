@@ -16,6 +16,8 @@ extern const osThreadAttr_t readRegenValueTask_attributes;
 extern const osThreadAttr_t updateEventFlagsTask_attributes;
 extern const osThreadAttr_t sendRegenCommandTask_attributes;
 
+extern const osThreadAttr_t sendCruiseCommandTask_attributes;
+
 extern const osTimerAttr_t encoderTimer_attributes;
 
 extern const osMessageQueueAttr_t encoderQueue_attributes;
