@@ -1,0 +1,7 @@
+---
+build/test/mocks/mock_ltc6813_btm.c:
+- TEST
+build/test/mocks/mock_ltc6813_btm_bal.c:
+- TEST
+build/test/mocks/mock_stm32f3xx_hal.c:
+- TEST

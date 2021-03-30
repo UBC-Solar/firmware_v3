@@ -7,7 +7,6 @@
  */
 
 #include "selftest.h"
-#include "ltc6813_btm_bal.h"
 #include "stdlib.h"
 
 #define SC_CELLS 2                      // Pins C18 and C12 on LTC6813-1 Slave Board should be shorted.

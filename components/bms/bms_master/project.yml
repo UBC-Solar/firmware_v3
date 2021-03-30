@@ -35,6 +35,9 @@
     - -:test/support
   :source:
     - Core/Src/**
+    - Core/Inc/**
+    - Drivers/CMSIS/Device/ST/STM32F3xx/Include/**
+
   :support:
     - test/support
   :libraries: []
@@ -64,6 +67,9 @@
     uint32:   UINT32
     int8:     INT8
     bool:     UINT8
+  :includes:
+    - <stdbool.h>
+    - <stdint.h>  
 
 # Add -gcov to the plugins list to make sure of the gcov plugin
 # You will need to have gcov and gcovr both installed to make it work.
@@ -101,6 +107,6 @@
     
 :module_generator:
   :project_root: ./
-  :source_root: Core/Src/
+  :source_root: Core/Src
   :test_root: test/
 ...

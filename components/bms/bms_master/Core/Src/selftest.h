@@ -10,6 +10,7 @@
 #define INC_SELFTEST_H_
 
 #include "ltc6813_btm.h"
+#include "ltc6813_btm_bal.h"
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
