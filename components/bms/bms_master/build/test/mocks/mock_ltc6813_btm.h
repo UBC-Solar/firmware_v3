@@ -81,8 +81,8 @@ void BTM_writeRegisterGroup_CMockIgnore(void);
 #define BTM_writeRegisterGroup_StopIgnore() BTM_writeRegisterGroup_CMockStopIgnore()
 void BTM_writeRegisterGroup_CMockStopIgnore(void);
 #define BTM_writeRegisterGroup_Expect(command, tx_data) BTM_writeRegisterGroup_CMockExpect(__LINE__, command, tx_data)
-void BTM_writeRegisterGroup_CMockExpect(UNITY_LINE_TYPE cmock_line, BTM_command_t command, uint8_t* tx_data);
-typedef void (* CMOCK_BTM_writeRegisterGroup_CALLBACK)(BTM_command_t command, uint8_t* tx_data, int cmock_num_calls);
+void BTM_writeRegisterGroup_CMockExpect(UNITY_LINE_TYPE cmock_line, BTM_command_t command, uint8_t** tx_data);
+typedef void (* CMOCK_BTM_writeRegisterGroup_CALLBACK)(BTM_command_t command, uint8_t** tx_data, int cmock_num_calls);
 void BTM_writeRegisterGroup_AddCallback(CMOCK_BTM_writeRegisterGroup_CALLBACK Callback);
 void BTM_writeRegisterGroup_Stub(CMOCK_BTM_writeRegisterGroup_CALLBACK Callback);
 #define BTM_writeRegisterGroup_StubWithCallback BTM_writeRegisterGroup_Stub
@@ -91,8 +91,8 @@ void BTM_readRegisterGroup_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, BTM_
 #define BTM_readRegisterGroup_StopIgnore() BTM_readRegisterGroup_CMockStopIgnore()
 void BTM_readRegisterGroup_CMockStopIgnore(void);
 #define BTM_readRegisterGroup_ExpectAndReturn(command, rx_data, cmock_retval) BTM_readRegisterGroup_CMockExpectAndReturn(__LINE__, command, rx_data, cmock_retval)
-void BTM_readRegisterGroup_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, BTM_command_t command, uint8_t* rx_data, BTM_Status_t cmock_to_return);
-typedef BTM_Status_t (* CMOCK_BTM_readRegisterGroup_CALLBACK)(BTM_command_t command, uint8_t* rx_data, int cmock_num_calls);
+void BTM_readRegisterGroup_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, BTM_command_t command, uint8_t** rx_data, BTM_Status_t cmock_to_return);
+typedef BTM_Status_t (* CMOCK_BTM_readRegisterGroup_CALLBACK)(BTM_command_t command, uint8_t** rx_data, int cmock_num_calls);
 void BTM_readRegisterGroup_AddCallback(CMOCK_BTM_readRegisterGroup_CALLBACK Callback);
 void BTM_readRegisterGroup_Stub(CMOCK_BTM_readRegisterGroup_CALLBACK Callback);
 #define BTM_readRegisterGroup_StubWithCallback BTM_readRegisterGroup_Stub

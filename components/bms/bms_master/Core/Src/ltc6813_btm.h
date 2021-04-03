@@ -37,6 +37,10 @@
 #include "stm32f3xx_hal.h"
 #endif
 
+#ifdef TEST
+#include "stdint.h"
+#endif
+
 /*============================================================================*/
 /* ENUMERATIONS */
 

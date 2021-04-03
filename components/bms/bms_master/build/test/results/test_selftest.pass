@@ -1,0 +1,18 @@
+---
+:source:
+  :path: test
+  :file: test_selftest.c
+:successes: []
+:failures: []
+:ignores:
+- :test: test_selftest_NeedToImplement
+  :line: 20
+  :message: Need to Implement selftest
+  :unity_test_time: 0
+:counts:
+  :total: 1
+  :passed: 0
+  :failed: 0
+  :ignored: 1
+:stdout: []
+:time: 0.02717859999393113

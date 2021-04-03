@@ -72,7 +72,7 @@ typedef struct _CMOCK_BTM_writeRegisterGroup_CALL_INSTANCE
   UNITY_LINE_TYPE LineNumber;
   int CallOrder;
   BTM_command_t Expected_command;
-  uint8_t* Expected_tx_data;
+  uint8_t** Expected_tx_data;
 
 } CMOCK_BTM_writeRegisterGroup_CALL_INSTANCE;
 
@@ -82,7 +82,7 @@ typedef struct _CMOCK_BTM_readRegisterGroup_CALL_INSTANCE
   BTM_Status_t ReturnVal;
   int CallOrder;
   BTM_command_t Expected_command;
-  uint8_t* Expected_rx_data;
+  uint8_t** Expected_rx_data;
 
 } CMOCK_BTM_readRegisterGroup_CALL_INSTANCE;
 
@@ -426,7 +426,7 @@ void BTM_calculatePec15_Stub(CMOCK_BTM_calculatePec15_CALLBACK Callback)
   Mock.BTM_calculatePec15_CallbackFunctionPointer = Callback;
 }
 
-void BTM_init(BTM_PackData_t* pack)
+void BTM_init(BTM_PackData_t * pack)
 {
   UNITY_LINE_TYPE cmock_line = TEST_LINE_NUM;
   CMOCK_BTM_init_CALL_INSTANCE* cmock_call_instance;
@@ -750,7 +750,7 @@ void BTM_sendCmdAndPoll_Stub(CMOCK_BTM_sendCmdAndPoll_CALLBACK Callback)
   Mock.BTM_sendCmdAndPoll_CallbackFunctionPointer = Callback;
 }
 
-void BTM_writeRegisterGroup(BTM_command_t command, uint8_t* tx_data)
+void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][6])
 {
   UNITY_LINE_TYPE cmock_line = TEST_LINE_NUM;
   CMOCK_BTM_writeRegisterGroup_CALL_INSTANCE* cmock_call_instance;
@@ -781,10 +781,7 @@ void BTM_writeRegisterGroup(BTM_command_t command, uint8_t* tx_data)
   }
   {
     UNITY_SET_DETAILS(CMockString_BTM_writeRegisterGroup,CMockString_tx_data);
-    if (cmock_call_instance->Expected_tx_data == NULL)
-      { UNITY_TEST_ASSERT_NULL(tx_data, cmock_line, CMockStringExpNULL); }
-    else
-      { UNITY_TEST_ASSERT_EQUAL_HEX8_ARRAY(cmock_call_instance->Expected_tx_data, tx_data, 1, cmock_line, CMockStringMismatch); }
+    UNITY_TEST_ASSERT_EQUAL_PTR(cmock_call_instance->Expected_tx_data, tx_data, cmock_line, CMockStringMismatch);
   }
   if (Mock.BTM_writeRegisterGroup_CallbackFunctionPointer != NULL)
   {
@@ -793,8 +790,8 @@ void BTM_writeRegisterGroup(BTM_command_t command, uint8_t* tx_data)
   UNITY_CLR_DETAILS();
 }
 
-void CMockExpectParameters_BTM_writeRegisterGroup(CMOCK_BTM_writeRegisterGroup_CALL_INSTANCE* cmock_call_instance, BTM_command_t command, uint8_t* tx_data);
-void CMockExpectParameters_BTM_writeRegisterGroup(CMOCK_BTM_writeRegisterGroup_CALL_INSTANCE* cmock_call_instance, BTM_command_t command, uint8_t* tx_data)
+void CMockExpectParameters_BTM_writeRegisterGroup(CMOCK_BTM_writeRegisterGroup_CALL_INSTANCE* cmock_call_instance, BTM_command_t command, uint8_t** tx_data);
+void CMockExpectParameters_BTM_writeRegisterGroup(CMOCK_BTM_writeRegisterGroup_CALL_INSTANCE* cmock_call_instance, BTM_command_t command, uint8_t** tx_data)
 {
   memcpy((void*)(&cmock_call_instance->Expected_command), (void*)(&command),
          sizeof(BTM_command_t[sizeof(command) == sizeof(BTM_command_t) ? 1 : -1])); /* add BTM_command_t to :treat_as_array if this causes an error */
@@ -811,7 +808,7 @@ void BTM_writeRegisterGroup_CMockStopIgnore(void)
   Mock.BTM_writeRegisterGroup_IgnoreBool = (char)0;
 }
 
-void BTM_writeRegisterGroup_CMockExpect(UNITY_LINE_TYPE cmock_line, BTM_command_t command, uint8_t* tx_data)
+void BTM_writeRegisterGroup_CMockExpect(UNITY_LINE_TYPE cmock_line, BTM_command_t command, uint8_t** tx_data)
 {
   CMOCK_MEM_INDEX_TYPE cmock_guts_index = CMock_Guts_MemNew(sizeof(CMOCK_BTM_writeRegisterGroup_CALL_INSTANCE));
   CMOCK_BTM_writeRegisterGroup_CALL_INSTANCE* cmock_call_instance = (CMOCK_BTM_writeRegisterGroup_CALL_INSTANCE*)CMock_Guts_GetAddressFor(cmock_guts_index);
@@ -838,7 +835,7 @@ void BTM_writeRegisterGroup_Stub(CMOCK_BTM_writeRegisterGroup_CALLBACK Callback)
   Mock.BTM_writeRegisterGroup_CallbackFunctionPointer = Callback;
 }
 
-BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t* rx_data)
+BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][6])
 {
   UNITY_LINE_TYPE cmock_line = TEST_LINE_NUM;
   CMOCK_BTM_readRegisterGroup_CALL_INSTANCE* cmock_call_instance;
@@ -873,10 +870,7 @@ BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t* rx_data)
   }
   {
     UNITY_SET_DETAILS(CMockString_BTM_readRegisterGroup,CMockString_rx_data);
-    if (cmock_call_instance->Expected_rx_data == NULL)
-      { UNITY_TEST_ASSERT_NULL(rx_data, cmock_line, CMockStringExpNULL); }
-    else
-      { UNITY_TEST_ASSERT_EQUAL_HEX8_ARRAY(cmock_call_instance->Expected_rx_data, rx_data, 1, cmock_line, CMockStringMismatch); }
+    UNITY_TEST_ASSERT_EQUAL_PTR(cmock_call_instance->Expected_rx_data, rx_data, cmock_line, CMockStringMismatch);
   }
   if (Mock.BTM_readRegisterGroup_CallbackFunctionPointer != NULL)
   {
@@ -886,8 +880,8 @@ BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t* rx_data)
   return cmock_call_instance->ReturnVal;
 }
 
-void CMockExpectParameters_BTM_readRegisterGroup(CMOCK_BTM_readRegisterGroup_CALL_INSTANCE* cmock_call_instance, BTM_command_t command, uint8_t* rx_data);
-void CMockExpectParameters_BTM_readRegisterGroup(CMOCK_BTM_readRegisterGroup_CALL_INSTANCE* cmock_call_instance, BTM_command_t command, uint8_t* rx_data)
+void CMockExpectParameters_BTM_readRegisterGroup(CMOCK_BTM_readRegisterGroup_CALL_INSTANCE* cmock_call_instance, BTM_command_t command, uint8_t** rx_data);
+void CMockExpectParameters_BTM_readRegisterGroup(CMOCK_BTM_readRegisterGroup_CALL_INSTANCE* cmock_call_instance, BTM_command_t command, uint8_t** rx_data)
 {
   memcpy((void*)(&cmock_call_instance->Expected_command), (void*)(&command),
          sizeof(BTM_command_t[sizeof(command) == sizeof(BTM_command_t) ? 1 : -1])); /* add BTM_command_t to :treat_as_array if this causes an error */
@@ -914,7 +908,7 @@ void BTM_readRegisterGroup_CMockStopIgnore(void)
   Mock.BTM_readRegisterGroup_IgnoreBool = (char)0;
 }
 
-void BTM_readRegisterGroup_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, BTM_command_t command, uint8_t* rx_data, BTM_Status_t cmock_to_return)
+void BTM_readRegisterGroup_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, BTM_command_t command, uint8_t** rx_data, BTM_Status_t cmock_to_return)
 {
   CMOCK_MEM_INDEX_TYPE cmock_guts_index = CMock_Guts_MemNew(sizeof(CMOCK_BTM_readRegisterGroup_CALL_INSTANCE));
   CMOCK_BTM_readRegisterGroup_CALL_INSTANCE* cmock_call_instance = (CMOCK_BTM_readRegisterGroup_CALL_INSTANCE*)CMock_Guts_GetAddressFor(cmock_guts_index);
@@ -943,7 +937,7 @@ void BTM_readRegisterGroup_Stub(CMOCK_BTM_readRegisterGroup_CALLBACK Callback)
   Mock.BTM_readRegisterGroup_CallbackFunctionPointer = Callback;
 }
 
-BTM_Status_t BTM_readBatt(BTM_PackData_t* packData)
+BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 {
   UNITY_LINE_TYPE cmock_line = TEST_LINE_NUM;
   CMOCK_BTM_readBatt_CALL_INSTANCE* cmock_call_instance;
