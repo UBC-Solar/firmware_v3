@@ -50,7 +50,8 @@ extern union float_bytes {
 // this struct is updated when an external interrupt comes in
 // this struct combines a bunch of boolean flags that helps to decide whether to send a regen
 // command or a normal motor command
-extern typedef struct input_flags {
+// TODO: reconsider whether some of these values should belong in this struct or a separate one
+typedef struct input_flags {
   uint8_t regen_enable;
   uint8_t reverse_enable;
   uint8_t cruise_enable;
@@ -60,9 +61,12 @@ extern typedef struct input_flags {
   uint8_t send_regen_command;
   uint8_t send_drive_command;
   uint8_t send_cruise_command;
-  float   cruise_value;
-} event_flags;
+  uint8_t cruise_value;
+} input_flags;
 
+extern input_flags event_flags;
+
+extern input_flags *event_mem;
 
 extern uint32_t regen_value;
 
