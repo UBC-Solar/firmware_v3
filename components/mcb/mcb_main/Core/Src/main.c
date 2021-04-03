@@ -115,35 +115,35 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
 
-    // <----- CAN setup ----->
+  // <----- CAN setup ----->
 
-    // FIXME: can move this elsewhere
-    drive_command_header.StdId = DRIVER_CONTROLS_BASE_ADDRESS + 1;
-    drive_command_header.IDE = CAN_ID_STD;
+  // FIXME: can move this elsewhere
+  drive_command_header.StdId = DRIVER_CONTROLS_BASE_ADDRESS + 1;
+  drive_command_header.IDE = CAN_ID_STD;
 
-    // in this case we are using two 16-bit filters in identifer mask mode
-    // therefore, the high and low values for the FilterID and FilterMask are going to be the same
-    // 0xC4C0 is chosen since its first 11-bits are 0x626 which is the relevant CAN identifier for the battery SOC message
-    CAN_filter.FilterIdHigh = (uint32_t) 0xC4C0;
-    CAN_filter.FilterIdLow = (uint32_t) 0xC4C0;
+  // in this case we are using two 16-bit filters in identifer mask mode
+  // therefore, the high and low values for the FilterID and FilterMask are going to be the same
+  // 0xC4C0 is chosen since its first 11-bits are 0x626 which is the relevant CAN identifier for the battery SOC message
+  CAN_filter.FilterIdHigh = (uint32_t) 0xC4C0;
+  CAN_filter.FilterIdLow = (uint32_t) 0xC4C0;
 
-    // masks away the last 5 bits - the only relevant bits are [15:5] (11-bit identifier)
-    CAN_filter.FilterMaskIdHigh = (uint32_t) 0xFFE0;
-    CAN_filter.FilterMaskIdLow = (uint32_t) 0xFFE0;
+  // masks away the last 5 bits - the only relevant bits are [15:5] (11-bit identifier)
+  CAN_filter.FilterMaskIdHigh = (uint32_t) 0xFFE0;
+  CAN_filter.FilterMaskIdLow = (uint32_t) 0xFFE0;
 
-    CAN_filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-    CAN_filter.FilterBank = (uint32_t) 0;
-    CAN_filter.FilterMode = CAN_FILTERMODE_IDMASK;
-    CAN_filter.FilterScale = CAN_FILTERSCALE_16BIT;
-    CAN_filter.FilterActivation = CAN_FILTER_ENABLE;
+  CAN_filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  CAN_filter.FilterBank = (uint32_t) 0;
+  CAN_filter.FilterMode = CAN_FILTERMODE_IDMASK;
+  CAN_filter.FilterScale = CAN_FILTERSCALE_16BIT;
+  CAN_filter.FilterActivation = CAN_FILTER_ENABLE;
 
-    HAL_CAN_ConfigFilter(&hcan, &CAN_filter);
-    HAL_CAN_Start(&hcan);
+  HAL_CAN_ConfigFilter(&hcan, &CAN_filter);
+  HAL_CAN_Start(&hcan);
 
-    // starting the ADC with DMA
-    // once the conversion is complete, an interrupt is sent
-    // ISR is the HAL_ADC_ConvCpltCallback function
-    HAL_ADC_Start_DMA(&hadc1, &regen_value, 1);
+  // starting the ADC with DMA
+  // once the conversion is complete, an interrupt is sent
+  // ISR is the HAL_ADC_ConvCpltCallback function
+  HAL_ADC_Start_DMA(&hadc1, &regen_value, 1);
 
   /* USER CODE END 2 */
 
@@ -151,7 +151,7 @@ int main(void)
   MX_FREERTOS_Init();
   osKernelStart();
 
-  while (1){
+  while (1) {
   }
 }
 
