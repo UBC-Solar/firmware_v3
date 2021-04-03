@@ -28,7 +28,7 @@ const osThreadAttr_t readRegenValueTask_attributes = {
 };
 
 const osThreadAttr_t sendCruiseCommandTask_attributes = {
-        .name = "readRegenValue",
+        .name = "sendCruiseCommandTask",
         .priority = (osPriority_t) osPriorityHigh,
         .stack_size = 128 * 4
 };
