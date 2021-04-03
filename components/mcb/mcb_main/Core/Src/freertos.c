@@ -68,7 +68,6 @@ osThreadId_t sendCruiseCommandTaskHandle;
 osThreadId_t updateEventFlagsTaskHandle;
 
 osMemoryPoolId_t eventMemPoolHandle;
-osTimerId_t encoderTimerHandle;
 
 osMessageQueueId_t encoderQueueHandle;
 
@@ -99,12 +98,6 @@ void sendMotorCommandTask(void *argument);
 void sendRegenCommandTask(void *argument);
 void sendCruiseCommandTask (void *argument);
 
-void sendCruiseCommandTask(void *argument);
-
-// <----- Timer callback prototypes ----->
-
-static void encoderTimerCallback(void *argument);
-
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -117,8 +110,6 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   * @retval None
   */
 void MX_FREERTOS_Init(void) {
-    /* USER CODE BEGIN Init */
-    osStatus_t timer_status;
 
     // <----- Queue object handles ----->
 
@@ -146,25 +137,11 @@ void MX_FREERTOS_Init(void) {
     eventFlagsSemaphoreHandle = osSemaphoreNew(1, INIT_SEMAPHORE_VALUE, NULL);
 
 
-    encoderTimerHandle = osTimerNew(encoderTimerCallback, osTimerPeriodic, NULL, &encoderTimer_attributes);
+  /* USER CODE END Init */
 
-    if (encoderTimerHandle != NULL){
-        timer_status = osTimerStart(encoderTimerHandle, ENCODER_TIMER_TICKS);
-        if (timer_status != osOK){
-            // error
-        }
-    }
-    else{
-        // error
-    }
-
-
-    /* USER CODE END Init */
-
-    /* Create the thread(s) */
-    /* creation of defaultTask */
-    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
-
+  /* Create the thread(s) */
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -195,18 +172,10 @@ void readEncoderTask(void *argument) {
     EncoderInit();
 
     while (1) {
-        // waits for flags to be set by the timer callback method
-        // Q: Do we want to wait forever? Or wait set amount of ticks before error
-        osThreadFlagsWait(0x0001U, osFlagsWaitAny, osWaitForever);
-
         encoder_reading = EncoderRead();
 
         // update the flags struct
-        event_Mem->encoder_value_zero = (encoder_reading == 0);
-
-        // wait for event flag that suggests a normal motor command will be sent
-        // only then should the encoder value be added to the thread queue
-        osEventFlagsWait(inputEventFlagsHandle, 0x0001U, osFlagsWaitAll, osWaitForever);
+        event_mem->encoder_value_zero = (encoder_reading == 0);
 
         // if the encoder value has changed, then put it in the encoder value queue
         if (encoder_reading != old_encoder_reading) {
@@ -215,7 +184,7 @@ void readEncoderTask(void *argument) {
 
         old_encoder_reading = encoder_reading;
 
-        osThreadYield();
+        osDelay(ENCODER_TIMER_TICKS);
     }
 }
 
@@ -226,7 +195,7 @@ void sendMotorCommandTask(void *argument) {
     uint16_t encoder_value;
 
     // velocity is set to unattainable value for motor torque-control mode
-    if (event_Mem->reverse_enable) {
+    if (event_mem->reverse_enable) {
         velocity.float_value = -100.0;
     } else {
         velocity.float_value = 100.0;
@@ -283,7 +252,7 @@ void sendRegenCommandTask(void *argument) {
 }
 
 // thread to send cruise command (velocity-control) CAN message
-void sendCruiseCommandTask (void *argument) {
+__NO_RETURN void sendCruiseCommandTask (void *argument) {
     uint8_t data_send[DATA_FRAME_LEN];
 
     // velocity is set to zero for regen CAN command
@@ -294,7 +263,7 @@ void sendCruiseCommandTask (void *argument) {
         osEventFlagsWait(inputEventFlagsHandle, 0x0003U, osFlagsWaitAll, osWaitForever);
 
         // current is linearly scaled with the read regen value
-        velocity.float_value = (float) cruise_value;
+        velocity.float_value = (float) event_mem->cruise_value;
 
         // writing data into data_send array which will be sent as a CAN message
         for (int i = 0; i < DATA_FRAME_LEN / 2; i++) {
@@ -316,7 +285,7 @@ void updateEventFlagsTask(void *argument) {
         // waits for the EXTI ISRs to release semaphore (this only happens when the value changes)
         osSemaphoreAcquire(eventFlagsSemaphoreHandle, osWaitForever);
 
-        // read battery CAN message here
+        // read battery CAN message here, filtering done in hardware
         HAL_CAN_GetRxMessage(&hcan, CAN_FIFO0, &CAN_receive_header, CAN_receive_data);
 
         battery_soc = CAN_receive_data[0];
@@ -331,20 +300,24 @@ void updateEventFlagsTask(void *argument) {
 
         // self note: for cruise: acc to max, velocity to desired speed --> encoder must be non_zero
 
-        event_Mem->send_regen_command = (event_Mem->regen_enable & event_Mem->encoder_value_zero)
-                                         | (event_Mem->regen_enable & ~(event_Mem->encoder_value_zero)
-                                         & ~(event_Mem->regen_value_zero));
+        // TODO: convert this to a regular conditional, it is too hard to read and might actually negatively
+        // affect compiler optimizations
+        // TODO: consider replacing with a state machine to remove the possibility of corner cases
+        event_mem->send_regen_command = (event_mem->regen_enable & event_mem->encoder_value_zero)
+                                         | (event_mem->regen_enable & ~(event_mem->encoder_value_zero)
+                                         & ~(event_mem->regen_value_zero)) & (battery_soc < 98);
 
-        event_Mem->send_cruise_command = event_Mem->cruise_enable & ~(event_Mem->encoder_value_zero);
+        event_mem->send_cruise_command = event_mem->cruise_enable & ~(event_mem->encoder_value_zero);
 
-        event_Mem->send_drive_command = !event_Mem->send_regen_command & !event_Mem->send_cruise_command;
+        event_mem->send_drive_command = !event_mem->send_regen_command & !event_mem->send_cruise_command;
 
         // flag_to_signal = 0x0001U -> send normal drive command
         // flag_to_signal = 0x0002U -> send regen drive command
-        if (event_Mem->send_drive_command) {
+        // flag_to_signal = 0x0002U -> send cruise control drive command
+        if (event_mem->send_drive_command) {
             flags_to_signal = 0x0001U;
         }
-        else if (event_Mem->send_regen_command) {
+        else if (event_mem->send_regen_command) {
             flags_to_signal = 0x0002U;
         }
         else {
@@ -354,13 +327,6 @@ void updateEventFlagsTask(void *argument) {
         // now use event flags to signal the appropriate flag
         osEventFlagsSet(inputEventFlagsHandle, flags_to_signal);
     }
-}
-
-// encoder timer callback function
-static void encoderTimerCallback(void *argument) {
-    // 0x0001 => it is time to read the encoder
-    // TODO: change this to a semaphore to make it easier to understand
-    osThreadFlagsSet(readEncoderTaskHandle, 0x0001U);
 }
 
 /* USER CODE END Application */
