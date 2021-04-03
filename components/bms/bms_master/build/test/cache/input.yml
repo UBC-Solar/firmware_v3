@@ -27,7 +27,6 @@
   :source:
   - Core/Src/**
   - Core/Inc/**
-  - Drivers/CMSIS/Device/ST/STM32F3xx/Include/**
   :support:
   - test/support
   :include: []
@@ -78,10 +77,10 @@
   :testfail: ".fail"
   :dependencies: ".d"
 :unity:
-  :vendor_path: C:/Ruby27-x64/lib/ruby/gems/2.7.0/gems/ceedling-0.31.0/vendor
+  :vendor_path: C:/Ruby26-x64/lib/ruby/gems/2.6.0/gems/ceedling-0.31.0/vendor
   :defines: []
 :cmock:
-  :vendor_path: C:/Ruby27-x64/lib/ruby/gems/2.7.0/gems/ceedling-0.31.0/vendor
+  :vendor_path: C:/Ruby26-x64/lib/ruby/gems/2.6.0/gems/ceedling-0.31.0/vendor
   :defines: []
   :includes:
   - "<stdbool.h>"
@@ -102,7 +101,7 @@
   :verbosity: 3
   :unity_helper: false
 :cexception:
-  :vendor_path: C:/Ruby27-x64/lib/ruby/gems/2.7.0/gems/ceedling-0.31.0/vendor
+  :vendor_path: C:/Ruby26-x64/lib/ruby/gems/2.6.0/gems/ceedling-0.31.0/vendor
   :defines: []
 :test_runner:
   :includes: []
@@ -226,13 +225,13 @@
   :arguments: []
 :plugins:
   :load_paths:
-  - C:/Ruby27-x64/lib/ruby/gems/2.7.0/gems/ceedling-0.31.0/lib/../plugins
+  - C:/Ruby26-x64/lib/ruby/gems/2.6.0/gems/ceedling-0.31.0/lib/../plugins
   :enabled:
   - stdout_pretty_tests_report
   - module_generator
   :display_raw_test_results: false
-  :stdout_pretty_tests_report_path: C:/Ruby27-x64/lib/ruby/gems/2.7.0/gems/ceedling-0.31.0/lib/../plugins/stdout_pretty_tests_report
-  :module_generator_path: C:/Ruby27-x64/lib/ruby/gems/2.7.0/gems/ceedling-0.31.0/lib/../plugins/module_generator
+  :stdout_pretty_tests_report_path: C:/Ruby26-x64/lib/ruby/gems/2.6.0/gems/ceedling-0.31.0/lib/../plugins/stdout_pretty_tests_report
+  :module_generator_path: C:/Ruby26-x64/lib/ruby/gems/2.6.0/gems/ceedling-0.31.0/lib/../plugins/module_generator
 :gcov:
   :reports:
   - HtmlDetailed

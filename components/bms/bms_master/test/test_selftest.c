@@ -6,7 +6,6 @@
 
 #include "mock_ltc6813_btm.h"
 #include "mock_ltc6813_btm_bal.h"
-#include "mock_stm32f3xx_hal.h"
 
 void setUp(void)
 {

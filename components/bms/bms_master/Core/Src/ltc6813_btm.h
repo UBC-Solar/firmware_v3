@@ -33,7 +33,9 @@
 #ifndef INC_LTC6813_BTM_H_
 #define INC_LTC6813_BTM_H_
 
+#ifndef TEST
 #include "stm32f3xx_hal.h"
+#endif
 
 /*============================================================================*/
 /* ENUMERATIONS */
@@ -311,7 +313,9 @@ typedef struct {
 
 // BTM_SPI_handle - must set this variable to the HAL SPI handle corresponding
 // to the SPI peripheral to which the LTC devices are connected
+#ifndef TEST
 SPI_HandleTypeDef * BTM_SPI_handle;
+#endif
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */

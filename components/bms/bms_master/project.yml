@@ -36,7 +36,6 @@
   :source:
     - Core/Src/**
     - Core/Inc/**
-    - Drivers/CMSIS/Device/ST/STM32F3xx/Include/**
 
   :support:
     - test/support
