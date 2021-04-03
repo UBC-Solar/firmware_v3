@@ -68,8 +68,6 @@ osThreadId_t sendCruiseCommandTaskHandle;
 osThreadId_t updateEventFlagsTaskHandle;
 
 osMemoryPoolId_t eventMemPoolHandle;
-event_flags *event_Mem;
-
 osTimerId_t encoderTimerHandle;
 
 osMessageQueueId_t encoderQueueHandle;
@@ -78,13 +76,15 @@ osEventFlagsId_t inputEventFlagsHandle;
 
 osSemaphoreId_t eventFlagsSemaphoreHandle;
 
+input_flags *event_mem;
+
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-        .name = "defaultTask",
-        .priority = (osPriority_t) osPriorityNormal,
-        .stack_size = 128 * 4
+  .name = "defaultTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,15 +93,10 @@ const osThreadAttr_t defaultTask_attributes = {
 // <----- Thread prototypes ----->
 
 void readEncoderTask(void *argument);
-
 void readRegenTask(void *argument);
-
 void updateEventFlagsTask(void *argument);
-
 void sendMotorCommandTask(void *argument);
-
 void sendRegenCommandTask(void *argument);
-
 void sendCruiseCommandTask (void *argument);
 
 void sendCruiseCommandTask(void *argument);
@@ -136,9 +131,7 @@ void MX_FREERTOS_Init(void) {
     readEncoderTaskHandle = osThreadNew(readEncoderTask, NULL, &readEncoderTask_attributes);
 
     sendMotorCommandTaskHandle = osThreadNew(sendMotorCommandTask, NULL, &sendMotorCommandTask_attributes);
-
     sendRegenCommandTaskHandle = osThreadNew(sendRegenCommandTask, NULL, &sendRegenCommandTask_attributes);
-
     sendCruiseCommandTaskHandle = osThreadNew(sendCruiseCommandTask, NULL, &sendCruiseCommandTask_attributes);
 
     updateEventFlagsTaskHandle = osThreadNew(updateEventFlagsTask, NULL, &updateEventFlagsTask_attributes);
@@ -148,7 +141,7 @@ void MX_FREERTOS_Init(void) {
     inputEventFlagsHandle = osEventFlagsNew(NULL);
 
     eventMemPoolHandle = osMemoryPoolNew(NUM_MEM_OBJECTS, sizeof(event_flags), NULL);
-    event_Mem = osMemoryPoolAlloc(eventMemPoolHandle, 0U);
+    event_mem = osMemoryPoolAlloc(eventMemPoolHandle, 0U);
 
     eventFlagsSemaphoreHandle = osSemaphoreNew(1, INIT_SEMAPHORE_VALUE, NULL);
 
@@ -181,19 +174,20 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument) {
-    /* USER CODE BEGIN StartDefaultTask */
+void StartDefaultTask(void *argument)
+{
+  /* USER CODE BEGIN StartDefaultTask */
     /* Infinite loop */
     for (;;) {
         osDelay(1);
     }
-    /* USER CODE END StartDefaultTask */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
-// reads the encoder and places the value in the encoder queue every 1ms
+// reads the encoder and places the value in the encoder queue every OS tick
 void readEncoderTask(void *argument) {
     uint16_t encoder_reading;
     uint16_t old_encoder_reading = 0x0000U;
