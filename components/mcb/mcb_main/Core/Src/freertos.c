@@ -78,13 +78,6 @@ osSemaphoreId_t eventFlagsSemaphoreHandle;
 input_flags *event_mem;
 
 /* USER CODE END Variables */
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
-};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -100,7 +93,6 @@ void sendCruiseCommandTask (void *argument);
 
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -110,14 +102,13 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   * @retval None
   */
 void MX_FREERTOS_Init(void) {
+    /* USER CODE BEGIN Init */
 
     // <----- Queue object handles ----->
 
     encoderQueueHandle = osMessageQueueNew(ENCODER_QUEUE_MSG_CNT, ENCODER_QUEUE_MSG_SIZE, &encoderQueue_attributes);
 
     // <----- Thread object handles ----->
-
-    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
     readEncoderTaskHandle = osThreadNew(readEncoderTask, NULL, &readEncoderTask_attributes);
 
@@ -136,35 +127,18 @@ void MX_FREERTOS_Init(void) {
 
     eventFlagsSemaphoreHandle = osSemaphoreNew(1, INIT_SEMAPHORE_VALUE, NULL);
 
-
   /* USER CODE END Init */
-
-  /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
-}
-
-/* USER CODE BEGIN Header_StartDefaultTask */
-/**
-  * @brief  Function implementing the defaultTask thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
-{
-  /* USER CODE BEGIN StartDefaultTask */
-    /* Infinite loop */
-    for (;;) {
-        osDelay(1);
-    }
-  /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
 // reads the encoder and places the value in the encoder queue every OS tick
+/**
+  * @brief  reads the encoder and places the value in the encoder queue every OS tick
+  * @param  argument: Not used
+  * @retval None
+  */
 void readEncoderTask(void *argument) {
     uint16_t encoder_reading;
     uint16_t old_encoder_reading = 0x0000U;
