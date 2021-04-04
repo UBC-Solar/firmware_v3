@@ -9,6 +9,8 @@
 
 // <----- RTOS object attributes ----->
 
+// TODO: tweak stack sizes and priorities at some point
+
 const osThreadAttr_t readEncoderTask_attributes = {
         .name = "readEncoder",
         .priority = (osPriority_t) osPriorityHigh,
