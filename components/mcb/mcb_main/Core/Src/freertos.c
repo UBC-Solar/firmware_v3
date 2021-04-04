@@ -33,11 +33,6 @@
 
 /* USER CODE END Includes */
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
@@ -53,12 +48,8 @@
 
 /* USER CODE END PD */
 
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
 /* Private variables ---------------------------------------------------------*/
+
 /* USER CODE BEGIN Variables */
 
 osThreadId_t readEncoderTaskHandle;
@@ -80,9 +71,8 @@ input_flags *event_mem;
 /* USER CODE END Variables */
 
 /* Private function prototypes -----------------------------------------------*/
-/* USER CODE BEGIN FunctionPrototypes */
 
-// <----- Thread prototypes ----->
+/* USER CODE BEGIN FunctionPrototypes */
 
 void readEncoderTask(void *argument);
 void readRegenTask(void *argument);
@@ -93,13 +83,10 @@ void sendCruiseCommandTask (void *argument);
 
 /* USER CODE END FunctionPrototypes */
 
-
-void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+void MX_FREERTOS_Init(void);
 
 /**
   * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
   */
 void MX_FREERTOS_Init(void) {
     /* USER CODE BEGIN Init */
@@ -122,8 +109,12 @@ void MX_FREERTOS_Init(void) {
 
     inputEventFlagsHandle = osEventFlagsNew(NULL);
 
+    // <----- Memory pool object handles ----->
+
     eventMemPoolHandle = osMemoryPoolNew(NUM_MEM_OBJECTS, sizeof(event_flags), NULL);
     event_mem = osMemoryPoolAlloc(eventMemPoolHandle, 0U);
+
+    // <----- Semaphore object handles ----->
 
     eventFlagsSemaphoreHandle = osSemaphoreNew(1, INIT_SEMAPHORE_VALUE, NULL);
 
@@ -133,7 +124,6 @@ void MX_FREERTOS_Init(void) {
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
-// reads the encoder and places the value in the encoder queue every OS tick
 /**
   * @brief  reads the encoder and places the value in the encoder queue every OS tick
   * @param  argument: Not used
@@ -162,7 +152,11 @@ void readEncoderTask(void *argument) {
     }
 }
 
-// thread to send motor command (torque-control) CAN message
+/**
+  * @brief  sends motor command (torque-control) CAN message once encoder value is read
+  * @param  argument: Not used
+  * @retval None
+  */
 void sendMotorCommandTask(void *argument) {
     uint8_t data_send[DATA_FRAME_LEN];
     osStatus_t status;
@@ -183,7 +177,7 @@ void sendMotorCommandTask(void *argument) {
             // current is linearly scaled to pedal position
             current.float_value = (float) encoder_value / (PEDAL_MAX - PEDAL_MIN);
         } else {
-            // FIXME: change this to better deal with a failure to retrieve value from queue
+            // FIXME: could maybe output to UART for debugging or even send a CAN message
             osThreadYield();
         }
 
@@ -199,7 +193,11 @@ void sendMotorCommandTask(void *argument) {
     }
 }
 
-// thread to send regen command (velocity control) CAN message
+/**
+  * @brief  sends regen command (velocity control) CAN message 
+  * @param  argument: Not used
+  * @retval None
+  */
 void sendRegenCommandTask(void *argument) {
     uint8_t data_send[DATA_FRAME_LEN];
 
@@ -225,18 +223,22 @@ void sendRegenCommandTask(void *argument) {
     }
 }
 
-// thread to send cruise command (velocity-control) CAN message
+/**
+  * @brief  sends cruise-control command (velocity control) CAN message 
+  * @param  argument: Not used
+  * @retval None
+  */
 __NO_RETURN void sendCruiseCommandTask (void *argument) {
     uint8_t data_send[DATA_FRAME_LEN];
 
-    // velocity is set to zero for regen CAN command
+    // current set to maximum for a cruise control message
     current.float_value = 100.0;
 
     while (1) {
-        // waits for event flag that signals the decision to send a regen command
+        // waits for event flag that signals the decision to send a cruise control command
         osEventFlagsWait(inputEventFlagsHandle, 0x0003U, osFlagsWaitAll, osWaitForever);
 
-        // current is linearly scaled with the read regen value
+        // set velocity to cruise value
         velocity.float_value = (float) event_mem->cruise_value;
 
         // writing data into data_send array which will be sent as a CAN message
@@ -256,7 +258,7 @@ void updateEventFlagsTask(void *argument) {
     uint8_t battery_soc;
 
     while (1) {
-        // waits for the EXTI ISRs to release semaphore (this only happens when the value changes)
+        // waits for the event flags struct to change
         osSemaphoreAcquire(eventFlagsSemaphoreHandle, osWaitForever);
 
         // read battery CAN message here, filtering done in hardware
@@ -267,6 +269,7 @@ void updateEventFlagsTask(void *argument) {
         // if the battery is out of range set it to 100% as a safety measure
         if (battery_soc < 0 || battery_soc > 100) {
             battery_soc = 100;
+            // TODO: somehow indicate to the outside world that this has happened
         }
 
         // should send a regen command if the regen is enabled and either of two things is true:
@@ -287,7 +290,7 @@ void updateEventFlagsTask(void *argument) {
 
         // flag_to_signal = 0x0001U -> send normal drive command
         // flag_to_signal = 0x0002U -> send regen drive command
-        // flag_to_signal = 0x0002U -> send cruise control drive command
+        // flag_to_signal = 0x0003U -> send cruise control drive command
         if (event_mem->send_drive_command) {
             flags_to_signal = 0x0001U;
         }
