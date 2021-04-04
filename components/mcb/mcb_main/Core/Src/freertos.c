@@ -130,8 +130,9 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 void readEncoderTask(void *argument) {
+    // this variable needs to exist throughout the runtime of the program 
+    static uint16_t old_encoder_reading = 0x0000U;
     uint16_t encoder_reading;
-    uint16_t old_encoder_reading = 0x0000U;
 
     EncoderInit();
 
