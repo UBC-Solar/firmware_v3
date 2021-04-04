@@ -1,81 +1,23 @@
-#include "stm32f10x.h"
+#include "stm32f1xx_hal.h"
+#include "LCD.c"
 
-/************************************************************************
-Header file containing all constants and function declarations to the LCD
-*************************************************************************/
-/*****************************
- ** DECLARES BUS CONNECTIONS**
- *****************************/
-#define BYTEPERBITMAP 16
-#define LOOKUP_COLUMN 4
-#define LOOKUP_ROW 41
-#define OFFSET_NUMERIC 22
-#define OFFSET_CAPITAL 65
-#define OFFSET_LOWCASE 97
+/******************************
+ ** DECLARES BUS CONNECTIONS **
+ ******************************/
 
-//COLUMN 1
+//TODO: add all the CAN IDs from the BOM (later)
+// MESSAGE ID
+#define BATT_FAULTS 0x622
+#define BATT_VOLTAGE 0x623
+#define BATT_PACK_HEALTH 0x626
+#define BATT_TEMP 0x267
+#define MDU_STATUS_INFORMATION 0x501
+#define MDU_VELOCITY 0x503
+#define MDU_MOTOR_TEMP 0x50B
 
-#define BATTERY_CURRENT_XPOS 0
-#define BATTERY_CURRENT_YPOS 0
-#define BATTERY_CURRENT_UNIT_XPOS 18
-#define BATTERY_CURRENT_UNIT_YPOS 0
+// COLUMN 1
 
-#define BATTERY_VOLTAGE_XPOS 0
-#define BATTERY_VOLTAGE_YPOS 3
-#define BATTERY_VOLTAGE_UNIT_XPOS 18
-#define BATTERY_VOLTAGE_UNIT_YPOS 3
-
-#define MOTOR_CURRENT_XPOS 0
-#define MOTOR_CURRENT_YPOS 6
-#define MOTOR_CURRENT_UNIT_XPOS 18
-#define MOTOR_CURRENT_UNIT_YPOS 6
-
-#define MOTOR_TEMP_XPOS 0
-#define MOTOR_TEMP_YPOS 9
-#define MOTOR_TEMP_UNIT_XPOS 18
-#define MOTOR_TEMP_UNIT_YPOS 9
-
-#define MOTOR_SPEED_XPOS 0
-#define MOTOR_SPEED_YPOS 12
-#define MOTOR_SPEED_UNIT_XPOS 18
-#define MOTOR_SPEED_UNIT_YPOS 12
-
-//COLUMN 2
-
-#define BATTERY_MINVOLT_XPOS 20
-#define BATTERY_MINVOLT_YPOS 0
-#define BATTERY_MINVOLT_UNIT_XPOS 37
-#define BATTERY_MINVOLT_UNIT_YPOS 0
-
-#define BATTERY_MAXVOLT_XPOS 20
-#define BATTERY_MAXVOLT_YPOS 3
-#define BATTERY_MAXVOLT_UNIT_XPOS 37
-#define BATTERY_MAXVOLT_UNIT_YPOS 3
-
-#define BATTERY_SUPPVOLT_XPOS 20
-#define BATTERY_SUPPVOLT_YPOS 6
-#define BATTERY_SUPPVOLT_UNIT_XPOS 37
-#define BATTERY_SUPPVOLT_UNIT_YPOS 6
-
-#define BATTERY_MAXTEMP_XPOS 20
-#define BATTERY_MAXTEMP_YPOS 9
-#define BATTERY_MAXTEMP_UNIT_XPOS 37
-#define BATTERY_MAXTEMP_UNIT_YPOS 9
-
-#define BATTERY_CHARGE_XPOS 22
-#define BATTERY_CHARGE_YPOS 12
-
-//DEPRECATED
-#define ARRAY_MAXTEMP_XPOS 20
-#define ARRAY_MAXTEMP_YPOS 0
-#define ARRAY_MAXTEMP_UNIT_XPOS 37
-#define ARRAY_MAXTEMP_UNIT_YPOS 3
-
-//DEPRECATED
-#define CHARGE_BAR_YPOS 12
-
-#define HIGH 1
-#define LOW 0
+// COLUMN 2
 
 /**
  * Write a byte of data through C3 to C10(Data Buses)

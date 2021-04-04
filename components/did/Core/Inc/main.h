@@ -38,6 +38,18 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
+
+extern typedef struct
+{
+	uint16_t id;
+	uint8_t  data[8];
+	uint8_t  len;
+} CAN_msg_t;
+
+extern CAN_FilterTypeDef CAN_filter;
+extern CAN_RxHeaderTypeDef CAN_rx_header;
+
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

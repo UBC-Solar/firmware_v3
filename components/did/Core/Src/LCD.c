@@ -1,5 +1,3 @@
-#include "LCD.h"
-
 /**
  * A Delay with a value of ~1ms
  * @Param counts: Number of milliseconds

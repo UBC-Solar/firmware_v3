@@ -19,11 +19,13 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "LCD.h"
-// #include "can.h"
+#include "can.h"
+#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include "LCD.h"
 
 /* USER CODE END Includes */
 
@@ -34,6 +36,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -45,11 +48,15 @@
 
 /* USER CODE BEGIN PV */
 
+CAN_FilterTypeDef CAN_filter;
+CAN_RxHeaderTypeDef CAN_rx_header;
+
+CAN_msg_t CAN_rx_msg;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -87,7 +94,15 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_CAN_Init(); //TODO: what about HAL_CAN_Init() and HAL_CAN_MspInit()?
+
   /* USER CODE BEGIN 2 */
+
+  CanFilterSetup(&CAN_filter);
+
+  InitialiseLCDPins();
+  ScreenSetup();
+
 
   /* USER CODE END 2 */
 
@@ -95,6 +110,50 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+      //TODO: display initial screen parameters
+	  //TODO: receive CAN message and update screen parameters
+	  if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != NULL)
+	  {
+
+		  //TODO: take data from FIFO mailboxes and populate the CAN_rx_msg struct members (data, len, id)
+		  // what values correspond to the ID and data frame?
+		  // how will the ID and data frame be stored?
+          HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_msg.data);
+
+		  switch (CAN_rx_header.StdId)
+		  {
+		  	  case (CAN_rx_header.StdId == BATT_FAULTS):
+				  //OutputString("BATT_FAULTS: 0x622", 10, 10);
+		  	  	  //UpdateScreenParameter(uint8_t x, uint8_t y, int32_t integerValue, uint8_t decValue)
+		  	  	  break;
+			  case (CAN_rx_header.StdId == BATT_VOLTAGE):
+				  //OutputString("BATT_VOLTAGE: 0x623", 10, 10);
+				  //UpdateScreenParameter(uint8_t x, uint8_t y, int32_t integerValue, uint8_t decValue)
+				  break;
+		  }
+	  }
+
+	  /**
+	  * bare-metal CAN receive logic without HAL
+	  *
+	  if (CanMsgAvail())
+	  {
+		  CanReceive(&CAN_rx_msg);
+		  switch (CAN_rx_msg.id)
+		  {
+		  	  case (CAN_rx_msg.id == BATT_FAULTS):
+				  OutputString("BATT_FAULTS: 0x622", 10, 10);
+		  	  	  //UpdateScreenParameter(uint8_t x, uint8_t y, int32_t integerValue, uint8_t decValue)
+		  	  	  break;
+			  case (CAN_rx_msg.id == BATT_VOLTAGE):
+				  OutputString("BATT_VOLTAGE: 0x623", 10, 10);
+				  //UpdateScreenParameter(uint8_t x, uint8_t y, int32_t integerValue, uint8_t decValue)
+				  break;
+		  }
+
+	  }
+	  */
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -135,39 +194,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-}
-
-/**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPIO_Init(void)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, A0_Pin|WR_Pin|RD_Pin|DB0_Pin
-                          |DB1_Pin|DB2_Pin|DB3_Pin|DB4_Pin
-                          |DB5_Pin|DB6_Pin|DB7_Pin|CS_Pin
-                          |RES_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pins : A0_Pin WR_Pin RD_Pin DB0_Pin
-                           DB1_Pin DB2_Pin DB3_Pin DB4_Pin
-                           DB5_Pin DB6_Pin DB7_Pin CS_Pin
-                           RES_Pin */
-  GPIO_InitStruct.Pin = A0_Pin|WR_Pin|RD_Pin|DB0_Pin
-                          |DB1_Pin|DB2_Pin|DB3_Pin|DB4_Pin
-                          |DB5_Pin|DB6_Pin|DB7_Pin|CS_Pin
-                          |RES_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
 }
 
 /* USER CODE BEGIN 4 */
