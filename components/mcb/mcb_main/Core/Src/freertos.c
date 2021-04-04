@@ -129,7 +129,7 @@ void MX_FREERTOS_Init(void) {
   * @param  argument: Not used
   * @retval None
   */
-void readEncoderTask(void *argument) {
+__NO_RETURN void readEncoderTask(void *argument) {
     // this variable needs to exist throughout the runtime of the program 
     static uint16_t old_encoder_reading = 0x0000U;
     uint16_t encoder_reading;
@@ -160,7 +160,7 @@ void readEncoderTask(void *argument) {
   * @param  argument: Not used
   * @retval None
   */
-void sendMotorCommandTask(void *argument) {
+__NO_RETURN void sendMotorCommandTask(void *argument) {
     uint8_t data_send[DATA_FRAME_LEN];
     osStatus_t status;
     uint16_t encoder_value;
@@ -201,7 +201,7 @@ void sendMotorCommandTask(void *argument) {
   * @param  argument: Not used
   * @retval None
   */
-void sendRegenCommandTask(void *argument) {
+__NO_RETURN void sendRegenCommandTask(void *argument) {
     uint8_t data_send[DATA_FRAME_LEN];
 
     // velocity is set to zero for regen CAN command
@@ -256,7 +256,7 @@ __NO_RETURN void sendCruiseCommandTask (void *argument) {
     }
 }
 // updates specific flags to decide which thread will send a CAN message
-void updateEventFlagsTask(void *argument) {
+__NO_RETURN void updateEventFlagsTask(void *argument) {
     uint32_t flags_to_signal;
     uint8_t battery_soc;
 
