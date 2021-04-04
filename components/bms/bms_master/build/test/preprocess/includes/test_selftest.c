@@ -3,3 +3,4 @@
 - Core/Src/selftest.h
 - build/test/mocks/mock_ltc6813_btm.h
 - build/test/mocks/mock_ltc6813_btm_bal.h
+- Core/Src/selftest.c

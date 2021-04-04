@@ -13,7 +13,9 @@ char* GlobalOrderError;
 /*=======External Functions This Runner Calls=====*/
 extern void setUp(void);
 extern void tearDown(void);
-extern void test_selftest_NeedToImplement(void);
+extern void test1();
+extern void test_itmpConversion();
+extern void test_checkLTCtemp();
 
 
 /*=======Mock Management=====*/
@@ -84,7 +86,9 @@ static void run_test(UnityTestFunction func, const char* name, UNITY_LINE_TYPE l
 int main(void)
 {
   UnityBegin("test_selftest.c");
-  run_test(test_selftest_NeedToImplement, "test_selftest_NeedToImplement", 18);
+  run_test(test1, "test1", 24);
+  run_test(test_itmpConversion, "test_itmpConversion", 29);
+  run_test(test_checkLTCtemp, "test_checkLTCtemp", 40);
 
   CMock_Guts_MemFreeFinal();
   return UnityEnd();

@@ -2,17 +2,26 @@
 :source:
   :path: test
   :file: test_selftest.c
-:successes: []
-:failures: []
-:ignores:
-- :test: test_selftest_NeedToImplement
-  :line: 20
-  :message: Need to Implement selftest
+:successes:
+- :test: test1
+  :line: 24
+  :message: ''
   :unity_test_time: 0
+- :test: test_itmpConversion
+  :line: 29
+  :message: ''
+  :unity_test_time: 0
+- :test: test_checkLTCtemp
+  :line: 40
+  :message: ''
+  :unity_test_time: 0
+:failures: []
+:ignores: []
 :counts:
-  :total: 1
-  :passed: 0
+  :total: 3
+  :passed: 3
   :failed: 0
-  :ignored: 1
-:stdout: []
-:time: 0.02717859999393113
+  :ignored: 0
+:stdout:
+- 'converted temp: 25.002409'
+:time: 0.02280490001430735
