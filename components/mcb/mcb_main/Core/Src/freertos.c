@@ -142,6 +142,8 @@ void readEncoderTask(void *argument) {
         // update the flags struct
         event_mem->encoder_value_zero = (encoder_reading == 0);
 
+        osSemaphoreRelease(eventFlagsSemaphoreHandle);
+
         // if the encoder value has changed, then put it in the encoder value queue
         if (encoder_reading != old_encoder_reading) {
             osMessageQueuePut(encoderQueueHandle, &encoder_reading, 0U, 0U);
