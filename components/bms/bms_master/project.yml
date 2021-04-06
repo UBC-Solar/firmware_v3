@@ -61,6 +61,7 @@
     - :ignore
     - :callback
     - :array
+    - :ignore_arg
   :treat_as:
     uint8:    HEX8
     uint16:   HEX16

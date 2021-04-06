@@ -13,9 +13,12 @@ char* GlobalOrderError;
 /*=======External Functions This Runner Calls=====*/
 extern void setUp(void);
 extern void tearDown(void);
-extern void test1();
 extern void test_itmpConversion();
-extern void test_checkLTCtemp();
+extern void test_checkLTCtemp1();
+extern void test_checkLTCtemp2();
+extern void test_checkLTCtemp3();
+extern void test_shiftDchStatus0();
+extern void test_shiftDchStatus1();
 
 
 /*=======Mock Management=====*/
@@ -86,9 +89,12 @@ static void run_test(UnityTestFunction func, const char* name, UNITY_LINE_TYPE l
 int main(void)
 {
   UnityBegin("test_selftest.c");
-  run_test(test1, "test1", 24);
-  run_test(test_itmpConversion, "test_itmpConversion", 29);
-  run_test(test_checkLTCtemp, "test_checkLTCtemp", 40);
+  run_test(test_itmpConversion, "test_itmpConversion", 24);
+  run_test(test_checkLTCtemp1, "test_checkLTCtemp1", 35);
+  run_test(test_checkLTCtemp2, "test_checkLTCtemp2", 44);
+  run_test(test_checkLTCtemp3, "test_checkLTCtemp3", 56);
+  run_test(test_shiftDchStatus0, "test_shiftDchStatus0", 71);
+  run_test(test_shiftDchStatus1, "test_shiftDchStatus1", 92);
 
   CMock_Guts_MemFreeFinal();
   return UnityEnd();

@@ -1,0 +1,40 @@
+---
+:source:
+  :path: test
+  :file: test_selftest.c
+:successes:
+- :test: test_itmpConversion
+  :line: 24
+  :message: ''
+  :unity_test_time: 0
+- :test: test_checkLTCtemp1
+  :line: 35
+  :message: ''
+  :unity_test_time: 0
+- :test: test_checkLTCtemp2
+  :line: 44
+  :message: ''
+  :unity_test_time: 0
+- :test: test_shiftDchStatus0
+  :line: 71
+  :message: ''
+  :unity_test_time: 0
+- :test: test_shiftDchStatus1
+  :line: 92
+  :message: ''
+  :unity_test_time: 0
+:failures:
+- :test: test_checkLTCtemp3
+  :line: 63
+  :message: Expected 0x00000000 Was 0x0062FE64. Function BTM_readRegisterGroup Argument
+    rx_data. Function called with unexpected argument value.
+  :unity_test_time: 0
+:ignores: []
+:counts:
+  :total: 6
+  :passed: 5
+  :failed: 1
+  :ignored: 0
+:stdout:
+- 'converted temp: 25.002409'
+:time: 0.01972889999888139
