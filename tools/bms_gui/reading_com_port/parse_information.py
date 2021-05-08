@@ -43,13 +43,13 @@ def generate_random_voltages(x="v: "):
         x+=str(randint(0,4))+"."+str(randint(0,2))+str(randint(0,4))+" "
     return x
 
-def signi_digs(number,significant_digits=4):
+def signi_digs(number,significant_digits=3):
     number=str(number)
 
 
     twoparts = number.split(".")
     if len(twoparts)==1:
-        return number+".0000"
+        return number+"."+"0"*significant_digits
 
     if len(twoparts[1])>significant_digits:
         return twoparts[0]+"."+twoparts[1][:significant_digits]

@@ -5,8 +5,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 # adjust any of the coordinates.
 class box_info:
     def __init__(self, centralwidget, x, y, w, h, module_number, height,width, spacing =15, text_list=None,
-                 voltage_text="V: "
-                                                                                                              "X.XX"):
+                 voltage_text="V: X.XX"):
 
 
         self.module_number = module_number
@@ -21,6 +20,8 @@ class box_info:
         self.width=width
         self.original_width=1368
         self.original_height=768
+        self.lim = 300
+        self.big_lim = 1000000
         self.x=x
         self.y=y
         self.w=w
@@ -29,6 +30,8 @@ class box_info:
         self.past_temps = []
         self.past_voltages = []
 
+        self.all_temps = []
+        self.all_voltages = []
         self.generate_voltage_bar(centralwidget) #generating the bar
         self.generate_all_labels(centralwidget,text_list,base_spacing=spacing)
 
@@ -118,12 +121,23 @@ class box_info:
         self.voltage_bar.show()
 
     def update_past_temps(self, new_temp_to_add):
-        if len(self.past_temps)>20:
+        if len(self.past_temps)>self.lim:
             self.past_temps.pop(0)
+
+        if len(self.all_temps)>self.big_lim:
+            self.all_temps.pop(0)
+        self.all_temps.append(new_temp_to_add)
+
+
         self.past_temps.append(new_temp_to_add)
 
+
     def update_past_voltages(self, new_voltage_to_add):
-        if len(self.past_voltages)>20:
+        if len(self.past_voltages)>self.lim:
             self.past_voltages.pop(0)
+
+        if len(self.all_voltages)>self.big_lim:
+            self.past_voltages.pop(0)
+        self.all_voltages.append(new_voltage_to_add)
         self.past_voltages.append(new_voltage_to_add)
 

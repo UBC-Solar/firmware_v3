@@ -7,12 +7,12 @@ class reader_thread(QThread):
     """This is a threading class that will be used to read input from the serial port in the background.
     This process must be a thread, otherwise the gui does not respond until a new input is given.
     """
-    UPDATE_LIMIT=0.1 #How many seconds to wait after each update
     new_information = pyqtSignal(str) #an unparsed with the new information will be transmitted as a signal
     voltage_values = []
-    def __init__(self, port_name,MainWindow,file_path_to_record="",character_number=1,time_out=1):
+    def __init__(self, port_name,MainWindow,update_limit = 0.1, file_path_to_record="",character_number=1,time_out=1):
         super().__init__()
         self.MainWindow=MainWindow
+        self.UPDATE_LIMIT=update_limit#How many seconds to wait after each update
 
         self.file_path_to_record = file_path_to_record
         self.going_to_record=False
@@ -48,7 +48,7 @@ class reader_thread(QThread):
             "y": ["s","S"],
             "Y": ["s","S"]
         }
-
+        self.ser.readline()
         current_string=""
         while self.keep_reading:
             #print("in loop")

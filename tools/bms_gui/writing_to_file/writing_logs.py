@@ -15,7 +15,7 @@ def write_log(text, path_name = ""):
 
     text=generate_file_name()+" " + text #adding time stamp
     file = open(path_name, "a+")
-
+    text = text.replace(" ",",")
     file.write(text)
 
     file.close()
