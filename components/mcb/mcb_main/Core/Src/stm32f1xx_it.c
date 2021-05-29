@@ -235,9 +235,15 @@ void EXTI4_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI4_IRQn 0 */
 
+  // EXTI4 corresponds to the CRUISE_EN value
+
+  event_flags->cruise_status = 1;
+
   /* USER CODE END EXTI4_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
   /* USER CODE BEGIN EXTI4_IRQn 1 */
+
+  osSemaphoreRelease(eventFlagsSemaphoreHandle);
 
   /* USER CODE END EXTI4_IRQn 1 */
 }
@@ -252,6 +258,8 @@ void DMA1_Channel1_IRQHandler(void)
   /* USER CODE END DMA1_Channel1_IRQn 0 */
   HAL_DMA_IRQHandler(&hdma_adc1);
   /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
+
+  osSemaphoreRelease(eventFlagsSemaphoreHandle);
 
   /* USER CODE END DMA1_Channel1_IRQn 1 */
 }
