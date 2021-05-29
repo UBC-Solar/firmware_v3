@@ -35,6 +35,8 @@ extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
 
+extern CAN_FilterTypeDef hcan_filter;
+
 #define DRIVER_CONTROLS_BASE_ADDRESS 0x400
 #define BATTERY_FULL_MSG 0x622
 #define BATT_BASE 0x620
@@ -45,6 +47,8 @@ extern CAN_HandleTypeDef hcan;
 void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
+void CAN_Filter_Init(void);
 
 /* USER CODE END Prototypes */
 

@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
+CAN_FilterTypeDef hcan_filter;
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
@@ -89,9 +91,6 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 
   if(canHandle->Instance==CAN1)
   {
-  /* USER CODE BEGIN CAN1_MspDeInit 0 */
-
-  /* USER CODE END CAN1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_CAN1_CLK_DISABLE();
 
@@ -100,14 +99,30 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
     PB9     ------> CAN_TX
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8|GPIO_PIN_9);
-
-  /* USER CODE BEGIN CAN1_MspDeInit 1 */
-
-  /* USER CODE END CAN1_MspDeInit 1 */
   }
 }
 
 /* USER CODE BEGIN 1 */
+
+void CAN_Filter_Init(void)
+{
+  // in this case we are using two 16-bit filters in identifer mask mode
+  // therefore, the high and low values for the FilterID and FilterMask are going to be the same since we're just filtering
+	// for one ID (0x626)
+  // 0xC4C0 is chosen since its first 11-bits are 0x626 which is the relevant CAN identifier for the battery SOC message
+  hcan_filter.FilterIdHigh = (uint32_t) (0x626 << 5);
+  hcan_filter.FilterIdLow = (uint32_t) (0x626 << 5);
+
+  // masks away the last 5 bits - the only relevant bits are [15:5] (11-bit identifier)
+  hcan_filter.FilterMaskIdHigh = (uint32_t) (0x7FF << 5);
+  hcan_filter.FilterMaskIdLow = (uint32_t) (0x7FF << 5);
+
+  hcan_filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  hcan_filter.FilterBank = (uint32_t) 0;
+  hcan_filter.FilterMode = CAN_FILTERMODE_IDMASK;
+  hcan_filter.FilterScale = CAN_FILTERSCALE_16BIT;
+  hcan_filter.FilterActivation = CAN_FILTER_ENABLE;
+}
 
 /* USER CODE END 1 */
 

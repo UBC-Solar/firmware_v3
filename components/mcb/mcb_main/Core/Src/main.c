@@ -17,6 +17,7 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
+
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
@@ -26,57 +27,41 @@
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
+
 /* USER CODE BEGIN Includes */
 
 #include "encoder.h"
 
 /* USER CODE END Includes */
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
 
-// union members shown in main.h
 union float_bytes current, velocity;
 
 struct input_flags event_flags;
 
 uint32_t regen_value;
+uint8_t cruise_value;
 
 CAN_TxHeaderTypeDef drive_command_header;
-uint32_t can_mailbox;
 CAN_RxHeaderTypeDef CAN_receive_header;
-CAN_FilterTypeDef CAN_filter;
-
+uint32_t CAN_mailbox;
 uint8_t CAN_receive_data[8];
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
+
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
@@ -84,11 +69,6 @@ void MX_FREERTOS_Init(void);
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
-
-  HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
-
-  /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -98,14 +78,12 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
+  HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
@@ -117,42 +95,28 @@ int main(void)
 
   // <----- CAN setup ----->
 
-  // FIXME: can move this elsewhere
   drive_command_header.StdId = DRIVER_CONTROLS_BASE_ADDRESS + 1;
   drive_command_header.IDE = CAN_ID_STD;
 
-  // in this case we are using two 16-bit filters in identifer mask mode
-  // therefore, the high and low values for the FilterID and FilterMask are going to be the same
-  // 0xC4C0 is chosen since its first 11-bits are 0x626 which is the relevant CAN identifier for the battery SOC message
-  CAN_filter.FilterIdHigh = (uint32_t) 0xC4C0;
-  CAN_filter.FilterIdLow = (uint32_t) 0xC4C0;
-
-  // masks away the last 5 bits - the only relevant bits are [15:5] (11-bit identifier)
-  CAN_filter.FilterMaskIdHigh = (uint32_t) 0xFFE0;
-  CAN_filter.FilterMaskIdLow = (uint32_t) 0xFFE0;
-
-  CAN_filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-  CAN_filter.FilterBank = (uint32_t) 0;
-  CAN_filter.FilterMode = CAN_FILTERMODE_IDMASK;
-  CAN_filter.FilterScale = CAN_FILTERSCALE_16BIT;
-  CAN_filter.FilterActivation = CAN_FILTER_ENABLE;
-
-  HAL_CAN_ConfigFilter(&hcan, &CAN_filter);
+  CAN_Filter_Init();
+  HAL_CAN_ConfigFilter(&hcan, &hcan_filter);
   HAL_CAN_Start(&hcan);
 
-  // starting the ADC with DMA
+  // <----- ADC setup ----->
+
   // once the conversion is complete, an interrupt is sent
   // ISR is the HAL_ADC_ConvCpltCallback function
   HAL_ADC_Start_DMA(&hadc1, &regen_value, 1);
 
   /* USER CODE END 2 */
 
-  osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
+  osKernelInitialize();
   MX_FREERTOS_Init();
   osKernelStart();
 
   while (1) {
   }
+
 }
 
 /**
