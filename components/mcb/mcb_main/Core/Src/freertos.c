@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
@@ -68,6 +69,8 @@ osSemaphoreId_t eventFlagsSemaphoreHandle;
 
 input_flags *event_mem;
 
+enum State {IDLE_STATE = 0x0000U, NORMAL_STATE = 0x0001U, REGEN_STATE = 0x0002U, CRUISE_STATE = 0x0003U} state;
+
 /* USER CODE END Variables */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -75,7 +78,6 @@ input_flags *event_mem;
 /* USER CODE BEGIN FunctionPrototypes */
 
 void readEncoderTask(void *argument);
-void readRegenTask(void *argument);
 void updateEventFlagsTask(void *argument);
 void sendMotorCommandTask(void *argument);
 void sendRegenCommandTask(void *argument);
@@ -104,6 +106,8 @@ void MX_FREERTOS_Init(void) {
     sendCruiseCommandTaskHandle = osThreadNew(sendCruiseCommandTask, NULL, &sendCruiseCommandTask_attributes);
 
     updateEventFlagsTaskHandle = osThreadNew(updateEventFlagsTask, NULL, &updateEventFlagsTask_attributes);
+
+    // THREADS TO ADD: debug thread, send CAN status message thread
 
     // <----- Event flag object handles ----->
 
@@ -146,6 +150,7 @@ __NO_RETURN void readEncoderTask(void *argument) {
 
         // if the encoder value has changed, then put it in the encoder value queue
         if (encoder_reading != old_encoder_reading) {
+        	// TODO: is it okay if this queue overflows?
             osMessageQueuePut(encoderQueueHandle, &encoder_reading, 0U, 0U);
         }
 
@@ -156,7 +161,7 @@ __NO_RETURN void readEncoderTask(void *argument) {
 }
 
 /**
-  * @brief  sends motor command (torque-control) CAN message once encoder value is read
+  * @brief  sends motor command (torque-control) CAN message once encoder value is read and a NORMAL_STATE flag is signalled
   * @param  argument: Not used
   * @retval None
   */
@@ -164,13 +169,6 @@ __NO_RETURN void sendMotorCommandTask(void *argument) {
     uint8_t data_send[DATA_FRAME_LEN];
     osStatus_t status;
     uint16_t encoder_value;
-
-    // velocity is set to unattainable value for motor torque-control mode
-    if (event_mem->reverse_enable) {
-        velocity.float_value = -100.0;
-    } else {
-        velocity.float_value = 100.0;
-    }
 
     while (1) {
         // blocks thread waiting for encoder value to be added to queue
@@ -184,13 +182,22 @@ __NO_RETURN void sendMotorCommandTask(void *argument) {
             osThreadYield();
         }
 
+        osEventFlagsWait(inputEventFlagsHandle, NORMAL_STATE, osFlagsWaitAll, osWaitForever);
+
+        // velocity is set to unattainable value for motor torque-control mode
+        if (event_mem->reverse_enable) {
+            velocity.float_value = -100.0;
+        } else {
+            velocity.float_value = 100.0;
+        }
+
         // writing data into data_send array which will be sent as a CAN message
         for (int i = 0; i < DATA_FRAME_LEN / 2; i++) {
             data_send[i] = velocity.bytes[i];
-            data_send[i + 4] = current.bytes[i];
+            data_send[4 + i] = current.bytes[i];
         }
 
-        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
+        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &CAN_mailbox);
 
         osThreadYield();
     }
@@ -204,12 +211,12 @@ __NO_RETURN void sendMotorCommandTask(void *argument) {
 __NO_RETURN void sendRegenCommandTask(void *argument) {
     uint8_t data_send[DATA_FRAME_LEN];
 
-    // velocity is set to zero for regen CAN command
-    velocity.float_value = 0.0;
-
     while (1) {
         // waits for event flag that signals the decision to send a regen command
-        osEventFlagsWait(inputEventFlagsHandle, 0x0002U, osFlagsWaitAll, osWaitForever);
+        osEventFlagsWait(inputEventFlagsHandle, REGEN_STATE, osFlagsWaitAll, osWaitForever);
+
+        // velocity is set to zero for regen CAN command
+        velocity.float_value = 0.0;
 
         // current is linearly scaled with the read regen value
         current.float_value = (float) regen_value / (ADC_MAX - ADC_MIN);
@@ -217,10 +224,10 @@ __NO_RETURN void sendRegenCommandTask(void *argument) {
         // writing data into data_send array which will be sent as a CAN message
         for (int i = 0; i < DATA_FRAME_LEN / 2; i++) {
             data_send[i] = velocity.bytes[i];
-            data_send[i + 4] = current.bytes[i];
+            data_send[4 + i] = current.bytes[i];
         }
 
-        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
+        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &CAN_mailbox);
 
         osThreadYield();
     }
@@ -234,30 +241,35 @@ __NO_RETURN void sendRegenCommandTask(void *argument) {
 __NO_RETURN void sendCruiseCommandTask (void *argument) {
     uint8_t data_send[DATA_FRAME_LEN];
 
-    // current set to maximum for a cruise control message
-    current.float_value = 100.0;
-
     while (1) {
         // waits for event flag that signals the decision to send a cruise control command
-        osEventFlagsWait(inputEventFlagsHandle, 0x0003U, osFlagsWaitAll, osWaitForever);
+        osEventFlagsWait(inputEventFlagsHandle, CRUISE_STATE, osFlagsWaitAll, osWaitForever);
+
+        // current set to maximum for a cruise control message
+        current.float_value = 100.0;
 
         // set velocity to cruise value
-        velocity.float_value = (float) event_mem->cruise_value;
+        // TODO: should read in the current speed of the car here (ID 0x503)
+        velocity.float_value = (float) cruise_value;
 
         // writing data into data_send array which will be sent as a CAN message
         for (int i = 0; i < DATA_FRAME_LEN / 2; i++) {
             data_send[i] = velocity.bytes[i];
-            data_send[i + 4] = current.bytes[i];
+            data_send[4 + i] = current.bytes[i];
         }
 
-        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
+        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &CAN_mailbox);
 
         osThreadYield();
     }
 }
-// updates specific flags to decide which thread will send a CAN message
+
+/**
+  * @brief  updates specific flags to decide which thread will send a CAN message
+  * @param  argument: Not used
+  * @retval None
+  */
 __NO_RETURN void updateEventFlagsTask(void *argument) {
-    uint32_t flags_to_signal;
     uint8_t battery_soc;
 
     while (1) {
@@ -280,32 +292,15 @@ __NO_RETURN void updateEventFlagsTask(void *argument) {
 
         // self note: for cruise: acc to max, velocity to desired speed --> encoder must be non_zero
 
-        // TODO: convert this to a regular conditional, it is too hard to read and might actually negatively
-        // affect compiler optimizations
-        // TODO: consider replacing with a state machine to remove the possibility of corner cases
-        event_mem->send_regen_command = (event_mem->regen_enable & event_mem->encoder_value_zero)
-                                         | (event_mem->regen_enable & ~(event_mem->encoder_value_zero)
-                                         & ~(event_mem->regen_value_zero)) & (battery_soc < 98);
+        if (event_mem->regen_enable & ~(event_mem->regen_value_zero) & (battery_soc < 98)) {
+            state = REGEN_STATE;
+            osEventFlagsSet(inputEventFlagsHandle, state);
 
-        event_mem->send_cruise_command = event_mem->cruise_enable & ~(event_mem->encoder_value_zero);
-
-        event_mem->send_drive_command = !event_mem->send_regen_command & !event_mem->send_cruise_command;
-
-        // flag_to_signal = 0x0001U -> send normal drive command
-        // flag_to_signal = 0x0002U -> send regen drive command
-        // flag_to_signal = 0x0003U -> send cruise control drive command
-        if (event_mem->send_drive_command) {
-            flags_to_signal = 0x0001U;
-        }
-        else if (event_mem->send_regen_command) {
-            flags_to_signal = 0x0002U;
-        }
-        else {
-            flags_to_signal = 0x0003U;
+        } else if (event_mem->cruise_status & (event_mem->encoder_value_zero) & (battery_soc < 98)) {
+            state = CRUISE_STATE;
+            osEventFlagsSet(inputEventFlagsHandle, state);
         }
 
-        // now use event flags to signal the appropriate flag
-        osEventFlagsSet(inputEventFlagsHandle, flags_to_signal);
     }
 }
 
