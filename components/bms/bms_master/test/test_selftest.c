@@ -53,6 +53,21 @@ void test_checkLTCtemp2(){
 	TEST_ASSERT_EQUAL(readRegisterGroup_status.device_num, outStatus.device_num);
 }
 
+void test_checkLTCtemp3(){
+	BTM_Status_t sendCmdAndPoll_status = {BTM_OK, 0};
+	BTM_sendCmdAndPoll_ExpectAndReturn(CMD_ADSTAT_ITMP, sendCmdAndPoll_status);
+
+	BTM_Status_t readRegisterGroup_status = {BTM_ERROR_HAL, 1};
+	uint8_t rx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
+	uint8_t (*ptr_rx_data)[BTM_REG_GROUP_SIZE] = rx_data;
+	BTM_readRegisterGroup_ExpectAndReturn(CMD_RDSTATA, NULL, readRegisterGroup_status);
+    // BTM_readRegisterGroup_IgnoreArg_rx_data();
+	
+	BTM_Status_t outStatus = ST_checkLTCtemp();
+	TEST_ASSERT_EQUAL(readRegisterGroup_status.error, outStatus.error);
+	TEST_ASSERT_EQUAL(readRegisterGroup_status.device_num, outStatus.device_num);
+}
+
 void test_shiftDchStatus0(){
 	BTM_module_bal_status_t dch_off = {DISCHARGE_OFF};
     BTM_module_bal_status_t dch_on = {DISCHARGE_ON};
