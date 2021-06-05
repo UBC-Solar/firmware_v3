@@ -1,3 +1,6 @@
+#Everything here is self-explanatory if you're able to run the program
+#and see all the widgets, labels, bars, etc...
+
 from PyQt5 import QtCore, QtGui, QtWidgets
 from GUI.terminal_class import terminal
 from GUI.box_class import box_info

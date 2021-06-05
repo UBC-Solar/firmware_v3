@@ -1,3 +1,5 @@
+#This file takes care of all the graphing done in the program (voltage & Temperature)
+
 from reading_com_port.parse_information   import parse_float_from_str
 def gen_x_values(values, update_interval_in_seconds):
     x_values = []

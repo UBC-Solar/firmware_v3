@@ -1,4 +1,4 @@
-
+#This file is responsible for writing a csv logs file to a specific destination
 
 from datetime import datetime
 

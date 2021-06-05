@@ -1,7 +1,5 @@
 from PyQt5 import QtWidgets
 
-
-
 class terminal(QtWidgets.QScrollArea):
 
     # This class is bascially a label inside a scrollarea.
