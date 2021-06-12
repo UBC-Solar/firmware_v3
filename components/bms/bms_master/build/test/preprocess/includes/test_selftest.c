@@ -1,6 +1,0 @@
----
-- C:/Ruby26-x64/lib/ruby/gems/2.6.0/gems/ceedling-0.31.0/vendor/unity/src/unity.h
-- Core/Src/selftest.h
-- build/test/mocks/mock_ltc6813_btm.h
-- build/test/mocks/mock_ltc6813_btm_bal.h
-- Core/Src/selftest.c
