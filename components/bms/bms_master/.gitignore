@@ -8,3 +8,5 @@
 # Debug and Run Configuration
 *.launch
 /.metadata/
+# Auto-Generated Ceedling Data
+/build/
