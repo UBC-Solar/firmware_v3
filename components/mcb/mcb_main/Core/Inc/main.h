@@ -47,29 +47,25 @@ extern union float_bytes {
 	uint8_t bytes[4];
 } current, velocity;
 
-// this struct is updated when an external interrupt comes in
-// this struct combines a bunch of boolean flags that helps to decide whether to send a regen
-// command or a normal motor command
-// TODO: reconsider whether some of these values should belong in this struct or a separate one
+// this struct is updated when an external interrupt comes in and combines boolean flags 
+// that helps to decide whether to send a regen command, normal command
 typedef struct input_flags {
-  uint8_t regen_enable;
-  uint8_t reverse_enable;
-  uint8_t cruise_status;
-  uint8_t brake_in;
-  uint8_t regen_value_zero;
-  uint8_t encoder_value_zero;
+  volatile uint8_t regen_enable;
+  volatile uint8_t reverse_enable;
+  volatile uint8_t cruise_status;
+  volatile uint8_t brake_in;
+  volatile uint8_t regen_value_is_zero;
+  volatile uint8_t encoder_value_is_zero;
 } input_flags;
 
 extern input_flags event_flags;
-
-extern input_flags *event_mem;
 
 extern uint32_t regen_value;
 extern uint8_t cruise_value;
 
 extern CAN_TxHeaderTypeDef drive_command_header;
-extern uint32_t CAN_mailbox;
 extern CAN_RxHeaderTypeDef CAN_receive_header;
+extern uint32_t CAN_mailbox;
 
 extern uint8_t CAN_receive_data[8];
 
@@ -134,7 +130,7 @@ void Error_Handler(void);
 
 #define DATA_FRAME_LEN 8
 
-#define ADC_MAX 0xFFF
+#define ADC_MAX 0xFFFF
 #define ADC_MIN 0
 
 #define ENCODER_TIMER_TICKS (uint32_t) 1
