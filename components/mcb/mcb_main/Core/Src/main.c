@@ -39,10 +39,11 @@
 /* USER CODE BEGIN PV */
 
 union float_bytes current, velocity;
-
 struct input_flags event_flags;
 
 uint32_t regen_value;
+
+// range is 0-255km/h
 uint8_t cruise_value;
 
 CAN_TxHeaderTypeDef drive_command_header;
