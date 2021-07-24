@@ -128,7 +128,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 
 void HAL_ADC_ConvCplt_Callback(ADC_HandleTypeDef *hadc) {
     // change the event flags struct
-    event_mem->regen_value_zero = (regen_value == 0);
+    event_flags.regen_value_is_zero = (regen_value == 0);
 
     // send flag to the updateEventFlags task
     osSemaphoreRelease(eventFlagsSemaphoreHandle);
