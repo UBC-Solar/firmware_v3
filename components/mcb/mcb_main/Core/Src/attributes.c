@@ -41,6 +41,12 @@ const osThreadAttr_t updateEventFlagsTask_attributes = {
         .stack_size = 128 * 4
 };
 
+const osThreadAttr_t receiveBatteryMessageTask_attributes = {
+        .name = "receiveBatteryMessage",
+        .priority = (osPriority_t) osPriorityLow,
+        .stack_size = 128 * 4
+};
+
 const osMessageQueueAttr_t encoderQueue_attributes = {
         .name = "encoderQueue"
 };
