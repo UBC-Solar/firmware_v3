@@ -32,6 +32,11 @@ CAN_TxHeaderTypeDef drive_command_header = {
 
 CAN_FilterTypeDef battery_soc_filter;
 
+CAN_RxHeaderTypeDef CAN_receive_header;
+uint8_t CAN_receive_data[8];
+
+uint32_t CAN_mailbox;
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;

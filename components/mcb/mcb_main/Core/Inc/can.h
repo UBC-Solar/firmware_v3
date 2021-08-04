@@ -27,22 +27,18 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
 extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
-
-extern CAN_TxHeaderTypeDef drive_command_header;
-extern CAN_FilterTypeDef battery_soc_filter;
 
 #define DRIVER_CONTROLS_BASE_ADDRESS 0x400
 #define MOTOR_CTRL_BASE 0x500
 #define BATTERY_BASE 0x620
 
 #define CAN_DATA_LENGTH 8
+
+extern CAN_TxHeaderTypeDef drive_command_header;
+extern CAN_FilterTypeDef battery_soc_filter;
 
 /* USER CODE END Private defines */
 

@@ -34,8 +34,10 @@
 #define INIT_EVENT_FLAGS_SEMAPHORE_VAL  0
 #define MAX_EVENT_FLAGS_SEMAPHORE_VAL   1
 
-#define PEDAL_MAX 0xD0
-#define PEDAL_MIN 0x0F
+#define PEDAL_MAX               0xD0
+#define PEDAL_MIN               0x0F
+
+#define ENCODER_READ_DELAY      100
 
 /* USER CODE END PD */
 
@@ -55,7 +57,6 @@ osThreadId_t receiveBatteryMessageTaskHandle;
 osMessageQueueId_t encoderQueueHandle;
 
 osEventFlagsId_t commandEventFlagsHandle;
-
 osSemaphoreId_t eventFlagsSemaphoreHandle;
 
 /* USER CODE END Variables */
@@ -99,7 +100,7 @@ void MX_FREERTOS_Init(void) {
 
     receiveBatteryMessageTaskHandle = osThreadNew(receiveBatteryMessageTask, NULL, &receiveBatteryMessageTask_attributes);
 
-    // TODO: threads to add - send MCB status message over CAN, read in car speed from CAN bus
+    // TODO: threads to add - send MCB status message over CAN, read in car speed from CAN bus, transmit "next screen" CAN message
 
     // <----- Event flag object handles ----->
 
@@ -121,8 +122,7 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 __NO_RETURN void readEncoderTask(void *argument) {
-    // could make this a global variable but that means other functions will be able to write to it as well
-    // which might be dangerous
+
     static uint16_t old_encoder_reading = 0x0000;
     static uint16_t encoder_reading = 0x0000;
 
@@ -141,6 +141,8 @@ __NO_RETURN void readEncoderTask(void *argument) {
         }
 
         old_encoder_reading = encoder_reading;
+
+        osDelay(ENCODER_READ_DELAY)
     }
 }
 
@@ -150,8 +152,7 @@ __NO_RETURN void readEncoderTask(void *argument) {
   * @retval None
   */
 __NO_RETURN void sendMotorCommandTask(void *argument) {
-
-    uint8_t data_send[DATA_FRAME_LEN];
+    uint8_t data_send[CAN_DATA_LENGTH];
     uint16_t encoder_value;
 
     osStatus_t queue_status;
@@ -178,7 +179,7 @@ __NO_RETURN void sendMotorCommandTask(void *argument) {
         }
 
         // writing data into data_send array which will be sent as a CAN message
-        for (int i = 0; i < (uint8_t) DATA_FRAME_LEN / 2; i++) {
+        for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++) {
             data_send[i] = velocity.bytes[i];
             data_send[4 + i] = current.bytes[i];
         }
@@ -193,7 +194,7 @@ __NO_RETURN void sendMotorCommandTask(void *argument) {
   * @retval None
   */
 __NO_RETURN void sendRegenCommandTask(void *argument) {
-    uint8_t data_send[DATA_FRAME_LEN];
+    uint8_t data_send[CAN_DATA_LENGTH];
 
     while (1) {
         // waits for event flag that signals the decision to send a regen command
@@ -206,7 +207,7 @@ __NO_RETURN void sendRegenCommandTask(void *argument) {
         current.float_value = (float) regen_value / (ADC_MAX - ADC_MIN);
 
         // writing data into data_send array which will be sent as a CAN message
-        for (int i = 0; i < (uint8_t) DATA_FRAME_LEN / 2; i++) {
+        for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++) {
             data_send[i] = velocity.bytes[i];
             data_send[4 + i] = current.bytes[i];
         }
@@ -221,7 +222,7 @@ __NO_RETURN void sendRegenCommandTask(void *argument) {
   * @retval None
   */
 __NO_RETURN void sendCruiseCommandTask (void *argument) {
-    uint8_t data_send[DATA_FRAME_LEN];
+    uint8_t data_send[CAN_DATA_LENGTH];
 
     while (1) {
         // waits for event flag that signals the decision to send a cruise control command
@@ -231,11 +232,10 @@ __NO_RETURN void sendCruiseCommandTask (void *argument) {
         current.float_value = 100.0;
 
         // set velocity to cruise value
-        // TODO: should read in the current speed of the car here (ID 0x503)
         velocity.float_value = (float) cruise_value;
 
         // writing data into data_send array which will be sent as a CAN message
-        for (int i = 0; i < (uint8_t) DATA_FRAME_LEN / 2; i++) {
+        for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++) {
             data_send[i] = velocity.bytes[i];
             data_send[4 + i] = current.bytes[i];
         }

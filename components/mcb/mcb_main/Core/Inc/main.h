@@ -63,18 +63,6 @@ extern input_flags event_flags;
 extern uint32_t regen_value;
 extern uint8_t cruise_value;
 
-extern CAN_RxHeaderTypeDef CAN_receive_header;
-extern uint32_t CAN_mailbox;
-
-extern uint8_t CAN_receive_data[8];
-
-extern osThreadId_t readEncoderTaskHandle;
-extern osThreadId_t sendMotorCommandTaskHandle;
-extern osThreadId_t readRegenValueTaskHandle;
-extern osThreadId_t updateEventFlagsTaskHandle;
-
-extern osSemaphoreId_t eventFlagsSemaphoreHandle;
-
 /* USER CODE END ET */
 
 /* Exported functions prototypes ---------------------------------------------*/

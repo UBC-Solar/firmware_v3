@@ -43,13 +43,7 @@ union float_bytes current, velocity;
 struct input_flags event_flags;
 
 uint32_t regen_value;
-
-// range is 0-255km/h
 uint8_t cruise_value;
-
-CAN_RxHeaderTypeDef CAN_receive_header;
-uint32_t CAN_mailbox;
-uint8_t CAN_receive_data[8];
 
 /* USER CODE END PV */
 
@@ -57,10 +51,6 @@ uint8_t CAN_receive_data[8];
 
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
-
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 
