@@ -19,25 +19,7 @@ const osThreadAttr_t readEncoderTask_attributes = {
 
 const osThreadAttr_t sendMotorCommandTask_attributes = {
         .name = "sendMotorCommand",
-        .priority = (osPriority_t) osPriorityHigh,
-        .stack_size = 128 * 4
-};
-
-const osThreadAttr_t readRegenValueTask_attributes = {
-        .name = "readRegenValue",
-        .priority = (osPriority_t) osPriorityHigh,
-        .stack_size = 128 * 4
-};
-
-const osThreadAttr_t sendCruiseCommandTask_attributes = {
-        .name = "sendCruiseCommandTask",
-        .priority = (osPriority_t) osPriorityHigh,
-        .stack_size = 128 * 4
-};
-
-const osThreadAttr_t updateEventFlagsTask_attributes = {
-        .name = "updateEventFlags",
-        .priority = (osPriority_t) osPriorityHigh,
+        .priority = (osPriority_t) osPriorityNormal,
         .stack_size = 128 * 4
 };
 
@@ -47,11 +29,22 @@ const osThreadAttr_t sendRegenCommandTask_attributes = {
         .stack_size = 128 * 4
 };
 
-const osTimerAttr_t encoderTimer_attributes = {
-        .name = "encoderTimer",
-        .attr_bits = 0,
-        .cb_mem = NULL,
-        .cb_size = 0
+const osThreadAttr_t sendCruiseCommandTask_attributes = {
+        .name = "sendCruiseCommandTask",
+        .priority = (osPriority_t) osPriorityBelowNormal,
+        .stack_size = 128 * 4
+};
+
+const osThreadAttr_t updateEventFlagsTask_attributes = {
+        .name = "updateEventFlags",
+        .priority = (osPriority_t) osPriorityHigh,
+        .stack_size = 128 * 4
+};
+
+const osThreadAttr_t receiveBatteryMessageTask_attributes = {
+        .name = "receiveBatteryMessage",
+        .priority = (osPriority_t) osPriorityLow,
+        .stack_size = 128 * 4
 };
 
 const osMessageQueueAttr_t encoderQueue_attributes = {

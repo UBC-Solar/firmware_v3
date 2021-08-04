@@ -17,6 +17,7 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
+
 /* Includes ------------------------------------------------------------------*/
 
 #include "main.h"
@@ -27,53 +28,41 @@
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
+
 /* USER CODE BEGIN Includes */
 
 #include "encoder.h"
 
 /* USER CODE END Includes */
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
 
 union float_bytes current, velocity;
-
 struct input_flags event_flags;
 
 uint32_t regen_value;
 
-uint32_t can_mailbox;
+// range is 0-255km/h
+uint8_t cruise_value;
+
 CAN_RxHeaderTypeDef CAN_receive_header;
+uint32_t CAN_mailbox;
 uint8_t CAN_receive_data[8];
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
+
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
@@ -81,17 +70,18 @@ void MX_FREERTOS_Init(void);
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
-
-  HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
-
-  /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 
   HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+
+  /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
@@ -117,12 +107,13 @@ int main(void)
 
   /* USER CODE END 2 */
 
-  osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
+  osKernelInitialize();
   MX_FREERTOS_Init();
   osKernelStart();
 
   while (1) {
   }
+
 }
 
 /**

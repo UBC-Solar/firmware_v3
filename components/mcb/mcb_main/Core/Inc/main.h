@@ -47,29 +47,24 @@ extern union float_bytes {
 	uint8_t bytes[4];
 } current, velocity;
 
-// this struct is updated when an external interrupt comes in
-// this struct combines a bunch of boolean flags that helps to decide whether to send a regen
-// command or a normal motor command
-// TODO: reconsider whether some of these values should belong in this struct or a separate one
+// this struct is updated when an external interrupt comes in and combines boolean flags 
+// that helps to decide whether to send a regen command, normal command
 typedef struct input_flags {
-  uint8_t regen_enable;
-  uint8_t reverse_enable;
-  uint8_t cruise_enable;
-  uint8_t brake_in;
-  uint8_t regen_value_zero;
-  uint8_t encoder_value_zero;
-  uint8_t send_regen_command;
-  uint8_t send_drive_command;
-  uint8_t send_cruise_command;
-  uint8_t cruise_value;
+  volatile uint8_t regen_enable;
+  volatile uint8_t reverse_enable;
+  volatile uint8_t cruise_status;
+  volatile uint8_t brake_in;
+  volatile uint8_t regen_value_is_zero;
+  volatile uint8_t encoder_value_is_zero;
 } input_flags;
 
 extern input_flags event_flags;
 
 extern uint32_t regen_value;
+extern uint8_t cruise_value;
 
-extern uint32_t can_mailbox;
 extern CAN_RxHeaderTypeDef CAN_receive_header;
+extern uint32_t CAN_mailbox;
 
 extern uint8_t CAN_receive_data[8];
 
@@ -82,17 +77,8 @@ extern osSemaphoreId_t eventFlagsSemaphoreHandle;
 
 /* USER CODE END ET */
 
-/* Exported constants --------------------------------------------------------*/
-/* USER CODE BEGIN EC */
-
-/* USER CODE END EC */
-
-/* Exported macro ------------------------------------------------------------*/
-/* USER CODE BEGIN EM */
-
-/* USER CODE END EM */
-
 /* Exported functions prototypes ---------------------------------------------*/
+
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
@@ -100,6 +86,7 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+
 #define REGEN_VAL_Pin GPIO_PIN_0
 #define REGEN_VAL_GPIO_Port GPIOA
 #define REGEN_EN_Pin GPIO_PIN_1
@@ -137,6 +124,7 @@ void Error_Handler(void);
 #define ENC_ZS_GPIO_Port GPIOA
 #define ENC_YS_Pin GPIO_PIN_3
 #define ENC_YS_GPIO_Port GPIOB
+
 /* USER CODE BEGIN Private defines */
 
 #define ADC_MAX 0xFFF
