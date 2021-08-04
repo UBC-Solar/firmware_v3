@@ -66,11 +66,8 @@ typedef struct input_flags {
 
 extern input_flags event_flags;
 
-extern input_flags *event_mem;
-
 extern uint32_t regen_value;
 
-extern CAN_TxHeaderTypeDef drive_command_header;
 extern uint32_t can_mailbox;
 extern CAN_RxHeaderTypeDef CAN_receive_header;
 
@@ -141,8 +138,6 @@ void Error_Handler(void);
 #define ENC_YS_Pin GPIO_PIN_3
 #define ENC_YS_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
-
-#define DATA_FRAME_LEN 8
 
 #define ADC_MAX 0xFFF
 #define ADC_MIN 0

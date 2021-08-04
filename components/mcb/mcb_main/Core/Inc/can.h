@@ -35,16 +35,22 @@ extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
 
+extern CAN_TxHeaderTypeDef drive_command_header;
+extern CAN_FilterTypeDef battery_soc_filter;
+
 #define DRIVER_CONTROLS_BASE_ADDRESS 0x400
-#define BATTERY_FULL_MSG 0x622
-#define BATT_BASE 0x620
 #define MOTOR_CTRL_BASE 0x500
+#define BATTERY_BASE 0x620
+
+#define CAN_DATA_LENGTH 8
 
 /* USER CODE END Private defines */
 
 void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
+void CAN_Filter_Init(void);
 
 /* USER CODE END Prototypes */
 
@@ -53,5 +59,3 @@ void MX_CAN_Init(void);
 #endif
 
 #endif /* __CAN_H__ */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

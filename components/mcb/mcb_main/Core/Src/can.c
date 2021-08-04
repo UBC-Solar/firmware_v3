@@ -22,6 +22,16 @@
 
 /* USER CODE BEGIN 0 */
 
+CAN_TxHeaderTypeDef drive_command_header = {
+  .StdId = DRIVER_CONTROLS_BASE_ADDRESS + 1,
+  .ExtId = 0x0000,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = CAN_DATA_LENGTH
+}
+
+CAN_FilterTypeDef battery_soc_filter;
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
@@ -34,11 +44,11 @@ void MX_CAN_Init(void)
   hcan.Init.Prescaler = 16;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_1TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_1TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_4TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
-  hcan.Init.AutoWakeUp = DISABLE;
+  hcan.Init.AutoWakeUp = ENABLE;
   hcan.Init.AutoRetransmission = DISABLE;
   hcan.Init.ReceiveFifoLocked = DISABLE;
   hcan.Init.TransmitFifoPriority = DISABLE;
@@ -109,6 +119,24 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 
 /* USER CODE BEGIN 1 */
 
-/* USER CODE END 1 */
+// TODO: add brief here
+void CAN_Filter_Init(void) {
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+  // in this case we are using two 16-bit filters in identifer mask mode
+  // therefore, the high and low values for the FilterID and FilterMask are going to be the same since
+  // we are currently only filtering for one ID (0x626)
+  battery_soc_filter.FilterIdHigh = (uint32_t) (BATTERY_BASE + 6 << 5);
+  battery_soc_filter.FilterIdLow = (uint32_t) (BATTERY_BASE + 6 << 5);
+
+  // masks away the last 5 bits - the only relevant bits are [15:5] (11-bit identifier)
+  battery_soc_filter.FilterMaskIdHigh = (uint32_t) (0x7FF << 5);
+  battery_soc_filter.FilterMaskIdLow = (uint32_t) (0x7FF << 5);
+
+  battery_soc_filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  battery_soc_filter.FilterBank = (uint32_t) 0;
+  battery_soc_filter.FilterMode = CAN_FILTERMODE_IDMASK;
+  battery_soc_filter.FilterScale = CAN_FILTERSCALE_16BIT;
+  battery_soc_filter.FilterActivation = CAN_FILTER_ENABLE;
+}
+
+/* USER CODE END 1 */
