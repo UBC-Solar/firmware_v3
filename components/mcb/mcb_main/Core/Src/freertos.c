@@ -16,9 +16,9 @@
 /* USER CODE BEGIN PD */
 
 #define ENCODER_QUEUE_MSG_CNT   5
-#define ENCODER_QUEUE_MSG_SIZE  2    /* 2 bytes (uint16_t) */
+#define ENCODER_QUEUE_MSG_SIZE  2       /* 2 bytes (uint16_t) */
 
-#define DEFAULT_CRUISE_SPEED    10     /* To be edited */
+#define DEFAULT_CRUISE_SPEED    10      /* To be edited */
 #define CRUISE_MAX              100
 #define CRUISE_MIN              0
 
@@ -38,6 +38,7 @@
 #define PEDAL_MIN               0x0F
 
 #define ENCODER_READ_DELAY      100
+#define READ_BATTERY_SOC_DELAY  5000
 
 /* USER CODE END PD */
 
@@ -122,7 +123,6 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 __NO_RETURN void readEncoderTask(void *argument) {
-
     static uint16_t old_encoder_reading = 0x0000;
     static uint16_t encoder_reading = 0x0000;
 
@@ -250,22 +250,9 @@ __NO_RETURN void sendCruiseCommandTask (void *argument) {
   * @retval None
   */
 __NO_RETURN void updateEventFlagsTask(void *argument) {
-    uint8_t battery_soc;
-
     while (1) {
         // waits for the event flags struct to change
         osSemaphoreAcquire(eventFlagsSemaphoreHandle, osWaitForever);
-
-        // read battery CAN message here, filtering done in hardware
-        HAL_CAN_GetRxMessage(&hcan, CAN_FIFO0, &CAN_receive_header, CAN_receive_data);
-
-        battery_soc = CAN_receive_data[0];
-
-        // if the battery SOC is out of range, assume it is at 100% as a safety measure
-        if (battery_soc < 0 || battery_soc > 100) {
-            // TODO: somehow indicate to the outside world that this has happened
-            battery_soc = 100;
-        }
 
         // should send a regen command if the regen is enabled and either of two things is true:
         // 1) the encoder value is zero OR 2) the encoder value and the regen value is not zero 
@@ -284,19 +271,32 @@ __NO_RETURN void updateEventFlagsTask(void *argument) {
             osEventFlagsSet(commandEventFlagsHandle, IDLE);
         }
         
-
     }
 }
 
 /**
-  * @brief  Unimplemented
+  * @brief  Reads battery SOC from CAN bus (message ID 0x626, byte 0)
   * @param  argument: Not used
   * @retval None
   */
 __NO_RETURN void receiveBatteryMessageTask (void *argument) {
+    uint8_t battery_msg_data[8];
 
     while (1) {
-    	// TODO: implement this
+        if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_FIFO0)) {
+            // filtering for 0x626 ID done in hardware 
+            HAL_CAN_GetRxMessage(&hcan, CAN_FIFO0, &CAN_receive_header, battery_msg_data);
+
+            // if the battery SOC is out of range, assume it is at 100% as a safety measure
+            if (battery_msg_data[0] < 0 || battery_msg_data[0] > 100) {
+                // TODO: somehow indicate to the outside world that this has happened
+                battery_soc = 100;
+            } else {
+                battery_soc = battery_msg_data[0];
+            }
+        }
+
+        osDelay(READ_BATTERY_SOC_DELAY)
     }
 }
 

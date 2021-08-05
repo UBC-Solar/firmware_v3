@@ -62,6 +62,7 @@ extern input_flags event_flags;
 
 extern uint32_t regen_value;
 extern uint8_t cruise_value;
+extern uint8_t battery_soc;
 
 /* USER CODE END ET */
 

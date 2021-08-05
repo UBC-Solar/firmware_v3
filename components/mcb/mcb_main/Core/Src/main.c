@@ -44,6 +44,7 @@ struct input_flags event_flags;
 
 uint32_t regen_value;
 uint8_t cruise_value;
+uint8_t battery_soc;
 
 /* USER CODE END PV */
 
