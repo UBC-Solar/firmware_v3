@@ -39,6 +39,7 @@
 
 #define ENCODER_READ_DELAY      100
 #define READ_BATTERY_SOC_DELAY  5000
+#define EVENT_FLAG_UPDATE_DELAY 100
 
 /* USER CODE END PD */
 
@@ -59,6 +60,16 @@ osMessageQueueId_t encoderQueueHandle;
 
 osEventFlagsId_t commandEventFlagsHandle;
 osSemaphoreId_t eventFlagsSemaphoreHandle;
+
+
+// indicates the current state of the main control node
+enum states {
+    IDLE = (uint32_t) 0x0000,
+    NORMAL_READY = (uint32_t) 0x0001,
+    REGEN_READY = (uint32_t) 0x0002,
+    CRUISE_READY = (uint32_t) 0x0004
+} state;
+
 
 /* USER CODE END Variables */
 
@@ -184,7 +195,7 @@ __NO_RETURN void sendMotorCommandTask(void *argument) {
             data_send[4 + i] = current.bytes[i];
         }
 
-        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &CAN_mailbox);
+        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
     }
 }
 
@@ -212,7 +223,7 @@ __NO_RETURN void sendRegenCommandTask(void *argument) {
             data_send[4 + i] = current.bytes[i];
         }
 
-        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &CAN_mailbox);
+        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
     }
 }
 
@@ -240,7 +251,7 @@ __NO_RETURN void sendCruiseCommandTask (void *argument) {
             data_send[4 + i] = current.bytes[i];
         }
 
-        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &CAN_mailbox);
+        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
     }
 }
 
@@ -252,25 +263,24 @@ __NO_RETURN void sendCruiseCommandTask (void *argument) {
 __NO_RETURN void updateEventFlagsTask(void *argument) {
     while (1) {
         // waits for the event flags struct to change
-        osSemaphoreAcquire(eventFlagsSemaphoreHandle, osWaitForever);
-
-        // should send a regen command if the regen is enabled and either of two things is true:
-        // 1) the encoder value is zero OR 2) the encoder value and the regen value is not zero 
+        // osSemaphoreAcquire(eventFlagsSemaphoreHandle, osWaitForever);
 
         // order of priorities beginning with most important: regen braking, encoder motor command, cruise control
         if (event_flags.regen_enable && regen_value > 0 && battery_soc < 90) {
-            osEventFlagsSet(commandEventFlagsHandle, REGEN_READY);
+            state = REGEN_READY;
         }
         else if (!event_flags.encoder_value_is_zero) {
-            osEventFlagsSet(commandEventFlagsHandle, NORMAL_READY);
+            state = NORMAL_READY;
         }
         else if (event_flags.cruise_status && cruise_value > 0 && !event_flags.brake_in) {
-            osEventFlagsSet(commandEventFlagsHandle, CRUISE_READY);
+            state = CRUISE_READY;
         }
         else {
-            osEventFlagsSet(commandEventFlagsHandle, IDLE);
+            state = IDLE;
         }
-        
+
+        osEventFlagsSet(commandEventFlagsHandle, state);
+        osDelay(EVENT_FLAG_UPDATE_DELAY);
     }
 }
 
@@ -285,7 +295,7 @@ __NO_RETURN void receiveBatteryMessageTask (void *argument) {
     while (1) {
         if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_FIFO0)) {
             // filtering for 0x626 ID done in hardware 
-            HAL_CAN_GetRxMessage(&hcan, CAN_FIFO0, &CAN_receive_header, battery_msg_data);
+            HAL_CAN_GetRxMessage(&hcan, CAN_FIFO0, &can_rx_header, battery_msg_data);
 
             // if the battery SOC is out of range, assume it is at 100% as a safety measure
             if (battery_msg_data[0] < 0 || battery_msg_data[0] > 100) {
