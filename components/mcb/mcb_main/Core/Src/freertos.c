@@ -258,13 +258,13 @@ __NO_RETURN void updateEventFlagsTask(void *argument) {
         // 1) the encoder value is zero OR 2) the encoder value and the regen value is not zero 
 
         // order of priorities beginning with most important: regen braking, encoder motor command, cruise control
-        if (event_flags.regen_enable && regen_value > 0) {
+        if (event_flags.regen_enable && regen_value > 0 && battery_soc < 90) {
             osEventFlagsSet(commandEventFlagsHandle, REGEN_READY);
         }
         else if (!event_flags.encoder_value_is_zero) {
             osEventFlagsSet(commandEventFlagsHandle, NORMAL_READY);
         }
-        else if (event_flags.cruise_status && cruise_value > 0) {
+        else if (event_flags.cruise_status && cruise_value > 0 && !event_flags.brake_in) {
             osEventFlagsSet(commandEventFlagsHandle, CRUISE_READY);
         }
         else {
