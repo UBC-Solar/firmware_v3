@@ -30,12 +30,9 @@ CAN_TxHeaderTypeDef drive_command_header = {
   .DLC = CAN_DATA_LENGTH
 }
 
+CAN_RxHeaderTypeDef can_rx_header;
 CAN_FilterTypeDef battery_soc_filter;
-
-CAN_RxHeaderTypeDef CAN_receive_header;
-uint8_t CAN_receive_data[8];
-
-uint32_t CAN_mailbox;
+uint32_t can_mailbox;
 
 /* USER CODE END 0 */
 
