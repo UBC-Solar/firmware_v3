@@ -197,6 +197,9 @@ void EXTI2_IRQHandler(void)
 
     event_flags.brake_in = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
 
+    // when brake_in goes high, cruise control should be disengaged
+    event_flags.cruise_status = DISABLED;
+
     /* USER CODE END EXTI2_IRQn 0 */
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
     /* USER CODE BEGIN EXTI2_IRQn 1 */
@@ -235,7 +238,7 @@ void EXTI4_IRQHandler(void)
 
     // EXTI4 corresponds to the CRUISE_EN value
 
-    event_flags.cruise_status = 1;
+    event_flags.cruise_status = ENABLED;
 
     /* USER CODE END EXTI4_IRQn 0 */
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
