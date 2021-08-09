@@ -121,6 +121,7 @@ void Error_Handler(void);
 
 #define ENCODER_TIMER_TICKS (uint32_t) 1
 
+// TODO: alter these values
 #define PEDAL_MAX 0xD0
 #define PEDAL_MIN 0x0F
 
