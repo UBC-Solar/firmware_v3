@@ -28,7 +28,7 @@ CAN_TxHeaderTypeDef drive_command_header = {
   .IDE = CAN_ID_STD,
   .RTR = CAN_RTR_DATA,
   .DLC = CAN_DATA_LENGTH
-}
+};
 
 CAN_RxHeaderTypeDef can_rx_header;
 CAN_FilterTypeDef battery_soc_filter;
@@ -120,8 +120,8 @@ void CAN_Filter_Init(void) {
   // in this case we are using two 16-bit filters in identifer mask mode
   // therefore, the high and low values for the FilterID and FilterMask are going to be the same since
   // we are currently only filtering for one ID (0x626)
-  battery_soc_filter.FilterIdHigh = (uint32_t) (BATTERY_BASE + 6 << 5);
-  battery_soc_filter.FilterIdLow = (uint32_t) (BATTERY_BASE + 6 << 5);
+  battery_soc_filter.FilterIdHigh = (uint32_t) ((BATTERY_BASE + 6) << 5);
+  battery_soc_filter.FilterIdLow = (uint32_t) ((BATTERY_BASE + 6) << 5);
 
   // masks away the last 5 bits - the only relevant bits are [15:5] (11-bit identifier)
   battery_soc_filter.FilterMaskIdHigh = (uint32_t) (0x7FF << 5);

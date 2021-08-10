@@ -36,8 +36,6 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define INC_VALUE 1
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -47,6 +45,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
+
+extern osThreadId_t eventFlagsSemaphoreHandle;
 
 /* USER CODE END PV */
 
@@ -198,7 +198,7 @@ void EXTI2_IRQHandler(void)
     event_flags.brake_in = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
 
     // when brake_in goes high, cruise control should be disengaged
-    event_flags.cruise_status = DISABLED;
+    event_flags.cruise_status = DISABLE;
 
     /* USER CODE END EXTI2_IRQn 0 */
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
@@ -238,7 +238,7 @@ void EXTI4_IRQHandler(void)
 
     // EXTI4 corresponds to the CRUISE_EN value
 
-    event_flags.cruise_status = ENABLED;
+    event_flags.cruise_status = ENABLE;
 
     /* USER CODE END EXTI4_IRQn 0 */
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
@@ -271,6 +271,24 @@ void DMA1_Channel1_IRQHandler(void)
 void EXTI9_5_IRQHandler(void)
 {
     /* USER CODE BEGIN EXTI9_5_IRQn 0 */
+
+	if(__HAL_GPIO_EXTI_GET_FLAG(CRUISE_DIS_Pin)) {
+		event_flags.cruise_status = DISABLE;
+
+	} else if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_UP_Pin)) {
+		if ((cruise_value + CRUISE_INCREMENT_VALUE) > CRUISE_MAX) {
+			cruise_value = CRUISE_MAX;
+		} else {
+			cruise_value += CRUISE_INCREMENT_VALUE;
+		}
+
+	} else if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_DOWN_Pin)) {
+		if ((cruise_value - CRUISE_INCREMENT_VALUE) < CRUISE_MIN) {
+			cruise_value = CRUISE_MIN;
+		} else {
+			cruise_value -= CRUISE_INCREMENT_VALUE;
+		}
+	}
 
     /* USER CODE END EXTI9_5_IRQn 0 */
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);

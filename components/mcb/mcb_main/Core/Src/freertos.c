@@ -22,10 +22,7 @@
 #define CRUISE_MAX              100
 #define CRUISE_MIN              0
 
-#define IDLE                    (uint32_t) 0x0000
-#define NORMAL_READY            (uint32_t) 0x0001
-#define REGEN_READY             (uint32_t) 0x0002
-#define CRUISE_READY            (uint32_t) 0x0004
+#define BATTERY_REGEN_THRESHOLD 90
 
 #define CAN_FIFO0               0
 #define CAN_FIFO1               1
@@ -153,7 +150,7 @@ __NO_RETURN void readEncoderTask(void *argument) {
 
         old_encoder_reading = encoder_reading;
 
-        osDelay(ENCODER_READ_DELAY)
+        osDelay(ENCODER_READ_DELAY);
     }
 }
 
@@ -256,7 +253,7 @@ __NO_RETURN void sendCruiseCommandTask (void *argument) {
 }
 
 /**
-  * @brief  updates specific flags to decide which thread will send a CAN message
+  * @brief  Decides which thread will send a CAN message
   * @param  argument: Not used
   * @retval None
   */
@@ -266,7 +263,7 @@ __NO_RETURN void updateEventFlagsTask(void *argument) {
         // osSemaphoreAcquire(eventFlagsSemaphoreHandle, osWaitForever);
 
         // order of priorities beginning with most important: regen braking, encoder motor command, cruise control
-        if (event_flags.regen_enable && regen_value > 0 && battery_soc < 90) {
+        if (event_flags.regen_enable && regen_value > 0 && battery_soc < BATTERY_REGEN_THRESHOLD) {
             state = REGEN_READY;
         }
         else if (!event_flags.encoder_value_is_zero) {
@@ -306,7 +303,7 @@ __NO_RETURN void receiveBatteryMessageTask (void *argument) {
             }
         }
 
-        osDelay(READ_BATTERY_SOC_DELAY)
+        osDelay(READ_BATTERY_SOC_DELAY);
     }
 }
 

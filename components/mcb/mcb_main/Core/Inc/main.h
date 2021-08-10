@@ -125,6 +125,10 @@ void Error_Handler(void);
 #define PEDAL_MAX 0xD0
 #define PEDAL_MIN 0x0F
 
+#define CRUISE_MIN 0
+#define CRUISE_MAX 100
+#define CRUISE_INCREMENT_VALUE 1
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
