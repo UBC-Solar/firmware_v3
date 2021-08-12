@@ -14,9 +14,10 @@
 
 #endif
 
-void tx_data(BTM_PackData_t *pPackData, char data_to_send);
+void tx_data(BTM_PackData_t *pPackData);
 void Voltage_Retrieve(BTM_PackData_t *pPackData);
 void Temperature_Retrieve(BTM_PackData_t *pPackData);
+void SOC_Retrieve(BTM_PackData_t *pPackData);
 void Module_Status_Retrieve(BTM_PackData_t *pPackData);
 void System_Status_Retrieve(BTM_PackData_t *pPackData);
 
@@ -27,7 +28,7 @@ void System_Status_Retrieve(BTM_PackData_t *pPackData);
 #define BTM_NUM_DEVICES 2U
 #define BTM_NUM_MODULES 18
 #define CAN_MESSAGE_SERIES_LEN 5
-#define SEND_DATA True
+#define SEND_DATA 1 //true
 
 #define DATA_BYTES_MODULE 2
 
@@ -40,6 +41,6 @@ typedef struct
     CAN_TxHeaderTypeDef TxHeader;
     uint8_t dataFrame[8];
     uint32_t mailbox = 0; //check this
-} CAN_Message;
+} CAN_Message_t;
 
 #endif //this means this file will only be included once, so won't get error
