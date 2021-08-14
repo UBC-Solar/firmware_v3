@@ -34,9 +34,9 @@
 #define PEDAL_MAX               0xD0
 #define PEDAL_MIN               0x0F
 
+#define EVENT_FLAG_UPDATE_DELAY 25
 #define ENCODER_READ_DELAY      50
 #define READ_BATTERY_SOC_DELAY  5000
-#define EVENT_FLAG_UPDATE_DELAY 25
 
 /* USER CODE END PD */
 
@@ -50,6 +50,7 @@ osThreadId_t updateEventFlagsTaskHandle;
 osThreadId_t sendMotorCommandTaskHandle;
 osThreadId_t sendRegenCommandTaskHandle;
 osThreadId_t sendCruiseCommandTaskHandle;
+osThreadId_t sendIdleCommandTaskHandle;
 
 osThreadId_t receiveBatteryMessageTaskHandle;
 
@@ -81,6 +82,7 @@ void updateEventFlagsTask(void *argument);
 void sendMotorCommandTask(void *argument);
 void sendRegenCommandTask(void *argument);
 void sendCruiseCommandTask (void *argument);
+void sendIdleCommandTask (void *argument);
 
 void receiveBatteryMessageTask (void *argument);
 
@@ -106,6 +108,7 @@ void MX_FREERTOS_Init(void) {
     sendMotorCommandTaskHandle = osThreadNew(sendMotorCommandTask, NULL, &sendMotorCommandTask_attributes);
     sendRegenCommandTaskHandle = osThreadNew(sendRegenCommandTask, NULL, &sendRegenCommandTask_attributes);
     sendCruiseCommandTaskHandle = osThreadNew(sendCruiseCommandTask, NULL, &sendCruiseCommandTask_attributes);
+    sendIdleCommandTaskHandle = osThreadNew(sendIdleCommandTask, NULL, &sendIdleCommandTask_attributes);
 
     receiveBatteryMessageTaskHandle = osThreadNew(receiveBatteryMessageTask, NULL, &receiveBatteryMessageTask_attributes);
 
@@ -241,6 +244,32 @@ __NO_RETURN void sendCruiseCommandTask (void *argument) {
 
         // set velocity to cruise value
         velocity.float_value = (float) cruise_value;
+
+        // writing data into data_send array which will be sent as a CAN message
+        for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++) {
+            data_send[i] = velocity.bytes[i];
+            data_send[4 + i] = current.bytes[i];
+        }
+
+        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
+    }
+}
+
+/**
+  * @brief  sends an "idle" CAN message when the car is not moving
+  * @param  argument: Not used
+  * @retval None
+  */
+__NO_RETURN void sendIdleCommandTask (void *argument) {
+    uint8_t data_send[CAN_DATA_LENGTH];
+
+    while (1) {
+        // waits for event flag that signals the decision to send an idle command
+        osEventFlagsWait(commandEventFlagsHandle, IDLE, osFlagsWaitAll, osWaitForever);
+
+        // zeroed since car would not be moving in idle state
+        current.float_value = 0.0;
+        velocity.float_value = 0.0;
 
         // writing data into data_send array which will be sent as a CAN message
         for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++) {

@@ -35,6 +35,12 @@ const osThreadAttr_t sendCruiseCommandTask_attributes = {
         .stack_size = 128 * 4
 };
 
+const osThreadAttr_t sendIdleCommandTask_attributes = {
+        .name = "sendIdleCommandTask",
+        .priority = (osPriority_t) osPriorityNormal,
+        .stack_size = 128 * 4
+};
+
 const osThreadAttr_t updateEventFlagsTask_attributes = {
         .name = "updateEventFlags",
         .priority = (osPriority_t) osPriorityHigh,
