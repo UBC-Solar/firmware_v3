@@ -61,10 +61,10 @@ osSemaphoreId_t eventFlagsSemaphoreHandle;
 
 // indicates the current state of the main control node
 enum states {
-    IDLE = (uint32_t) 0x0000,
-    NORMAL_READY = (uint32_t) 0x0001,
-    REGEN_READY = (uint32_t) 0x0002,
-    CRUISE_READY = (uint32_t) 0x0004
+    IDLE = (uint32_t) 0x0001,
+    NORMAL_READY = (uint32_t) 0x0002,
+    REGEN_READY = (uint32_t) 0x0004,
+    CRUISE_READY = (uint32_t) 0x0008
 } state;
 
 
