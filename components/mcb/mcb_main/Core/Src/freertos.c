@@ -34,9 +34,9 @@
 #define PEDAL_MAX               0xD0
 #define PEDAL_MIN               0x0F
 
-#define ENCODER_READ_DELAY      100
+#define ENCODER_READ_DELAY      50
 #define READ_BATTERY_SOC_DELAY  5000
-#define EVENT_FLAG_UPDATE_DELAY 100
+#define EVENT_FLAG_UPDATE_DELAY 25
 
 /* USER CODE END PD */
 
