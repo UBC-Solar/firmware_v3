@@ -5,11 +5,7 @@
 #include "masterboard_data_collection.h"
 #endif
 
-#define NEWLINE "\n"
-#define VOLT_CHAR "v"
-#define TEMP_CHAR "t"
-#define SOC_CHAR "c"
-#define MODULE_STATUS_CHAR "s"
-#define SYS_STATUS_CHAR "y"
+CDC_Transmit_FS(NEWLINE, strlen(data_char));
+static void CAN_config(void);
 
 #endif

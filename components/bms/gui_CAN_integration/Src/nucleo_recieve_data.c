@@ -9,6 +9,7 @@ int *interrupt_count = 0;
 
 static void CAN_config(void)
 {
+    //CAN handle config (should this be in separate Main file?)
     hcan->Instance = CAN1;
     hcan->Init.Prescaler = 16;
     hcan->Init.Mode = CAN_MODE_NORMAL;
@@ -22,15 +23,15 @@ static void CAN_config(void)
     hcan->Init.ReceiveFifoLocked = DISABLE;
     hcan->Init.TransmitFifoPriority = DISABLE;
 
-    //CAN filter config
-    sFilterConfig.FilterBank = 1; //https://www.programmersought.com/article/56373885196/
+    //CAN filter config (should this be in separate Main file?)
+    sFilterConfig.FilterBank = 1; //https://www.google.ca/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwjRrfzYluTxAhVXqJ4KHUWbB1wQFjAAegQIEBAD&url=https%3A%2F%2Fwww.st.com%2Fresource%2Fen%2Freference_manual%2Fdm00135183-stm32f446xx-advanced-armbased-32bit-mcus-stmicroelectronics.pdf&usg=AOvVaw09x0J9iGreyFuAMma4aTnE
+    //page 1058
     sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
     sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
     sFilterConfig.FilterIdHigh = 0x623 << 5; //this will need to change
     sFilterConfig.FilterIdLow = 0x0000;
     sFilterConfig.FilterMaskIdHigh = 0x623 << 5;
     sFilterConfig.FilterMaskIdLow = 0x0000;
-    CDC_Transmit_FS(NEWLINE, strlen(data_char));
     sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
     sFilterConfig.FilterActivation = ENABLE;
 
@@ -137,12 +138,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(hcan)
 
     for (int i = 0; i < CAN_BYTES_SENT; i++)
     {
-        CDC_Transmit_FS(RxData[i], strlen(RxData[i])); //is ok?
+        CDC_Transmit_FS(RxData[i], strlen(RxData[i])); //ok to use this function?
     }
 
     *interrupt_count++;
 
-    if (*interrupt_count == 25) //last message in series, reset series
+    if (*interrupt_count == 25) //last message in series, reset running index
     {
         //serial.send "\n"
         *interrupt_count = 0;
