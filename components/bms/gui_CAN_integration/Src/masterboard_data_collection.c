@@ -23,6 +23,17 @@ for (int i = 0; i < CAN_MESSAGE_SERIES_LEN; i++)
 
 #endif
 
+/*
+Function Name: tx_data
+Function Purpose: 
+    Retrieve data using data-type-specific getter functions.
+    Tx 8 bytes of data at a time on CAN bus. 
+
+Parameter(s): BTM_PackData_t *pPackData - pointer to struct contining battery-module measurements
+
+Return: void
+*/
+
 void tx_data(BTM_PackData_t *pPackData)
 {
 
@@ -41,7 +52,7 @@ void tx_data(BTM_PackData_t *pPackData)
             buffer_pos = 0;
             buffer_end = CAN_BYTES_SENT;
             status = HAL_OK;
-            size_of_data = sizeof(collected_data) / sizeof(collected_data[0]);
+            size_of_data = sizeof(collected_data) / sizeof(collected_data[0]); //bytes of data needing to be sent
             transmission_attempt = 0;
 
             *pGetter_fns[k](pPackData); //calling getter function
@@ -56,7 +67,7 @@ void tx_data(BTM_PackData_t *pPackData)
 
                 do
                 {
-                    status = HAL_CAN_AddTxMessage(CAN_Handle, &((txInfo + k)->TxHeader), txInfo->dataFrame, &txInfo->mailbox);
+                    status = HAL_CAN_AddTxMessage(CAN_Handle, &((txInfo + k)->TxHeader), (txInfo + k)->dataFrame, &(txInfo + k)->mailbox);
                     transmission_attempt++;
                 } while (status != HAL_OK && transmission_attempt < TRANSMISSION_ATTEMPT_MAX);
 
