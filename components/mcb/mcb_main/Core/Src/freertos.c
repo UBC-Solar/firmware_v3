@@ -15,24 +15,23 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define ENCODER_QUEUE_MSG_CNT   5
-#define ENCODER_QUEUE_MSG_SIZE  2       /* 2 bytes (uint16_t) */
+#define ENCODER_QUEUE_MSG_CNT   5           /* maximum number of messages allowed in encoder queue */
+#define ENCODER_QUEUE_MSG_SIZE  2           /* size of each message in encoder queue 2 bytes (uint16_t) */
 
-#define DEFAULT_CRUISE_SPEED    10      /* To be edited */
-#define CRUISE_MAX              100
-#define CRUISE_MIN              0
+#define DEFAULT_CRUISE_SPEED    10          /* TODO: calibrate this */
+#define CRUISE_MAX              100         /* value is in km/h */ 
+#define CRUISE_MIN              0           /* value is in km/h */ 
 
-#define BATTERY_REGEN_THRESHOLD 90
+#define BATTERY_REGEN_THRESHOLD 90          /* maximum battery percentage at which regen is enabled */
 
 #define CAN_FIFO0               0
 #define CAN_FIFO1               1
-#define DATA_LENGTH             8
 
 #define INIT_EVENT_FLAGS_SEMAPHORE_VAL  0
 #define MAX_EVENT_FLAGS_SEMAPHORE_VAL   1
 
-#define PEDAL_MAX               0xD0
-#define PEDAL_MIN               0x0F
+#define PEDAL_MAX               0xD0        /* TODO: calibrate this */
+#define PEDAL_MIN               0x0F        /* TODO: calibrate this */
 
 #define EVENT_FLAG_UPDATE_DELAY 25
 #define ENCODER_READ_DELAY      50
@@ -59,7 +58,6 @@ osMessageQueueId_t encoderQueueHandle;
 osEventFlagsId_t commandEventFlagsHandle;
 osSemaphoreId_t eventFlagsSemaphoreHandle;
 
-
 // indicates the current state of the main control node
 enum states {
     IDLE = (uint32_t) 0x0001,
@@ -67,7 +65,6 @@ enum states {
     REGEN_READY = (uint32_t) 0x0004,
     CRUISE_READY = (uint32_t) 0x0008
 } state;
-
 
 /* USER CODE END Variables */
 
@@ -129,14 +126,14 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE BEGIN Application */
 
 /**
-  * @brief  reads the encoder and places the value in the encoder queue every OS tick
-  * @param  argument: Not used
+  * @brief  reads the encoder and places the value in the encoder queue
   * @retval None
   */
 __NO_RETURN void readEncoderTask(void *argument) {
     static uint16_t old_encoder_reading = 0x0000;
     static uint16_t encoder_reading = 0x0000;
 
+    // TODO: replace with HAL library
     EncoderInit();
 
     while (1) {
@@ -159,7 +156,6 @@ __NO_RETURN void readEncoderTask(void *argument) {
 
 /**
   * @brief  sends motor command (torque-control) CAN message once encoder value is read and a NORMAL_STATE flag is signalled
-  * @param  argument: Not used
   * @retval None
   */
 __NO_RETURN void sendMotorCommandTask(void *argument) {
@@ -201,7 +197,6 @@ __NO_RETURN void sendMotorCommandTask(void *argument) {
 
 /**
   * @brief  sends regen command (velocity control) CAN message 
-  * @param  argument: Not used
   * @retval None
   */
 __NO_RETURN void sendRegenCommandTask(void *argument) {
@@ -229,7 +224,6 @@ __NO_RETURN void sendRegenCommandTask(void *argument) {
 
 /**
   * @brief  sends cruise-control command (velocity control) CAN message 
-  * @param  argument: Not used
   * @retval None
   */
 __NO_RETURN void sendCruiseCommandTask (void *argument) {
@@ -257,7 +251,6 @@ __NO_RETURN void sendCruiseCommandTask (void *argument) {
 
 /**
   * @brief  sends an "idle" CAN message when the car is not moving
-  * @param  argument: Not used
   * @retval None
   */
 __NO_RETURN void sendIdleCommandTask (void *argument) {
