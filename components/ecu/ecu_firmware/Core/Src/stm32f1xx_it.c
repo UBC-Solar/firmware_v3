@@ -57,7 +57,8 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-
+extern DMA_HandleTypeDef hdma_adc3;
+extern ADC_HandleTypeDef hadc3;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -187,7 +188,7 @@ void SysTick_Handler(void)
   /* USER CODE BEGIN SysTick_IRQn 0 */
 
   //static int variable for reading ADC values
-  static int adc_count = 0;
+  // static int adc_count = 0;
 
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
@@ -196,17 +197,17 @@ void SysTick_Handler(void)
 
   //ADC ISRs are called for every ADC_COUNT
   
-  if (adc_count == ADC_COUNT) {
+  // if (adc_count == ADC_COUNT) {
 
-    ADC_supp_batt_volt_runInterrupt();
-    ADC_motor_current_runInterrupt();
-    ADC_array_current_runInterrupt();
-    adc_count = 0;
+  //   ADC_supp_batt_volt_runInterrupt();
+  //   ADC_motor_current_runInterrupt();
+  //   ADC_array_current_runInterrupt();
+  //   adc_count = 0;
 
-  } else {
+  // } else {
 
-    adc_count ++;
-  }
+  //   adc_count ++;
+  // }
 
   /* USER CODE END SysTick_IRQn 1 */
 }
@@ -217,6 +218,34 @@ void SysTick_Handler(void)
 /* For the available peripheral interrupt handler names,                      */
 /* please refer to the startup file (startup_stm32f1xx.s).                    */
 /******************************************************************************/
+
+/**
+  * @brief This function handles ADC3 global interrupt.
+  */
+void ADC3_IRQHandler(void)
+{
+  /* USER CODE BEGIN ADC3_IRQn 0 */
+
+  /* USER CODE END ADC3_IRQn 0 */
+  HAL_ADC_IRQHandler(&hadc3);
+  /* USER CODE BEGIN ADC3_IRQn 1 */
+
+  /* USER CODE END ADC3_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA2 channel4 and channel5 global interrupts.
+  */
+void DMA2_Channel4_5_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA2_Channel4_5_IRQn 0 */
+
+  /* USER CODE END DMA2_Channel4_5_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_adc3);
+  /* USER CODE BEGIN DMA2_Channel4_5_IRQn 1 */
+
+  /* USER CODE END DMA2_Channel4_5_IRQn 1 */
+}
 
 /* USER CODE BEGIN 1 */
 
