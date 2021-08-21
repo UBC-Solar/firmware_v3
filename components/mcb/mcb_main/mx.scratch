@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ScratchFile FileVersion="3.0">
+  <FileVersion>3.0</FileVersion>
+  <Workspace>
+    <WorkspaceType>Single-project</WorkspaceType>
+    <WorkspacePath>C:\Users\mihir\Desktop\firmware_v3\components\mcb\mcb_main\</WorkspacePath>
+    <underRoot>true</underRoot>
+    <TrustZone>0</TrustZone>
+    <HAL_Driver>C:\Users\mihir\STM32Cube\Repository\STM32Cube_FW_F1_V1.8.3\</HAL_Driver>
+    <CMSIS>Drivers/CMSIS</CMSIS>
+    <Toolchain>STM32CubeIDE</Toolchain>
+    <IocFile>mcb_main.ioc</IocFile>
+    <Project>
+      <ProjectName>mcb_main</ProjectName>
+      <ProjectNature>C</ProjectNature>
+      <Secure />
+      <filestoremove />
+      <sourceEntriesToRemove>
+        <sourceEntry />
+      </sourceEntriesToRemove>
+      <configs>
+        <config>
+          <name>mcb_main</name>
+          <mainSourceRepo>Core</mainSourceRepo>
+          <sourceStructure>Advanced</sourceStructure>
+          <device>STM32F103RCTx</device>
+          <cpucore>Arm Cortex-M3</cpucore>
+          <fpu>None</fpu>
+          <memories>
+            <memory access="xrw" name="RAM" size="48" start="0x20000000" />
+            <memory access="rx" name="FLASH" size="256" start="0x8000000" />
+          </memories>
+          <startup>C:\Users\mihir\STM32Cube\Repository\STM32Cube_FW_F1_V1.8.3\Drivers\CMSIS\Device\ST\STM32F1xx\Source\Templates\gcc\startup_stm32f103xe.s</startup>
+          <LinkSettings>
+            <icfloc>1</icfloc>
+            <LinkAdditionalLibs />
+          </LinkSettings>
+          <heapSize>0x200</heapSize>
+          <stackSize>0x400</stackSize>
+          <board>custom</board>
+          <debugprobe />
+          <optimization />
+          <Aincludes>
+            <include />
+          </Aincludes>
+          <Adefines />
+          <Cdefines>
+            <define>USE_HAL_DRIVER</define>
+            <define>STM32F103xE</define>
+          </Cdefines>
+          <Ldefines />
+          <Cincludes>
+            <include>Core\Inc</include>
+            <include>Drivers\STM32F1xx_HAL_Driver\Inc</include>
+            <include>Drivers\STM32F1xx_HAL_Driver\Inc\Legacy</include>
+            <include>Middlewares\Third_Party\FreeRTOS\Source\include</include>
+            <include>Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS_V2</include>
+            <include>Middlewares\Third_Party\FreeRTOS\Source\portable\GCC\ARM_CM3</include>
+            <include>Drivers\CMSIS\Device\ST\STM32F1xx\Include</include>
+            <include>Drivers\CMSIS\Include</include>
+          </Cincludes>
+          <definestoremove>
+            <Adefines />
+            <Cdefines>
+              <define>USE_FULL_LL_DRIVER</define>
+              <define>MBEDTLS_CONFIG_FILE="mbedtls_config.h"</define>
+              <define>USE_FULL_ASSERT=1U</define>
+            </Cdefines>
+            <Ldefines />
+          </definestoremove>
+          <inctoremove>
+            <Aincludes>
+              <include />
+            </Aincludes>
+            <Cincludes />
+          </inctoremove>
+        </config>
+      </configs>
+      <copyAsReference>false</copyAsReference>
+      <sourceEntries>
+        <sourceEntry>
+          <name>Core</name>
+        </sourceEntry>
+        <sourceEntry>
+          <name>Drivers</name>
+        </sourceEntry>
+        <sourceEntry>
+          <name>Middlewares</name>
+        </sourceEntry>
+      </sourceEntries>
+      <Groups />
+    </Project>
+  </Workspace>
+</ScratchFile>
+
