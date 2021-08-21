@@ -10,13 +10,17 @@
 
 ## encoder.c (likely to be removed soon)
 
+Contains the functions used to initialise and read the pedal's quadrature encoder using a hardware timer
+
+This code has been written in bare-metal C and will likely soon be replaced with HAL function calls.
+
 ## freertos.c
 
-### Overview
+This file contains all of the code that controls the behaviour of the MCB (minus interrupt service routines) _after_ the RTOS kernel starts running.
 
-- This file contains all of the code that controls the behaviour of the MCB (minus interrupt service routines) _after_ the RTOS kernel starts running.
-- Essentially, all the important things that the MCB does (sending CAN messages, reading inputs, etc.) is possible because of the functions defined in this file
-- If you are looking to add a new feature to the MCB, chances are you'll be creating a task in this file
+Essentially, all the important things that the MCB does (sending CAN messages, reading inputs, etc.) is possible because of the functions defined in this file.
+
+If you are looking to add a new feature to the MCB, chances are you'll be creating a task in this file.
 
 ### Contents
 
