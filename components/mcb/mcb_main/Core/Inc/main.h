@@ -122,8 +122,7 @@ void Error_Handler(void);
 
 #define ENCODER_TIMER_TICKS (uint32_t) 1
 
-#define PEDAL_MAX 0xD0
-#define PEDAL_MIN 0x0F
+#define CRUISE_INCREMENT_VALUE 1
 
 /* USER CODE END Private defines */
 

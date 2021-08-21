@@ -22,6 +22,10 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "cmsis_os.h"
+
+extern osThreadId_t eventFlagsSemaphoreHandle;
+
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;

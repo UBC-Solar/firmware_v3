@@ -41,6 +41,12 @@ const osThreadAttr_t sendNextScreenTask_attributes = {
         .priority = (osPriority_t) osPriorityBelowNormal,
         .stack_size = 128 * 4
 };
+const osThreadAttr_t sendIdleCommandTask_attributes = {
+        .name = "sendIdleCommandTask",
+        .priority = (osPriority_t) osPriorityNormal,
+        .stack_size = 128 * 4
+};
+
 const osThreadAttr_t updateEventFlagsTask_attributes = {
         .name = "updateEventFlags",
         .priority = (osPriority_t) osPriorityHigh,

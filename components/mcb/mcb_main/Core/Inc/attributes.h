@@ -16,6 +16,7 @@ extern const osThreadAttr_t updateEventFlagsTask_attributes;
 extern const osThreadAttr_t sendMotorCommandTask_attributes;
 extern const osThreadAttr_t sendRegenCommandTask_attributes;
 extern const osThreadAttr_t sendCruiseCommandTask_attributes;
+extern const osThreadAttr_t sendIdleCommandTask_attributes;
 
 extern const osThreadAttr_t readRegenValueTask_attributes;
 

@@ -15,29 +15,26 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define ENCODER_QUEUE_MSG_CNT   5
-#define ENCODER_QUEUE_MSG_SIZE  2       /* 2 bytes (uint16_t) */
+#define ENCODER_QUEUE_MSG_CNT   5           /* maximum number of messages allowed in encoder queue */
+#define ENCODER_QUEUE_MSG_SIZE  2           /* size of each message in encoder queue 2 bytes (uint16_t) */
 
-#define DEFAULT_CRUISE_SPEED    10      /* To be edited */
-#define CRUISE_MAX              100
-#define CRUISE_MIN              0
+#define DEFAULT_CRUISE_SPEED    10          /* TODO: calibrate this */
+#define CRUISE_MAX              100         /* value is in km/h */
+#define CRUISE_MIN              0           /* value is in km/h */
 
-#define IDLE                    (uint32_t) 0x0000
-#define NORMAL_READY            (uint32_t) 0x0001
-#define REGEN_READY             (uint32_t) 0x0002
-#define CRUISE_READY            (uint32_t) 0x0004
+#define BATTERY_REGEN_THRESHOLD 90          /* maximum battery percentage at which regen is enabled */
 
 #define CAN_FIFO0               0
 #define CAN_FIFO1               1
-#define DATA_LENGTH             8
 
 #define INIT_EVENT_FLAGS_SEMAPHORE_VAL  0
 #define MAX_EVENT_FLAGS_SEMAPHORE_VAL   1
 
-#define PEDAL_MAX               0xD0
-#define PEDAL_MIN               0x0F
+#define PEDAL_MAX               0xD0        /* TODO: calibrate this */
+#define PEDAL_MIN               0x0F        /* TODO: calibrate this */
 
-#define ENCODER_READ_DELAY      100
+#define EVENT_FLAG_UPDATE_DELAY 25
+#define ENCODER_READ_DELAY      50
 #define READ_BATTERY_SOC_DELAY  5000
 
 /* USER CODE END PD */
@@ -53,6 +50,7 @@ osThreadId_t sendMotorCommandTaskHandle;
 osThreadId_t sendRegenCommandTaskHandle;
 osThreadId_t sendCruiseCommandTaskHandle;
 osThreadId_t sendNextScreenTaskHandle;
+osThreadId_t sendIdleCommandTaskHandle;
 
 osThreadId_t receiveBatteryMessageTaskHandle;
 
@@ -60,6 +58,14 @@ osMessageQueueId_t encoderQueueHandle;
 
 osEventFlagsId_t commandEventFlagsHandle;
 osSemaphoreId_t eventFlagsSemaphoreHandle;
+
+// indicates the current state of the main control node
+enum states {
+    IDLE = (uint32_t) 0x0001,
+    NORMAL_READY = (uint32_t) 0x0002,
+    REGEN_READY = (uint32_t) 0x0004,
+    CRUISE_READY = (uint32_t) 0x0008
+} state;
 
 /* USER CODE END Variables */
 
@@ -74,6 +80,7 @@ void updateEventFlagsTask(void *argument);
 void sendMotorCommandTask(void *argument);
 void sendRegenCommandTask(void *argument);
 void sendCruiseCommandTask (void *argument);
+void sendIdleCommandTask (void *argument);
 void sendNextScreenTask (void *argument);
 
 
@@ -102,6 +109,8 @@ void MX_FREERTOS_Init(void) {
     sendRegenCommandTaskHandle = osThreadNew(sendRegenCommandTask, NULL, &sendRegenCommandTask_attributes);
     sendCruiseCommandTaskHandle = osThreadNew(sendCruiseCommandTask, NULL, &sendCruiseCommandTask_attributes);
     sendNextScreenTaskHandle = osThreadNew(sendNextScreenTask, NULL, &sendNextScreenTask_attributes);
+    sendIdleCommandTaskHandle = osThreadNew(sendIdleCommandTask, NULL, &sendIdleCommandTask_attributes);
+
     receiveBatteryMessageTaskHandle = osThreadNew(receiveBatteryMessageTask, NULL, &receiveBatteryMessageTask_attributes);
 
     // TODO: threads to add - send MCB status message over CAN, read in car speed from CAN bus, transmit "next screen" CAN message
@@ -121,14 +130,14 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE BEGIN Application */
 
 /**
-  * @brief  reads the encoder and places the value in the encoder queue every OS tick
-  * @param  argument: Not used
+  * @brief  reads the encoder and places the value in the encoder queue
   * @retval None
   */
 __NO_RETURN void readEncoderTask(void *argument) {
     static uint16_t old_encoder_reading = 0x0000;
     static uint16_t encoder_reading = 0x0000;
 
+    // TODO: replace with HAL library
     EncoderInit();
 
     while (1) {
@@ -145,13 +154,12 @@ __NO_RETURN void readEncoderTask(void *argument) {
 
         old_encoder_reading = encoder_reading;
 
-        osDelay(ENCODER_READ_DELAY)
+        osDelay(ENCODER_READ_DELAY);
     }
 }
 
 /**
   * @brief  sends motor command (torque-control) CAN message once encoder value is read and a NORMAL_STATE flag is signalled
-  * @param  argument: Not used
   * @retval None
   */
 __NO_RETURN void sendMotorCommandTask(void *argument) {
@@ -187,13 +195,12 @@ __NO_RETURN void sendMotorCommandTask(void *argument) {
             data_send[4 + i] = current.bytes[i];
         }
 
-        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &CAN_mailbox);
+        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
     }
 }
 
 /**
-  * @brief  sends regen command (velocity control) CAN message 
-  * @param  argument: Not used
+  * @brief  sends regen command (velocity control) CAN message
   * @retval None
   */
 __NO_RETURN void sendRegenCommandTask(void *argument) {
@@ -215,13 +222,12 @@ __NO_RETURN void sendRegenCommandTask(void *argument) {
             data_send[4 + i] = current.bytes[i];
         }
 
-        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &CAN_mailbox);
+        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
     }
 }
 
 /**
-  * @brief  sends cruise-control command (velocity control) CAN message 
-  * @param  argument: Not used
+  * @brief  sends cruise-control command (velocity control) CAN message
   * @retval None
   */
 __NO_RETURN void sendCruiseCommandTask (void *argument) {
@@ -243,12 +249,37 @@ __NO_RETURN void sendCruiseCommandTask (void *argument) {
             data_send[4 + i] = current.bytes[i];
         }
 
-        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &CAN_mailbox);
+        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
     }
 }
 
 /**
-  * @brief  sends next_screen command (to switch telemetry output) CAN message 
+  * @brief  sends an "idle" CAN message when the car is not moving
+  * @retval None
+  */
+__NO_RETURN void sendIdleCommandTask (void *argument) {
+    uint8_t data_send[CAN_DATA_LENGTH];
+
+    while (1) {
+        // waits for event flag that signals the decision to send an idle command
+        osEventFlagsWait(commandEventFlagsHandle, IDLE, osFlagsWaitAll, osWaitForever);
+
+        // zeroed since car would not be moving in idle state
+        current.float_value = 0.0;
+        velocity.float_value = 0.0;
+
+        // writing data into data_send array which will be sent as a CAN message
+        for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++) {
+            data_send[i] = velocity.bytes[i];
+            data_send[4 + i] = current.bytes[i];
+        }
+
+        HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
+    }
+}
+
+/**
+  * @brief  sends next_screen command (to switch telemetry output) CAN message
   * @param  argument: Not used
   * @retval None
   */
@@ -261,48 +292,47 @@ __NO_RETURN void sendNextScreenTask (void *argument) {
         // current set to maximum for a cruise control message
         if (event_flags.next_screen) {
             data_send = 0x01;
-            HAL_CAN_AddTxMessage(&hcan, &screen_cruise_control_header, data_send, &CAN_mailbox);
+            HAL_CAN_AddTxMessage(&hcan, &screen_cruise_control_header, data_send, &can_mailbox);
             event_flags.next_screen = 0;
         }
 
-        
 
-        
+
+
     }
 }
 
 
 /**
-  * @brief  updates specific flags to decide which thread will send a CAN message
+  * @brief  Decides which thread will send a CAN message
   * @param  argument: Not used
   * @retval None
   */
 __NO_RETURN void updateEventFlagsTask(void *argument) {
     while (1) {
         // waits for the event flags struct to change
-        osSemaphoreAcquire(eventFlagsSemaphoreHandle, osWaitForever);
-
-        // should send a regen command if the regen is enabled and either of two things is true:
-        // 1) the encoder value is zero OR 2) the encoder value and the regen value is not zero 
+        // osSemaphoreAcquire(eventFlagsSemaphoreHandle, osWaitForever);
 
         // order of priorities beginning with most important: regen braking, encoder motor command, cruise control
-        if (event_flags.regen_enable && regen_value > 0) {
-            osEventFlagsSet(commandEventFlagsHandle, REGEN_READY);
+        if (event_flags.regen_enable && regen_value > 0 && battery_soc < BATTERY_REGEN_THRESHOLD) {
+            state = REGEN_READY;
         }
         else if (!event_flags.encoder_value_is_zero && !event_flags.cruise_status) {
-            osEventFlagsSet(commandEventFlagsHandle, NORMAL_READY);
+            state = NORMAL_READY;
         }
-        else if (event_flags.cruise_status && cruise_value > 0) {
-            osEventFlagsSet(commandEventFlagsHandle, CRUISE_READY);
+        else if (event_flags.cruise_status && cruise_value > 0 && !event_flags.brake_in) {
+            state = CRUISE_READY;
         }
         // only want to idle after braking when exiting cruise mode
         else if (event_flags.brake_in && event_flags.cruise_status){
-            osEventFlagsSet(commandEventFlagsHandle, IDLE);
+             state = IDLE;
         }
         else {
-            osEventFlagsSet(commandEventFlagsHandle, IDLE);
+            state = IDLE;
         }
-        
+
+        osEventFlagsSet(commandEventFlagsHandle, state);
+        osDelay(EVENT_FLAG_UPDATE_DELAY);
     }
 }
 
@@ -317,7 +347,7 @@ __NO_RETURN void receiveBatteryMessageTask (void *argument) {
     while (1) {
         if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_FIFO0)) {
             // filtering for 0x626 ID done in hardware 
-            HAL_CAN_GetRxMessage(&hcan, CAN_FIFO0, &CAN_receive_header, battery_msg_data);
+            HAL_CAN_GetRxMessage(&hcan, CAN_FIFO0, &can_rx_header, battery_msg_data);
 
             // if the battery SOC is out of range, assume it is at 100% as a safety measure
             if (battery_msg_data[0] < 0 || battery_msg_data[0] > 100) {
@@ -328,7 +358,7 @@ __NO_RETURN void receiveBatteryMessageTask (void *argument) {
             }
         }
 
-        osDelay(READ_BATTERY_SOC_DELAY)
+        osDelay(READ_BATTERY_SOC_DELAY);
     }
 }
 

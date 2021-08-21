@@ -40,7 +40,9 @@ extern CAN_HandleTypeDef hcan;
 
 extern CAN_TxHeaderTypeDef drive_command_header;
 extern CAN_TxHeaderTypeDef screen_cruise_control_header
+extern CAN_RxHeaderTypeDef can_rx_header;
 extern CAN_FilterTypeDef battery_soc_filter;
+extern uint32_t can_mailbox;
 
 /* USER CODE END Private defines */
 
