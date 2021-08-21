@@ -117,8 +117,8 @@ void MemManage_Handler(void)
 }
 
 /**
- * @brief This function handles Prefetch fault, memory access fault.
- */
+  * @brief This function handles Prefetch fault, memory access fault.
+  */
 void BusFault_Handler(void)
 {
     /* USER CODE BEGIN BusFault_IRQn 0 */
@@ -167,7 +167,7 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /**
- * @brief This function handles EXTI line1 interrupt.
+ * @brief This function handles a REGEN_EN interrupt.
  */
 void EXTI1_IRQHandler(void)
 {
@@ -187,8 +187,8 @@ void EXTI1_IRQHandler(void)
 }
 
 /**
- * @brief This function handles EXTI line2 interrupt.
- */
+  * @brief This function handles a BRK_IN interrupt.
+  */
 void EXTI2_IRQHandler(void)
 {
     /* USER CODE BEGIN EXTI2_IRQn 0 */
@@ -210,8 +210,8 @@ void EXTI2_IRQHandler(void)
 }
 
 /**
- * @brief This function handles EXTI line3 interrupt.
- */
+  * @brief This function handles a RVRS_EN interrupt.
+  */
 void EXTI3_IRQHandler(void)
 {
     /* USER CODE BEGIN EXTI3_IRQn 0 */
@@ -272,23 +272,32 @@ void EXTI9_5_IRQHandler(void)
 {
     /* USER CODE BEGIN EXTI9_5_IRQn 0 */
 
-	if(__HAL_GPIO_EXTI_GET_FLAG(CRUISE_DIS_Pin)) {
-		event_flags.cruise_status = DISABLE;
-
-	} else if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_UP_Pin)) {
-		if ((cruise_value + CRUISE_INCREMENT_VALUE) > CRUISE_MAX) {
-			cruise_value = CRUISE_MAX;
-		} else {
-			cruise_value += CRUISE_INCREMENT_VALUE;
-		}
-
-	} else if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_DOWN_Pin)) {
-		if ((cruise_value - CRUISE_INCREMENT_VALUE) < CRUISE_MIN) {
-			cruise_value = CRUISE_MIN;
-		} else {
-			cruise_value -= CRUISE_INCREMENT_VALUE;
-		}
-	}
+    if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_DIS_Pin))
+    {
+        event_flags.cruise_status = DISABLE;
+    }
+    else if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_UP_Pin))
+    {
+        if ((cruise_value + CRUISE_INCREMENT_VALUE) > CRUISE_MAX)
+        {
+            cruise_value = CRUISE_MAX;
+        }
+        else
+        {
+            cruise_value += CRUISE_INCREMENT_VALUE;
+        }
+    }
+    else if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_DOWN_Pin))
+    {
+        if ((cruise_value - CRUISE_INCREMENT_VALUE) < CRUISE_MIN)
+        {
+            cruise_value = CRUISE_MIN;
+        }
+        else
+        {
+            cruise_value -= CRUISE_INCREMENT_VALUE;
+        }
+    }
 
     /* USER CODE END EXTI9_5_IRQn 0 */
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
