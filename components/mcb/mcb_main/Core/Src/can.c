@@ -30,6 +30,14 @@ CAN_TxHeaderTypeDef drive_command_header = {
   .DLC = CAN_DATA_LENGTH
 }
 
+CAN_TxHeaderTypeDef screen_cruise_control_header = {
+  .StdId = DRIVER_CONTROLS_BASE_ADDRESS,
+  .ExtId = 0x0000,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = CAN_CONTROL_DATA_LENGTH
+}
+
 CAN_FilterTypeDef battery_soc_filter;
 
 CAN_RxHeaderTypeDef CAN_receive_header;

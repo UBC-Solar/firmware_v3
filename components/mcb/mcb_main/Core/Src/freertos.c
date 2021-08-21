@@ -52,6 +52,7 @@ osThreadId_t updateEventFlagsTaskHandle;
 osThreadId_t sendMotorCommandTaskHandle;
 osThreadId_t sendRegenCommandTaskHandle;
 osThreadId_t sendCruiseCommandTaskHandle;
+osThreadId_t sendNextScreenTaskHandle;
 
 osThreadId_t receiveBatteryMessageTaskHandle;
 
@@ -73,6 +74,8 @@ void updateEventFlagsTask(void *argument);
 void sendMotorCommandTask(void *argument);
 void sendRegenCommandTask(void *argument);
 void sendCruiseCommandTask (void *argument);
+void sendNextScreenTask (void *argument);
+
 
 void receiveBatteryMessageTask (void *argument);
 
@@ -98,7 +101,7 @@ void MX_FREERTOS_Init(void) {
     sendMotorCommandTaskHandle = osThreadNew(sendMotorCommandTask, NULL, &sendMotorCommandTask_attributes);
     sendRegenCommandTaskHandle = osThreadNew(sendRegenCommandTask, NULL, &sendRegenCommandTask_attributes);
     sendCruiseCommandTaskHandle = osThreadNew(sendCruiseCommandTask, NULL, &sendCruiseCommandTask_attributes);
-
+    sendNextScreenTaskHandle = osThreadNew(sendNextScreenTask, NULL, &sendNextScreenTask_attributes);
     receiveBatteryMessageTaskHandle = osThreadNew(receiveBatteryMessageTask, NULL, &receiveBatteryMessageTask_attributes);
 
     // TODO: threads to add - send MCB status message over CAN, read in car speed from CAN bus, transmit "next screen" CAN message
@@ -245,6 +248,31 @@ __NO_RETURN void sendCruiseCommandTask (void *argument) {
 }
 
 /**
+  * @brief  sends next_screen command (to switch telemetry output) CAN message 
+  * @param  argument: Not used
+  * @retval None
+  */
+__NO_RETURN void sendNextScreenTask (void *argument) {
+    uint8_t data_send[CAN_DATA_LENGTH];
+
+    while (1) {
+        // waits for event flag that signals the decision to send a cruise control command
+        osSemaphoreAcquire(eventFlagsSemaphoreHandle, osWaitForever);
+        // current set to maximum for a cruise control message
+        if (event_flags.next_screen) {
+            data_send = 0x01;
+            HAL_CAN_AddTxMessage(&hcan, &screen_cruise_control_header, data_send, &CAN_mailbox);
+            event_flags.next_screen = 0;
+        }
+
+        
+
+        
+    }
+}
+
+
+/**
   * @brief  updates specific flags to decide which thread will send a CAN message
   * @param  argument: Not used
   * @retval None
@@ -261,11 +289,15 @@ __NO_RETURN void updateEventFlagsTask(void *argument) {
         if (event_flags.regen_enable && regen_value > 0) {
             osEventFlagsSet(commandEventFlagsHandle, REGEN_READY);
         }
-        else if (!event_flags.encoder_value_is_zero) {
+        else if (!event_flags.encoder_value_is_zero && !event_flags.cruise_status) {
             osEventFlagsSet(commandEventFlagsHandle, NORMAL_READY);
         }
         else if (event_flags.cruise_status && cruise_value > 0) {
             osEventFlagsSet(commandEventFlagsHandle, CRUISE_READY);
+        }
+        // only want to idle after braking when exiting cruise mode
+        else if (event_flags.brake_in && event_flags.cruise_status){
+            osEventFlagsSet(commandEventFlagsHandle, IDLE);
         }
         else {
             osEventFlagsSet(commandEventFlagsHandle, IDLE);
