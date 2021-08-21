@@ -17,19 +17,11 @@
   ******************************************************************************
   */
 
-/* Includes ------------------------------------------------------------------*/
 #include "gpio.h"
-
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/
 /* Configure GPIO                                                             */
 /*----------------------------------------------------------------------------*/
-/* USER CODE BEGIN 1 */
-
-/* USER CODE END 1 */
 
 /** Configure pins as
         * Analog
@@ -69,10 +61,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PAPin PAPin PAPin PAPin
-                           PAPin */
-  GPIO_InitStruct.Pin = ENC_AS_Pin|ENC_BS_Pin|SWDIO_Pin|SWCLK_Pin
-                          |ENC_ZS_Pin;
+  /*Configure GPIO pins : PAPin PAPin PAPin */
+  GPIO_InitStruct.Pin = ENC_AS_Pin|ENC_BS_Pin|ENC_ZS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -107,9 +97,3 @@ void MX_GPIO_Init(void)
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
-
-/* USER CODE BEGIN 2 */
-
-/* USER CODE END 2 */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
