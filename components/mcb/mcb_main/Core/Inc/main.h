@@ -56,6 +56,7 @@ typedef struct input_flags {
   volatile uint8_t brake_in;
   volatile uint8_t regen_value_is_zero;
   volatile uint8_t encoder_value_is_zero;
+  volatile uint8_t next_screen
 } input_flags;
 
 extern input_flags event_flags;
