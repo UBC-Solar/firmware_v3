@@ -1,7 +1,7 @@
 #include "masterboard_data_collection.h"
 
 CAN_Message_t *txInfo;
-uint8_t messageID_table[5] = {0x111, 0x222, 0x333, 0x444, 0x555};                                                                                           //need to replace these after talking to Matthew
+uint8_t messageID_table[5] = {0x100, 0x200, 0x300, 0x400, 0x500};                                                                                           //placeholder values -- replace after talking to Matthew
 void (*pGetter_fns[5])(BTM_PackData_t *pPackData) = {Voltage_Retrieve, Temperature_Retrieve, SOC_Retrieve, Module_Status_Retrieve, System_Status_Retrieve}; //array of data getter functions
 
 #ifndef INIT_MESSAGE_HEADER
