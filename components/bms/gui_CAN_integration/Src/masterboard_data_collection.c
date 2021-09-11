@@ -67,7 +67,7 @@ void tx_data(BTM_PackData_t *pPackData)
 
                 do
                 {
-                    status = HAL_CAN_AddTxMessage(CAN_Handle, &((txInfo + k)->TxHeader), (txInfo + k)->dataFrame, &(txInfo + k)->mailbox);
+                    status = HAL_CAN_AddTxMessage(&hcan, &((txInfo + k)->TxHeader), (txInfo + k)->dataFrame, &(txInfo + k)->mailbox);
                     transmission_attempt++;
                 } while (status != HAL_OK && transmission_attempt < TRANSMISSION_ATTEMPT_MAX);
 

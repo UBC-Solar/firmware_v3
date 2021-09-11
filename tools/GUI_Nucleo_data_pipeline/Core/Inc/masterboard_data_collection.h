@@ -31,8 +31,6 @@ void System_Status_Retrieve(BTM_PackData_t *pPackData);
 
 #define DATA_BYTES_MODULE 2
 
-CAN_HandleTypeDef *CAN_Handle; //then you could do &hcan = CAN_Handle;
-
 BTM_PackData_t *pPackData;
 
 typedef struct
