@@ -117,7 +117,7 @@ int main(void)
 
   HAL_CAN_Start (&hcan);
 
-  ADC_init();
+  // ADC_init();
   FSM_init();
   /* USER CODE END 2 */
 
@@ -449,11 +449,11 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 {
   static float result[NUM_ANALOG_CHANNELS] = {0.0};
   // Average 1st half of the buffer
-  processReadings(0, result);
+  ADC3_processReadings(0, result);
   // convertTemp(result[0]);
-  ADC_getSuppBattVoltage(result[0]);
-  ADC_getMotorCurrent(result[1]);
-  ADC_getArrayCurrent(result[2]);
+  ADC3_setSuppBattVoltage(result[0]);
+  ADC3_setMotorCurrent(result[1]);
+  ADC3_setArrayCurrent(result[2]);
   // printf(", %.2f, %.2f\n", result[1], result[2]);
 }
 
@@ -462,40 +462,40 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
   static float result[NUM_ANALOG_CHANNELS] = {0.0};
   // Average 2nd half of the buffer
-  processReadings(1, result);
-  ADC_getSuppBattVoltage(result[0]);
-  ADC_getMotorCurrent(result[1]);
-  ADC_getArrayCurrent(result[2]);
+  ADC3_processReadings(1, result);
+  ADC3_setSuppBattVoltage(result[0]);
+  ADC3_setMotorCurrent(result[1]);
+  ADC3_setArrayCurrent(result[2]);
   // printf(", %.2f, %.2f\n", result[1], result[2]);
 }
 
-void processReadings(int half, float result[])
-{
-  int32_t sum[NUM_ANALOG_CHANNELS] = {0};
-  int sample_num = 0;
-  int limit = ADC_BUF_LENGTH_PER_CHANNEL >> 1; // divide by 2
-  if(half == 1) 
-  {
-    sample_num = ADC_BUF_LENGTH_PER_CHANNEL >> 1; 
-    limit = ADC_BUF_LENGTH_PER_CHANNEL;
-  }
+// void processReadings(int half, float result[])
+// {
+//   int32_t sum[NUM_ANALOG_CHANNELS] = {0};
+//   int sample_num = 0;
+//   int limit = ADC_BUF_LENGTH_PER_CHANNEL >> 1; // divide by 2
+//   if(half == 1) 
+//   {
+//     sample_num = ADC_BUF_LENGTH_PER_CHANNEL >> 1; 
+//     limit = ADC_BUF_LENGTH_PER_CHANNEL;
+//   }
 
-  // Average the samples
-  for(; sample_num < limit; sample_num++)
-  {
-    for(int channel = 0; channel < NUM_ANALOG_CHANNELS; channel++)
-    {
-      sum[channel] += adc_buf[NUM_ANALOG_CHANNELS * sample_num + channel];
-    }
-  }
+//   // Average the samples
+//   for(; sample_num < limit; sample_num++)
+//   {
+//     for(int channel = 0; channel < NUM_ANALOG_CHANNELS; channel++)
+//     {
+//       sum[channel] += adc_buf[NUM_ANALOG_CHANNELS * sample_num + channel];
+//     }
+//   }
   
-  for(int channel = 0; channel < NUM_ANALOG_CHANNELS; channel++)
-  {
-    result[channel] = ((float) sum[channel]) / (ADC_BUF_LENGTH_PER_CHANNEL >> 1);
-  }
+//   for(int channel = 0; channel < NUM_ANALOG_CHANNELS; channel++)
+//   {
+//     result[channel] = ((float) sum[channel]) / (ADC_BUF_LENGTH_PER_CHANNEL >> 1);
+//   }
 
-  return;
-}
+//   return;
+// }
 /* USER CODE END 4 */
 
 /**
