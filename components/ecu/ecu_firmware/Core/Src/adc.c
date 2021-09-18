@@ -9,23 +9,12 @@
  */
 
 #include "adc.h"
-// #define MAX_VOLT_READING 3.3
-// #define ADC_RESOLUTION 4095
-// #define ADC_AVG_SIZE 10
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
-// int ADC_getAverage (volatile int buffer[]);
 
 /*============================================================================*/
 /* PUBLIC FUNCTIONS */
-
-// void ADC_init(void)
-// {
-//     ADC_buffer_index = 0;
-//     ADC_raw_average = 0;
-//     return;
-// }
 
 /**
  * @brief Provides the voltage of the supplemental Battery
@@ -44,7 +33,7 @@ void ADC3_setSuppBattVoltage(float supp_voltage)
 {
     //assign the average ADC voltage to supp_voltage
     //adc voltage comes from a voltage divider made of R1=10k and R2=1k (v_adc = 1/11 * v_supp)
-    ADC3_supp_batt_volt = supp_voltage * ADC_MAX_VOLT_READING / ADC_RESOLUTION * 11 * 1000; 
+    ADC3_supp_batt_volt = (supp_voltage * ADC_MAX_VOLT_READING / ADC_RESOLUTION) * 11 * 1000; 
 }
 
 int ADC3_getSuppBattVoltage()
@@ -65,11 +54,10 @@ int ADC3_getSuppBattVoltage()
  * @param motor_current Pointer to variable to which result will be written
  * @retval 0 if reading is successful, else 1 (due to eg. ADC saturated)
  */
-int ADC3_setMotorCurrent(float motor_current)
+void ADC3_setMotorCurrent(float motor_current)
 {
     //convert volt readings into current
     //good references: https://www.lem.com/sites/default/files/products_datasheets/hass_50_600-s.pdf 
-    //file:///C:/Users/Forbes/Downloads/Isolated%20current%20and%20voltage%20transducers%20characteristics_1.pdf 
 
     motor_current = motor_current * ADC_MAX_VOLT_READING / ADC_RESOLUTION;
 
@@ -93,18 +81,15 @@ int ADC3_getMotorCurrent()
  * @param array_current Pointer to variable to which result will be written
  * @retval 0 if reading is successful, else 1 (due to eg. ADC saturated)
  */
-int ADC3_setArrayCurrent(float array_current)
+void ADC3_setArrayCurrent(float array_current)
 {
-    //initialize variables
+    //convert raw readings to voltage readings
     array_current = array_current * ADC_MAX_VOLT_READING / ADC_RESOLUTION;
     
     //convert volt readings into current
     //good references: https://www.lem.com/sites/default/files/products_datasheets/hass_50_600-s.pdf 
-    //file:///C:/Users/Forbes/Downloads/Isolated%20current%20and%20voltage%20transducers%20characteristics_1.pdf 
 
     ADC3_array_current = (array_current - 2.5) * 80 * 100; //output in cA
-
-    return 0;
 }
 
 int ADC3_getArrayCurrent()
@@ -129,97 +114,31 @@ int ADC_netCurrentOut(int motor_current, int array_current)
     return ADC3_motor_current - ADC3_array_current;
 }
 
-void ADC3_processRawReadings(int half, float result[])
+void ADC3_processRawReadings(int half, volatile int adc3_buf[], float result[])
 {
-  int32_t sum[NUM_ANALOG_CHANNELS] = {0};
+  int sum[ADC3_NUM_ANALOG_CHANNELS] = {0}; //C++(20) does not recognize int32_t
   int sample_num = 0;
-  int limit = ADC_BUF_LENGTH_PER_CHANNEL >> 1; // divide by 2
+  int limit = ADC3_BUF_LENGTH_PER_CHANNEL >> 1; // divide by 2
   if(half == 1) 
   {
-    sample_num = ADC_BUF_LENGTH_PER_CHANNEL >> 1; 
-    limit = ADC_BUF_LENGTH_PER_CHANNEL;
+    sample_num = ADC3_BUF_LENGTH_PER_CHANNEL >> 1; 
+    limit = ADC3_BUF_LENGTH_PER_CHANNEL;
   }
 
   // Average the samples
   for(; sample_num < limit; sample_num++)
   {
-    for(int channel = 0; channel < NUM_ANALOG_CHANNELS; channel++)
+    for(int channel = 0; channel < ADC3_NUM_ANALOG_CHANNELS; channel++)
     {
-      sum[channel] += adc_buf[NUM_ANALOG_CHANNELS * sample_num + channel];
+      sum[channel] += adc3_buf[ADC3_NUM_ANALOG_CHANNELS * sample_num + channel];
     }
   }
   
-  for(int channel = 0; channel < NUM_ANALOG_CHANNELS; channel++)
+  for(int channel = 0; channel < ADC3_NUM_ANALOG_CHANNELS; channel++)
   {
-    result[channel] = ((float) sum[channel]) / (ADC_BUF_LENGTH_PER_CHANNEL >> 1);
+    result[channel] = ((float) sum[channel]) / (ADC3_BUF_LENGTH_PER_CHANNEL >> 1);
   }
-
-  return;
 }
-
-// void ADC_supp_batt_volt_runInterrupt(void)
-// {
-
-//   HAL_ADC_PollForConversion(ADC_supp_batt_volt, HAL_MAX_DELAY);
-//   int volt_raw = HAL_ADC_GetValue(ADC_supp_batt_volt);
-
-//   ADC_supp_batt_volt_buff[ADC_buffer_index] = volt_raw;
-//   ADC_buffer_index++;
-
-//   if (ADC_buffer_index >= ADC_BUFFER_SIZE - 1) {
-//     ADC_buffer_index = 0;
-//   }
-// }
-
-// void ADC_motor_current_runInterrupt(void)
-// {
-
-//   HAL_ADC_PollForConversion(ADC_motor_current, HAL_MAX_DELAY);
-//   int volt_raw = HAL_ADC_GetValue(ADC_motor_current);
-
-//   ADC_motor_current_buff[ADC_buffer_index] = volt_raw;
-//   ADC_buffer_index++;
-
-//   if (ADC_buffer_index >= ADC_BUFFER_SIZE - 1) {
-//     ADC_buffer_index = 0;
-//   }
-// }
-
-// void ADC_array_current_runInterrupt(void)
-// {
-
-//   HAL_ADC_PollForConversion(ADC_array_current, HAL_MAX_DELAY);
-//   int volt_raw = HAL_ADC_GetValue(ADC_array_current);
-
-//   ADC_array_current_buff[ADC_buffer_index] = volt_raw;
-//   ADC_buffer_index ++;
-
-//   if (ADC_buffer_index >= ADC_BUFFER_SIZE) {
-//     ADC_buffer_index = 0;
-//   }
-// }
 
 /*============================================================================*/
 /* PRIVATE FUNCTIONS */
-// int ADC_getAverage(volatile int buffer[])
-// {
-//     int i = 0;
-//     int avg_index = ADC_buffer_index - 1;
-
-//     for (i = 0; i < ADC_AVG_SIZE; i++) {
-
-//         if (buffer[avg_index] <= ADC_RESOLUTION) 
-//             ADC_raw_average += buffer[avg_index];
-//         else 
-//             return 1;
-
-//         if (avg_index != 0) //read the most recent values
-//             avg_index --;
-//         else 
-//             avg_index = ADC_BUFFER_SIZE - 1; //wrapping in the circular buffer
-//     }
-
-//     ADC_raw_average /= ADC_AVG_SIZE;
-    
-//     return 0;
-// }

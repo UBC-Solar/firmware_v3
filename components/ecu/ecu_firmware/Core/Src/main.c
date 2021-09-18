@@ -35,9 +35,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define NUM_ANALOG_CHANNELS 3
-#define ADC_BUF_LENGTH_PER_CHANNEL 200
-#define ADC_BUF_LENGTH (ADC_BUF_LENGTH_PER_CHANNEL * NUM_ANALOG_CHANNELS)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -55,7 +52,7 @@ CAN_HandleTypeDef hcan;
 TIM_HandleTypeDef htim8;
 
 /* USER CODE BEGIN PV */
-
+volatile uint16_t adc3_buf[ADC_BUF_LENGTH] = {0};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -110,14 +107,8 @@ int main(void)
   MX_TIM8_Init();
   /* USER CODE BEGIN 2 */
   CAN_hcan = &hcan;
-
-  // ADC_supp_batt_volt= &hadc1;
-  // ADC_motor_current = &hadc2; //match names from adc.h
-  // ADC_array_current = &hadc3;
-
   HAL_CAN_Start (&hcan);
-
-  // ADC_init();
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adc3_buf, ADC3_BUF_LENGTH);
   FSM_init();
   /* USER CODE END 2 */
 
@@ -448,54 +439,29 @@ static void MX_GPIO_Init(void)
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 {
   static float result[NUM_ANALOG_CHANNELS] = {0.0};
+
   // Average 1st half of the buffer
-  ADC3_processReadings(0, result);
-  // convertTemp(result[0]);
+  ADC3_processRawReadings(0, adc3_buf, result);
+
+  // convert averaged raw readings into corresponding voltage and current values
   ADC3_setSuppBattVoltage(result[0]);
   ADC3_setMotorCurrent(result[1]);
   ADC3_setArrayCurrent(result[2]);
-  // printf(", %.2f, %.2f\n", result[1], result[2]);
 }
 
 // Conversion complete DMA interrupt callback
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
   static float result[NUM_ANALOG_CHANNELS] = {0.0};
+
   // Average 2nd half of the buffer
-  ADC3_processReadings(1, result);
+  ADC3_processRawReadings(1, adc3_buf, result);
+  
+  // convert averaged raw readings into corresponding voltage and current values
   ADC3_setSuppBattVoltage(result[0]);
   ADC3_setMotorCurrent(result[1]);
   ADC3_setArrayCurrent(result[2]);
-  // printf(", %.2f, %.2f\n", result[1], result[2]);
 }
-
-// void processReadings(int half, float result[])
-// {
-//   int32_t sum[NUM_ANALOG_CHANNELS] = {0};
-//   int sample_num = 0;
-//   int limit = ADC_BUF_LENGTH_PER_CHANNEL >> 1; // divide by 2
-//   if(half == 1) 
-//   {
-//     sample_num = ADC_BUF_LENGTH_PER_CHANNEL >> 1; 
-//     limit = ADC_BUF_LENGTH_PER_CHANNEL;
-//   }
-
-//   // Average the samples
-//   for(; sample_num < limit; sample_num++)
-//   {
-//     for(int channel = 0; channel < NUM_ANALOG_CHANNELS; channel++)
-//     {
-//       sum[channel] += adc_buf[NUM_ANALOG_CHANNELS * sample_num + channel];
-//     }
-//   }
-  
-//   for(int channel = 0; channel < NUM_ANALOG_CHANNELS; channel++)
-//   {
-//     result[channel] = ((float) sum[channel]) / (ADC_BUF_LENGTH_PER_CHANNEL >> 1);
-//   }
-
-//   return;
-// }
 /* USER CODE END 4 */
 
 /**
