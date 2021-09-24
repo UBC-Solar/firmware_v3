@@ -2,18 +2,7 @@
 /**
  ******************************************************************************
  * @file    stm32f1xx_it.c
- * @brief   Interrupt Service Routines.
- ******************************************************************************
- * @attention
- *
- * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
- * All rights reserved.</center></h2>
- *
- * This software component is licensed by ST under BSD 3-Clause license,
- * the "License"; You may not use this file except in compliance with the
- * License. You may obtain a copy of the License at:
- *                        opensource.org/licenses/BSD-3-Clause
- *
+ * @brief   Contains interrupt service routine definitions
  ******************************************************************************
  */
 /* USER CODE END Header */
@@ -46,7 +35,8 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 
-extern osThreadId_t eventFlagsSemaphoreHandle;
+extern osSemaphoreId_t eventFlagsSemaphoreHandle;
+extern osSemaphoreId_t nextScreenSemaphoreHandle;
 
 /* USER CODE END PV */
 
@@ -74,46 +64,46 @@ extern osThreadId_t updateEventFlagsTaskHandle;
 /*           Cortex-M3 Processor Interruption and Exception Handlers          */
 /******************************************************************************/
 /**
- * @brief This function handles Non maskable interrupt.
- */
+  * @brief This function handles Non maskable interrupt.
+  */
 void NMI_Handler(void)
 {
-    /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
+  /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
 
-    /* USER CODE END NonMaskableInt_IRQn 0 */
-    /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
+  /* USER CODE END NonMaskableInt_IRQn 0 */
+  /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
 
-    /* USER CODE END NonMaskableInt_IRQn 1 */
+  /* USER CODE END NonMaskableInt_IRQn 1 */
 }
 
 /**
- * @brief This function handles Hard fault interrupt.
- */
+  * @brief This function handles Hard fault interrupt.
+  */
 void HardFault_Handler(void)
 {
-    /* USER CODE BEGIN HardFault_IRQn 0 */
+  /* USER CODE BEGIN HardFault_IRQn 0 */
 
-    /* USER CODE END HardFault_IRQn 0 */
-    while (1)
-    {
-        /* USER CODE BEGIN W1_HardFault_IRQn 0 */
-        /* USER CODE END W1_HardFault_IRQn 0 */
-    }
+  /* USER CODE END HardFault_IRQn 0 */
+  while (1)
+  {
+    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
+    /* USER CODE END W1_HardFault_IRQn 0 */
+  }
 }
 
 /**
- * @brief This function handles Memory management fault.
- */
+  * @brief This function handles Memory management fault.
+  */
 void MemManage_Handler(void)
 {
-    /* USER CODE BEGIN MemoryManagement_IRQn 0 */
+  /* USER CODE BEGIN MemoryManagement_IRQn 0 */
 
-    /* USER CODE END MemoryManagement_IRQn 0 */
-    while (1)
-    {
-        /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
-        /* USER CODE END W1_MemoryManagement_IRQn 0 */
-    }
+  /* USER CODE END MemoryManagement_IRQn 0 */
+  while (1)
+  {
+    /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
+    /* USER CODE END W1_MemoryManagement_IRQn 0 */
+  }
 }
 
 /**
@@ -121,42 +111,42 @@ void MemManage_Handler(void)
   */
 void BusFault_Handler(void)
 {
-    /* USER CODE BEGIN BusFault_IRQn 0 */
+  /* USER CODE BEGIN BusFault_IRQn 0 */
 
-    /* USER CODE END BusFault_IRQn 0 */
-    while (1)
-    {
-        /* USER CODE BEGIN W1_BusFault_IRQn 0 */
-        /* USER CODE END W1_BusFault_IRQn 0 */
-    }
+  /* USER CODE END BusFault_IRQn 0 */
+  while (1)
+  {
+    /* USER CODE BEGIN W1_BusFault_IRQn 0 */
+    /* USER CODE END W1_BusFault_IRQn 0 */
+  }
 }
 
 /**
- * @brief This function handles Undefined instruction or illegal state.
- */
+  * @brief This function handles Undefined instruction or illegal state.
+  */
 void UsageFault_Handler(void)
 {
-    /* USER CODE BEGIN UsageFault_IRQn 0 */
+  /* USER CODE BEGIN UsageFault_IRQn 0 */
 
-    /* USER CODE END UsageFault_IRQn 0 */
-    while (1)
-    {
-        /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
-        /* USER CODE END W1_UsageFault_IRQn 0 */
-    }
+  /* USER CODE END UsageFault_IRQn 0 */
+  while (1)
+  {
+    /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
+    /* USER CODE END W1_UsageFault_IRQn 0 */
+  }
 }
 
 /**
- * @brief This function handles Debug monitor.
- */
+  * @brief This function handles Debug monitor.
+  */
 void DebugMon_Handler(void)
 {
-    /* USER CODE BEGIN DebugMonitor_IRQn 0 */
+  /* USER CODE BEGIN DebugMonitor_IRQn 0 */
 
-    /* USER CODE END DebugMonitor_IRQn 0 */
-    /* USER CODE BEGIN DebugMonitor_IRQn 1 */
+  /* USER CODE END DebugMonitor_IRQn 0 */
+  /* USER CODE BEGIN DebugMonitor_IRQn 1 */
 
-    /* USER CODE END DebugMonitor_IRQn 1 */
+  /* USER CODE END DebugMonitor_IRQn 1 */
 }
 
 /******************************************************************************/
@@ -167,179 +157,153 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /**
- * @brief This function handles a REGEN_EN interrupt.
- */
+  * @brief This function handles EXTI line1 interrupt.
+  */
 void EXTI1_IRQHandler(void)
 {
-    /* USER CODE BEGIN EXTI1_IRQn 0 */
+  /* USER CODE BEGIN EXTI1_IRQn 0 */
 
-    // EXTI1 corresponds to the REGEN_EN value
-    event_flags.regen_enable = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+	// EXTI1 corresponds to the REGEN_EN pin
+	event_flags.regen_enable = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
 
-    /* USER CODE END EXTI1_IRQn 0 */
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
-    /* USER CODE BEGIN EXTI1_IRQn 1 */
+  /* USER CODE END EXTI1_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
+  /* USER CODE BEGIN EXTI1_IRQn 1 */
 
-    // flag unblocks the updateFlagsTask
-    osSemaphoreRelease(eventFlagsSemaphoreHandle);
-
-    /* USER CODE END EXTI1_IRQn 1 */
+  /* USER CODE END EXTI1_IRQn 1 */
 }
 
 /**
-  * @brief This function handles a BRK_IN interrupt.
+  * @brief This function handles EXTI line2 interrupt.
   */
 void EXTI2_IRQHandler(void)
 {
-    /* USER CODE BEGIN EXTI2_IRQn 0 */
+  /* USER CODE BEGIN EXTI2_IRQn 0 */
 
-    // EXTI2 corresponds to the BRK_IN value
+	// EXTI2 corresponds to the BRK_IN pin
 
-    event_flags.brake_in = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
+	event_flags.brake_in = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
 
-    // when brake_in goes high, cruise control should be disengaged
-    event_flags.cruise_status = DISABLE;
+	// when brake_in goes high, cruise control should be disengaged
+	event_flags.cruise_status = DISABLE;
 
-    /* USER CODE END EXTI2_IRQn 0 */
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
-    /* USER CODE BEGIN EXTI2_IRQn 1 */
+  /* USER CODE END EXTI2_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
+  /* USER CODE BEGIN EXTI2_IRQn 1 */
 
-    osSemaphoreRelease(eventFlagsSemaphoreHandle);
-
-    /* USER CODE END EXTI2_IRQn 1 */
+  /* USER CODE END EXTI2_IRQn 1 */
 }
 
 /**
-  * @brief This function handles a RVRS_EN interrupt.
+  * @brief This function handles EXTI line3 interrupt.
   */
 void EXTI3_IRQHandler(void)
 {
-    /* USER CODE BEGIN EXTI3_IRQn 0 */
+  /* USER CODE BEGIN EXTI3_IRQn 0 */
 
-    // EXTI3 corresponds to the RVRS_EN value
+	// EXTI3 corresponds to the RVRS_EN pin
 
-    event_flags.reverse_enable = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin);
+	event_flags.reverse_enable = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin);
 
-    /* USER CODE END EXTI3_IRQn 0 */
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
-    /* USER CODE BEGIN EXTI3_IRQn 1 */
+  /* USER CODE END EXTI3_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
+  /* USER CODE BEGIN EXTI3_IRQn 1 */
 
-    osSemaphoreRelease(eventFlagsSemaphoreHandle);
-
-    /* USER CODE END EXTI3_IRQn 1 */
+  /* USER CODE END EXTI3_IRQn 1 */
 }
 
 /**
- * @brief This function handles CRUISE_EN interrupt.
- */
+  * @brief This function handles EXTI line4 interrupt.
+  */
 void EXTI4_IRQHandler(void)
 {
-    /* USER CODE BEGIN EXTI4_IRQn 0 */
+  /* USER CODE BEGIN EXTI4_IRQn 0 */
 
-    // EXTI4 corresponds to the CRUISE_EN value
+	// EXTI4 corresponds to the NEXT_SCREEN pin
 
-    event_flags.cruise_status = ENABLE;
+	osSemaphoreRelease(nextScreenSemaphoreHandle);
 
-    /* USER CODE END EXTI4_IRQn 0 */
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
-    /* USER CODE BEGIN EXTI4_IRQn 1 */
+  /* USER CODE END EXTI4_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
+  /* USER CODE BEGIN EXTI4_IRQn 1 */
 
-    osSemaphoreRelease(eventFlagsSemaphoreHandle);
-
-    /* USER CODE END EXTI4_IRQn 1 */
+  /* USER CODE END EXTI4_IRQn 1 */
 }
 
 /**
- * @brief This function handles NEXT_SCREEN interrupt.
- */
-void EXTI5_IRQHandler(void)
-{
-    /* USER CODE BEGIN EXTI4_IRQn 0 */
-
-    // EXTI5 corresponds to the NEXT_SCREEN value
-
-    event_flags.next_screen = 1;
-
-    /* USER CODE END EXTI4_IRQn 0 */
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
-    /* USER CODE BEGIN EXTI4_IRQn 1 */
-
-    osSemaphoreRelease(eventFlagsSemaphoreHandle);
-
-    /* USER CODE END EXTI4_IRQn 1 */
-}
-
-/**
- * @brief This function handles DMA1 channel1 global interrupt.
- */
+  * @brief This function handles DMA1 channel1 global interrupt.
+  */
 void DMA1_Channel1_IRQHandler(void)
 {
-    /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
+  /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
 
-    /* USER CODE END DMA1_Channel1_IRQn 0 */
-    HAL_DMA_IRQHandler(&hdma_adc1);
-    /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
+  /* USER CODE END DMA1_Channel1_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_adc1);
+  /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
 
-    osSemaphoreRelease(eventFlagsSemaphoreHandle);
-
-    /* USER CODE END DMA1_Channel1_IRQn 1 */
+  /* USER CODE END DMA1_Channel1_IRQn 1 */
 }
 
 /**
- * @brief This function handles EXTI line[9:5] interrupts.
- */
+  * @brief This function handles EXTI line[9:5] interrupts.
+  */
 void EXTI9_5_IRQHandler(void)
 {
-    /* USER CODE BEGIN EXTI9_5_IRQn 0 */
+  /* USER CODE BEGIN EXTI9_5_IRQn 0 */
 
-    if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_DIS_Pin))
-    {
-        event_flags.cruise_status = DISABLE;
-    }
-    else if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_UP_Pin))
-    {
-        if ((cruise_value + CRUISE_INCREMENT_VALUE) > CRUISE_MAX)
-        {
-            cruise_value = CRUISE_MAX;
-        }
-        else
-        {
-            cruise_value += CRUISE_INCREMENT_VALUE;
-        }
-    }
-    else if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_DOWN_Pin))
-    {
-        if ((cruise_value - CRUISE_INCREMENT_VALUE) < CRUISE_MIN)
-        {
-            cruise_value = CRUISE_MIN;
-        }
-        else
-        {
-            cruise_value -= CRUISE_INCREMENT_VALUE;
-        }
-    }
+	// checks if the CRUISE_DIS external interrupt is triggered
+	if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_DIS_Pin))
+	{
+		event_flags.cruise_status = DISABLE;
+	}
 
-    /* USER CODE END EXTI9_5_IRQn 0 */
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
-    /* USER CODE BEGIN EXTI9_5_IRQn 1 */
+	// checks if the CRUISE_UP external interrupt is triggered
+	else if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_UP_Pin))
+	{
+		if ((cruise_value + CRUISE_INCREMENT_VALUE) > CRUISE_MAX)
+		{
+			cruise_value = CRUISE_MAX;
+		}
+		else
+		{
+			cruise_value += CRUISE_INCREMENT_VALUE;
+		}
+	}
 
-    /* USER CODE END EXTI9_5_IRQn 1 */
+	// checks if the CRUISE_DOWN external interrupt is triggered
+	else if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_DOWN_Pin))
+	{
+		if ((cruise_value - CRUISE_INCREMENT_VALUE) < CRUISE_MIN)
+		{
+			cruise_value = CRUISE_MIN;
+		}
+		else
+		{
+			cruise_value -= CRUISE_INCREMENT_VALUE;
+		}
+	}
+
+  /* USER CODE END EXTI9_5_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
+  /* USER CODE BEGIN EXTI9_5_IRQn 1 */
+
+  /* USER CODE END EXTI9_5_IRQn 1 */
 }
 
 /**
- * @brief This function handles TIM8 update interrupt.
- */
+  * @brief This function handles TIM8 update interrupt.
+  */
 void TIM8_UP_IRQHandler(void)
 {
-    /* USER CODE BEGIN TIM8_UP_IRQn 0 */
+  /* USER CODE BEGIN TIM8_UP_IRQn 0 */
 
-    /* USER CODE END TIM8_UP_IRQn 0 */
-    HAL_TIM_IRQHandler(&htim8);
-    /* USER CODE BEGIN TIM8_UP_IRQn 1 */
+  /* USER CODE END TIM8_UP_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim8);
+  /* USER CODE BEGIN TIM8_UP_IRQn 1 */
 
-    /* USER CODE END TIM8_UP_IRQn 1 */
+  /* USER CODE END TIM8_UP_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
