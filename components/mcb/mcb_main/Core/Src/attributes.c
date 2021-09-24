@@ -33,12 +33,12 @@ const osThreadAttr_t sendCruiseCommandTask_attributes = {
         .stack_size = 128 * 4
 };
 
-
 const osThreadAttr_t sendNextScreenTask_attributes = {
         .name = "sendNextScreenTask",
         .priority = (osPriority_t) osPriorityBelowNormal,
         .stack_size = 128 * 4
 };
+
 const osThreadAttr_t sendIdleCommandTask_attributes = {
         .name = "sendIdleCommandTask",
         .priority = (osPriority_t) osPriorityNormal,
