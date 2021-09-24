@@ -27,6 +27,10 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
+/* USER CODE BEGIN Includes */
+
+/* USER CODE END Includes */
+
 extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
@@ -39,7 +43,7 @@ extern CAN_HandleTypeDef hcan;
 #define CAN_CONTROL_DATA_LENGTH 2
 
 extern CAN_TxHeaderTypeDef drive_command_header;
-extern CAN_TxHeaderTypeDef screen_cruise_control_header
+extern CAN_TxHeaderTypeDef screen_cruise_control_header;
 extern CAN_RxHeaderTypeDef can_rx_header;
 extern CAN_FilterTypeDef battery_soc_filter;
 extern uint32_t can_mailbox;
@@ -59,3 +63,5 @@ void CAN_Filter_Init(void);
 #endif
 
 #endif /* __CAN_H__ */
+
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
