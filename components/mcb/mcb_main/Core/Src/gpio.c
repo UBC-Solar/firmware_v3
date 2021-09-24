@@ -4,24 +4,9 @@
   * @brief   This file provides code for the configuration
   *          of all used GPIO pins.
   ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
-  *
-  ******************************************************************************
   */
 
 #include "gpio.h"
-
-/*----------------------------------------------------------------------------*/
-/* Configure GPIO                                                             */
-/*----------------------------------------------------------------------------*/
 
 /** Configure pins as
         * Analog
@@ -56,7 +41,7 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PAPin PAPin PAPin PAPin */
-  GPIO_InitStruct.Pin = CRUISE_EN_Pin|CRUISE_DIS_Pin|CRUISE_UP_Pin|CRUISE_DOWN_Pin;
+  GPIO_InitStruct.Pin = NEXT_SCREEN_Pin|CRUISE_DIS_Pin|CRUISE_UP_Pin|CRUISE_DOWN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -97,3 +82,4 @@ void MX_GPIO_Init(void)
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
+
