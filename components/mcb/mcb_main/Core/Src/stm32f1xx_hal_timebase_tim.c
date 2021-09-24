@@ -50,6 +50,7 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 
   /* Enable the TIM8 global Interrupt */
   HAL_NVIC_EnableIRQ(TIM8_UP_IRQn);
+
   /* Enable TIM8 clock */
   __HAL_RCC_TIM8_CLK_ENABLE();
 
@@ -74,6 +75,7 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   htim8.Init.Prescaler = uwPrescalerValue;
   htim8.Init.ClockDivision = 0;
   htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
+
   if(HAL_TIM_Base_Init(&htim8) == HAL_OK)
   {
     /* Start the TIM time Base generation in interrupt mode */
