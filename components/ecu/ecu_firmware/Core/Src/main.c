@@ -52,7 +52,8 @@ CAN_HandleTypeDef hcan;
 TIM_HandleTypeDef htim8;
 
 /* USER CODE BEGIN PV */
-volatile uint16_t adc3_buf[ADC_BUF_LENGTH] = {0};
+volatile uint16_t adc3_buf[ADC3_BUF_LENGTH] = {0};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -63,6 +64,7 @@ static void MX_ADC1_Init(void);
 static void MX_ADC3_Init(void);
 static void MX_CAN_Init(void);
 static void MX_TIM8_Init(void);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -108,7 +110,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   CAN_hcan = &hcan;
   HAL_CAN_Start (&hcan);
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adc3_buf, ADC3_BUF_LENGTH);
+  HAL_ADC_Start_DMA(&hadc3, (uint32_t *) adc3_buf, ADC3_BUF_LENGTH);
   FSM_init();
   /* USER CODE END 2 */
 
@@ -267,7 +269,7 @@ static void MX_ADC3_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN ADC3_Init 2 */
-
+  ADC3_setFaultStatus(0); //ADC3 not in process yet
   /* USER CODE END ADC3_Init 2 */
 
 }
@@ -435,32 +437,57 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-// Conversion half complete DMA interrupt callback
+
+// Conversion half complete DMA interrupt callback for ADC3
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 {
-  static float result[NUM_ANALOG_CHANNELS] = {0.0};
+  if (!ADC3_getFaultStatus()) //make sure DMA processing stops when processing ADC3 readings
+  {
+    ADC3_setFaultStatus(1); //indicates DMA right now is in process
+    static float result[ADC3_NUM_ANALOG_CHANNELS] = {0.0}; //stores supplemental battery voltage, motor and array currents
 
-  // Average 1st half of the buffer
-  ADC3_processRawReadings(0, adc3_buf, result);
+    // Average 1st half of the buffer
+    ADC3_processRawReadings(0, adc3_buf, result);
 
-  // convert averaged raw readings into corresponding voltage and current values
-  ADC3_setSuppBattVoltage(result[0]);
-  ADC3_setMotorCurrent(result[1]);
-  ADC3_setArrayCurrent(result[2]);
+    // convert averaged raw readings into corresponding voltage and current values
+    ADC3_setSuppBattVoltage(result[0]);
+    ADC3_setMotorCurrent(result[1]);
+    ADC3_setArrayCurrent(result[2]);
+
+    ADC3_setFaultStatus(0); //indicates now the DMA is not in process
+  }
+
+  else
+  {
+    ADC3_setFaultStatus(1); //fault status when previous DMA processing is not finished beforehand
+    HAL_TIM_Base_Stop(&htim8); //stop TIM8: the trigger timer for ADC3
+  }
 }
 
-// Conversion complete DMA interrupt callback
+// Conversion full complete DMA interrupt callback for ADC3
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-  static float result[NUM_ANALOG_CHANNELS] = {0.0};
+  if (!ADC3_getFaultStatus()) //make sure DMA processing stops when processing ADC3 readings
+  {
+    ADC3_setFaultStatus(1); //indicates DMA right now is in process
+    static float result[ADC3_NUM_ANALOG_CHANNELS] = {0.0}; //stores supplemental battery voltage, motor and array currents
 
-  // Average 2nd half of the buffer
-  ADC3_processRawReadings(1, adc3_buf, result);
+    // Average 2nd half of the buffer
+    ADC3_processRawReadings(1, adc3_buf, result);
   
-  // convert averaged raw readings into corresponding voltage and current values
-  ADC3_setSuppBattVoltage(result[0]);
-  ADC3_setMotorCurrent(result[1]);
-  ADC3_setArrayCurrent(result[2]);
+    // convert averaged raw readings into corresponding voltage and current values
+    ADC3_setSuppBattVoltage(result[0]);
+    ADC3_setMotorCurrent(result[1]);
+    ADC3_setArrayCurrent(result[2]);
+
+    ADC3_setFaultStatus(0); //indicates now the DMA is not in process
+  }
+  
+  else
+  {
+    ADC3_setFaultStatus(1); //fault status when previous DMA processing is not finished beforehand
+    HAL_TIM_Base_Stop(&htim8); //stop TIM8: the trigger timer for ADC3
+  }
 }
 /* USER CODE END 4 */
 

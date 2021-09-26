@@ -4,11 +4,18 @@
  * 
  * These functions need to average out the ADC readings for accuracy.
  * 
- * @date 2021/01/30
+ * @date 2021/09/30
  * @author Forbes Choy 
  */
 
 #include "adc.h"
+#include "stm32f1xx_hal.h"
+
+//global variables to store ADC readings
+int ADC3_supp_batt_volt;
+int ADC3_motor_current;
+int ADC3_array_current;
+volatile int ADC3_DMA_in_process_flag;
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
@@ -19,9 +26,10 @@
 /**
  * @brief Provides the voltage of the supplemental Battery
  * 
- * The supplemental battery voltage is provided as an unsigned integer
- * with units of millivolts (mV).
- * The voltage is averaged over XXX seconds OR XXX readings. Cache of like 10 ADCs? Take the average and we can use the "immediate" value for "checking" (fault state)
+ * The supplemental battery voltage is provided as an float, that has been processed and averaged
+ * by the ADC3_processRawReadings (see below), with units of millivolts (mV).
+ * Function then converts  
+ * The voltage is averaged over 1 second in 100 readings (100Hz). Takes the average and we can use this value for checking fault states
  * ADC function could return the average and instant value (we can take in two pointers and overwrite them)
  * Expect several calls in one second
  * Supp battery only for startup not really in driving
@@ -62,8 +70,6 @@ void ADC3_setMotorCurrent(float motor_current)
     motor_current = motor_current * ADC_MAX_VOLT_READING / ADC_RESOLUTION;
 
     ADC3_motor_current = (motor_current - 2.5) * 80 * 100; //output in cA
-
-    return 0;
 }
 
 int ADC3_getMotorCurrent()
@@ -109,14 +115,15 @@ int ADC3_getArrayCurrent()
  * @param array_current Current from array (positive into pack)
  * @retval net current out of battery, in the same format as the inputs
  */
-int ADC_netCurrentOut(int motor_current, int array_current)
+int ADC3_netCurrentOut(int motor_current, int array_current)
 {
-    return ADC3_motor_current - ADC3_array_current;
+  return ADC3_motor_current - ADC3_array_current;
 }
 
 void ADC3_processRawReadings(int half, volatile int adc3_buf[], float result[])
 {
-  int sum[ADC3_NUM_ANALOG_CHANNELS] = {0}; //C++(20) does not recognize int32_t
+  // int start = 1; global, put it in the interrupt instead
+  int32_t sum[ADC3_NUM_ANALOG_CHANNELS] = {0};
   int sample_num = 0;
   int limit = ADC3_BUF_LENGTH_PER_CHANNEL >> 1; // divide by 2
   if(half == 1) 
@@ -138,6 +145,16 @@ void ADC3_processRawReadings(int half, volatile int adc3_buf[], float result[])
   {
     result[channel] = ((float) sum[channel]) / (ADC3_BUF_LENGTH_PER_CHANNEL >> 1);
   }
+}
+
+int ADC3_getFaultStatus() 
+{
+  return ADC3_DMA_in_process_flag;
+}
+
+void ADC3_setFaultStatus(int flag_value)
+{
+  ADC3_DMA_in_process_flag = flag_value;
 }
 
 /*============================================================================*/

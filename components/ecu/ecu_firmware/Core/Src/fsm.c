@@ -157,9 +157,8 @@ void FSM_reset () {
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, LOW);
 
     // Read supplemental battery
-    unsigned int supp_voltage = 0;
-    ADC_getSuppBattVoltage(&supp_voltage);
-    if (supp_voltage < SUPP_LIMIT && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) == LOW) {
+
+    if (ADC3_getSuppBattVoltage() < SUPP_LIMIT && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) == LOW && !ADC3_getFaultStatus()) {
         HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, HIGH);
     } else {
         HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, LOW);
@@ -429,7 +428,8 @@ void ECU_monitor () {
     if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH
         || HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH
         || HAL_GPIO_ReadPin(OT_OUT_GPIO_Port, OT_OUT_Pin) == HIGH
-        || HAL_GPIO_ReadPin(ESTOP_5V_IN_GPIO_Port, ESTOP_5V_IN_Pin) == HIGH) {
+        || HAL_GPIO_ReadPin(ESTOP_5V_IN_GPIO_Port, ESTOP_5V_IN_Pin) == HIGH
+        || ADC3_getFaultStatus()) {
             FSM_state = FAULT;
             return;
     }
@@ -437,17 +437,13 @@ void ECU_monitor () {
     // TODO read current, if too high or too low, set/pulse?? OC LATCH // OR do a reset in the init fcn
 
     // send CAN message with current values to BMS
-    if (timer_check(MESSAGE_INTERVAL)) {    
-            int motor_current = 0;
-            int array_current = 0;
-            ADC_getArrayCurrent(&array_current);
-            ADC_getMotorCurrent(&motor_current);
-            CAN_send_current(ADC_netCurrentOut(motor_current, array_current));
+    if (timer_check(MESSAGE_INTERVAL)) {   
+        CAN_send_current(ADC3_netCurrentOut(ADC3_getArrayCurrent(), ADC3_getMotorCurrent()));
     }    
     
     // check supplemental battery voltage
-    unsigned int supp_voltage = 0;
-    if (ADC_getSuppBattVoltage(&supp_voltage) < SUPP_LIMIT && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) == LOW) {
+    // unsigned int supp_voltage = 0; ******
+    if (ADC3_getSuppBattVoltage() < SUPP_LIMIT && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) == LOW && !ADC3_getFaultStatus()) {
         HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, HIGH);
     } else{
         HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, LOW);
