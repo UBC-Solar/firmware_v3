@@ -489,7 +489,33 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     HAL_TIM_Base_Stop(&htim8); //stop TIM8: the trigger timer for ADC3
   }
 }
+
 /* USER CODE END 4 */
+
+/**
+  * @brief  ADC error callback in non blocking mode
+  *        (ADC conversion with interruption or transfer by DMA)
+  * @param  hadc: ADC handle
+  * @retval None
+  */
+void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
+{
+  //stop and reset DMA when there is an error
+  //reference: http://www.disca.upv.es/aperles/arm_cortex_m3/llibre/st/STM32F439xx_User_Manual/stm32f4xx__hal__adc_8c_source.html#l01675
+  if (hadc->State == HAL_ADC_STATE_ERROR_DMA)
+  {
+    //stop and reset DMA
+    //reference: http://www.disca.upv.es/aperles/arm_cortex_m3/llibre/st/STM32F439xx_User_Manual/group__adc__exported__functions__group2.html#gadea1a55c5199d5cb4cfc1fdcd32be1b2
+    HAL_ADC_Stop_DMA(&hadc);
+    HAL_ADC_Start_DMA(&hadc, (uint32_t *) adc3_buf, ADC3_BUF_LENGTH);
+  }
+  else
+  {
+    /* In case of ADC error, call main error handler */
+    Error_Handler();
+  }
+}
+
 
 /**
   * @brief  This function is executed in case of error occurrence.
