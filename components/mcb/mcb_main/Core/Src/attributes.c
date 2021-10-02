@@ -1,9 +1,9 @@
-/*
- * attributes.c
- *
- *  Created on: Feb. 23, 2021
- *      Author: Mihir Nimgade
- */
+/**
+  ******************************************************************************
+  * @file    attributes.c
+  * @brief   contains attribute structs for all FreeRTOS tasks
+  ******************************************************************************
+*/
 
 #include "attributes.h"
 
@@ -60,3 +60,4 @@ const osThreadAttr_t receiveBatteryMessageTask_attributes = {
 const osMessageQueueAttr_t encoderQueue_attributes = {
         .name = "encoderQueue"
 };
+
