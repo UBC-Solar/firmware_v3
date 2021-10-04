@@ -1,4 +1,5 @@
 # Ignore everything in this directory
-*
+*.pyc
+*.csv
 # Except this file
 !.gitignore
