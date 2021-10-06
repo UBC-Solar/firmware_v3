@@ -2,9 +2,9 @@
 #and see all the widgets, labels, bars, etc...
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from GUI.terminal_class import terminal
-from GUI.box_class import box_info
-from GUI import graph_formatting
+from gui.terminal_class import terminal
+from gui.box_class import box_info
+from gui import graph_formatting
 import serial.tools.list_ports  # to list port options
 import os
 from writing_to_file.writing_logs import generate_file_name
