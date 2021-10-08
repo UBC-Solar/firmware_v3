@@ -1,0 +1,13 @@
+ltc6813_btm.c:74:10:BTM_calculatePec15	32	static
+ltc6813_btm.c:93:6:BTM_wakeup	16	static
+ltc6813_btm.c:118:6:BTM_init	72	static
+ltc6813_btm.c:179:6:BTM_sendCmd	24	static
+ltc6813_btm.c:205:14:BTM_sendCmdAndPoll	48	static
+ltc6813_btm.c:275:6:BTM_writeRegisterGroup	40	static
+ltc6813_btm.c:312:14:BTM_readRegisterGroup	64	static
+ltc6813_btm.c:387:14:BTM_readBatt	136	static
+ltc6813_btm.c:452:7:BTM_regValToVoltage	24	static
+ltc6813_btm.c:462:6:BTM_writeCS	16	static
+ltc6813_btm.c:473:6:calculateStackVolts	24	static
+ltc6813_btm.c:492:6:calculatePackVolts	24	static
+ltc6813_btm.c:504:14:processHALStatus	32	static

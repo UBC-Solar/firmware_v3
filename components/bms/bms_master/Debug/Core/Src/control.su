@@ -1,0 +1,9 @@
+control.c:22:6:CONT_init	8	static
+control.c:42:6:CONT_BAL_switch	16	static
+control.c:48:6:CONT_COM_switch	16	static
+control.c:54:6:CONT_FLT_switch	16	static
+control.c:60:6:CONT_HLIM_switch	16	static
+control.c:66:6:CONT_LLIM_switch	16	static
+control.c:72:6:CONT_OT_switch	16	static
+control.c:88:6:CONT_FAN_PWM_set	16	static
+control.c:110:14:CONT_fanPwmFromTemp	32	static

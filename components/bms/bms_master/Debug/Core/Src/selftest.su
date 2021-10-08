@@ -1,0 +1,10 @@
+selftest.c:45:14:ST_checkLTCtemp	64	static
+selftest.c:85:14:ST_checkVREF2	56	static
+selftest.c:132:14:ST_shortedCells	88	static
+selftest.c:184:14:ST_checkOpenWire	432	static
+selftest.c:263:14:ST_checkOverlapVoltage	136	static
+selftest.c:344:14:ST_verifyDischarge	488	static
+selftest.c:425:6:itmpConversion	40	static
+selftest.c:447:14:readAllRegisters	72	static
+selftest.c:509:6:shiftDchStatus	24	static
+selftest.c:529:6:setDchPack	24	static

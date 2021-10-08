@@ -1,0 +1,12 @@
+fsm.c:72:6:FSM_init	8	static
+fsm.c:84:6:FSM_run	24	static
+fsm.c:107:6:FSM_reset	64	static
+fsm.c:198:6:FSM_normal	48	static
+fsm.c:277:6:FSM_fault_comm	16	static
+fsm.c:289:6:FSM_fault_general	40	static
+fsm.c:371:5:commsProblem	24	static
+fsm.c:388:6:analysisStatusUpdate	16	static
+fsm.c:405:5:doesRegGroupMatch	24	static
+fsm.c:417:6:driveControlSignals	16	static
+fsm.c:428:6:printBTMStatus	24	static
+fsm.c:461:6:printMeasurements	40	static

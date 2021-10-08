@@ -1,0 +1,2 @@
+btm_bal_settings.c:20:6:BTM_BAL_settings	96	dynamic
+btm_bal_settings.c:112:6:min_val	40	static
