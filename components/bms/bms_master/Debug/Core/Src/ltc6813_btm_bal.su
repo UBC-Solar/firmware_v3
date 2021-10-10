@@ -1,4 +1,0 @@
-ltc6813_btm_bal.c:23:6:BTM_BAL_initDchPack	24	static
-ltc6813_btm_bal.c:41:6:BTM_BAL_copyDchPack	24	static
-ltc6813_btm_bal.c:69:6:BTM_BAL_setDischarge	72	static
-ltc6813_btm_bal.c:167:6:writeBalStatusBit	16	static

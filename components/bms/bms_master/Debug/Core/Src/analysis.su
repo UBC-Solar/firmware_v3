@@ -1,5 +1,0 @@
-analysis.c:19:6:ANA_analyzeModules	40	static
-analysis.c:49:5:findModuleVoltState	16	static
-analysis.c:93:5:findModuleTempState	16	static
-analysis.c:131:5:ANA_mergeModuleStatusCodes	32	static
-analysis.c:155:7:ANA_findHighestModuleTemp	40	static
