@@ -1,5 +1,5 @@
-#Everything here is self-explanatory if you're able to run the program
-#and see all the widgets, labels, bars, etc...
+# Everything here is self-explanatory if you're able to run the program
+# and see all the widgets, labels, bars, etc...
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from gui.terminal_class import terminal

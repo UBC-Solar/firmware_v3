@@ -1,4 +1,4 @@
-#This file is responsible for writing a csv logs file to a specific destination
+# This file is responsible for writing a csv logs file to a specific destination
 
 from datetime import datetime
 
@@ -19,6 +19,7 @@ def write_log(text, path_name = ""):
     file.write(text)
 
     file.close()
+
 if __name__ == '__main__':
     #debugging
     for i in range(100):

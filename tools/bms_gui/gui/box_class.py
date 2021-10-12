@@ -140,4 +140,3 @@ class box_info:
             self.past_voltages.pop(0)
         self.all_voltages.append(new_voltage_to_add)
         self.past_voltages.append(new_voltage_to_add)
-

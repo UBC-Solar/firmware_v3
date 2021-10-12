@@ -1,4 +1,4 @@
-#A simulation file that sends random data serially to a virtual COM port
+# A simulation file that sends random data serially to a virtual COM port
 
 import serial
 from reading_com_port import parse_information
@@ -6,7 +6,7 @@ from time import sleep
 from random import randint,uniform
 
 s = serial.Serial('COM4') #this writes to the virtual com port that is connected tot he com port opened in the GUI
-#Normally, the data would come through whichever com port the cable is plugged into.
+# Normally, the data would come through whichever com port the cable is plugged into.
 #Since this is only to simulate what would happen, there is no problem in hard coding the com port.
 #Under normal circumstances, this script would never even run. This was only written for testing.
 
@@ -51,4 +51,3 @@ for i in range(100000010000001000000):
 
 
 s.close()
-

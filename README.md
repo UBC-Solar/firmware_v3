@@ -10,9 +10,10 @@ Each custom device on the car for which the team has written firmware has its ow
 
 When adding a firmware project for another device on the car to this repository, start by creating a folder in the `/components/` directory named using the 3-letter identifier for the device (eg. `bms`, `ecu`, `mcb`), if one does not already exist. Then, place the firmware project for the device in the corresponding 3-letter ID folder.
 
-In addition to the firmware for hardware on the car in `/components/`, any tools that have been developed for working with this hardware can be found in the `/tools/` folder. The following tools can be found here:
+In addition to the firmware for hardware on the car in `/components/`, any tools that have been developed for working with this hardware can be found in the `/tools/` folder. The following tools can be found in this repository:
 
 - BMS GUI - An interface program capable of displaying and logging information from the BMS read via a serial port, written in Python using PyQT.
+
 ## Contributing
 
 The firmware projects in this repository (so far) are written in C and developed using either STM32CubeIDE or PlatformIO.

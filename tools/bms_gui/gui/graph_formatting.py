@@ -1,4 +1,4 @@
-#This file takes care of all the graphing done in the program (voltage & Temperature)
+# This file takes care of all the graphing done in the program (voltage & Temperature)
 
 from reading_com_port.parse_information   import parse_float_from_str
 def gen_x_values(values, update_interval_in_seconds):
@@ -316,5 +316,3 @@ class grapher_manager:
     def get_state(self, module_number, string_minutes_to_show):
 
         return self.graphers[module_number].summaries[string_minutes_to_show]
-
-

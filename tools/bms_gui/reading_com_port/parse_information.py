@@ -1,4 +1,3 @@
-
 from random import randint
 
 def parse_float_from_str(string):
@@ -55,6 +54,6 @@ def signi_digs(number,significant_digits=3):
         return twoparts[0]+"."+twoparts[1][:significant_digits]
 
     return twoparts[0]+"." +twoparts[1] + (significant_digits-len(twoparts[1]))*"0"
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     print(signi_digs(322.123,4))

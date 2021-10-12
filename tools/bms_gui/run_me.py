@@ -1,4 +1,4 @@
-#Run this file to run the app
+# Run this file to run the app
 
 import gui.main as app
 
