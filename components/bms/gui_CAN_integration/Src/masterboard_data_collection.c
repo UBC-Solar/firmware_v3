@@ -1,25 +1,7 @@
 #include "masterboard_data_collection.h"
 
-CAN_Message_t *txInfo;
-uint8_t messageID_table[5] = {0x100, 0x200, 0x300, 0x400, 0x500};                                                                                           //placeholder values -- replace after talking to Matthew
-void (*pGetter_fns[5])(BTM_PackData_t *pPackData) = {Voltage_Retrieve, Temperature_Retrieve, SOC_Retrieve, Module_Status_Retrieve, System_Status_Retrieve}; //array of data getter functions
-
 #ifndef INIT_MESSAGE_HEADER
 #define INIT_MESSAGE_HEADER
-
-//init CAN Tx Headers for each message type
-
-for (int i = 0; i < CAN_MESSAGE_SERIES_LEN; i++)
-{
-    (txInfo + i)->TxHeader.StdId = messageID_table[i];
-    (txInfo + i)->TxHeader.ExtId = 0;
-    (txInfo + i)->TxHeader.IDE = CAN_ID_STD;
-    (txInfo + i)->TxHeader.RTR = CAN_RTR_DATA;
-    (txInfo + i)->TxHeader.DLC = 8;
-    (txInfo + i)->TxHeader.TransmitGlobalTime = 0;
-}
-
-//does this work, or would we need to init a entire new CAN_Messasge_t for each data type to send?
 
 #endif
 
@@ -36,6 +18,23 @@ Return: void
 
 void tx_data(BTM_PackData_t *pPackData)
 {
+    uint8_t collected_data[(RELEVANT_MODULES_PER_STACK * 2)] = {NULL};
+
+    CAN_Message_t txInfo;
+    uint8_t messageID_table[5] = {0x100, 0x200, 0x300, 0x400, 0x500}; //update these with Matthew's updated CAN protocol
+    //order: voltage, temperature, soc, module status, system status
+
+    //general txInfo paramaters
+    txInfo.TxHeader.ExtId = 0;
+    txInfo.TxHeader.IDE = CAN_ID_STD;
+    txInfo.TxHeader.RTR = CAN_RTR_DATA;
+    txInfo.TxHeader.DLC = 8;
+    txInfo.TxHeader.TransmitGlobalTime = 0;
+    /*
+    As data starts to flow, message might only recieve 3 modules worth of data
+    this would change amount of data CAN expects to be in message
+    if there isn't the same amount of data as in DLC, what issues would this cause? 
+    */
 
     int buffer_pos;
     int buffer_end;
@@ -46,28 +45,56 @@ void tx_data(BTM_PackData_t *pPackData)
     while (SEND_DATA == 1)
     {
 
-        for (int k = 0; k < CAN_MESSAGE_SERIES_LEN; k++)
+        for (int k = 0; k < MESSAGE_SERIES_LEN; k++)
         {
 
             buffer_pos = 0;
-            buffer_end = CAN_BYTES_SENT;
+            buffer_end = 0;
             status = HAL_OK;
-            size_of_data = sizeof(collected_data) / sizeof(collected_data[0]); //bytes of data needing to be sent
             transmission_attempt = 0;
 
-            *pGetter_fns[k](pPackData); //calling getter function
+            if (k = 0)
+            {
+                Voltage_Retrieve(pPackData, collected_data);
+                size_of_data = sizeof(collected_data) / sizeof(collected_data[0]); //number of elements in array
+                txInfo.TxHeader.StdId = messageID_table[k];
+            }
+            else if (k = 1)
+            {
+                Temperature_Retrieve(pPackData, collected_data);
+                size_of_data = sizeof(collected_data) / sizeof(collected_data[0]);
+                txInfo.TxHeader.StdId = messageID_table[k];
+            }
+            else if (k = 2)
+            {
+                SOC_Retrieve(pPackData, collected_data);
+                size_of_data = sizeof(collected_data) / sizeof(collected_data[0]);
+                txInfo.TxHeader.StdId = messageID_table[k];
+            }
+            else if (k = 3)
+            {
+                Module_Status_Retrieve(pPackData, collected_data);
+                size_of_data = sizeof(collected_data) / sizeof(collected_data[0]);
+                txInfo.TxHeader.StdId = messageID_table[k];
+            }
+            else
+            {
+                System_Status_Retrieve(pPackData, collected_data);
+                size_of_data = sizeof(collected_data) / sizeof(collected_data[0]);
+                txInfo.TxHeader.StdId = messageID_table[k];
+            }
 
             while (buffer_end < size_of_data && status == HAL_OK)
             {
-                for (int i = 0; i < CAN_BYTES_SENT; i++)
+                for (int i = 0; i < BYTES_SENT; i++)
                 {
-                    (txInfo + k)->dataFrame[i] = voltage_per_module[buffer_pos]; //should be "collected_data[buffer_pos]", change this in individual functions
+                    txInfo.dataFrame[i] = collected_data[buffer_pos];
                     buffer_pos++;
                 }
 
                 do
                 {
-                    status = HAL_CAN_AddTxMessage(&hcan, &((txInfo + k)->TxHeader), (txInfo + k)->dataFrame, &(txInfo + k)->mailbox);
+                    status = HAL_CAN_AddTxMessage(&hcan, &txInfo.TxHeader, txInfo.dataFrame, &txInfo.mailbox);
                     transmission_attempt++;
                 } while (status != HAL_OK && transmission_attempt < TRANSMISSION_ATTEMPT_MAX);
 
@@ -77,15 +104,15 @@ void tx_data(BTM_PackData_t *pPackData)
                     return status;
                 }
 
-                buffer_end += CAN_BYTES_SENT; //sent 8 bytes of data
+                buffer_end += BYTES_SENT; //sent 8 bytes of data
             }
         }
     }
 }
 
-void Voltage_Retrieve(BTM_PackData_t *pPackData)
+void Voltage_Retrieve(BTM_PackData_t *pPackData, uint8_t collected_data[RELEVANT_MODULES_PER_STACK * 2])
 {
-    uint8_t collected_data[(RELEVANT_MODULES_PER_STACK * 2)]; //format: [MSBs, LSBs, MSBs, LSBs, ....]
+    //uint8_t collected_data[(RELEVANT_MODULES_PER_STACK * 2)]; //format: [MSBs, LSBs, MSBs, LSBs, ....]
 
     for (int i = 0; i < BTM_NUM_DEVICES; i++)
     {
@@ -95,8 +122,8 @@ void Voltage_Retrieve(BTM_PackData_t *pPackData)
             if (pPACKDATA->stack[i].module[j].enable == 1)
             {
                 uint16_t module_voltage = pPackData->stack[i].module[j].voltage;
-                uint8_t module_voltage_MSBs = (uint8_t)(module_voltage >> 8); //shifting voltage data 8 bits to right, then casting uint16_t to uint8_t, discarding first 8 bits from left
-                uint8_t module_voltage_LSBs = (uint8_t)module_voltage;        //casting uint16_t to uint8_t, discarding first 8 bits from left, which were already saved in module_voltage_MSBs
+                uint8_t module_voltage_MSBs = (uint8_t)(module_voltage >> 8); //keeping left (upper) half of 16b voltage
+                uint8_t module_voltage_LSBs = (uint8_t)module_voltage;        //keeping right (lower) half of 16b voltage
 
                 if (i == 0)
                 {
@@ -114,9 +141,9 @@ void Voltage_Retrieve(BTM_PackData_t *pPackData)
     }
 }
 
-void Temperature_Retrieve(BTM_PackData_t *pPackData)
+void Temperature_Retrieve(BTM_PackData_t *pPackData, uint8_t collected_data[RELEVANT_MODULES_PER_STACK])
 {
-    uint8_t collected_data[RELEVANT_MODULES];
+    //uint8_t collected_data[RELEVANT_MODULES];
 
     for (int i = 0; i < BTM_NUM_DEVICES; i++)
     {
@@ -140,15 +167,15 @@ void Temperature_Retrieve(BTM_PackData_t *pPackData)
     }
 }
 
-void SOC_Retrieve(BTM_PackData_t *pPackData)
+void SOC_Retrieve(BTM_PackData_t *pPackData, uint8_t collected_data[RELEVANT_MODULES_PER_STACK])
 {
     //same format of retrieval as module-wise temperature
     //SOC for each module (you'll need to do this yourself, look at ltc6813_btm_bal.c for where module-wise SOC info is stored)
 }
 
-void Module_Status_Retrieve(BTM_PackData_t *pPackData)
+void Module_Status_Retrieve(BTM_PackData_t *pPackData, uint8_t collected_data[RELEVANT_MODULES_PER_STACK * 2])
 {
-    uint8_t collected_data[(RELEVANT_MODULES_PER_STACK * 2)]; //format: [MSBs, LSBs, MSBs, LSBs, ....]
+    //uint8_t collected_data[(RELEVANT_MODULES_PER_STACK * 2)]; //format: [MSBs, LSBs, MSBs, LSBs, ....]
 
     for (int i = 0; i < BTM_NUM_DEVICES; i++)
     {
@@ -177,10 +204,10 @@ void Module_Status_Retrieve(BTM_PackData_t *pPackData)
     }
 }
 
-void System_Status_Retrieve(BTM_PackData_t *pPackData)
+void System_Status_Retrieve(BTM_PackData_t *pPackData, )
 {
     uint8_t collected_data[2];
-    uint16_t system_status16 = pPackData->PH_status;
+    uint16_t system_status16 = pPackData->PH_status; //placeholder status
     collected_data[0] = (uint8_t)(system_status16 >> 8);
     collected_data[1] = (uint8_t)system_status16;
 }

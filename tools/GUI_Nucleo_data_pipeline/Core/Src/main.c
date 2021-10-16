@@ -43,9 +43,6 @@
 CAN_HandleTypeDef hcan;
 UART_HandleTypeDef huart2;
 
-CAN_FilterTypeDef sFilterConfig;
-
-
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -134,8 +131,7 @@ void SystemClock_Config(void)
   }
   /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -181,7 +177,6 @@ static void MX_CAN_Init(void)
   /* USER CODE BEGIN CAN_Init 2 */
 
   /* USER CODE END CAN_Init 2 */
-
 }
 
 /**
@@ -214,7 +209,6 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
-
 }
 
 /**
@@ -251,22 +245,22 @@ static void MX_GPIO_Init(void)
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-
 }
 
 /* USER CODE BEGIN 4 */
 static void CAN_config(void)
 {
-  sFilterConfig.FilterBank = 1; //https://www.google.ca/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwjRrfzYluTxAhVXqJ4KHUWbB1wQFjAAegQIEBAD&url=https%3A%2F%2Fwww.st.com%2Fresource%2Fen%2Freference_manual%2Fdm00135183-stm32f446xx-advanced-armbased-32bit-mcus-stmicroelectronics.pdf&usg=AOvVaw09x0J9iGreyFuAMma4aTnE
+  CAN_FilterTypeDef FilterConfig;
+  FilterConfig.FilterBank = 1; //https://www.google.ca/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwjRrfzYluTxAhVXqJ4KHUWbB1wQFjAAegQIEBAD&url=https%3A%2F%2Fwww.st.com%2Fresource%2Fen%2Freference_manual%2Fdm00135183-stm32f446xx-advanced-armbased-32bit-mcus-stmicroelectronics.pdf&usg=AOvVaw09x0J9iGreyFuAMma4aTnE
   //page 1058
-  sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-  sFilterConfig.FilterIdHigh = 0x623 << 5; //the filter and mask IDs will need to change
-  sFilterConfig.FilterIdLow = 0x0000;
-  sFilterConfig.FilterMaskIdHigh = 0x623 << 5;
-  sFilterConfig.FilterMaskIdLow = 0x0000;
-  sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-  sFilterConfig.FilterActivation = ENABLE;
+  FilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+  FilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+  FilterConfig.FilterIdHigh = 0x623 << 5; //the filter and mask IDs will need to change
+  FilterConfig.FilterIdLow = 0x0000;
+  FilterConfig.FilterMaskIdHigh = 0x623 << 5;
+  FilterConfig.FilterMaskIdLow = 0x0000;
+  FilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+  FilterConfig.FilterActivation = ENABLE;
 
   if (HAL_CAN_Init(&hcan) != HAL_OK)
   {
@@ -278,7 +272,7 @@ static void CAN_config(void)
     Error_Handler();
   }
 
-  if (HAL_CAN_ConfigFilter(&hcan, &sFilterConfig) != HAL_OK)
+  if (HAL_CAN_ConfigFilter(&hcan, &FilterConfig) != HAL_OK)
   {
     Error_Handler();
   }
@@ -314,7 +308,7 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
