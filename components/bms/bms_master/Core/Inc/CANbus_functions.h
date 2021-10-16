@@ -98,6 +98,14 @@ typedef struct
 {
     CAN_TxHeaderTypeDef header;
     uint8_t * dataFrame;
+
+    // A variable that some stm32 HAL functions use to store which of the 3
+    // mailboxes a message transmission request was put into.
+    // Can be set to these values:
+    //      CAN_TX_MAILBOX0 = 0
+    //      CAN_TX_MAILBOX1 = 1
+    //      CAN_TX_MAILBOX2 = 2
+    // See HAL documentation for more details.
     uint32_t mailbox;
 }
 Brightside_CAN_Message;
@@ -126,6 +134,51 @@ external function prototypes
 ************************/
 extern void CANstate_InitAll();
 extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries);
+
+
+/************************
+function prototypes
+************************/
+
+//void CANstate_depreciated(Brightside_CAN_MessageSeries * pSeries);
+uint8_t CANstate_staleCheck();
+void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries); //PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
+HAL_StatusTypeDef CANstate_requestQueue();
+void CANstate_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries); //PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
+
+void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int messageArraySize);
+void CAN_InitMessageSeries_Dynamic(
+        Brightside_CAN_MessageSeries * seriesStruct,
+        Brightside_CAN_Message * messageWiseContent,
+        uint8_t messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH],
+        int messageSeriesSize);
+
+void CAN_CompileMessage622(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
+void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
+void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
+void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
+
+void VoltageInfoRetrieval(
+    BTM_PackData_t * pPACKDATA,
+    uint16_t * pMinVoltage,
+    uint16_t * pMaxVoltage,
+    uint8_t * pMinStack,
+    uint8_t * pMinModule,
+    uint8_t * pMaxStack,
+    uint8_t * pMaxModule);
+unsigned int outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * outOfBounds);
+uint8_t outOfBoundsAndConvert_moduleVoltage(float moduleVoltageFLOAT, uint8_t * outOfBounds);
+void temperatureDataRetrieval(
+    BTM_PackData_t * pPACKDATA,
+    uint16_t * averageTemperature,
+    uint16_t * minTmp,
+    uint16_t * maxTmp,
+    uint8_t * minTmpStack,
+    uint8_t * maxTmpStack,
+    uint8_t * minTmpModule,
+    uint8_t * maxTmpModule);
+uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * outOfBounds);
+
 
 /*
 Copied from analysis.h, created by Andrew Hanlon.
