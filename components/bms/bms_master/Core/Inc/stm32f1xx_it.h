@@ -1,13 +1,12 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file           : main.h
-  * @brief          : Header for main.c file.
-  *                   This file contains the common defines of the application.
+  * @file    stm32f1xx_it.h
+  * @brief   This file contains the headers of the interrupt handlers.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -15,20 +14,17 @@
   * License. You may obtain a copy of the License at:
   *                        opensource.org/licenses/BSD-3-Clause
   *
-  ******************************************************************************
+ ******************************************************************************
   */
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __MAIN_H
-#define __MAIN_H
+#ifndef __STM32F1xx_IT_H
+#define __STM32F1xx_IT_H
 
 #ifdef __cplusplus
-extern "C" {
+ extern "C" {
 #endif
-
-/* Includes ------------------------------------------------------------------*/
-#include "stm32f1xx_hal.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -50,44 +46,24 @@ extern "C" {
 
 /* USER CODE END EM */
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
 /* Exported functions prototypes ---------------------------------------------*/
-void Error_Handler(void);
-
+void NMI_Handler(void);
+void HardFault_Handler(void);
+void MemManage_Handler(void);
+void BusFault_Handler(void);
+void UsageFault_Handler(void);
+void SVC_Handler(void);
+void DebugMon_Handler(void);
+void PendSV_Handler(void);
+void SysTick_Handler(void);
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */
-
-/* Private defines -----------------------------------------------------------*/
-#define GPIO_OUT_Pin GPIO_PIN_4
-#define GPIO_OUT_GPIO_Port GPIOA
-#define OT_OUT_Pin GPIO_PIN_5
-#define OT_OUT_GPIO_Port GPIOA
-#define BAL_OUT_Pin GPIO_PIN_6
-#define BAL_OUT_GPIO_Port GPIOA
-#define FLT_OUT_Pin GPIO_PIN_7
-#define FLT_OUT_GPIO_Port GPIOA
-#define LLIM_OUT_Pin GPIO_PIN_4
-#define LLIM_OUT_GPIO_Port GPIOC
-#define HLIM_OUT_Pin GPIO_PIN_5
-#define HLIM_OUT_GPIO_Port GPIOC
-#define FAN_PWM_Pin GPIO_PIN_0
-#define FAN_PWM_GPIO_Port GPIOB
-#define COM_OUT_Pin GPIO_PIN_1
-#define COM_OUT_GPIO_Port GPIOB
-#define SPI_LTC_CS_Pin GPIO_PIN_12
-#define SPI_LTC_CS_GPIO_Port GPIOB
-#define LED_OUT_Pin GPIO_PIN_6
-#define LED_OUT_GPIO_Port GPIOC
-/* USER CODE BEGIN Private defines */
-
-/* USER CODE END Private defines */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __MAIN_H */
+#endif /* __STM32F1xx_IT_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

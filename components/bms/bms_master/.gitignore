@@ -10,3 +10,5 @@
 /.metadata/
 # Auto-Generated Ceedling Data
 /build/
+# CubeMx Generated Project File
+.mxproject

@@ -34,7 +34,7 @@
 #define INC_LTC6813_BTM_H_
 
 #ifndef TEST
-#include "stm32f3xx_hal.h"
+#include "stm32f1xx_hal.h"
 #endif
 
 #ifdef TEST
