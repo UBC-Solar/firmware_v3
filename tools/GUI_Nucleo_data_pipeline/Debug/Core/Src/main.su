@@ -1,7 +1,0 @@
-main.c:72:5:main	8	static
-main.c:117:6:SystemClock_Config	72	static
-main.c:155:13:MX_CAN_Init	8	static
-main.c:192:13:MX_USART2_UART_Init	8	static
-main.c:225:13:MX_GPIO_Init	40	static
-main.c:258:13:CAN_config	8	static
-main.c:306:6:Error_Handler	4	static,ignoring_inline_asm

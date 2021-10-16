@@ -1,8 +1,0 @@
-# Compiled binaries, etc.
-/Debug/
-/Release/
-# Eclipse project metadata
-/.settings/
-# Debug and Run Configuration
-*.launch
-/.metadata/
