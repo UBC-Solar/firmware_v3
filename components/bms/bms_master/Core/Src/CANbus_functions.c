@@ -93,7 +93,7 @@ extern void CANstate_InitAll()
 }
 
 
-/*
+/**
 @brief
 Function Name: CAN_InitHeaderStruct
 
@@ -102,7 +102,10 @@ Function Purpose:
     Initialise the aspects of a CAN message that don't change
     after initialisation, as defined by HAL for STM32.
 
-@param Brightside_CAN_Message * CANmessageWiseContent :
+@param Brightside_CAN_Message * CANmessageWiseContent
+@n          this input is assumed to be the first entry of an array of type Brightside_CAN_Message.
+@param int messageSeriesSize
+@n          This input is the array-length of the Brightside_CAN_Message array
 
 @note
 Design Notes:
@@ -110,7 +113,8 @@ Design Notes:
     addresses, before being overwritten by separate assignments.
 
 @note
-    Currently, this function is meant for specific messages with CAN IDs of 622,623,626, and 627
+    Currently, this function is meant for specific messages with CAN IDs of 622,623,626, and 627.
+    This is a lazy bandaid feature and should be moved to a new function if more message series are added.
 */
 void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int messageSeriesSize)
 {
@@ -140,26 +144,28 @@ void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int me
 */
 
 
-/*
+/**
+@brief
 Function Name: CAN_InitMessageSeries_Dynamic()
+
+\par
 Function Purpose: link pre-defined structs and arrays together
 
-Parameters:
-    Brightside_CAN_MessageSeries * seriesStruct:
-        The highest-level struct containing everything else
-    Brightside_CAN_Message * messageWiseContent:
-        An array of structs, each element containing a message hedaer,
-        dataFrame array, and mailbox.
-    uint8_t messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH]:
-        A 2D array for easy assignment of message dataFrames to each struct.
-    int messageSeriesSize:
-        The total number of messages in one series.
+@param      Brightside_CAN_MessageSeries * seriesStruct:
+@n              The highest-level struct containing everything else
+@param      Brightside_CAN_Message * messageWiseContent:
+@n              An array of structs, each element containing a message hedaer,
+                dataFrame array, and mailbox.
+@param      uint8_t messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH]:
+@n              A 2D array for easy assignment of message dataFrames to each struct.
+@param      int messageSeriesSize:
+@n              The total number of messages in one series.
 
-Algorithm:
-    1) Initialise headers wrt messageSeriesSize.
-    2) Assign to each message-struct a pointer reference to a
+@par Algorithm
+      1) Initialise headers wrt messageSeriesSize.
+@n    2) Assign to each message-struct a pointer reference to a
     dataFrame, stored in the 2D array.
-    3) Assign to the messageSeries struct the message struct,
+@n    3) Assign to the messageSeries struct the message struct,
        and initialise the runningIndex and the messageSeriesSize.
 */
 void CAN_InitMessageSeries_Dynamic(
@@ -185,8 +191,10 @@ void CAN_InitMessageSeries_Dynamic(
 
 }
 
-/*
+/**
+@brief
 Function Name: CANstate_EntryCheck
+@details
 Function Purpose: TO limit the number of CANstate calls to at most 5 times per second.
 
 Parameters:
@@ -365,15 +373,20 @@ uint8_t CANstate_staleCheck() //PH_ removed "static inline" to allow compilation
     return CAN_NOT_STALE;
 }
 
-/*
+/**
+@brief
 Function Name: CANstate_compileAll
-Function Purpose: Run all functions that compile messages.
+@details
+Function Purpose: Run all functions that compile messages. Each message contains
+    different data arranged in different orders, hence why each message has a
+    unique compile function.
 
-Parameters:
+@param
     Brightside_CAN_MessageSeries * pSeries : pointer to message series struct.
 Return:
     None.
 
+@note
 Design Notes:
     Each CompileMessage() function call takes the message[].dataFrame element of the struct parameter.
 */
@@ -467,16 +480,18 @@ void CANstate_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries)//PH_ rem
 #ifdef ATOM_SYMBOLS_LABELLING
 #define HELPER_functions;
 #endif
-/*
+/**
+@brief
 Function name: CAN_CompileMessage622
-Function purpose:
-    Retrieve data, translate it, then format it into a message matching Elithion's format.
-    See the website for formatting details: https://www.elithion.com/lithiumate/php/controller_can_specs.php
 
-Algorithm:
-    1) Retrieve fault flags specified.
-    2) Place fault flag data into Elithion format.
-    3) Place data into message array, while following Elithion format.
+@par    Function purpose:
+        Retrieve data, translate it, then format it into a message matching Elithion's format.
+@n      See the website for formatting details: https://www.elithion.com/lithiumate/php/controller_can_specs.php
+
+@par    Algorithm:
+        1) Retrieve fault flags specified.
+@n      2) Place fault flag data into Elithion format.
+@n      3) Place data into message array, while following Elithion format.
 */
 void CAN_CompileMessage622(uint8_t aData_series622[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA)
 {
@@ -588,17 +603,20 @@ Update levelFaultFlagsBYTE.
 }
 
 /**
+\brief
 Function name: CAN_CompileMessage623
-Function purpose:
-    Retrieve data, translate it, then format it into a message matching Elithion's format.
-    See the website for formatting details: https://www.elithion.com/lithiumate/php/controller_can_specs.php
+\par    Function purpose:
+        Retrieve data, translate it, then format it into a message matching Elithion's format.
+\n      See the website for formatting details: https://www.elithion.com/lithiumate/php/controller_can_specs.php
 
-Algorithm:
-    1) Retrieve voltage data specified.
-        Note: this step does its best to maintain the original data type.
-    2) Translate gathered data into expected units and cast into uint8_t.
-        Note: this step is where data is made to match Elithion format's units, and where the numbers are casted to uint8_t.
-    3) Place data into message array, while following Elithion format.
+\par Algorithm:
+
+        1) Retrieve voltage data specified.
+                Note: this step does its best to maintain the original data type.
+        2) Translate gathered data into expected units and cast into uint8_t.
+                Note: this step is where data is made to match Elithion format's
+                units, and where the numbers are casted to uint8_t.
+        3) Place data into message array, while following Elithion format.
 */
 void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA)
 {
@@ -669,15 +687,18 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], 
   //end of function
 }
 
-/*
+/**
+\brief
 Function name: CAN_CompileMessage626
-Function purpose:
-    Retrieve data, translate it, then format it into a message matching Elithion's format.
-    See the website for formatting details: https://www.elithion.com/lithiumate/php/controller_can_specs.php
 
-Algorithm:
-    1) Retrieve state of charge
-    2) Place data into message array, while following Elithion format.
+\par    Function purpose:
+\n      Retrieve data, translate it, then format it into a message matching Elithion's format.
+\n      See the website for formatting details: https://www.elithion.com/lithiumate/php/controller_can_specs.php
+
+\par    Algorithm:
+
+        1) Retrieve state of charge
+        2) Place data into message array, while following Elithion format.
 */
 void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA)
 {
@@ -697,36 +718,36 @@ void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH], 
 }
 
 /**
+\brief
 Function name: CAN_CompileMessage627
-Function purpose:
-    To pull/process information from structs, and format it into a CAN-ready message.
-    In this case, the information specified is:
-         - average temperature
-         - min temperature
-         - max temperature
-         - cell number with min temp
-         - cell number with max temp
 
-Parameters:
-    uint8_t aData_series627[8] - Array pre-initialised with zeros.
-    BTM_PackData_t * pPACKDATA - pointer to struct containing battery-module measurements.
+\par        Function purpose:
+            To pull/process information from structs, and format it into a CAN-ready message.
+\n          In this case, the information specified is:
+             - average temperature
+             - min temperature
+             - max temperature
+             - cell number with min temp
+             - cell number with max temp
 
-Return:
-    void
+\param      uint8_t aData_series627[8] - Array pre-initialised with zeros.
+\param      BTM_PackData_t * pPACKDATA - pointer to struct containing battery-module measurements.
 
-"Output":
-    aData_series627[8] should have data in the proper order as per the Elithion format.
-    See the website: https://www.elithion.com/lithiumate/php/controller_can_specs.php
+\return     void
 
-Algorithm:
+\par    \"Output\":
 
-    1) Gather/calculate information from structs.
-        Note: this step does its best to maintain the original data type.
+        aData_series627[8] should have data in the proper order as per the Elithion format.
+        See the website: https://www.elithion.com/lithiumate/php/controller_can_specs.php
 
-    2) Translate gathered information to expected units and data type of uint8_t.
-        Note: this step is where data is made to match Elithion format's units, and where the numbers are casted to uint8_t.
+\par    Algorithm
 
-    3) Place data into message array, while matching the Elithion format.
+        1) Gather/calculate information from structs.
+                Note: this step does its best to maintain the original data type.
+        2) Translate gathered information to expected units and data type of uint8_t.
+                Note: this step is where data is made to match Elithion format's units,
+                and where the numbers are casted to uint8_t.
+        3) Place data into message array, while matching the Elithion format.
 
 */
 void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA){
