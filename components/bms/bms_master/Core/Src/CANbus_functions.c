@@ -161,7 +161,7 @@ Function Purpose: link pre-defined structs and arrays together
 @param      int messageSeriesSize:
 @n              The total number of messages in one series.
 
-@par Algorithm
+@par        Algorithm
       1) Initialise headers wrt messageSeriesSize.
 @n    2) Assign to each message-struct a pointer reference to a
     dataFrame, stored in the 2D array.
@@ -192,31 +192,30 @@ void CAN_InitMessageSeries_Dynamic(
 }
 
 /**
-@brief
-Function Name: CANstate_EntryCheck
-@details
-Function Purpose: TO limit the number of CANstate calls to at most 5 times per second.
+@brief      Function Name: CANstate_EntryCheck
+@details    Function Purpose: TO limit the number of CANstate calls to at most 5 times per second.
 
-Parameters:
-    Brightside_CAN_MessageSeries * pSeries : pointer to the full messageSeries struct.
+@param      Brightside_CAN_MessageSeries * pSeries : pointer to the full messageSeries struct.
 
-GLOBAL_variables_used:
-    uint32_t STATIC_lastInterval : Keeps track of the last 1.0s interval.
-    uint32_t STATIC_lasSubInterval : keeps track of the last 0.2s interval.
+@par        GLOBAL_variables_used:
+                uint32_t STATIC_lastInterval : Keeps track of the last 1.0s interval.
+@n              uint32_t STATIC_lasSubInterval : keeps track of the last 0.2s interval.
 
-Return:
-    BTM_Error
+@return     BTM_Error
 
-Algorithm:
-1) Calculate tickDelta and tickSubDelta.
-2) Check if a 1.0s interval has passed.
-2.1) if so, run extra functions, update lastInterval, then return.
-3) Else, check if a 0.2s interval has passed.
-3.1) if not, return.
-3.2) if so, run only queue(), update lastSubInterval, then return.
+@par        Algorithm:
 
-Design Notes:
-    Note that lastInterval and lastSubInterval are always multiples of their intervals, 1.0s and 0.2s respectively. This is to make it easier to debug and to
+    1) Calculate tickDelta and tickSubDelta.
+    2) Check if a 1.0s interval has passed.
+    2.1) if so, run extra functions, update lastInterval, then return.
+    3) Else, check if a 0.2s interval has passed.
+    3.1) if not, return.
+    3.2) if so, run only queue(), update lastSubInterval, then return.
+
+@note
+    Design Notes:
+        Note that lastInterval and lastSubInterval are always multiples of their
+        intervals, 1.0s and 0.2s respectively. This is to make it easier to debug.
 */
 extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
 {
@@ -290,79 +289,18 @@ extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
 
 
 
-//
-// void CANstate_depreciated(Brightside_CAN_MessageSeries * pSeries)
-// {
-//     uint8_t errorFlag = 0;
-//     int messageIndex;
-//     //check if there are still pending messages in the transmission mailboxes.
-//     //NOTE: assumption is that the TxMailboxes param (2nd parameter)
-//     //is using one-hot encoding, allowing for CAN_TX_MAILBOX0, CAN_TX_MAILBOX1,
-//     //and CAN_TX_MAILBOX2 to superimpose onto each other.
-//     //See actual definition of CAN_TX_MAILBOX0, CAN_TX_MAILBOX1, and CAN_TX_MAILBOX2
-//     //for the one hot encoding.
-//     // if(HAL_CAN_IsTxMessagePending(Brightside_CAN_handle, 0x111u) == CAN_PENDING){
-//     //     errorFlag = 1; //1 for true
-//     // }
-//     if(HAL_CAN_GetTxMailboxesFreeLevel(Brightside_CAN_handle) != 3)
-//     {
-//         errorFlag = 1;
-//     }
-//
-//     //compile messages
-//     CAN_CompileMessage623(pSeries->message[0].dataFrame, pPH_PACKDATA);
-//     CAN_CompileMessage627(pSeries->message[1].dataFrame, pPH_PACKDATA);
-//
-//     //Continue with placing new messages
-//     messageIndex = pSeries -> runningIndex;
-//     while
-//         (HAL_CAN_GetTxMailboxesFreeLevel(Brightside_CAN_handle) > 0
-//          && messageIndex < pSeries->messageSeriesSize)
-//     {
-//         HAL_CAN_AddTxMessage
-//             (
-//             Brightside_CAN_handle,
-//             &pSeries->message[messageIndex].header,
-//             pSeries->message[messageIndex].dataFrame,//intent: pass the array using call by value.
-//             &pSeries->message[messageIndex].mailbox
-//             );
-//
-//         messageIndex++;
-//     }
-//
-//     //sets or resets the runningIndex stored outside this function's scope.
-//     if(messageIndex < messageSeriesSize)
-//     {
-//         pSeries -> runningIndex = messageIndex;
-//     }
-//     else
-//     {
-//         pSeries -> runningIndex = 0;
-//     }
-// /*self-notes:
-// POINTER2struct->member is already a dereference.
-// &POINTER2struct->member is the address of the member
-// POINTER2struct->array and &POINTER2struct->array[0] are different somehow?
-// I think POINTER2struct->array is the pointer to the first element of the array,
-// like arr == &arr[0].
-// I think &POINTER2struct->array[0] is the same as above, but &POINTER2struct->array[1] is not.
-// */
-// }
 
 
 
+/**
+@brief      Function Name: CANstate_staleCheck
+@details    Function Purpose: check if the CAN-bus mailboxes stil lcontain messages from the previous interval.
+
+@param      None.
 
 
-/*
-Function Name: CANstate_staleCheck
-Function Purpose: check if the CAN-bus mailboxes stil lcontain messages from the previous interval.
-
-Parameters:
-    None.
-
-Return:
-    returns 1 if there is stale data
-    else, returns 0 if the mailboxes are empty, i.e. without stale data to send.
+@returns    returns 1 if there is stale data
+@returns    else, returns 0 if the mailboxes are empty, i.e. without stale data to send.
 */
 uint8_t CANstate_staleCheck() //PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
 {
@@ -374,17 +312,15 @@ uint8_t CANstate_staleCheck() //PH_ removed "static inline" to allow compilation
 }
 
 /**
-@brief
-Function Name: CANstate_compileAll
-@details
-Function Purpose: Run all functions that compile messages. Each message contains
-    different data arranged in different orders, hence why each message has a
-    unique compile function.
+@brief      Function Name: CANstate_compileAll
 
-@param
-    Brightside_CAN_MessageSeries * pSeries : pointer to message series struct.
-Return:
-    None.
+@details    Function Purpose:
+            Run all functions that compile messages.
+            Each message contains different data arranged in different orders,
+            hence why each message has a unique compile function.
+
+@param      Brightside_CAN_MessageSeries * pSeries : pointer to message series struct.
+@return     None.
 
 @note
 Design Notes:
@@ -398,16 +334,17 @@ void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries)
     CAN_CompileMessage627(pSeries->message[3].dataFrame, CAN_PACKDATA_POINTER);
 }
 
-/*
-Function Name:
-Function Purpose:
+/**
+@brief      Function Name: CANstate_requestQueue
+@details    Function Purpose:
 
-Parameters:
+@param
 
-Return:
+@returns
 
-Algorithm:
-Design Notes: This function should NOT reset the runningIndex.
+@par        Algorithm:
+
+@note       Design Notes: This function should NOT reset the runningIndex.
 */
 HAL_StatusTypeDef CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
 {
@@ -467,6 +404,9 @@ HAL_StatusTypeDef CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
     return status;
 }
 
+/**
+@note This is the function that resets the running index in the struct
+*/
 void CANstate_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries)//PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
 {
     pSeries -> runningIndex = 0;
@@ -481,17 +421,17 @@ void CANstate_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries)//PH_ rem
 #define HELPER_functions;
 #endif
 /**
-@brief
-Function name: CAN_CompileMessage622
+@brief  Function name: CAN_CompileMessage622
 
 @par    Function purpose:
         Retrieve data, translate it, then format it into a message matching Elithion's format.
 @n      See the website for formatting details: https://www.elithion.com/lithiumate/php/controller_can_specs.php
 
 @par    Algorithm:
-        1) Retrieve fault flags specified.
-@n      2) Place fault flag data into Elithion format.
-@n      3) Place data into message array, while following Elithion format.
+
+    1) Retrieve fault flags specified.
+    2) Place fault flag data into Elithion format.
+    3) Place data into message array, while following Elithion format.
 */
 void CAN_CompileMessage622(uint8_t aData_series622[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA)
 {
@@ -900,20 +840,17 @@ void VoltageInfoRetrieval(
 
 
 /**
-@brief
-Function Name: outOfBoundsAndCast_packVoltage
+@brief      Function Name: outOfBoundsAndCast_packVoltage
 
-@details
-Function Purpose:
-    Check if the pack voltage collected is outside the expected message.
-        - If out of bounds, assign the broken bound and cast to unsigned int.
-        - Else, return exact value casted to unsigned int.
+@details    Function Purpose:
+            Check if the pack voltage collected is outside the expected message.
+                - If out of bounds, assign the broken bound and cast to unsigned int.
+                - Else, return exact value casted to unsigned int.
 
-@param float packVoltageFLOAT - The voltage to check.
-@param uint8_t * outOfBounds - The pointer to a variable used as a flag for if bounds are broken.
+@param      float packVoltageFLOAT - The voltage to check.
+@param      uint8_t * outOfBounds - The pointer to a variable used as a flag for if bounds are broken.
 
-@return
-    The packVoltageFLOAT parameter casted to unsigned int.
+@return     The packVoltageFLOAT parameter casted to unsigned int.
 */
 unsigned int outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * outOfBounds){
     if(packVoltageFLOAT < CAN_PACK_MINIMUM){
@@ -929,8 +866,8 @@ unsigned int outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * ou
 }
 
 /**
-Function Name: outOfBoundsAndConvert_moduleVoltage
-Function Purpose:
+@brief      Function Name: outOfBoundsAndConvert_moduleVoltage
+@Function Purpose:
     Check if the module voltage collected is outside the expected message.
         If out of bounds, assign the broken bound and cast to uint8_t.
         Else, return exact value casted to uint8_t.
@@ -1170,3 +1107,13 @@ uint8_t celciusAverage(BTM_PackData_t * pPACKDATA){
     //Looks really clean
     //retreving voltage of module 12 of stack 3 (note the off-by-one array index)
     //uint16_t PH_ModuleVOLTAGE = PACKDATApointer -> stack[2].module[11].voltage;
+
+
+    // /*self-notes:
+    // POINTER2struct->member is already a dereference.
+    // &POINTER2struct->member is the address of the member
+    // POINTER2struct->array and &POINTER2struct->array[0] are different somehow?
+    // I think POINTER2struct->array is the pointer to the first element of the array,
+    // like arr == &arr[0].
+    // I think &POINTER2struct->array[0] is the same as above, but &POINTER2struct->array[1] is not.
+    // */
