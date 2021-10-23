@@ -60,3 +60,4 @@ RemoteSystemsTempFiles*
 # Compiled binaries
 **/Debug/
 **/Release/
+Doxyfile-firmwarev3
