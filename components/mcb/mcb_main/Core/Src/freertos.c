@@ -332,6 +332,9 @@ __NO_RETURN void sendNextScreenMessageTask (void *argument) {
 __NO_RETURN void updateEventFlagsTask(void *argument) {
     while (1) {
 
+        // state machine should depend on both the current inputs and the previous state
+        // record current state and next state
+
         // order of priorities beginning with most important: regen braking, encoder motor command, cruise control
         if (event_flags.regen_enable && regen_value > 0 && battery_soc < BATTERY_REGEN_THRESHOLD) {
             state = REGEN_READY;
