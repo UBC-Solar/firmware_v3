@@ -2,7 +2,7 @@
 #include "stm32f1xx_hal.h"
 
 /**
- * Initializes the encoder for the accelerator pedal
+ * Initializes the encoder for the accelerator pedal.
  */
 void EncoderInit(void) {
 
@@ -44,7 +44,7 @@ void EncoderInit(void) {
 }
 
 /**
- * Reads a value from the encoder
+ * Reads a value from the encoder.
  */
 uint16_t EncoderRead(void) {
 
