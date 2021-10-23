@@ -24,6 +24,8 @@ extern const osThreadAttr_t readRegenValueTask_attributes;
 
 extern const osThreadAttr_t receiveBatteryMessageTask_attributes;
 
+extern const osThreadAttr_t sendMotorOverheatTask_attributes;
+
 extern const osTimerAttr_t encoderTimer_attributes;
 
 extern const osMessageQueueAttr_t encoderQueue_attributes;
