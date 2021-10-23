@@ -32,6 +32,16 @@ static uint8_t STATIC_messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHT
 //        {11,12,13,14,15,93,16,17,18,19,20,94},
 //        {21,22,23,24,25,26,27,28,29,30,31,32}
 //    };
+
+
+/**
+\brief      Object Purpose: This struct holds the physical labelling -- the stickers -- of the battery modules.
+
+\note       Stickers 91 and 92 don't actually have an actual battery module.
+            They are in this list to indicate if the placeholder in the struct
+            we pull battery info from is being used, which would be something
+            we need to debug and avoid.
+*/
 uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
 {
     { 1, 2, 3, 4, 5,91, 6, 7, 8, 9,10,92}
@@ -42,6 +52,11 @@ uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
 //function prototypes
 #define CODEWORD_DEBUG_BRIGHTSIDE
 #ifdef CODEWORD_DEBUG_BRIGHTSIDE
+/**
+\note
+    I think this prototype was included for the sake of testing cubeIDE 
+    compilation. Needs to be double checked.
+*/
 double BTM_TEMP_volts2temp(double vout);
 #endif //CODEWORD_DEBUG_BRIGHTSIDE
 
@@ -146,7 +161,7 @@ void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int me
 
 /**
 @brief
-Function Name: CAN_InitMessageSeries_Dynamic()
+Function Name:  CAN_InitMessageSeries_Dynamic()
 
 \par
 Function Purpose: link pre-defined structs and arrays together
@@ -192,7 +207,7 @@ void CAN_InitMessageSeries_Dynamic(
 }
 
 /**
-@brief      Function Name: CANstate_EntryCheck
+@brief      Function Name: CANstate
 @details    Function Purpose: TO limit the number of CANstate calls to at most 5 times per second.
 
 @param      Brightside_CAN_MessageSeries * pSeries : pointer to the full messageSeries struct.
@@ -214,8 +229,10 @@ void CAN_InitMessageSeries_Dynamic(
 
 @note
     Design Notes:
-        Note that lastInterval and lastSubInterval are always multiples of their
-        intervals, 1.0s and 0.2s respectively. This is to make it easier to debug.
+        - Note that lastInterval and lastSubInterval are always multiples of their
+          intervals, 1.0s and 0.2s respectively. This is to make it easier to debug.
+
+        - this function used to be called "CANstate_EntryCheck"
 */
 extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
 {
@@ -289,15 +306,11 @@ extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
 
 
 
-
-
-
 /**
 @brief      Function Name: CANstate_staleCheck
 @details    Function Purpose: check if the CAN-bus mailboxes stil lcontain messages from the previous interval.
 
 @param      None.
-
 
 @returns    returns 1 if there is stale data
 @returns    else, returns 0 if the mailboxes are empty, i.e. without stale data to send.
@@ -337,10 +350,14 @@ void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries)
 /**
 @brief      Function Name: CANstate_requestQueue
 @details    Function Purpose:
+                Queue messages within a message series into the 3 transmission
+                mailboxes of the stm32 chip we're using.
 
-@param
+@param      Brightside_CAN_MessageSeries * pSeries
 
-@returns
+@returns    HAL_StatusTypeDef status
+                - if the message queuing fails, then
+                  HAL_OK is not the return.
 
 @par        Algorithm:
 
@@ -751,35 +768,33 @@ void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], 
 }
 
 
-/*
-Function Name: VoltageInfoRetrieval
-Function Purpose: Scan the array of voltages of the modules per stacks, and return the min and max voltages
+/**
+@brief      Function Name: VoltageInfoRetrieval
+@details    Function Purpose: Scan the array of voltages of the modules per stacks, and return the min and max voltages
 
-Parameters:
-    pointers:
-        pMinVoltage - pointer to variable to hold minimum voltage found.
-        pMaxVoltage - pointer to variable to hold maximum voltage found.
-        .....
-        pMinStack - pointer to variable to hold INDEX of the battery stack containing the battery module with minimum voltage found.
-        pMinModule - pointer to variable to hold INDEX of the module with the minimum voltage found.
-        .....
-        pMaxStack - pointer to variable to hold INDEX of the battery stack containing the battery module with maximum voltage found.
-        pMaxModule - pointer to variable to hold INDEX of the module with the maximum voltage found.
+@param      pMinVoltage - pointer to variable to hold minimum voltage found.
+@param      pMaxVoltage - pointer to variable to hold maximum voltage found.
+@n          .....
+@param      pMinStack - pointer to variable to hold INDEX of the battery stack containing the battery module with minimum voltage found.
+@param      pMinModule - pointer to variable to hold INDEX of the module with the minimum voltage found.
+@n          .....
+@param      pMaxStack - pointer to variable to hold INDEX of the battery stack containing the battery module with maximum voltage found.
+@param      pMaxModule - pointer to variable to hold INDEX of the module with the maximum voltage found.
 
-Return:
-    void
+@returns    void
 
-Output:
-    Data is stored in variables pointed to. See input.
+@note       Data is stored in variables pointed to. See input.
 
-Algorithm:
+@par        Algorithm:
+
     1) Loop one stack and one module at a time.
-    Per loop iteration:
-    1.1) Retrieve localVoltage.
-    1.2) Compare localVoltage to running min and max voltages collected. Replace if needed.
-    1.3) If min or max voltages are updated, record stack and module INDICES.
-    1.4) Repeat until all modules have been analysed.
+        Per loop iteration:
+        1.1) Retrieve localVoltage.
+        1.2) Compare localVoltage to running min and max voltages collected. Replace if needed.
+        1.3) If min or max voltages are updated, record stack and module INDICES.
+        1.4) Repeat until all modules have been analysed.
     2) Assign final numbers to pointed-to variables.
+
 */
 void VoltageInfoRetrieval(
     BTM_PackData_t * pPACKDATA,
@@ -867,18 +882,16 @@ unsigned int outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * ou
 
 /**
 @brief      Function Name: outOfBoundsAndConvert_moduleVoltage
-@Function Purpose:
-    Check if the module voltage collected is outside the expected message.
-        If out of bounds, assign the broken bound and cast to uint8_t.
-        Else, return exact value casted to uint8_t.
+@details    Function Purpose:
+            Check if the module voltage collected is outside the expected message.
+                If out of bounds, assign the broken bound and cast to uint8_t.
+                Else, return exact value casted to uint8_t.
 
-Parameters:
-    float moduleVoltageFLOAT - The voltage to check.
-    uint8_t * outOfBounds - The pointer to a variable used as a flag for if bounds are broken.
+@param      float moduleVoltageFLOAT - The voltage to check.
+@param      uint8_t * outOfBounds - The pointer to a variable used as a flag for if bounds are broken.
 
-Return:
-    The moduleVoltage100mV value, casted to uint8_t.
-    moduleVoltage100mV is moduleVoltageFLOAT converted to units of 100mV.
+@returns    The moduleVoltage100mV value, casted to uint8_t.
+@note       moduleVoltage100mV is moduleVoltageFLOAT converted to units of 100mV.
 */
 uint8_t outOfBoundsAndConvert_moduleVoltage(float moduleVoltageFLOAT, uint8_t * outOfBounds){
     float moduleVoltage100mV = moduleVoltageFLOAT * 10;
@@ -895,35 +908,36 @@ uint8_t outOfBoundsAndConvert_moduleVoltage(float moduleVoltageFLOAT, uint8_t * 
     return (uint8_t)moduleVoltage100mV; //DOUBLE CHECK IF THE CASTING WORKS
 }
 
-/*
-Function Name: temperatureDataRetrieval
-Function Purpose: Scan the array of temperature-voltages of the modules per stacks, find the min and max temperature-voltages, and calculate the average temperature.
-Note: The voltage measurements are from thermistors, whose resistances vary with temperature.
-    This and related functions do NOT return temperature in units of degree Celcius unless it explicitly says it does.
+/**
+@brief      Function Name: temperatureDataRetrieval
+@details    Function Purpose: Scan the array of temperature-voltages of the modules per stacks, find the min and max temperature-voltages, and calculate the average temperature.
+@note       Note: The voltage measurements are from thermistors, whose resistances vary with temperature.
+            This and related functions do NOT return temperature in units of degree Celcius unless it explicitly says it does.
 
-Parameters:
-    Pointers:
-        pAverageTemperature - pointer to variable for holding the average temperature-voltage calculated.
-        .....
-        pMinVoltage - pointer to variable to hold minimum voltage found.
-        pMaxVoltage - pointer to variable to hold maximum voltage found.
-        .....
-        pMinStack - pointer to variable to hold INDEX of the battery stack containing the battery module with minimum voltage found.
-        pMinModule - pointer to variable to hold INDEX of the module with the minimum voltage found.
-        .....
-        pMaxStack - pointer to variable to hold INDEX of the battery stack containing the battery module with maximum voltage found.
-        pMaxModule - pointer to variable to hold INDEX of the module with the maximum voltage found.
+@param      pAverageTemperature - pointer to variable for holding the average temperature-voltage calculated.
+@n          .....
+@param      pMinVoltage - pointer to variable to hold minimum voltage found.
+@param      pMaxVoltage - pointer to variable to hold maximum voltage found.
+@n          .....
+@param      pMinStack - pointer to variable to hold INDEX of the battery stack containing the battery module with minimum voltage found.
+@param      pMinModule - pointer to variable to hold INDEX of the module with the minimum voltage found.
+@n          .....
+@param      pMaxStack - pointer to variable to hold INDEX of the battery stack containing the battery module with maximum voltage found.
+@param      pMaxModule - pointer to variable to hold INDEX of the module with the maximum voltage found.
 
-Algorithm:
-1) loop through each stack for each battery-module's measurements.
-Per loop iteration:
-1.1) Retrieve localTemperature.
-1.2) Calculate the average based on the temperatures gathered up to this loop iteration; a running average.
-1.3) Compare local temperature to the current minimum and maximum temperatures measured/initialised. Replace as required.
-1.4) If minimum and/or maximum temperatures are updated, record the stack and module INDICES.
-1.5) Repeat until all modules have been analysed.
-2) the final numbers are placed into the pointed variables.
-2.1) The running average of all module temperatures is now the entire pack's temperature average.
+@par        Algorithm:
+
+    1) loop through each stack for each battery-module's measurements.
+        Per loop iteration:
+        1.1) Retrieve localTemperature.
+        1.2) Calculate the average based on the temperatures gathered up to this loop iteration; a running average.
+        1.3) Compare local temperature to the current minimum and maximum temperatures measured/initialised. Replace as required.
+        1.4) If minimum and/or maximum temperatures are updated, record the stack and module INDICES.
+        1.5) Repeat until all modules have been analysed.
+
+    2) the final numbers are placed into the pointed variables.
+        2.1) The running average of all module temperatures is now the entire pack's temperature average.
+
 */
 void temperatureDataRetrieval(
     BTM_PackData_t * pPACKDATA,
@@ -1009,18 +1023,18 @@ void temperatureDataRetrieval(
 }
 
 
-/*
-Function Name: TwosComplement_TemperatureConverter
-Function purpose:
-    Check if value is within expected message bounds, and returns the value converted to two's complement.
-Parameters:
-    double temperatureDOUBLE - the temperature in Celcius.
-    uint8_t * outOfBounds - The pointer to a variable used as a flag for if bounds are broken.
+/**
+@brief      Function Name: TwosComplement_TemperatureConverter
+@details    Function purpose:
+            Check if value is within expected message bounds, and returns the value converted to two's complement.
 
-Return:
-    Tmperature, casted to uint8_t.
+@param      double temperatureDOUBLE - the temperature in Celcius.
+@param      uint8_t * outOfBounds - The pointer to a variable used as a flag for if bounds are broken.
 
-Algorithm:
+@returns    Tmperature, casted to uint8_t.
+
+@par        Algorithm:
+
     1) Check if greater-than upper bound.
         If true, set outOfBounds flag and return the bound broken.
     2) Check if less-than lower bound.
@@ -1028,6 +1042,8 @@ Algorithm:
         Note that the bounds are intentionally set to two's complement min and max for uint8_t size.
     3) Cast temperatureDOUBLE to uint8_t and assign to temperatureBYTE
     4) Convert temperatureBYTE to two's complement, then return the value.
+
+@note       We use twos complement to match the Elithion Lithiumate format.
 */
 uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * outOfBounds)
 {
@@ -1067,6 +1083,9 @@ Other Functions
 #endif
 
 
+/**
+\note I don't remember why this function is here. No other function calls this function.
+*/
 uint8_t celciusAverage(BTM_PackData_t * pPACKDATA){
     uint16_t localTemperature = 0;
     double temperatureTotal = 0;
