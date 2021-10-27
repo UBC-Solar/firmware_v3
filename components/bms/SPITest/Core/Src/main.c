@@ -18,7 +18,6 @@
  */
 
 /* USER CODE END Header */
-
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
@@ -26,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "ltc6811_btm.h"
+#include "ltc6811_btm_bal.h"
 #include "control.h"
 
 /* USER CODE END Includes */
@@ -87,7 +87,7 @@ int main(void)
 	    };
 
 	uint8_t register_readout[BTM_NUM_DEVICES][6] = {{0}};
-
+	BTM_BAL_dch_setting_pack_t dch_pack1, dch_pack2;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -136,6 +136,32 @@ int main(void)
 		printf("%X\t\t%X\n", config_val[i], register_readout[0][i]);
 	}
 	putchar('\n');
+
+	// Test BTM_BAL functions written so far
+    BTM_BAL_initDchPack(&dch_pack1);
+    BTM_BAL_initDchPack(&dch_pack2);
+    pack.stack[2].module[4].enable = MODULE_DISABLED; // for 3 stack test w/o 6811 dev board
+    for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+    {
+        for(int mod_num = 0; mod_num < BTM_NUM_MODULES; mod_num++)
+        {
+            switch(ic_num)
+            {
+            case 0:
+                dch_pack1.stack[ic_num].module_dch[mod_num] = (0x55 >> mod_num) & 1;
+                break;
+            case 1:
+                dch_pack1.stack[ic_num].module_dch[mod_num] = (0x2AA >> mod_num) & 1;
+                break;
+            default:
+                dch_pack1.stack[ic_num].module_dch[mod_num] = (0xB38 >> mod_num) & 1;
+                break;
+            }
+        }
+    }
+
+    BTM_BAL_setDischarge(&pack, &dch_pack1); // Don't run with dev board on
+    BTM_BAL_copyDchPack(&dch_pack1, &dch_pack2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -218,7 +244,8 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /** Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
@@ -228,7 +255,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /** Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
@@ -241,7 +268,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /** Enables the Clock Security System 
+  /** Enables the Clock Security System
   */
   HAL_RCC_EnableCSS();
 }
@@ -424,7 +451,7 @@ void Error_Handler(void)
   * @retval None
   */
 void assert_failed(uint8_t *file, uint32_t line)
-{ 
+{
   /* USER CODE BEGIN 6 */
 	/* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
