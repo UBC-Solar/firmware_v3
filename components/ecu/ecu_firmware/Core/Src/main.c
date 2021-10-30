@@ -111,6 +111,7 @@ int main(void)
   CAN_hcan = &hcan;
   HAL_CAN_Start (&hcan);
   HAL_ADC_Start_DMA(&hadc3, (uint32_t *) adc3_buf, ADC3_BUF_LENGTH);
+  HAL_TIM_Base_Start(&htim8);
   FSM_init();
   /* USER CODE END 2 */
 
@@ -441,9 +442,9 @@ static void MX_GPIO_Init(void)
 // Conversion half complete DMA interrupt callback for ADC3
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 {
-  if (!ADC3_getFaultStatus()) //make sure DMA processing stops when processing ADC3 readings
+  if (!ADC3_getBusyStatus()) //make sure DMA processing stops when processing ADC3 readings
   {
-    ADC3_setFaultStatus(1); //indicates DMA right now is in process
+    ADC3_setBusyStatus(1); //indicates DMA right now is in process
     static float result[ADC3_NUM_ANALOG_CHANNELS] = {0.0}; //stores supplemental battery voltage, motor and array currents
 
     // Average 1st half of the buffer
@@ -454,7 +455,7 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
     ADC3_setMotorCurrent(result[1]);
     ADC3_setArrayCurrent(result[2]);
 
-    ADC3_setFaultStatus(0); //indicates now the DMA is not in process
+    ADC3_setBusyStatus(0); //indicates now the DMA is not in process
   }
 
   else
@@ -467,9 +468,9 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 // Conversion full complete DMA interrupt callback for ADC3
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-  if (!ADC3_getFaultStatus()) //make sure DMA processing stops when processing ADC3 readings
+  if (!ADC3_getBusyStatus()) //make sure DMA processing stops when processing ADC3 readings
   {
-    ADC3_setFaultStatus(1); //indicates DMA right now is in process
+    ADC3_setBusyStatus(1); //indicates DMA right now is in process
     static float result[ADC3_NUM_ANALOG_CHANNELS] = {0.0}; //stores supplemental battery voltage, motor and array currents
 
     // Average 2nd half of the buffer
@@ -480,7 +481,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     ADC3_setMotorCurrent(result[1]);
     ADC3_setArrayCurrent(result[2]);
 
-    ADC3_setFaultStatus(0); //indicates now the DMA is not in process
+    ADC3_setBusyStatus(0); //indicates now the DMA is not in process
   }
   
   else
@@ -506,8 +507,10 @@ void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
   {
     //stop and reset DMA
     //reference: http://www.disca.upv.es/aperles/arm_cortex_m3/llibre/st/STM32F439xx_User_Manual/group__adc__exported__functions__group2.html#gadea1a55c5199d5cb4cfc1fdcd32be1b2
+    HAL_TIM_Base_Stop(&htim8); //stop TIM8: the trigger timer for ADC3   
     HAL_ADC_Stop_DMA(&hadc);
     HAL_ADC_Start_DMA(&hadc, (uint32_t *) adc3_buf, ADC3_BUF_LENGTH);
+    HAL_TIM_Base_Start(&htim8);
   }
   else
   {

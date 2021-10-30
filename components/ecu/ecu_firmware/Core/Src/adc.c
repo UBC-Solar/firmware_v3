@@ -4,7 +4,7 @@
  * 
  * These functions need to average out the ADC readings for accuracy.
  * 
- * @date 2021/09/30
+ * @date 2021/10/30
  * @author Forbes Choy 
  */
 
@@ -15,7 +15,8 @@
 int ADC3_supp_batt_volt; //stores supplemental battery voltage readings in ADC3
 int ADC3_motor_current; //stores current readings, flowing form the motor to the battery, in ADC3
 int ADC3_array_current; //stores current readings, flowing from solar arrays to the battery, in ADC3
-volatile int ADC3_DMA_in_process_flag; //flag that indicates the DMA interrupt for ADC3 has been called and is in process
+volatile int ADC3_DMA_in_process_flag; //flag that indicates the DMA interrupt if ADC3 has been called and is in process
+volatile int ADC3_DMA_fault_flag; //flag that indicates the DMA interrupt if ADC3 has been called and is at fault
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
@@ -208,29 +209,56 @@ void ADC3_processRawReadings(int half, volatile int adc3_buf[], float result[])
   }
 }
 
+
 /**
- * @brief sets the Fault flag in the global variable ADC3_DMA_in_process_flag
+ * @brief sets the busy flag in the global variable ADC3_DMA_in_process_flag
  * depending if ADC3 attempts to read values in the middle of a DMA interrupt callback process
  * 
- * @param flag_value integer value: 1 is at fault, 0 is not at fault
+ * @param flag_value integer value: 1 is busy, 0 is not at busy
  * @retval sets ADC3_DMA_in_process_flag with flag_value
  */
-void ADC3_setFaultStatus(int flag_value)
+void ADC3_setBusyStatus(int flag_value)
 {
   ADC3_DMA_in_process_flag = flag_value;
 }
 
 /**
- * @brief Retrieves the fault status of ADC3, stored in global variable
+ * @brief Retrieves the busy status of ADC3, stored in global variable
  * ADC3_DMA_in_process_flag
  * 
  * @param -
  * @retval returns the global variable ADC3_DMA_in_process_flag (int datatype).
+ *         1 means at busy; 0 means not at busy
+ */
+int ADC3_getBusyStatus() 
+{
+  return ADC3_DMA_in_process_flag;
+}
+
+
+/**
+ * @brief sets the Fault flag in the global variable ADC3_DMA_fault_flag
+ * depending if ADC3 attempts to read values in the middle of a DMA interrupt callback process
+ * 
+ * @param flag_value integer value: 1 is at fault, 0 is not at fault
+ * @retval sets ADC3_DMA_fault_flag with flag_value
+ */
+void ADC3_setFaultStatus(int flag_value)
+{
+  ADC3_DMA_fault_flag = flag_value;
+}
+
+/**
+ * @brief Retrieves the fault status of ADC3, stored in global variable
+ * ADC3_DMA_fault_flag
+ * 
+ * @param -
+ * @retval returns the global variable ADC3_DMA_fault_flag (int datatype).
  *         1 means at fault; 0 means not at fault
  */
 int ADC3_getFaultStatus() 
 {
-  return ADC3_DMA_in_process_flag;
+  return ADC3_DMA_fault_flag;
 }
 
 /*============================================================================*/

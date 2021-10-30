@@ -3,7 +3,7 @@
  * @brief Header file for ADC interface for supplemental battery
  * and current sensor read from ECU
  * 
- * @date 2021/01/30
+ * @date 2021/10/30
  * @author 
  */
 
@@ -38,6 +38,9 @@ void ADC3_setArrayCurrent(float array_current);
 
 int ADC3_netCurrentOut(int motor_current, int array_current);
 void ADC3_processRawReadings(int half, volatile int adc3_buf[], float result[]);
+
+int ADC3_getBusyStatus();
+void ADC3_setFaultStatus(int flag_value);
 
 int ADC3_getFaultStatus(); 
 void ADC3_setFaultStatus(int flag_value);
