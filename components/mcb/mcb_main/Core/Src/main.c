@@ -27,6 +27,7 @@
 
 union FloatBytes current;
 union FloatBytes velocity;
+union FloatBytes motor_temperature;
 
 struct InputFlags event_flags;		/**< Stores the driver inputs from the steering wheel and dashboard. */
 
@@ -76,9 +77,9 @@ int main(void)
 
     // <----- CAN setup ----->
 
-    CAN_Filter_Init();
-    HAL_CAN_ConfigFilter(&hcan, &battery_soc_filter);
-    HAL_CAN_Start(&hcan);
+	CAN_Filter_Init();
+	HAL_CAN_ConfigFilter(&hcan, &mcb_filter);
+	HAL_CAN_Start(&hcan);
 
     // <----- ADC setup ----->
 

@@ -36,7 +36,7 @@ CAN_TxHeaderTypeDef screen_cruise_control_header = {
 CAN_RxHeaderTypeDef can_rx_header;                  /**< Stores the header information for CAN messages read from
 													     the RX (receive) buffer */
 
-CAN_FilterTypeDef battery_soc_filter;               /**< Stores the intialisation information for the hardware CAN
+CAN_FilterTypeDef mcb_filter;			            /**< Stores the intialisation information for the hardware CAN
 													     that filters for battery (ID 0x626) messages */
 
 uint32_t can_mailbox;                               /**< Stores the TX (transmit) mailbox that a CAN message has
@@ -124,26 +124,27 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef *canHandle)
 }
 
 /**
- * 	@brief 	Initializes a hardware CAN filter that filters for CAN messages that have the standard ID 0x626.
- * 			This corresponds to a message from the BMS (battery management system) that contains the battery SOC.
+ * 	@brief 	Initializes a hardware CAN filter that filters for CAN messages that have the standard IDs 0x50B and 0x626.
+ *          Filters are configured in list mode and 16 bit scale allowing for 4 IDs to be filtered.
  */
 void CAN_Filter_Init(void)
 {
-    // in this case we are using two 16-bit filters in identifer mask mode
-    // therefore, the high and low values for the FilterID and FilterMask are going to be the same since
-    // we are currently only filtering for one ID (0x626)
-    battery_soc_filter.FilterIdHigh = (uint32_t)((BATTERY_BASE + 6) << 5);
-    battery_soc_filter.FilterIdLow = (uint32_t)((BATTERY_BASE + 6) << 5);
+    /**
+    * Filter 4 seperate 11 bit IDs.
+    * Currently, only 2 out of the 4 available filters are being used. The remaining 2 are filled in as duplicates.
+    * Duplicates are in place because empty or random values will let through IDs that we have not specified to filter.
+    */
 
-    // masks away the last 5 bits of CAN message - the only relevant bits are [15:5] (11-bit standard identifier)
-    battery_soc_filter.FilterMaskIdHigh = (uint32_t)(0x7FF << 5);
-    battery_soc_filter.FilterMaskIdLow = (uint32_t)(0x7FF << 5);
+    mcb_filter.FilterIdHigh = (uint32_t)((BATTERY_BASE + 6) << 5);            // Battery SOC
+    mcb_filter.FilterIdLow = (uint32_t)((MOTOR_CTRL_BASE + 11) << 5);         // Motor Temperature
+    mcb_filter.FilterMaskIdHigh = (uint32_t)((MOTOR_CTRL_BASE + 11) << 5);    // unused
+    mcb_filter.FilterMaskIdLow = (uint32_t)((MOTOR_CTRL_BASE + 11) << 5);     // unused
 
-    battery_soc_filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-    battery_soc_filter.FilterBank = (uint32_t)0;
-    battery_soc_filter.FilterMode = CAN_FILTERMODE_IDMASK;
-    battery_soc_filter.FilterScale = CAN_FILTERSCALE_16BIT;
-    battery_soc_filter.FilterActivation = CAN_FILTER_ENABLE;
+    mcb_filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+    mcb_filter.FilterBank = (uint32_t)0;
+    mcb_filter.FilterMode = CAN_FILTERMODE_IDLIST;
+    mcb_filter.FilterScale = CAN_FILTERSCALE_16BIT;
+    mcb_filter.FilterActivation = CAN_FILTER_ENABLE;
 }
 
 /* USER CODE END 1 */

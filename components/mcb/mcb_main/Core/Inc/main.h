@@ -73,10 +73,15 @@ typedef struct InputFlags {
   volatile uint8_t encoder_value_is_zero;	/**< Flag that indicates if the encoder value read from the hardware timer is zero
   	  	  	  	  	  	  	  	  	  	  	  	 or not. A value of 0x01 means the regen value is zero while a value of 0x00
   	  	  	  	  	  	  	  	  	  	  	  	 means the regen value is not zero. */
+
+  volatile uint8_t motor_overheat;			/**< Flag that indicates if the motor is above its maximum temperature. A value of 0x01 means that
+   	   	   	   	   	   	   	   	   	   	   	   	 the motor is over heating while 0x00 means that the motor condition is acceptable. */
+
 } InputFlags;
 
-extern union FloatBytes current;		/**< Stores the current value to send to motor controller over CAN */
-extern union FloatBytes velocity;		/**< Stores the velocity value to send to motor controller over CAN */
+extern union FloatBytes current;			/**< Stores the current value to send to motor controller over CAN */
+extern union FloatBytes velocity;			/**< Stores the velocity value to send to motor controller over CAN */
+extern union FloatBytes motor_temperature;	/**< Stores the motor temperature read from the CAN bus */
 
 extern struct InputFlags event_flags;
 
