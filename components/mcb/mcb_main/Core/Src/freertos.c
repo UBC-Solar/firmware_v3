@@ -60,6 +60,8 @@ osThreadId_t sendNextScreenMessageTaskHandle;	    /**< Thread handle for sendNex
 
 osThreadId_t receiveBatteryMessageTaskHandle;	    /**< Thread handle for receiveBatteryMessageTask(). */
 
+osThreadId_t sendMotorOverheatTaskHandle;
+
 osMessageQueueId_t encoderQueueHandle;			    /**< Queue handle for the encoder queue. When new encoder values are read
                                                          from the hardware timer by readEncoderTask(), they are placed inside this queue.
                                                          The values in the queue are read by sendMotorCommandTask().*/
@@ -88,14 +90,14 @@ enum DriveState {
                                               REGEN_EN is enabled and the regen value is more than zero. This state takes priority
                                               over NORMAL_READY, CRUISE_READY, and IDLE.*/
 
-	CRUISE_READY = (uint32_t) 0x0008,	/**< Indicates that cruise control is active. The MCB will enter this state when CRUISE_EN
+	CRUISE_READY = (uint32_t) 0x0008,		/**< Indicates that cruise control is active. The MCB will enter this state when CRUISE_EN
 											 is enabled and the cruise value is more than zero. Pressing the pedal down or pressing
 											 the brake will exit the cruise control state. */
 
-	MOTOR_OVERHEAT = (uint32_t) 0x0010  /**< Indicates that when the motor is over the maximum temperature. The value is set in the
+	MOTOR_OVERHEAT = (uint32_t) 0x0010  	/**< Indicates that when the motor is over the maximum temperature. The value is set in the
 	 	 	 	 	 	 	 	 	 	 	 sendMotorOverheatTask which checks the incoming motor temperature received over CAN. */
 
-} state;								/**< Stores the current MCB state. */
+} state;									/**< Stores the current MCB state. */
 
 /* USER CODE END Variables */
 
