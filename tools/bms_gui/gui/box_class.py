@@ -140,3 +140,10 @@ class box_info:
             self.past_voltages.pop(0)
         self.all_voltages.append(new_voltage_to_add)
         self.past_voltages.append(new_voltage_to_add)
+
+    def change_textsize(self,labels,textsize):
+        for i in range(len(labels)):
+            labels[i].setFont((QtGui.QFont("Segoe UI", textsize)))
+
+
+
