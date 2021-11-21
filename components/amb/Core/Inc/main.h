@@ -60,6 +60,24 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define TEMP_1_Pin GPIO_PIN_0
 #define TEMP_1_GPIO_Port GPIOA
+#define TEMP_2_Pin GPIO_PIN_1
+#define TEMP_2_GPIO_Port GPIOA
+#define TEMP_3_Pin GPIO_PIN_2
+#define TEMP_3_GPIO_Port GPIOA
+#define TEMP_4_Pin GPIO_PIN_3
+#define TEMP_4_GPIO_Port GPIOA
+#define ISENSE2_Pin GPIO_PIN_4
+#define ISENSE2_GPIO_Port GPIOA
+#define VSENSE2_Pin GPIO_PIN_5
+#define VSENSE2_GPIO_Port GPIOA
+#define VSENSE1_Pin GPIO_PIN_6
+#define VSENSE1_GPIO_Port GPIOA
+#define ISENSE1_Pin GPIO_PIN_7
+#define ISENSE1_GPIO_Port GPIOA
+#define TEMP_7_Pin GPIO_PIN_0
+#define TEMP_7_GPIO_Port GPIOB
+#define TEMP_8_Pin GPIO_PIN_1
+#define TEMP_8_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
