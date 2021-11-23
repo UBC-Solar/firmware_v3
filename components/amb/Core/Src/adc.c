@@ -69,6 +69,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     __HAL_RCC_ADC1_CLK_ENABLE();
 
     __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
     /**ADC1 GPIO Configuration
     PA0-WKUP     ------> ADC1_IN0
@@ -79,6 +80,8 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     PA5     ------> ADC1_IN5
     PA6     ------> ADC1_IN6
     PA7     ------> ADC1_IN7
+    PC4     ------> ADC1_IN14
+    PC5     ------> ADC1_IN15
     PB0     ------> ADC1_IN8
     PB1     ------> ADC1_IN9
     */
@@ -86,6 +89,10 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
                           |ISENSE2_Pin|VSENSE2_Pin|VSENSE1_Pin|ISENSE1_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = TEMP_5_Pin|TEMP_6_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
     GPIO_InitStruct.Pin = TEMP_7_Pin|TEMP_8_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
@@ -117,11 +124,15 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     PA5     ------> ADC1_IN5
     PA6     ------> ADC1_IN6
     PA7     ------> ADC1_IN7
+    PC4     ------> ADC1_IN14
+    PC5     ------> ADC1_IN15
     PB0     ------> ADC1_IN8
     PB1     ------> ADC1_IN9
     */
     HAL_GPIO_DeInit(GPIOA, TEMP_1_Pin|TEMP_2_Pin|TEMP_3_Pin|TEMP_4_Pin
                           |ISENSE2_Pin|VSENSE2_Pin|VSENSE1_Pin|ISENSE1_Pin);
+
+    HAL_GPIO_DeInit(GPIOC, TEMP_5_Pin|TEMP_6_Pin);
 
     HAL_GPIO_DeInit(GPIOB, TEMP_7_Pin|TEMP_8_Pin);
 

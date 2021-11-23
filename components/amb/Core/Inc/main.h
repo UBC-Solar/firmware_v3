@@ -74,10 +74,18 @@ void Error_Handler(void);
 #define VSENSE1_GPIO_Port GPIOA
 #define ISENSE1_Pin GPIO_PIN_7
 #define ISENSE1_GPIO_Port GPIOA
+#define TEMP_5_Pin GPIO_PIN_4
+#define TEMP_5_GPIO_Port GPIOC
+#define TEMP_6_Pin GPIO_PIN_5
+#define TEMP_6_GPIO_Port GPIOC
 #define TEMP_7_Pin GPIO_PIN_0
 #define TEMP_7_GPIO_Port GPIOB
 #define TEMP_8_Pin GPIO_PIN_1
 #define TEMP_8_GPIO_Port GPIOB
+#define SWDIO_Pin GPIO_PIN_13
+#define SWDIO_GPIO_Port GPIOA
+#define SWCLK_Pin GPIO_PIN_14
+#define SWCLK_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

@@ -110,20 +110,23 @@ int main(void)
   if (HAL_OK != HAL_ADCEx_Calibration_Start(&hadc1))
 	  Error_Handler();
 
- if (HAL_OK != HAL_ADC_Start_DMA(&hadc1, temperatures, ADC_BUF_SIZE))
-	 Error_Handler();
+  if (HAL_OK != HAL_ADC_Start_DMA(&hadc1, temperatures, ADC_BUF_SIZE))
+	  Error_Handler();
 
- if (HAL_OK != HAL_TIM_Base_Start(&htim1))
-	 Error_Handler();
+  if (HAL_OK != HAL_TIM_Base_Start(&htim1))
+	  Error_Handler();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)github
+  while (1)
   {
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
+
+	  //code here
+	  //read ADC, process, then output to CANbus
+
   }
   /* USER CODE END 3 */
 }
