@@ -5,9 +5,7 @@
  * @date 2020/10/03
  * @author matthewjegan
  */
-
 #include "selftest.h"
-#include "ltc6813_btm_bal.h"
 #include "stdlib.h"
 
 #define SC_CELLS 2                      // Pins C18 and C12 on LTC6813-1 Slave Board should be shorted.
@@ -511,7 +509,7 @@ BTM_Status_t readAllRegisters(uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVIC
 void shiftDchStatus(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]){
     BTM_module_bal_status_t end_status = module_dch[BTM_NUM_MODULES - 1];
 
-    for (int module = 1; module < BTM_NUM_MODULES; module++){
+    for (int module = BTM_NUM_MODULES - 1; module > 0; module--){
         module_dch[module] = module_dch[module - 1];
     }
 
