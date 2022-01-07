@@ -170,6 +170,9 @@ void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pa
 #endif
     if (commsProblem(func_status, &system_status)) return;
 
+    // perform initial SOC estimations
+    SOC_allModulesInit(pack);
+
     // analyze initial measurements, update system status code
     analysisStatusUpdate(pack, &system_status);
 
@@ -481,6 +484,15 @@ void printMeasurements(BTM_PackData_t * pack)
                 printf("%.3f\t", pack->stack[ic_num].module[module_num].temperature);
             } else {
                 printf("x\t\t"); // Don't print the voltage for inactive modules
+            }
+        }
+        putchar('\n');
+
+        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) {
+            if (pack->stack[ic_num].module[module_num].enable) {
+                printf("%.4f\t", pack->stack[ic_num].module[module_num].soc);
+            } else {
+                printf("x\t\t"); // Don't print the SOC for inactive modules
             }
         }
         putchar('\n');

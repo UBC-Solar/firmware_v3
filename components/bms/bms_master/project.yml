@@ -30,6 +30,10 @@
   :source:
     - Core/Src/**
     - Core/Inc/**
+    - Drivers/STM32F1xx_HAL_Driver/Inc/**
+    - Drivers/STM32F1xx_HAL_Driver/Src/**
+    - Drivers/CMSIS/Device/ST/STM32F1xx/Include/**
+    - Drivers/CMSIS/Include/**
 
   :support:
     - test/support
@@ -64,7 +68,10 @@
     bool:     UINT8
   :includes:
     - <stdbool.h>
-    - <stdint.h>  
+    - <stdint.h>
+    - <stddef.h> 
+    - <stdio.h>
+    - <stdlib.h>
 
 # Add -gcov to the plugins list to make sure of the gcov plugin
 # You will need to have gcov and gcovr both installed to make it work.
