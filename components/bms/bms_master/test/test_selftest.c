@@ -2,8 +2,8 @@
 
 #include "unity.h"
 
-#include "selftest.c"
 #include "selftest.h"
+
 #include "mock_ltc6813_btm.h"
 #include "mock_ltc6813_btm_bal.h"
 
@@ -14,12 +14,8 @@ void setUp(void)
 
 void tearDown(void)
 {
-}
 
-/*void test_selftest_NeedToImplement(void)
-{
-    TEST_IGNORE_MESSAGE("Need to Implement selftest");
-}*/
+}
 
 void test_itmpConversion(){
 	uint16_t itmp[] = {0x595C};

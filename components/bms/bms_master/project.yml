@@ -28,12 +28,9 @@
     - +:test/**
     - -:test/support
   :source:
-    - Core/Src/**
-    - Core/Inc/**
-    - Drivers/STM32F1xx_HAL_Driver/Src/**
-    - Drivers/STM32F1xx_HAL_Driver/Inc/**
-    - Drivers/CMSIS/Device/ST/STM32F1xx/Include/**
-    - Drivers/CMSIS/Include/**
+    - Core/**
+    - Drivers/STM32F1xx_HAL_Driver/**
+    - Drivers/CMSIS/**
   :support:
     - test/support
   :libraries: []
@@ -44,6 +41,8 @@
   #  2) add entries to the :common: section (e.g. :test: has TEST defined)
   :common: &common_defines
     - STM32F103xE
+    - USE_HAL_DRIVERS
+    - DEBUG
   :test:
     - *common_defines
     - TEST
@@ -64,9 +63,7 @@
     uint32:   UINT32
     int8:     INT8
     bool:     UINT8
-:includes:
-    - <stdbool.h>
-    - <stdint.h>  
+:includes: []
 
 # Add -gcov to the plugins list to make sure of the gcov plugin
 # You will need to have gcov and gcovr both installed to make it work.
