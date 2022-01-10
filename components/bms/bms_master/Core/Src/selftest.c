@@ -432,7 +432,7 @@ STATIC_TESTABLE void itmpConversion(uint16_t itmp[], float temp_celsius[])
     const float itmp_coefficient = 0.013158;
     const float conversion_const = 276.0;
 
-    unsigned int raw_reading;
+    float raw_reading;
     float celsiusTemp;
 
     for (int board = 0; board < BTM_NUM_DEVICES; board++){

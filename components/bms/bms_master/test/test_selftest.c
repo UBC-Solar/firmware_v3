@@ -18,9 +18,9 @@ void tearDown(void)
 }
 
 void test_itmpConversion(){
-	uint16_t itmp[] = {0x595C};
+	uint16_t itmp[BTM_NUM_DEVICES] = {0x595C, 0x0};
 	float expected_temp = 25.0f;
-	float temp_celsius[1];
+	float temp_celsius[BTM_NUM_DEVICES];
 	float tolerance = 1.0f;
 	itmpConversion(itmp, temp_celsius);
 
