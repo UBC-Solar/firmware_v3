@@ -5,8 +5,9 @@
  * @date 2020/10/03
  * @author matthewjegan
  */
+
 #include "selftest.h"
-#include "stdlib.h"
+#include <math.h>
 
 #define SC_CELLS 2                      // Pins C18 and C12 on LTC6813-1 Slave Board should be shorted.
 #define EXPECTED_SC_VOLTAGE 0.0         // Voltage @ shorted pins should be 0
@@ -31,10 +32,14 @@
 #define VREF_LOWERBOUND 2.990     		// Establishes range of acceptable voltages for VREF2 measurement.
 #define VREF_UPPERBOUND 3.014 		    // (specified on p.30 of LTC6813-1 datasheet)
 
-void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
-BTM_Status_t readAllRegisters(uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE], float moduleVoltage[BTM_NUM_DEVICES][BTM_NUM_MODULES]);
-void shiftDchStatus(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]);
-void setDchPack(BTM_BAL_dch_setting_pack_t* dch_pack, BTM_module_bal_status_t new_module_dch[BTM_NUM_MODULES]);
+static BTM_Status_t readAllRegisters(uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE], float moduleVoltage[BTM_NUM_DEVICES][BTM_NUM_MODULES]);
+static void setDchPack(BTM_BAL_dch_setting_pack_t* dch_pack, BTM_module_bal_status_t new_module_dch[BTM_NUM_MODULES]);
+
+// Testable private functions
+#ifndef TEST
+STATIC_TESTABLE void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
+STATIC_TESTABLE void shiftDchStatus(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]);
+#endif // TEST
 
 /**
  * @brief Checks internal die temperature of LTC6813's for safe operating condition
@@ -161,7 +166,7 @@ BTM_Status_t ST_shortedCells(){
             // Convert to volts
             converted_voltage = BTM_regValToVoltage(cell_voltage_raw);
 
-            float delta = abs(converted_voltage - EXPECTED_SC_VOLTAGE);
+            float delta = fabs(converted_voltage - EXPECTED_SC_VOLTAGE);
             if (delta > ST_VOLTAGE_ERROR){
                 status.error = BTM_ERROR_SELFTEST;
                 status.device_num = ic_num + 1;
@@ -312,7 +317,7 @@ BTM_Status_t ST_checkOverlapVoltage(){
 
             float ADC1_voltage = overlapVoltage[board][2 * cell];
             float ADC2_voltage = overlapVoltage[board][2 * cell + 1];
-            float delta = abs(ADC1_voltage - ADC2_voltage);
+            float delta = fabs(ADC1_voltage - ADC2_voltage);
 
             if (delta > ST_VOLTAGE_ERROR){
                 status.error = BTM_ERROR_SELFTEST;
@@ -403,7 +408,7 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
             float v_init_next = initial_voltage[ic_num][module];
             float v_dch_next = discharge_voltage[ic_num][module];
             float ratio =  v_dch_next / v_init_next;
-            float delta = abs(ratio - ST_DCH_COMPARE_PCT);
+            float delta = fabs(ratio - ST_DCH_COMPARE_PCT);
 
             if (delta > ST_DCH_PCT_DELTA){
                 status.error = BTM_ERROR_SELFTEST;
@@ -422,12 +427,12 @@ BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack){
  *
  * @return void
  **/
-void itmpConversion(uint16_t itmp[], float temp_celsius[])
+STATIC_TESTABLE void itmpConversion(uint16_t itmp[], float temp_celsius[])
 {
     const float itmp_coefficient = 0.013158;
     const float conversion_const = 276.0;
 
-    unsigned int raw_reading;
+    float raw_reading;
     float celsiusTemp;
 
     for (int board = 0; board < BTM_NUM_DEVICES; board++){
@@ -444,7 +449,7 @@ void itmpConversion(uint16_t itmp[], float temp_celsius[])
  *
  * @return OK if reading successful, otherwise returns error status.
  **/
-BTM_Status_t readAllRegisters(uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
+static BTM_Status_t readAllRegisters(uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
         float moduleVoltage[BTM_NUM_DEVICES][BTM_NUM_MODULES]){
     BTM_Status_t status = {BTM_OK, 0};
     uint16_t cell_voltage_raw = 0;
@@ -506,7 +511,8 @@ BTM_Status_t readAllRegisters(uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVIC
  *
  * @param module_dch
  */
-void shiftDchStatus(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]){
+STATIC_TESTABLE void shiftDchStatus(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES])
+{
     BTM_module_bal_status_t end_status = module_dch[BTM_NUM_MODULES - 1];
 
     for (int module = BTM_NUM_MODULES - 1; module > 0; module--){
@@ -526,8 +532,9 @@ void shiftDchStatus(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]){
  * @param dch_pack
  * @param new_module_dch
  */
-void setDchPack(BTM_BAL_dch_setting_pack_t* dch_pack,
-        BTM_module_bal_status_t new_module_dch[BTM_NUM_MODULES]){
+static void setDchPack(BTM_BAL_dch_setting_pack_t* dch_pack,
+        BTM_module_bal_status_t new_module_dch[BTM_NUM_MODULES])
+{
     for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
     {
         for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
