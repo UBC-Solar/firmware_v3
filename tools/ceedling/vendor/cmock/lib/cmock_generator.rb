@@ -290,7 +290,10 @@ class CMockGenerator
     function_mod_and_rettype = (function[:modifier].empty? ? '' : "#{function[:modifier]} ") +
                                (function[:return][:type]) +
                                (function[:c_calling_convention] ? " #{function[:c_calling_convention]}" : '')
-    args_string = function[:args_string]
+    # SOLAR TWEAK
+    # args_string = function[:args_string] # ORIGINAL
+    args_string = function[:original_args]
+    # END SOLAR TWEAK
     args_string += (', ' + function[:var_arg]) unless function[:var_arg].nil?
 
     # Encapsulate in namespace(s) if applicable

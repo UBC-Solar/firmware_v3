@@ -477,7 +477,16 @@ class CMockHeaderParser
     else
       c = 0
       # magically turn brackets into asterisks, also match for parentheses that come from macros
-      arg_list.gsub!(/(\w+)(?:\s*\[[^\[\]]*\])+/, '*\1')
+      # SOLAR TWEAK
+      # arg_list.gsub!(/(\w+)(?:\s*\[[^\[\]]*\])+/, '*\1') # BAD ORIGINAL
+      arg_list.gsub!(/(\w+)(?:\s*\[\s*\(*[\s\d\w+-]*\)*\s*\])/,'*\1')
+      arg_list.gsub!(/(\w+)(?:\s*\[\s*\(*[\s\d\w+-]*\)*\s*\])/,'*\1')
+      arg_list.gsub!(/(\w+)(?:\s*\[\s*\(*[\s\d\w+-]*\)*\s*\])/,'*\1')
+      arg_list.gsub!(/(\w+)(?:\s*\[\s*\(*[\s\d\w+-]*\)*\s*\])/,'*\1')
+      arg_list.gsub!(/(\w+)(?:\s*\[\s*\(*[\s\d\w+-]*\)*\s*\])/,'*\1')
+      arg_list.gsub!(/(\w+)(?:\s*\[\s*\(*[\s\d\w+-]*\)*\s*\])/,'*\1')
+      # END SOLAR TWEAK
+
       # remove space to place asterisks with type (where they belong)
       arg_list.gsub!(/\s+\*/, '*')
       # pull asterisks away from arg to place asterisks with type (where they belong)
@@ -583,6 +592,10 @@ class CMockHeaderParser
     else
       decl[:var_arg] = nil
     end
+
+    # SOLAR TWEAK
+    decl[:original_args] = args.dup
+    # END SOLAR TWEAK
     args = clean_args(args, parse_project)
     decl[:args_string] = args
     decl[:args] = parse_args(args)
