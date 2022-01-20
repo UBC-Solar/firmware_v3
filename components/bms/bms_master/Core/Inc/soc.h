@@ -13,6 +13,7 @@
 #ifndef __SOC_H
 #define __SOC_H
 
+#include "util.h"
 #include <stdint.h>
 #include "stm32f1xx_hal.h"
 #include "ltc6813_btm.h"
@@ -31,7 +32,7 @@
 #define SOC_CELL_MAX_VOLTAGE 4.2 //voltage of a cell when fully charged
 #define SOC_CELL_DISCHARGE_EFFICIENCY 0.85 //according to http://large.stanford.edu/courses/2010/ph240/sun1/, but subject to (experimental) change
 #define SOC_CELL_CHARGE_EFFICIENCY 0.85 //according to http://large.stanford.edu/courses/2010/ph240/sun1/, but subject to (experimental) change
-#define SOC_MODULE_RATED_CAPACITY (3.45*13) // capacity [Ah] of each module; each cell has a typical capacity of 3450mAh and each module has 13 cells in parallel
+#define SOC_MODULE_RATED_CAPACITY (3.45 * 13) // capacity [Ah] of each module; each cell has a typical capacity of 3450mAh and each module has 13 cells in parallel
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
@@ -41,12 +42,14 @@ float SOC_moduleInit(float cell_voltage);
 void SOC_allModulesInit(BTM_PackData_t * pack);
 
 //functions require calling each time when CAN transmits a new current to update our SOC estimation
-float SOC_moduleEst(float last_SOC, uint32_t cell_voltage100uV, int32_t CAN_currentReading, uint32_t FSM_totalTimeElasped);
-void SOC_allModulesEst(BTM_PackData_t * pack, int32_t CAN_currentReading, uint32_t FSM_totalTimeElasped);
+float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, int32_t current_reading, uint32_t total_time_elasped);
+void SOC_allModulesEst(BTM_PackData_t * pack, int32_t current_reading, uint32_t total_time_elasped);
 
-//helper functions
-int LUT_indexOfNearestCellVoltage(float cell_votlage);
-float calculate_deltaDOD(float presentCurrent, float presentTime, float pastCurrent, float pastTime);
-                         
+//private helper functions
+#ifdef TEST
+#include <stdio.h> //for debugging
+STATIC_TESTABLE int indexOfNearestCellVoltage(float cell_votlage);
+STATIC_TESTABLE float calculateDeltaDOD(float present_current, float present_time, float past_current, float past_time);
+#endif // TEST              
 
 #endif

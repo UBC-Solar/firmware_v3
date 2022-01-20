@@ -11,11 +11,21 @@
 
 #include "soc.h"
 #include <math.h>
+/*============================================================================*/
+
+// Testable private functions
+
+//TODO: remove indexOfNearestCellVoltage2 once indexOfNearestCellVoltage passes
+#ifndef TEST
+STATIC_TESTABLE int indexOfNearestCellVoltage(float cell_votlage);
+STATIC_TESTABLE int indexOfNearestCellVoltage2(float cell_votlage);
+STATIC_TESTABLE float calculateDeltaDOD(float present_current, float present_time, float past_current, float past_time);
+#endif // TEST 
 
 /*============================================================================*/
 
 //last current readings from CAN bus
-float SOC_last_CAN_currentReading; 
+float SOC_last_CAN_current_reading; 
 
 //last recorded elasped time since the start of the FSM (finite state machine)
 int SOC_last_FSM_time;
@@ -24,29 +34,89 @@ int SOC_last_FSM_time;
 //first row is cell voltage [V] and second row is the corresponding SOC [%]
 //condition: 4A charge/discharge, 25^oC
 //derive from the discharge curve in page 3 of this document: https://www.orbtronic.com/content/Datasheet-specs-Sanyo-Panasonic-NCR18650GA-3500mah.pdf
-const float cellVoltage_SOC_table[2][21] =
+
+#ifdef TEST //TODO: there seem to be some memory issue if my lookup table is too large
+
+//this lookup table could be too large
+// const float cell_voltage_SOC_table[2][19] =
+// {
+//   {4.50, 4.45, 4.40, 4.35, 4.30, 4.25, 4.20, 4.15, 4.10, 4.05, 4.00, 3.95, 3.90, 3.85, 3.80,
+//   3.75, 3.70, 3.65, 3.60},
+//   {100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 97.971, 88.406, 81.884,
+//   76.522, 72.464, 67.391, 62.319}
+// };
+
+const float cell_voltage_SOC_table[2][3] =
+{
+  {4.50, 4.45, 4.40},
+  {100.0, 100.0, 100.0}
+};
+#else
+const float cell_voltage_SOC_table[2][41] =
 {
   {4.50, 4.45, 4.40, 4.35, 4.30, 4.25, 4.20, 4.15, 4.10, 4.05, 4.00, 3.95,
-  3.90, 3.85, 3.80, 3.75, 3.70, 3.65, 3.60, 3.55, 3.50},
+  3.90, 3.85, 3.80, 3.75, 3.70, 3.65, 3.60, 3.55, 3.50, 3.45, 
+  3.40, 3.35, 3.30, 3.25, 3.20, 3.15, 3.10, 3.05, 3.00, 2.95, 
+  2.90, 2.85, 2.80, 2.75, 2.70, 2.65, 2.60, 2.55, 2.50},
   {100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0,
-  97.971, 88.406, 81.884, 76.522, 72.464, 67.391, 62.319, 56.522, 52.464}
+  97.971, 88.406, 81.884, 76.522, 72.464, 67.391, 62.319, 56.522, 52.464, 47.536,
+  42.029, 35.942, 30.435, 24.928, 21.739, 18.261, 15.362, 13.043, 11.594, 10.145, 
+  9.565, 8.406, 7.536, 6.957, 6.087, 5.652, 4.638, 4.348, 4.058}
 };
+#endif //TEST
 
 /*============================================================================*/
 
 /**
- * @brief initialize an SOC estimation of a module based on its cell voltage (our module is 13 cells in parallel)
+ * @brief initialize an SOC estimation of a module from its cell voltage (our module is 13 cells in parallel)
+ *        calculation based on linear intepolation/extrapolation on the lookup table, cell_voltage_SOC_table 
  *
  * @param cell_voltage the cell voltage of a module [V]
  */
 
 float SOC_moduleInit(float cell_voltage)
 {
-  //find the cell voltage value closest to cell_voltage in the cellVoltage_SOC_table lookup table
-  int LUT_index = LUT_indexOfNearestCellVoltage(cell_voltage);
+  float module_SOC = 0.0;
 
-  //return SOC from the cellVoltage_SOC_table lookup table, which are stored in the 2nd row
-  return cellVoltage_SOC_table[2][LUT_index];
+  //determine two cell voltage values from the cell_voltage_SOC_table, so that our cell voltage input is between them
+
+  //the first cell voltage value from the lookup table is the one closest to our cell voltage input
+  int first_index = indexOfNearestCellVoltage(cell_voltage);
+
+  //first, check if our input cell voltage is equal to one of the cell voltages in our lookup table; if so we can just return our SOC estimation
+  if (cell_voltage == cell_voltage_SOC_table[0][first_index])
+  {
+    module_SOC = cell_voltage_SOC_table[1][first_index];
+    return module_SOC;
+  }
+  
+  //determine the second index for intepolation/extrapolation
+  int second_index = 0;
+  
+  if (cell_voltage > cell_voltage_SOC_table[0][first_index])
+  {
+    if (cell_voltage > cell_voltage_SOC_table[0][41-1]) //when our input cell voltage exceeds the maximum cell voltage of our lookup table
+      second_index = first_index - 1;
+    else
+      second_index = first_index + 1;  
+  }
+  else
+  {
+    if (cell_voltage < cell_voltage_SOC_table[0][0]) //when our input cell voltage is less than the minimum cell voltage of our lookup table
+      second_index = first_index + 1;
+    else
+      second_index = first_index - 1;
+  }
+
+  //we can begin our intepolation/extrapolation
+
+  //determine the slope (dSOC/dcell_voltage) of the line formed by our cell voltages from the lookup table; m = (y2-y1)/(x2-x1);
+  float slope = (cell_voltage_SOC_table[1][second_index] - cell_voltage_SOC_table[1][first_index]) / (cell_voltage_SOC_table[0][second_index] - cell_voltage_SOC_table[0][first_index]);
+
+  //determine the corresponding SOC for our input cell voltage using our slope and lookup table values; y = m*(x-x1) + y1
+  module_SOC = slope * (cell_voltage - cell_voltage_SOC_table[0][first_index]) + cell_voltage_SOC_table[1][first_index];
+
+  return module_SOC;
 }
 
 /**
@@ -57,20 +127,18 @@ float SOC_moduleInit(float cell_voltage)
 void SOC_allModulesInit(BTM_PackData_t * pack)
 {
   //first set last CAN current reading and FSM time to 0
-
-  SOC_last_CAN_currentReading = 0; 
+  SOC_last_CAN_current_reading = 0; 
   SOC_last_FSM_time = 0;
 
   //initialize SOC for all modules
-  
-  float cellVoltage_reading = 0.0;
+  float cell_voltage_reading = 0.0;
 
   for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++) 
   {
     for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) 
     {
-      cellVoltage_reading = pack->stack[stack_num].module[module_num].voltage;
-      pack->stack[stack_num].module[module_num].soc = SOC_moduleInit(cellVoltage_reading);
+      cell_voltage_reading = pack->stack[stack_num].module[module_num].voltage;
+      pack->stack[stack_num].module[module_num].soc = SOC_moduleInit(cell_voltage_reading);
     }
   }
 }
@@ -81,57 +149,56 @@ void SOC_allModulesInit(BTM_PackData_t * pack)
  *        https://www.analog.com/media/en/technical-documentation/technical-articles/a-closer-look-at-state-of-charge-and-state-health-estimation-techniques.pdf
  *
  * @param last_SOC last SOC estimation of the module [%]
- * @param cell_voltage100uV the cell voltage of the module in 100uV [100uV]
- * @param CAN_currentReading current readings of our hall-effect sensors transmitted through CAN [A]
- * @param FSM_totalTimeElapsed total time elapsed since the start of our finite state machine (FSM) [ms]
+ * @param cell_voltage_100uV the cell voltage of the module in 100uV [100uV]
+ * @param current_reading current readings of our hall-effect sensors for the battery pack [A]; positive (+) current means the battery pack is charging and negative (-) current means the battery pack is discharging
+ * @param total_time_elasped total time elapsed [ms]
  */
 
-float SOC_moduleEst(float last_SOC, uint32_t cell_voltage100uV, int32_t CAN_currentReading, uint32_t FSM_totalTimeElapsed)
+float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, int32_t current_reading, uint32_t total_time_elasped)
 {
   //initialize constants
-  float module_SOH = 100.0; //the battery SOH will be approximated as 100% until the module is fully charged or discharged
-  float cell_voltage = cell_voltage100uV * 0.0001; //convert cell voltage readings into V
-  float module_DOD = 100.0 - last_SOC; //current instantaneous DOD of a module
+  float cell_voltage = cell_voltage_100uV * 0.0001; //convert cell voltage readings into V
+  float last_DOD = 100.0 - last_SOC; //instantaneous DOD of the module
   float delta_DOD = 0.0; //change in depth of discharge (DOD)
 
   /*------------------------------------*/
 
   //When Module is DISCHARGING --> Ib < 0
 
-  if (CAN_currentReading < 0) //discharge
+  if (current_reading < 0) //discharge
   {
     if(cell_voltage > SOC_CELL_MIN_VOLTAGE) //when module is not fully discharged yet --> Vb > Vmin
     {
       //first compute the change in DOD
-      delta_DOD = calculate_deltaDOD(CAN_currentReading, FSM_totalTimeElapsed,
-                  SOC_last_CAN_currentReading, SOC_last_FSM_time);
+      delta_DOD = calculateDeltaDOD(current_reading, total_time_elasped,
+                  SOC_last_CAN_current_reading, SOC_last_FSM_time);
 
-      module_DOD = module_DOD + SOC_CELL_DISCHARGE_EFFICIENCY * delta_DOD;
-      last_SOC = module_SOH - module_DOD;
+      last_DOD = last_DOD + SOC_CELL_DISCHARGE_EFFICIENCY * delta_DOD;
+      
+      //update last_SOC
+      last_SOC = 100.0 - last_DOD;
     }
     else //when module is fully discharged --> Vb < Vmin
     {
-      module_SOH = module_DOD;
-      last_SOC = 100 - module_DOD;
+      last_SOC = 100.0 - last_DOD;
     }
   }
   /*------------------------------------*/
 
   //when Module is CHARGING --> Ib > 0
      
-  else if(CAN_currentReading >= 0) //charge
+  else if(current_reading >= 0) //charge
   {
     if(cell_voltage < SOC_CELL_MAX_VOLTAGE) //when module is not fully charged yet
     {
-      delta_DOD = calculate_deltaDOD(CAN_currentReading, FSM_totalTimeElapsed,
-                  SOC_last_CAN_currentReading, SOC_last_FSM_time);
-      module_DOD = module_DOD + SOC_CELL_CHARGE_EFFICIENCY * delta_DOD;
-      last_SOC = module_SOH - module_DOD;
+      delta_DOD = calculateDeltaDOD(current_reading, total_time_elasped,
+                  SOC_last_CAN_current_reading, SOC_last_FSM_time);
+      last_DOD = last_DOD + SOC_CELL_CHARGE_EFFICIENCY * delta_DOD;
+      last_SOC = 100.0 - last_DOD;
     }
     else //when module is fully charged
     {
-      module_SOH = module_DOD;
-      last_SOC = 100 - module_DOD;
+      last_SOC = 100.0 - last_DOD;
     }
   }
 
@@ -142,28 +209,28 @@ float SOC_moduleEst(float last_SOC, uint32_t cell_voltage100uV, int32_t CAN_curr
  * @brief calculates/update the SOC estimation of all modules of our battery pack
  *
  * @param pack the battery pack data structure
- * @param CAN_currentReading current readings of our hall-effect sensors transmitted through CAN [A]
- * @param FSM_totalTimeElapsed total time elapsed since the start of our finite state machine (FSM) [ms]
+ * @param current_reading current readings of our hall-effect sensors for the battery pack [A]; positive (+) current means the battery pack is charging and negative (-) current means the battery pack is discharging
+ * @param total_time_elasped total time elapsed [ms]
  */
 
-void SOC_allModulesEst(BTM_PackData_t * pack, int32_t CAN_currentReading, uint32_t FSM_totalTimeElasped)
+void SOC_allModulesEst(BTM_PackData_t * pack, int32_t current_reading, uint32_t total_time_elasped)
 {
-  float cellVoltage_reading = 0.0;
-  float last_moduleSOC = 0.0;
+  float cell_voltage_reading = 0.0;
+  float last_module_SOC = 0.0;
 
   for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++) 
   {
     for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) 
     {
-      cellVoltage_reading = pack->stack[stack_num].module[module_num].voltage;
-      last_moduleSOC = pack->stack[stack_num].module[module_num].soc;
+      cell_voltage_reading = pack->stack[stack_num].module[module_num].voltage;
+      last_module_SOC = pack->stack[stack_num].module[module_num].soc;
       
-      pack->stack[stack_num].module[module_num].soc = SOC_moduleEst(last_moduleSOC, cellVoltage_reading, CAN_currentReading, FSM_totalTimeElasped);
+      pack->stack[stack_num].module[module_num].soc = SOC_moduleEst(last_module_SOC, cell_voltage_reading, current_reading, total_time_elasped);
     }
   }
 
-  SOC_last_CAN_currentReading = CAN_currentReading; //update current globally
-  SOC_last_FSM_time = FSM_totalTimeElasped; //update time globally
+  SOC_last_CAN_current_reading = current_reading; //update current globally
+  SOC_last_FSM_time = total_time_elasped; //update time globally
 }
 
 /*============================================================================*/
@@ -171,18 +238,18 @@ void SOC_allModulesEst(BTM_PackData_t * pack, int32_t CAN_currentReading, uint32
 /**
  * @brief helper function to calculate the change in depth of discharge (DOD) of a module
  *
- * @param presentCurrent current current reading [A]
- * @param presentTime current time [ms]
- * @param pastCurrent last current readings [A]
- * @param pastTime last recorded time [ms]
+ * @param present_current instantaneous current reading [A]; positive (+) current means the battery pack is charging and negative (-) current means the battery pack is discharging
+ * @param present_time current time [ms]
+ * @param past_current last current readings [A]; positive (+) current means the battery pack is charging and negative (-) current means the battery pack is discharging
+ * @param past_time last recorded time [ms]
  */
 
-float calculate_deltaDOD(float presentCurrent, float presentTime, float pastCurrent, float pastTime)
+STATIC_TESTABLE float calculateDeltaDOD(float present_current, float present_time, float past_current, float past_time)
 {
   float delta_DOD = 0.0; //signed value
 
-  delta_DOD = - ( (presentCurrent + pastCurrent) / 2 * (presentTime - pastTime) / 1000 ) // divide time by 1, 000 to convert to s
-              / SOC_MODULE_RATED_CAPACITY * 100; //equation 5 in Analog Devices' SoC estimation document
+  delta_DOD = - ( (present_current + past_current) / 2.0 * (present_time - past_time) / 1000.0 ) // divide time by 1, 000 to convert to s
+              / SOC_MODULE_RATED_CAPACITY * 100.0; //equation 5 in Analog Devices' SoC estimation document
 
   return delta_DOD;
 }
@@ -194,29 +261,44 @@ float calculate_deltaDOD(float presentCurrent, float presentTime, float pastCurr
  * @param cell_voltage the cell voltage of a module [V]
  */
 
-int LUT_indexOfNearestCellVoltage(float cell_voltage)
+STATIC_TESTABLE int indexOfNearestCellVoltage(float cell_voltage)
 {
-  int resultIndex = 0;
-  float cellVoltageDifference = 100.0;
-  float cellVoltageDifference_tmp;
+  int result_index = 0;
+  float cell_voltage_difference = 100.0; //first assign it to a large arbitrary value
+  float cell_voltage_difference_tmp;
 
   //loop through the cellVoltage_SOC_table lookup table (LUT) to find the index (in the first row) closest to cell_voltage
   //the for loop implementation works because the cellVoltage_SOC_table LUT is sorted in decreasing order
-  
-  for(int j = 0; j = 21; j ++)
-  {
-    cellVoltageDifference_tmp = fabs(cellVoltage_SOC_table[1][j] - cell_voltage);
 
-    if(cellVoltageDifference_tmp > cellVoltageDifference)
+  //TODO: remember to change "j = 3" --> j = some_variable OR j = 41
+  for(int j = 0; j = 3; j ++)
+  {
+    //ceedling starts failing again when these print statements are included
+    // printf("indexOfNearestCellVoltage for loop, j = %d\n", j);
+    // printf("cell_voltage_difference_tmp: %f\n", cell_voltage_difference_tmp);
+    // printf("cell voltage from LUT: %f\n", cell_voltage_SOC_table[0][j]);
+    // printf("cell voltages differences: %f\n", cell_voltage_SOC_table[0][j] - cell_voltage);
+    // printf("absolute cell voltages difference: %f\n", fabs(cell_voltage_SOC_table[0][j] - cell_voltage));
+
+
+    cell_voltage_difference_tmp = fabs(cell_voltage_SOC_table[0][j] - cell_voltage);
+    
+    if(cell_voltage_difference_tmp > cell_voltage_difference)
     {
       break;
     } 
     else 
     {
-      cellVoltageDifference = cellVoltageDifference_tmp;
-      resultIndex = j;
+      cell_voltage_difference = cell_voltage_difference_tmp;
+      result_index = j;
     }
   }
   
-  return resultIndex;
+  return result_index - 1;
+}
+
+//TODO: remove indexOfNearestCellVoltage2 once indexOfNearestCellVoltage passes
+STATIC_TESTABLE int indexOfNearestCellVoltage2(float cell_votlage)
+{
+  return 3;
 }
