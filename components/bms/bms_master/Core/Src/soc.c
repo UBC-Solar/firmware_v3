@@ -15,10 +15,8 @@
 
 // Testable private functions
 
-//TODO: remove indexOfNearestCellVoltage2 once indexOfNearestCellVoltage passes
 #ifndef TEST
 STATIC_TESTABLE int indexOfNearestCellVoltage(float cell_votlage);
-STATIC_TESTABLE int indexOfNearestCellVoltage2(float cell_votlage);
 STATIC_TESTABLE float calculateDeltaDOD(float present_current, float present_time, float past_current, float past_time);
 #endif // TEST 
 
@@ -35,23 +33,6 @@ int SOC_last_FSM_time;
 //condition: 4A charge/discharge, 25^oC
 //derive from the discharge curve in page 3 of this document: https://www.orbtronic.com/content/Datasheet-specs-Sanyo-Panasonic-NCR18650GA-3500mah.pdf
 
-#ifdef TEST //TODO: there seem to be some memory issue if my lookup table is too large
-
-//this lookup table could be too large
-// const float cell_voltage_SOC_table[2][19] =
-// {
-//   {4.50, 4.45, 4.40, 4.35, 4.30, 4.25, 4.20, 4.15, 4.10, 4.05, 4.00, 3.95, 3.90, 3.85, 3.80,
-//   3.75, 3.70, 3.65, 3.60},
-//   {100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 97.971, 88.406, 81.884,
-//   76.522, 72.464, 67.391, 62.319}
-// };
-
-const float cell_voltage_SOC_table[2][3] =
-{
-  {4.50, 4.45, 4.40},
-  {100.0, 100.0, 100.0}
-};
-#else
 const float cell_voltage_SOC_table[2][41] =
 {
   {4.50, 4.45, 4.40, 4.35, 4.30, 4.25, 4.20, 4.15, 4.10, 4.05, 4.00, 3.95,
@@ -63,7 +44,6 @@ const float cell_voltage_SOC_table[2][41] =
   42.029, 35.942, 30.435, 24.928, 21.739, 18.261, 15.362, 13.043, 11.594, 10.145, 
   9.565, 8.406, 7.536, 6.957, 6.087, 5.652, 4.638, 4.348, 4.058}
 };
-#endif //TEST
 
 /*============================================================================*/
 
@@ -95,17 +75,17 @@ float SOC_moduleInit(float cell_voltage)
   
   if (cell_voltage > cell_voltage_SOC_table[0][first_index])
   {
-    if (cell_voltage > cell_voltage_SOC_table[0][41-1]) //when our input cell voltage exceeds the maximum cell voltage of our lookup table
-      second_index = first_index - 1;
+    if (cell_voltage > cell_voltage_SOC_table[0][0]) //when our input cell voltage exceeds the maximum cell voltage of our lookup table
+      second_index = first_index + 1;
     else
-      second_index = first_index + 1;  
+      second_index = first_index - 1;  
   }
   else
   {
-    if (cell_voltage < cell_voltage_SOC_table[0][0]) //when our input cell voltage is less than the minimum cell voltage of our lookup table
-      second_index = first_index + 1;
-    else
+    if (cell_voltage < cell_voltage_SOC_table[0][41-1]) //when our input cell voltage is less than the minimum cell voltage of our lookup table
       second_index = first_index - 1;
+    else
+      second_index = first_index + 1;
   }
 
   //we can begin our intepolation/extrapolation
@@ -180,7 +160,7 @@ float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, int32_t current
     }
     else //when module is fully discharged --> Vb < Vmin
     {
-      last_SOC = 100.0 - last_DOD;
+      last_SOC = 0.0; //TODO: use curve fitting instead?
     }
   }
   /*------------------------------------*/
@@ -198,7 +178,7 @@ float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, int32_t current
     }
     else //when module is fully charged
     {
-      last_SOC = 100.0 - last_DOD;
+      last_SOC = 100.0; //TODO: use curve fitting instead?
     }
   }
 
@@ -270,17 +250,8 @@ STATIC_TESTABLE int indexOfNearestCellVoltage(float cell_voltage)
   //loop through the cellVoltage_SOC_table lookup table (LUT) to find the index (in the first row) closest to cell_voltage
   //the for loop implementation works because the cellVoltage_SOC_table LUT is sorted in decreasing order
 
-  //TODO: remember to change "j = 3" --> j = some_variable OR j = 41
-  for(int j = 0; j = 3; j ++)
+  for(int j = 0; j < 41; j ++)
   {
-    //ceedling starts failing again when these print statements are included
-    // printf("indexOfNearestCellVoltage for loop, j = %d\n", j);
-    // printf("cell_voltage_difference_tmp: %f\n", cell_voltage_difference_tmp);
-    // printf("cell voltage from LUT: %f\n", cell_voltage_SOC_table[0][j]);
-    // printf("cell voltages differences: %f\n", cell_voltage_SOC_table[0][j] - cell_voltage);
-    // printf("absolute cell voltages difference: %f\n", fabs(cell_voltage_SOC_table[0][j] - cell_voltage));
-
-
     cell_voltage_difference_tmp = fabs(cell_voltage_SOC_table[0][j] - cell_voltage);
     
     if(cell_voltage_difference_tmp > cell_voltage_difference)
@@ -294,11 +265,5 @@ STATIC_TESTABLE int indexOfNearestCellVoltage(float cell_voltage)
     }
   }
   
-  return result_index - 1;
-}
-
-//TODO: remove indexOfNearestCellVoltage2 once indexOfNearestCellVoltage passes
-STATIC_TESTABLE int indexOfNearestCellVoltage2(float cell_votlage)
-{
-  return 3;
+  return result_index;
 }
