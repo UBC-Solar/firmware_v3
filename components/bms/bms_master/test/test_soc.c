@@ -360,7 +360,7 @@ void test_SOC_moduleEstNegativeNetCurrentOverdischarged()
     int32_t current_reading = -2; //A
     uint32_t cell_voltage = 20000; //100 uV
 
-    float expected_SOC = 0.0;
+    float expected_SOC = 1.15942029;
     float tolerance = 0.01;
 
     float calculated_SOC = SOC_moduleEst(last_SOC, cell_voltage, current_reading, present_time);

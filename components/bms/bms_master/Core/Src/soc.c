@@ -160,7 +160,7 @@ float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, int32_t current
     }
     else //when module is fully discharged --> Vb < Vmin
     {
-      last_SOC = 0.0; //TODO: use curve fitting instead?
+      last_SOC = SOC_moduleInit(cell_voltage); //TODO: change the function name of SOC_moduleInit?
     }
   }
   /*------------------------------------*/
@@ -178,7 +178,7 @@ float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, int32_t current
     }
     else //when module is fully charged
     {
-      last_SOC = 100.0; //TODO: use curve fitting instead?
+      last_SOC = SOC_moduleInit(cell_voltage); //TODO: change the function name of SOC_moduleInit?
     }
   }
 
