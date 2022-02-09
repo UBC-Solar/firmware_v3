@@ -105,4 +105,12 @@
   :source_root: Core/Src
   :inc_root: Core/Inc
   :test_root: test/
+
+#suppress warnings
+:flags:
+  :test:
+    :compile:
+      :*:
+        - -Wno-incompatible-pointer-types # Disable warning produced by * to [] mismatch
+
 ...
