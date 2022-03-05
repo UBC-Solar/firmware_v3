@@ -106,11 +106,10 @@
   :inc_root: Core/Inc
   :test_root: test/
 
-#suppress warnings
 :flags:
   :test:
     :compile:
       :*:
+        - -Werror # treat all warnings as errors
         - -Wno-incompatible-pointer-types # Disable warning produced by * to [] mismatch
-
 ...
