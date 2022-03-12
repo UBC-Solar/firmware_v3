@@ -20,8 +20,6 @@
 
 #include "ltc6813_btm.h"
 
-#define NUM_CELL_VOLT_REGS 6
-#define READINGS_PER_REG 3
 #define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
 
 // Lookup table for PEC (Packet Error Code) CRC calculation
@@ -388,8 +386,8 @@ BTM_Status_t BTM_readRegisterGroup(
  */
 BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
 {
-	// 4x 6-byte sets (each from a different register group of the LTC6813)
-	uint8_t ADC_data[6][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
+	// 6x 6-byte sets (each from a different register group of the LTC6813)
+	uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
 	uint16_t cell_voltage_raw = 0;
 	int cell_num = 0;
 	BTM_Status_t status = {BTM_OK, 0};

@@ -10,7 +10,7 @@
  */
 
 #include "ltc6813_btm_temp.h"
-#include "stm32f3xx_hal.h"
+#include "stm32f1xx_hal.h"
 #include <math.h>
 
 #define GPIO_5_TOGGLE 0b10000000 // For bitwise operations with CFGRA byte 0

@@ -9,13 +9,14 @@
 #ifndef INC_FSM_H_
 #define INC_FSM_H_
 
-#include "stm32f3xx_hal.h"
+#include "stm32f1xx_hal.h"
 #include "ltc6813_btm.h"
 #include "control.h"
 #include "ltc6813_btm_temp.h"
 #include "ltc6813_btm_bal.h"
 #include "btm_bal_settings.h"
 #include "analysis.h"
+#include "selftest.h"
 
 /*============================================================================*/
 /* ENUMERATIONS */

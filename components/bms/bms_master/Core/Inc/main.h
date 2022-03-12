@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f3xx_hal.h"
+#include "stm32f1xx_hal.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -80,8 +80,6 @@ void Error_Handler(void);
 #define SPI_LTC_CS_GPIO_Port GPIOB
 #define LED_OUT_Pin GPIO_PIN_6
 #define LED_OUT_GPIO_Port GPIOC
-#define EEPROM_WC_Pin GPIO_PIN_11
-#define EEPROM_WC_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

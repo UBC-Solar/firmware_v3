@@ -33,20 +33,27 @@
 #ifndef INC_LTC6813_BTM_H_
 #define INC_LTC6813_BTM_H_
 
-#include "stm32f3xx_hal.h"
+#ifndef TEST
+#include "stm32f1xx_hal.h"
+#endif
+
+#ifdef TEST
+#include "stdint.h"
+#endif
 
 /*============================================================================*/
 /* ENUMERATIONS */
 
 enum BTM_Error {
-    BTM_OK                  = 0,
-    BTM_ERROR_PEC           = 1,
-    BTM_ERROR_TIMEOUT       = 2,
-    BTM_ERROR_HAL           = 3,
-    BTM_ERROR_HAL_BUSY      = 4,
-    BTM_ERROR_HAL_TIMEOUT   = 5
+    BTM_OK = 0,
+    BTM_ERROR_PEC,
+    BTM_ERROR_TIMEOUT,
+    BTM_ERROR_SELFTEST,
+    BTM_ERROR_HAL,
+    BTM_ERROR_HAL_BUSY,
+    BTM_ERROR_HAL_TIMEOUT
 };
-#define BTM_HAL_ERROR_OFFSET 2 // BTM_ERROR_HAL - HAL_ERROR
+#define BTM_HAL_ERROR_OFFSET (BTM_ERROR_HAL - HAL_ERROR)
 
 // LTC6813 ADC mode options
 // First freq applies when ADCOPT == 0, second when ADCOPT == 1
@@ -56,6 +63,17 @@ enum BTM_MD_e {
     MD_27KHZ_14KHZ = 0x1,	// fast
     MD_7KHZ_3KHZ   = 0x2,	// normal
     MD_26HZ_2KHZ   = 0x3	// filtered
+};
+
+// LTC6813 ADC Cell Measurement Options
+enum BTM_CH_e {
+	CH_ALL = 0x0,
+	CH_1 = 0x1, // Measure Cells 1, 7, 13
+	CH_2 = 0x2, // Measure Cells 2, 8, 14
+	CH_3 = 0x3, // Measure Cells 3, 9, 15
+	CH_4 = 0x4, // Measure Cells 4, 10, 16
+	CH_5 = 0x5, // Measure Cells 5, 11, 17
+	CH_6 = 0x6  // Measure Cells 6, 12, 18
 };
 
 // LTC6813 GPIO selection for ADC conversion
@@ -119,13 +137,15 @@ typedef enum {
 /* End Configuration Register Group Parameters */
 
 // Discharge Permitted during cell measurement
-#define DCP 0 // 0 = Discharge Not Permitted, 1 = Discharge Permitted
+#define DCP 0 // 0 = Discharge Not Permitted 1 = Discharge Permitted
 // ADC Mode (speed)
 #define MD MD_7KHZ_3KHZ // Normal mode
 // Self Test Mode Selection
 // #define ST 1 // TODO: Add enumeration if ST commands are needed
 /* Pull-Up/Pull-Down Current for Open Wire Conversions */
-#define PUP 0 // 0 = Pull down, 1 = Pull up
+#define PUP 1 // 1 = Pull up
+#define PDOWN 0 // 0 = Pull down
+
 
 /*============================================================================*/
 /* COMMAND DEFINITIONS */
@@ -160,8 +180,16 @@ typedef enum {
 
     // Start Cell Voltage ADC Conversion and Poll Status
     CMD_ADCV    = 0x0260 | (MD << 7) | (DCP << 4), // CH set to 0 = all cells
+	CMD_ADCV_CH1 = 0x0260 | (MD << 7) | (DCP << 4) | CH_1,
+	CMD_ADCV_CH2 = 0x0260 | (MD << 7) | (DCP << 4) | CH_2,
+	CMD_ADCV_CH3 = 0x0260 | (MD << 7) | (DCP << 4) | CH_3,
+	CMD_ADCV_CH4 = 0x0260 | (MD << 7) | (DCP << 4) | CH_4,
+	CMD_ADCV_CH5 = 0x0260 | (MD << 7) | (DCP << 4) | CH_5,
+	CMD_ADCV_CH6 = 0x0260 | (MD << 7) | (DCP << 4) | CH_6,
+
     // Start Open Wire ADC Conversion and Poll Status
-    CMD_ADOW    = 0x0228 | (MD << 7) | (PUP << 6) | (DCP << 4), // CH set to 0
+    CMD_ADOW_PUP    = 0x0228 | (MD << 7) | (PUP << 6) | (DCP << 4), // CH set to 0
+	CMD_ADOW_PDOWN    = 0x0228 | (MD << 7) | (PDOWN << 6) | (DCP << 4), // CH set to 0
 
     // Start Self Test Cell Voltage Conversion and Poll Status
     //CMD_CVST    = 0x0207 | (MD << 7) | (ST << 5),
@@ -228,6 +256,8 @@ typedef enum {
 
 #define BTM_NUM_MODULES 18
 #define BTM_REG_GROUP_SIZE 6 // All of the LTC6813 register groups consist of 6 bytes
+#define NUM_CELL_VOLT_REGS 6
+#define READINGS_PER_REG 3
 
 /*============================================================================*/
 /* STRUCTURES FOR GATHERED DATA */
@@ -287,7 +317,9 @@ typedef struct {
 
 // BTM_SPI_handle - must set this variable to the HAL SPI handle corresponding
 // to the SPI peripheral to which the LTC devices are connected
+#ifndef TEST
 SPI_HandleTypeDef * BTM_SPI_handle;
+#endif
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */

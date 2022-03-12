@@ -16,7 +16,7 @@ Purpose: Goes with CANbus_function.c
 
 #ifndef CANBUS_TESTING_ONLY_H_
 #include <stdint.h>
-#include "stm32f3xx_hal.h"
+#include "stm32f1xx_hal.h"
 #include "ltc6813_btm.h"
 #include "analysis.h"
 //#include "stm32f3xx_hal_can.h"
