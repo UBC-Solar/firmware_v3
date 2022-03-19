@@ -111,8 +111,9 @@ int main(void)
   // Values from ADC; index 0 = voltage, 1 = current; 2 = raw temperature
   uint32_t ADC_VAL[3];
 
-  //if (HAL_OK != HAL_ADCEx_Calibration_Start(&hadc1))
-	  //Error_Handler();
+  if (HAL_OK !=  HAL_ADCEx_InjectedStart(&hadc1)) {
+	  Error_Handler();
+  }
 
   // if (HAL_OK != HAL_ADC_Start_DMA(&hadc1, temperatures, ADC_BUF_SIZE))
 	  // Error_Handler();
@@ -138,23 +139,24 @@ int main(void)
 	  HAL_ADC_Start(&hadc1);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);		// arguments: ADC_HandleTypeDef * hadc, uint32_t timeout = 1 second
 	  ADC_VAL[0] = HAL_ADC_GetValue(&hadc1);
-	  HAL_ADC_Stop(&hadc1);
+	  HAL_ADCEx_InjectedStop(&hadc1);
 
 	  /* Channel 1 - Current from Current Sensor */
 	  ADC_Select_CH1();
 	  HAL_ADC_Start(&hadc1);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);		// arguments: ADC_HandleTypeDef * hadc, uint32_t timeout = 1 second
 	  ADC_VAL[1] = HAL_ADC_GetValue(&hadc1);
-	  HAL_ADC_Stop(&hadc1);
+	  HAL_ADCEx_InjectedStop(&hadc1);
 
 	  /* Channel 2 - Temperature */
 	  ADC_Select_CHTemp();
 	  HAL_ADC_Start(&hadc1);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);		// arguments: ADC_HandleTypeDef * hadc, uint32_t timeout = 1 second
 	  ADC_VAL[2] = HAL_ADC_GetValue(&hadc1);
-	  HAL_ADC_Stop(&hadc1);
+	  HAL_ADCEx_InjectedStop(&hadc1);
 	  // Modify below line to include conversion model for temperature
  	  // uint32_t Temp = ADC_VAL[2];
+
 	  HAL_Delay (1000);
 
 
