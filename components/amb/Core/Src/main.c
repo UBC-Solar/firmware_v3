@@ -107,14 +107,20 @@ int main(void)
    *
    *
    */
-  if (HAL_OK != HAL_ADCEx_Calibration_Start(&hadc1))
-	  Error_Handler();
 
-  if (HAL_OK != HAL_ADC_Start_DMA(&hadc1, temperatures, ADC_BUF_SIZE))
-	  Error_Handler();
+  // Values from ADC; index 0 = voltage, 1 = current; 2 = raw temperature
+  uint32_t ADC_VAL[3];
 
-  if (HAL_OK != HAL_TIM_Base_Start(&htim1))
+  //if (HAL_OK != HAL_ADCEx_Calibration_Start(&hadc1))
+	  //Error_Handler();
+
+  // if (HAL_OK != HAL_ADC_Start_DMA(&hadc1, temperatures, ADC_BUF_SIZE))
+	  // Error_Handler();
+
+  if (HAL_OK != HAL_TIM_Base_Start(&htim1)) {
 	  Error_Handler();
+  }
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -126,6 +132,31 @@ int main(void)
 
 	  //code here
 	  //read ADC, process, then output to CANbus
+
+	  /* Channel 0 - Voltage from Voltage Sensor */
+	  ADC_Select_CH0();
+	  HAL_ADC_Start(&hadc1);
+	  HAL_ADC_PollForConversion(&hadc1, 1000);		// arguments: ADC_HandleTypeDef * hadc, uint32_t timeout = 1 second
+	  ADC_VAL[0] = HAL_ADC_GetValue(&hadc1);
+	  HAL_ADC_Stop(&hadc1);
+
+	  /* Channel 1 - Current from Current Sensor */
+	  ADC_Select_CH1();
+	  HAL_ADC_Start(&hadc1);
+	  HAL_ADC_PollForConversion(&hadc1, 1000);		// arguments: ADC_HandleTypeDef * hadc, uint32_t timeout = 1 second
+	  ADC_VAL[1] = HAL_ADC_GetValue(&hadc1);
+	  HAL_ADC_Stop(&hadc1);
+
+	  /* Channel 2 - Temperature */
+	  ADC_Select_CHTemp();
+	  HAL_ADC_Start(&hadc1);
+	  HAL_ADC_PollForConversion(&hadc1, 1000);		// arguments: ADC_HandleTypeDef * hadc, uint32_t timeout = 1 second
+	  ADC_VAL[2] = HAL_ADC_GetValue(&hadc1);
+	  HAL_ADC_Stop(&hadc1);
+	  // Modify below line to include conversion model for temperature
+ 	  // uint32_t Temp = ADC_VAL[2];
+	  HAL_Delay (1000);
+
 
   }
   /* USER CODE END 3 */

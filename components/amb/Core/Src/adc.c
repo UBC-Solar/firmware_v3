@@ -22,6 +22,12 @@
 
 /* USER CODE BEGIN 0 */
 
+// Defined values from documentation below
+// https://www.disca.upv.es/aperles/arm_cortex_m3/llibre/st/STM32F439xx_User_Manual/group__adc__sampling__times.html
+#define ADC_SAMPLETIME_28CYCLES ((uint32_t)ADC_SMPR1_SMP10_1)
+#define ADC_SAMPLETIME_84CYCLES ((uint32_t)ADC_SMPR1_SMP10_2)
+#define ADC_SAMPLETIME_112CYCLES ((uint32_t)(ADC_SMPR1_SMP10_2 | ADC_SMPR1_SMP10_0))
+
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
@@ -143,6 +149,57 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+/* Below are functions to select between ADC Channels
+ * sConfig.Channel is set to the appropriate channel required
+ * https://controllerstech.com/stm32-adc-multi-channel-without-dma/
+ */
+
+
+/* Voltage Channel */
+void ADC_Select_CH0(void)
+{
+	ADC_ChannelConfTypeDef sConfig = {0};
+	/*Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. */
+	sConfig.Channel = ADC_CHANNEL_0;
+	sConfig.Rank = 1;
+	// Not sure about below sampling time
+	sConfig.SamplingTime = ADC_SAMPLETIME_28CYCLES;
+	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+	{
+		Error_Handler();
+	}
+}
+
+/* Current Channel */
+void ADC_Select_CH1(void)
+{
+	ADC_ChannelConfTypeDef sConfig = {0};
+	/* Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. */
+	sConfig.Channel = ADC_CHANNEL_1;
+	sConfig.Rank = 1;
+	// Not sure about below Sampling Time
+	sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;
+	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+	{
+		Error_Handler();
+	}
+}
+
+/* Temperature Channel */
+void ADC_Select_CHTemp(void)
+{
+	ADC_ChannelConfTypeDef sConfig = {0};
+	/* Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. */
+	sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
+	sConfig.Rank = 1;
+	// Not sure about below sampling time
+	sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
+	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+	{
+		Error_Handler();
+	}
+}
 
 /* USER CODE END 1 */
 
