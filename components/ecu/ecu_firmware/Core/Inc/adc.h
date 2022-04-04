@@ -10,7 +10,7 @@
 #ifndef __ADC_H
 #define __ADC_H
 
-
+#include <stdio.h>
 /*============================================================================*/
 /* CONFIGURATION */
 
@@ -21,6 +21,10 @@
 #define ADC_MAX_VOLT_READING 3.3
 #define ADC_RESOLUTION 4095
 
+#define HASS_50_600_S_VOLTAGE_OFFSET 2.5
+#define HASS_50_600_S_CURRENT_SCALE_FACTOR 80.0
+
+#define SUPP_BATT_VOLTAGE_DIVIDER 11.0
 /*============================================================================*/
 /* PUBLIC VARIABLES */
 
@@ -36,7 +40,7 @@ void ADC3_setMotorCurrent(float motor_current);
 int ADC3_getArrayCurrent();
 void ADC3_setArrayCurrent(float array_current);
 
-int ADC3_netCurrentOut(int motor_current, int array_current);
+int ADC3_netCurrentOut();
 void ADC3_processRawReadings(int half, volatile int adc3_buf[], float result[]);
 
 int ADC3_getBusyStatus();

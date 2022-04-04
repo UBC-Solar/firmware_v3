@@ -50,6 +50,8 @@ extern "C" {
 
 /* USER CODE END EM */
 
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -58,74 +60,82 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define FAN3_CTRL_Pin GPIO_PIN_1
-#define FAN3_CTRL_GPIO_Port GPIOC
-#define MDUFAN_CTRL_Pin GPIO_PIN_2
-#define MDUFAN_CTRL_GPIO_Port GPIOC
-#define DIST_RST_Pin GPIO_PIN_3
-#define DIST_RST_GPIO_Port GPIOC
-#define Bsense_Pin GPIO_PIN_1
-#define Bsense_GPIO_Port GPIOA
+#define OFFSET_REF_BATT_Pin GPIO_PIN_0
+#define OFFSET_REF_BATT_GPIO_Port GPIOC
+#define SPAR1_CTRL_Pin GPIO_PIN_1
+#define SPAR1_CTRL_GPIO_Port GPIOC
+#define AMB_CTRL_Pin GPIO_PIN_2
+#define AMB_CTRL_GPIO_Port GPIOC
+#define SPAR2_CTRL_Pin GPIO_PIN_3
+#define SPAR2_CTRL_GPIO_Port GPIOC
+#define OFFSET_REF_AM_Pin GPIO_PIN_0
+#define OFFSET_REF_AM_GPIO_Port GPIOA
 #define Msense_Pin GPIO_PIN_2
 #define Msense_GPIO_Port GPIOA
 #define Asense_Pin GPIO_PIN_3
 #define Asense_GPIO_Port GPIOA
-#define LV_SENSE_Pin GPIO_PIN_4
-#define LV_SENSE_GPIO_Port GPIOA
-#define DCDC_P_CTRL_Pin GPIO_PIN_5
-#define DCDC_P_CTRL_GPIO_Port GPIOA
-#define DCDC_M_CTRL_Pin GPIO_PIN_6
-#define DCDC_M_CTRL_GPIO_Port GPIOA
-#define FAN1_CTRL_Pin GPIO_PIN_7
-#define FAN1_CTRL_GPIO_Port GPIOA
-#define SUPP_SENSE_Pin GPIO_PIN_4
-#define SUPP_SENSE_GPIO_Port GPIOC
-#define LOCKOUT_EN_Pin GPIO_PIN_5
-#define LOCKOUT_EN_GPIO_Port GPIOC
-#define OC_LATCH_SET_Pin GPIO_PIN_0
-#define OC_LATCH_SET_GPIO_Port GPIOB
-#define GPIO_BMS_Pin GPIO_PIN_10
-#define GPIO_BMS_GPIO_Port GPIOB
-#define OT_OUT_Pin GPIO_PIN_11
-#define OT_OUT_GPIO_Port GPIOB
-#define HLIM_Pin GPIO_PIN_12
-#define HLIM_GPIO_Port GPIOB
-#define ESTOP_5V_IN_Pin GPIO_PIN_13
-#define ESTOP_5V_IN_GPIO_Port GPIOB
-#define FLT_OUT_Pin GPIO_PIN_14
-#define FLT_OUT_GPIO_Port GPIOB
-#define SUPP_LOW_Pin GPIO_PIN_15
-#define SUPP_LOW_GPIO_Port GPIOB
-#define SWAP_EN_Pin GPIO_PIN_6
-#define SWAP_EN_GPIO_Port GPIOC
-#define SPAR2_CTRL_Pin GPIO_PIN_7
-#define SPAR2_CTRL_GPIO_Port GPIOC
-#define SPAR1_STRL_Pin GPIO_PIN_8
-#define SPAR1_STRL_GPIO_Port GPIOC
-#define TELEM_CTRL_Pin GPIO_PIN_9
+#define LVS_CURR_SENSE_Pin GPIO_PIN_4
+#define LVS_CURR_SENSE_GPIO_Port GPIOA
+#define SUPP_SENS_Pin GPIO_PIN_5
+#define SUPP_SENS_GPIO_Port GPIOA
+#define ESTOP_3_3V_IN_Pin GPIO_PIN_6
+#define ESTOP_3_3V_IN_GPIO_Port GPIOA
+#define OC_LATCH_SET_Pin GPIO_PIN_7
+#define OC_LATCH_SET_GPIO_Port GPIOA
+#define ESTOP_CTRL_Pin GPIO_PIN_4
+#define ESTOP_CTRL_GPIO_Port GPIOC
+#define TELEM_CTRL_Pin GPIO_PIN_5
 #define TELEM_CTRL_GPIO_Port GPIOC
-#define FAN2_CTRL_Pin GPIO_PIN_8
-#define FAN2_CTRL_GPIO_Port GPIOA
-#define LLIM_CTRL_Pin GPIO_PIN_9
-#define LLIM_CTRL_GPIO_Port GPIOA
-#define NEG_CTRL_Pin GPIO_PIN_10
-#define NEG_CTRL_GPIO_Port GPIOA
-#define PC_CTRL_Pin GPIO_PIN_11
-#define PC_CTRL_GPIO_Port GPIOA
-#define HLIM_CTRL_Pin GPIO_PIN_12
+#define FAN3_CTRL_Pin GPIO_PIN_0
+#define FAN3_CTRL_GPIO_Port GPIOB
+#define GPIO_BMS_Pin GPIO_PIN_1
+#define GPIO_BMS_GPIO_Port GPIOB
+#define FAN2_CTRL_Pin GPIO_PIN_10
+#define FAN2_CTRL_GPIO_Port GPIOB
+#define FAN1_CTRL_Pin GPIO_PIN_11
+#define FAN1_CTRL_GPIO_Port GPIOB
+#define FLT_OUT_Pin GPIO_PIN_12
+#define FLT_OUT_GPIO_Port GPIOB
+#define SUPP_LOW_Pin GPIO_PIN_13
+#define SUPP_LOW_GPIO_Port GPIOB
+#define FAN4_CTRL_Pin GPIO_PIN_14
+#define FAN4_CTRL_GPIO_Port GPIOB
+#define MDUFAN_CTRL_Pin GPIO_PIN_15
+#define MDUFAN_CTRL_GPIO_Port GPIOB
+#define OT_OUT_Pin GPIO_PIN_6
+#define OT_OUT_GPIO_Port GPIOC
+#define SWAP_CTRL_Pin GPIO_PIN_7
+#define SWAP_CTRL_GPIO_Port GPIOC
+#define HLIM_IN_Pin GPIO_PIN_8
+#define HLIM_IN_GPIO_Port GPIOC
+#define PC_CTRL_Pin GPIO_PIN_9
+#define PC_CTRL_GPIO_Port GPIOC
+#define HLIM_CTRL_Pin GPIO_PIN_8
 #define HLIM_CTRL_GPIO_Port GPIOA
-#define DASH_CTRL_Pin GPIO_PIN_10
-#define DASH_CTRL_GPIO_Port GPIOC
-#define AMB_CTRL_Pin GPIO_PIN_11
-#define AMB_CTRL_GPIO_Port GPIOC
+#define NEG_CTRL_Pin GPIO_PIN_9
+#define NEG_CTRL_GPIO_Port GPIOA
+#define DCDC_NEG_CTRL_Pin GPIO_PIN_11
+#define DCDC_NEG_CTRL_GPIO_Port GPIOA
+#define DCDC_POS_CTRL_Pin GPIO_PIN_12
+#define DCDC_POS_CTRL_GPIO_Port GPIOA
+#define SWDIO_Pin GPIO_PIN_13
+#define SWDIO_GPIO_Port GPIOA
+#define SWCLK_Pin GPIO_PIN_14
+#define SWCLK_GPIO_Port GPIOA
+#define DIST_RST_Pin GPIO_PIN_10
+#define DIST_RST_GPIO_Port GPIOC
+#define LLIM_CTRL_Pin GPIO_PIN_11
+#define LLIM_CTRL_GPIO_Port GPIOC
+#define LLIM_IN_Pin GPIO_PIN_3
+#define LLIM_IN_GPIO_Port GPIOB
 #define FLT_BMS_Pin GPIO_PIN_4
 #define FLT_BMS_GPIO_Port GPIOB
-#define BAL_BMS_Pin GPIO_PIN_5
-#define BAL_BMS_GPIO_Port GPIOB
-#define COM_BMS_Pin GPIO_PIN_6
+#define COM_BMS_Pin GPIO_PIN_5
 #define COM_BMS_GPIO_Port GPIOB
-#define LLIM_Pin GPIO_PIN_7
-#define LLIM_GPIO_Port GPIOB
+#define BAL_BMS_Pin GPIO_PIN_6
+#define BAL_BMS_GPIO_Port GPIOB
+#define DASH_CTRL_Pin GPIO_PIN_7
+#define DASH_CTRL_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
@@ -135,5 +145,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -40,7 +40,14 @@ void ADC3_setSuppBattVoltage(float supp_voltage)
 {
     //assign the average ADC voltage to supp_voltage
     //adc voltage comes from a voltage divider made of R1=10k and R2=1k (v_adc = 1/11 * v_supp)
-    ADC3_supp_batt_volt = (supp_voltage * ADC_MAX_VOLT_READING / ADC_RESOLUTION) * 11 * 1000; 
+
+    float adc_val = supp_voltage;
+    if (adc_val < 0 ) adc_val = 0;
+    else if (adc_val > ADC_RESOLUTION)  adc_val = ADC_RESOLUTION;
+
+    //printf("\n%d\n", (int)((adc_val * ADC_MAX_VOLT_READING / ADC_RESOLUTION) * SUPP_BATT_VOLTAGE_DIVIDER * 1000));
+
+    ADC3_supp_batt_volt = (int)((adc_val * ADC_MAX_VOLT_READING / ADC_RESOLUTION) * SUPP_BATT_VOLTAGE_DIVIDER * 1000); 
 }
 
 /**
@@ -78,10 +85,12 @@ void ADC3_setMotorCurrent(float motor_current)
 {
     //convert volt readings into current
     //good references: https://www.lem.com/sites/default/files/products_datasheets/hass_50_600-s.pdf 
+    float adc_val = motor_current;
+    if (adc_val < 0) adc_val = 0;
+    else if (adc_val > ADC_RESOLUTION) adc_val = ADC_RESOLUTION;
+    adc_val = adc_val * ADC_MAX_VOLT_READING / ADC_RESOLUTION;
 
-    motor_current = motor_current * ADC_MAX_VOLT_READING / ADC_RESOLUTION;
-
-    ADC3_motor_current = (motor_current - 2.5) * 80 * 100; //output in cA
+    ADC3_motor_current = (adc_val - HASS_50_600_S_VOLTAGE_OFFSET) * HASS_50_600_S_CURRENT_SCALE_FACTOR * 100; //output in cA 
 }
 
 /**
@@ -118,13 +127,17 @@ int ADC3_getMotorCurrent()
 void ADC3_setArrayCurrent(float array_current)
 {
     //convert raw readings to voltage readings
-    array_current = array_current * ADC_MAX_VOLT_READING / ADC_RESOLUTION;
+    float adc_val = array_current;
+    if (adc_val < 0) adc_val =0;
+    else if (adc_val > ADC_RESOLUTION) adc_val = ADC_RESOLUTION;
+    adc_val = adc_val * ADC_MAX_VOLT_READING / ADC_RESOLUTION;
     
     //convert volt readings into current
     //good references: https://www.lem.com/sites/default/files/products_datasheets/hass_50_600-s.pdf 
 
-    ADC3_array_current = (array_current - 2.5) * 80 * 100; //output in cA
+    ADC3_array_current = (adc_val - HASS_50_600_S_VOLTAGE_OFFSET) * HASS_50_600_S_CURRENT_SCALE_FACTOR * 100; //output in cA
 }
+
 
 /**
  * @brief Retrieves the current flowing between the solar array and battery pack (cA)
@@ -153,7 +166,7 @@ int ADC3_getArrayCurrent()
  * @param array_current Current from array (positive into pack)
  * @retval net current out of battery, in the same format as the inputs
  */
-int ADC3_netCurrentOut(int motor_current, int array_current)
+int ADC3_netCurrentOut()
 {
   return ADC3_motor_current - ADC3_array_current;
 }

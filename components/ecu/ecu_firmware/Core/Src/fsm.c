@@ -151,8 +151,8 @@ void FSM_reset () {
     // Open all contactors
     HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, LOW);
     HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(DCDC_M_CTRL_GPIO_Port, DCDC_M_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(DCDC_NEG_CTRL_GPIO_Port, DCDC_NEG_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(DCDC_POS_CTRL_GPIO_Port, DCDC_POS_CTRL_Pin, LOW);
     HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, LOW);
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, LOW);
 
@@ -203,7 +203,7 @@ void BMS_ready () {
         FSM_state = FAULT;
     } else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == LOW) {
         last_tick = HAL_GetTick();
-        HAL_GPIO_WritePin(DCDC_M_CTRL_GPIO_Port, DCDC_M_CTRL_Pin, HIGH);
+        HAL_GPIO_WritePin(DCDC_NEG_CTRL_GPIO_Port, DCDC_NEG_CTRL_Pin, HIGH);
         FSM_state = PC_DCDC;
     }
     return;
@@ -218,7 +218,7 @@ void BMS_ready () {
  */
 void DCDC_minus () {
     if (timer_check(SHORT_INTERVAL)) {
-        HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, HIGH);
+        HAL_GPIO_WritePin(DCDC_POS_CTRL_GPIO_Port, DCDC_POS_CTRL_Pin, HIGH);
         FSM_state = DCDC_PLUS;
     }
     return;
@@ -233,10 +233,11 @@ void DCDC_minus () {
  */
 void DCDC_plus () {
     if (timer_check(SHORT_INTERVAL)) {
-        HAL_GPIO_WritePin(SWAP_EN_GPIO_Port, SWAP_EN_Pin, HIGH);
+        HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, HIGH);
         HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, HIGH);
         HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, HIGH);
         HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, HIGH);
+        HAL_GPIO_WritePin(FAN4_CTRL_GPIO_Port, FAN4_CTRL_Pin, HIGH);
         HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, HIGH);
         FSM_state = DISABLE_MDU_DCH;
     }
@@ -270,11 +271,11 @@ void disable_MDU_DCH () {
  * Exit Action: -
  * Exit State CHECK_HLIM
  */
-void check_LLIM () {
-    if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == LOW) {
+void check_LLIM (){
+    if (HAL_GPIO_ReadPin(LLIM_IN_GPIO_Port, LLIM_IN_Pin) == LOW) {
         last_LLIM_status = LOW;
         FSM_state = CHECK_HLIM;
-    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == HIGH) {
+    } else if (HAL_GPIO_ReadPin(LLIM_IN_GPIO_Port, LLIM_IN_Pin) == HIGH) {
         last_LLIM_status = HIGH;
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, HIGH);
         last_tick = HAL_GetTick();
@@ -325,7 +326,7 @@ void LLIM_closed () {
  * Exit State: LVS_ON
  */
 void check_HLIM () {
-    if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == HIGH) {
+    if (HAL_GPIO_ReadPin(HLIM_IN_GPIO_Port, HLIM_IN_Pin) == HIGH) {
         last_HLIM_status = HIGH;
         HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, HIGH);
     } else {
@@ -407,19 +408,19 @@ void AMB_on() {
  */
 void ECU_monitor () {
     // Check battery capacity
-    if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == HIGH && last_HLIM_status == LOW) {
+    if (HAL_GPIO_ReadPin(HLIM_IN_GPIO_Port, HLIM_IN_Pin) == HIGH && last_HLIM_status == LOW) {
         HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, HIGH);
         last_HLIM_status = HIGH;
-    } else if (HAL_GPIO_ReadPin(HLIM_GPIO_Port, HLIM_Pin) == LOW && last_HLIM_status == HIGH) {
+    } else if (HAL_GPIO_ReadPin(HLIM_IN_GPIO_Port, HLIM_IN_Pin) == LOW && last_HLIM_status == HIGH) {
         HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, LOW);
         last_HLIM_status = LOW;
-    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == HIGH && last_LLIM_status == LOW) {
+    } else if (HAL_GPIO_ReadPin(LLIM_IN_GPIO_Port, LLIM_IN_Pin) == HIGH && last_LLIM_status == LOW) {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, HIGH);
         last_LLIM_status = HIGH;
         last_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_PC;
         return;
-    } else if (HAL_GPIO_ReadPin(LLIM_GPIO_Port, LLIM_Pin) == LOW && last_LLIM_status == HIGH) {
+    } else if (HAL_GPIO_ReadPin(LLIM_IN_GPIO_Port, LLIM_IN_Pin) == LOW && last_LLIM_status == HIGH) {
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, LOW);
         last_LLIM_status = LOW;
     }
@@ -428,7 +429,7 @@ void ECU_monitor () {
     if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH
         || HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH
         || HAL_GPIO_ReadPin(OT_OUT_GPIO_Port, OT_OUT_Pin) == HIGH
-        || HAL_GPIO_ReadPin(ESTOP_5V_IN_GPIO_Port, ESTOP_5V_IN_Pin) == HIGH
+        || HAL_GPIO_ReadPin(ESTOP_3_3V_IN_GPIO_Port, ESTOP_3_3V_IN_Pin) == HIGH
         || ADC3_getFaultStatus()) {
             FSM_state = FAULT;
             return;
@@ -461,7 +462,7 @@ void fault() {
     // also send current message via CAN?
     
     // switch to SUPP
-    HAL_GPIO_WritePin(SWAP_EN_GPIO_Port, SWAP_EN_Pin, LOW);
+    HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, LOW);
 
     // blink fault light at 2Hz minimum
     if (timer_check(FLT_BLINK_INTERVAL)) {
@@ -474,8 +475,8 @@ void fault() {
     // Open all contactors
     HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, LOW);
     HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(DCDC_M_CTRL_GPIO_Port, DCDC_M_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(DCDC_P_CTRL_GPIO_Port, DCDC_P_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(DCDC_NEG_CTRL_GPIO_Port, DCDC_NEG_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(DCDC_POS_CTRL_GPIO_Port, DCDC_POS_CTRL_Pin, LOW);
     HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, LOW);
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, LOW);
     return;
