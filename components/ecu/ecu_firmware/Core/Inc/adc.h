@@ -14,7 +14,11 @@
 /*============================================================================*/
 /* CONFIGURATION */
 
-#define ADC3_NUM_ANALOG_CHANNELS 3
+#define ADC1_NUM_ANALOG_CHANNELS 3
+#define ADC1_BUF_LENGTH_PER_CHANNEL 200
+#define ADC1_BUF_LENGTH (ADC1_BUF_LENGTH_PER_CHANNEL * ADC1_NUM_ANALOG_CHANNELS)
+
+#define ADC3_NUM_ANALOG_CHANNELS 3 
 #define ADC3_BUF_LENGTH_PER_CHANNEL 200
 #define ADC3_BUF_LENGTH (ADC3_BUF_LENGTH_PER_CHANNEL * ADC3_NUM_ANALOG_CHANNELS)
 
@@ -44,6 +48,8 @@ int ADC3_netCurrentOut();
 void ADC3_processRawReadings(int half, volatile int adc3_buf[], float result[]);
 
 int ADC3_getBusyStatus();
+void ADC3_setBusyStatus(int flag_value);
+
 void ADC3_setFaultStatus(int flag_value);
 
 int ADC3_getFaultStatus(); 

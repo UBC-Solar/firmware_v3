@@ -108,15 +108,23 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     /**ADC1 GPIO Configuration
     PC0     ------> ADC1_IN10
     PA0-WKUP     ------> ADC1_IN0
+<<<<<<< HEAD
     PA1     ------> ADC1_IN1
     PA4     ------> ADC1_IN4
     PA5     ------> ADC1_IN5
+=======
+    PA4     ------> ADC1_IN4
+>>>>>>> user/jaynith/ecu/ecu-update
     */
     GPIO_InitStruct.Pin = OFFSET_REF_BATT_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     HAL_GPIO_Init(OFFSET_REF_BATT_GPIO_Port, &GPIO_InitStruct);
 
+<<<<<<< HEAD
     GPIO_InitStruct.Pin = OFFSET_REF_AM_Pin|GPIO_PIN_1|LVS_CURR_SENSE_Pin|SUPP_SENS_Pin;
+=======
+    GPIO_InitStruct.Pin = OFFSET_REF_AM_Pin|LVS_CURR_SENSE_Pin;
+>>>>>>> user/jaynith/ecu/ecu-update
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -202,6 +210,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     /**ADC1 GPIO Configuration
     PC0     ------> ADC1_IN10
     PA0-WKUP     ------> ADC1_IN0
+<<<<<<< HEAD
     PA1     ------> ADC1_IN1
     PA4     ------> ADC1_IN4
     PA5     ------> ADC1_IN5
@@ -209,6 +218,13 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     HAL_GPIO_DeInit(OFFSET_REF_BATT_GPIO_Port, OFFSET_REF_BATT_Pin);
 
     HAL_GPIO_DeInit(GPIOA, OFFSET_REF_AM_Pin|GPIO_PIN_1|LVS_CURR_SENSE_Pin|SUPP_SENS_Pin);
+=======
+    PA4     ------> ADC1_IN4
+    */
+    HAL_GPIO_DeInit(OFFSET_REF_BATT_GPIO_Port, OFFSET_REF_BATT_Pin);
+
+    HAL_GPIO_DeInit(GPIOA, OFFSET_REF_AM_Pin|LVS_CURR_SENSE_Pin);
+>>>>>>> user/jaynith/ecu/ecu-update
 
     /* ADC1 DMA DeInit */
     HAL_DMA_DeInit(hadc->DMA_Handle);

@@ -119,7 +119,7 @@ void (*FSM_state_table[])(void) = {
  */
 void FSM_init() {
     last_tick = HAL_GetTick();
-    FSM_state = RESET;
+    FSM_state = FSM_RESET;
     return;
 }
 
@@ -146,6 +146,7 @@ void FSM_reset () {
     HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, LOW);
     HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, LOW);
     HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(FAN4_CTRL_GPIO_Port, FAN4_CTRL_Pin, LOW);
     HAL_GPIO_WritePin(MDUFAN_CTRL_GPIO_Port, MDUFAN_CTRL_Pin, LOW);
 
     // Open all contactors
@@ -157,7 +158,6 @@ void FSM_reset () {
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, LOW);
 
     // Read supplemental battery
-
     if (ADC3_getSuppBattVoltage() < SUPP_LIMIT && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) == LOW && !ADC3_getFaultStatus()) {
         HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, HIGH);
     } else {
@@ -271,11 +271,19 @@ void disable_MDU_DCH () {
  * Exit Action: -
  * Exit State CHECK_HLIM
  */
+<<<<<<< HEAD
 void check_LLIM (){
     if (HAL_GPIO_ReadPin(LLIM_IN_GPIO_Port, LLIM_IN_Pin) == LOW) {
         last_LLIM_status = LOW;
         FSM_state = CHECK_HLIM;
     } else if (HAL_GPIO_ReadPin(LLIM_IN_GPIO_Port, LLIM_IN_Pin) == HIGH) {
+=======
+void check_LLIM () {
+    if (HAL_GPIO_ReadPin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin) == LOW) {
+        last_LLIM_status = LOW;
+        FSM_state = CHECK_HLIM;
+    } else if (HAL_GPIO_ReadPin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin) == HIGH) {
+>>>>>>> user/jaynith/ecu/ecu-update
         last_LLIM_status = HIGH;
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, HIGH);
         last_tick = HAL_GetTick();
@@ -326,7 +334,11 @@ void LLIM_closed () {
  * Exit State: LVS_ON
  */
 void check_HLIM () {
+<<<<<<< HEAD
     if (HAL_GPIO_ReadPin(HLIM_IN_GPIO_Port, HLIM_IN_Pin) == HIGH) {
+=======
+    if (HAL_GPIO_ReadPin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin) == HIGH) {
+>>>>>>> user/jaynith/ecu/ecu-update
         last_HLIM_status = HIGH;
         HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, HIGH);
     } else {
@@ -408,6 +420,7 @@ void AMB_on() {
  */
 void ECU_monitor () {
     // Check battery capacity
+<<<<<<< HEAD
     if (HAL_GPIO_ReadPin(HLIM_IN_GPIO_Port, HLIM_IN_Pin) == HIGH && last_HLIM_status == LOW) {
         HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, HIGH);
         last_HLIM_status = HIGH;
@@ -415,12 +428,25 @@ void ECU_monitor () {
         HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, LOW);
         last_HLIM_status = LOW;
     } else if (HAL_GPIO_ReadPin(LLIM_IN_GPIO_Port, LLIM_IN_Pin) == HIGH && last_LLIM_status == LOW) {
+=======
+    if (HAL_GPIO_ReadPin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin) == HIGH && last_HLIM_status == LOW) {
+        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, HIGH);
+        last_HLIM_status = HIGH;
+    } else if (HAL_GPIO_ReadPin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin) == LOW && last_HLIM_status == HIGH) {
+        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, LOW);
+        last_HLIM_status = LOW;
+    } else if (HAL_GPIO_ReadPin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin) == HIGH && last_LLIM_status == LOW) {
+>>>>>>> user/jaynith/ecu/ecu-update
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, HIGH);
         last_LLIM_status = HIGH;
         last_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_PC;
         return;
+<<<<<<< HEAD
     } else if (HAL_GPIO_ReadPin(LLIM_IN_GPIO_Port, LLIM_IN_Pin) == LOW && last_LLIM_status == HIGH) {
+=======
+    } else if (HAL_GPIO_ReadPin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin) == LOW && last_LLIM_status == HIGH) {
+>>>>>>> user/jaynith/ecu/ecu-update
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, LOW);
         last_LLIM_status = LOW;
     }
@@ -429,7 +455,11 @@ void ECU_monitor () {
     if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH
         || HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH
         || HAL_GPIO_ReadPin(OT_OUT_GPIO_Port, OT_OUT_Pin) == HIGH
+<<<<<<< HEAD
         || HAL_GPIO_ReadPin(ESTOP_3_3V_IN_GPIO_Port, ESTOP_3_3V_IN_Pin) == HIGH
+=======
+        || HAL_GPIO_ReadPin(ESTOP_CTRL_GPIO_Port, ESTOP_CTRL_Pin) == HIGH
+>>>>>>> user/jaynith/ecu/ecu-update
         || ADC3_getFaultStatus()) {
             FSM_state = FAULT;
             return;

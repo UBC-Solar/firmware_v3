@@ -53,7 +53,11 @@ CAN_HandleTypeDef hcan;
 TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN PV */
+<<<<<<< HEAD
 volatile int adc1_buff[ADC3_BUF_LENGTH] = {0};
+=======
+volatile int adc1_buf[ADC1_BUF_LENGTH] = {0};
+>>>>>>> user/jaynith/ecu/ecu-update
 volatile int adc3_buf[ADC3_BUF_LENGTH] = {0};
 /* USER CODE END PV */
 
@@ -109,9 +113,13 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   CAN_hcan = &hcan;
-  HAL_CAN_Start (&hcan);
+  HAL_CAN_Start (&hcan);  
   HAL_ADC_Start_DMA(&hadc3, (uint32_t *) adc3_buf, ADC3_BUF_LENGTH);
+<<<<<<< HEAD
   HAL_TIM_Base_Start(&htim1);
+=======
+  HAL_TIM_Base_Start(&htim2);
+>>>>>>> user/jaynith/ecu/ecu-update
   FSM_init();
   /* USER CODE END 2 */
 
@@ -425,12 +433,21 @@ static void MX_GPIO_Init(void)
                           |DIST_RST_Pin|LLIM_CTRL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+<<<<<<< HEAD
   HAL_GPIO_WritePin(GPIOA, OC_LATCH_SET_Pin|HLIM_CTRL_Pin|NEG_CTRL_Pin|DCDC_NEG_CTRL_Pin
                           |DCDC_POS_CTRL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, FAN3_CTRL_Pin|FAN2_CTRL_Pin|FAN1_CTRL_Pin|FLT_OUT_Pin
                           |SUPP_LOW_Pin|FAN4_CTRL_Pin|MDUFAN_CTRL_Pin|DASH_CTRL_Pin, GPIO_PIN_RESET);
+=======
+  HAL_GPIO_WritePin(GPIOA, FAN2_CTRL_Pin|OC_LATCH_SET_Pin|HLIM_CTRL_Pin|NEG_CTRL_Pin
+                          |DCDC_NEG_CTRL_Pin|DCDC_POS_CTRL_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, FAN3_CTRL_Pin|FAN1_CTRL_Pin|FLT_OUT_Pin|SUPP_LOW_Pin
+                          |FAN4_CTRL_Pin|MDUFAN_CTRL_Pin|DASH_CTRL_Pin, GPIO_PIN_RESET);
+>>>>>>> user/jaynith/ecu/ecu-update
 
   /*Configure GPIO pins : SPAR1_CTRL_Pin AMB_CTRL_Pin SPAR2_CTRL_Pin ESTOP_CTRL_Pin
                            TELEM_CTRL_Pin OT_OUT_Pin SWAP_CTRL_Pin PC_CTRL_Pin
@@ -443,6 +460,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+<<<<<<< HEAD
   /*Configure GPIO pin : ESTOP_3_3V_IN_Pin */
   GPIO_InitStruct.Pin = ESTOP_3_3V_IN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
@@ -453,15 +471,34 @@ static void MX_GPIO_Init(void)
                            DCDC_POS_CTRL_Pin */
   GPIO_InitStruct.Pin = OC_LATCH_SET_Pin|HLIM_CTRL_Pin|NEG_CTRL_Pin|DCDC_NEG_CTRL_Pin
                           |DCDC_POS_CTRL_Pin;
+=======
+  /*Configure GPIO pins : FAN2_CTRL_Pin OC_LATCH_SET_Pin HLIM_CTRL_Pin NEG_CTRL_Pin
+                           DCDC_NEG_CTRL_Pin DCDC_POS_CTRL_Pin */
+  GPIO_InitStruct.Pin = FAN2_CTRL_Pin|OC_LATCH_SET_Pin|HLIM_CTRL_Pin|NEG_CTRL_Pin
+                          |DCDC_NEG_CTRL_Pin|DCDC_POS_CTRL_Pin;
+>>>>>>> user/jaynith/ecu/ecu-update
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+<<<<<<< HEAD
   /*Configure GPIO pins : FAN3_CTRL_Pin FAN2_CTRL_Pin FAN1_CTRL_Pin FLT_OUT_Pin
                            SUPP_LOW_Pin FAN4_CTRL_Pin MDUFAN_CTRL_Pin DASH_CTRL_Pin */
   GPIO_InitStruct.Pin = FAN3_CTRL_Pin|FAN2_CTRL_Pin|FAN1_CTRL_Pin|FLT_OUT_Pin
                           |SUPP_LOW_Pin|FAN4_CTRL_Pin|MDUFAN_CTRL_Pin|DASH_CTRL_Pin;
+=======
+  /*Configure GPIO pin : ESTOP_3_3V_IN_Pin */
+  GPIO_InitStruct.Pin = ESTOP_3_3V_IN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(ESTOP_3_3V_IN_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : FAN3_CTRL_Pin FAN1_CTRL_Pin FLT_OUT_Pin SUPP_LOW_Pin
+                           FAN4_CTRL_Pin MDUFAN_CTRL_Pin DASH_CTRL_Pin */
+  GPIO_InitStruct.Pin = FAN3_CTRL_Pin|FAN1_CTRL_Pin|FLT_OUT_Pin|SUPP_LOW_Pin
+                          |FAN4_CTRL_Pin|MDUFAN_CTRL_Pin|DASH_CTRL_Pin;
+>>>>>>> user/jaynith/ecu/ecu-update
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -507,7 +544,11 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
   else
   {
     ADC3_setFaultStatus(1); //fault status when previous DMA processing is not finished beforehand
+<<<<<<< HEAD
     HAL_TIM_Base_Stop(&htim1); //stop TIM8: the trigger timer for ADC3
+=======
+    //HAL_TIM_Base_Stop(&htim8); //stop TIM8: the trigger timer for ADC3
+>>>>>>> user/jaynith/ecu/ecu-update
   }
 }
 
@@ -533,7 +574,11 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
   else
   {
     ADC3_setFaultStatus(1); //fault status when previous DMA processing is not finished beforehand
+<<<<<<< HEAD
     HAL_TIM_Base_Stop(&htim1); //stop TIM8: the trigger timer for ADC3
+=======
+    //HAL_TIM_Base_Stop(&htim8); //stop TIM8: the trigger timer for ADC3
+>>>>>>> user/jaynith/ecu/ecu-update
   }
 }
 
