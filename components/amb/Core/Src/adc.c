@@ -91,7 +91,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     PB0     ------> ADC1_IN8
     PB1     ------> ADC1_IN9
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_0|TEMP_2_Pin|TEMP_3_Pin|TEMP_4_Pin
+    GPIO_InitStruct.Pin = TEMP_1_Pin|TEMP_2_Pin|TEMP_3_Pin|TEMP_4_Pin
                           |ISENSE2_Pin|VSENSE2_Pin|VSENSE1_Pin|ISENSE1_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -135,7 +135,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     PB0     ------> ADC1_IN8
     PB1     ------> ADC1_IN9
     */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_0|TEMP_2_Pin|TEMP_3_Pin|TEMP_4_Pin
+    HAL_GPIO_DeInit(GPIOA, TEMP_1_Pin|TEMP_2_Pin|TEMP_3_Pin|TEMP_4_Pin
                           |ISENSE2_Pin|VSENSE2_Pin|VSENSE1_Pin|ISENSE1_Pin);
 
     HAL_GPIO_DeInit(GPIOC, TEMP_5_Pin|TEMP_6_Pin);
@@ -156,51 +156,136 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
  */
 
 
-/* Voltage Channel */
+/* Function takes channel as argument to set configuration */
 
-void ADC_Select_CH5(void)
+void ADC_Select(uint8_t channel)
 {
 	ADC_ChannelConfTypeDef sConfig = {0};
-	/*Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. */
-	sConfig.Channel = ADC_CHANNEL_5;
+
+	switch(channel) {
+		case 0:		// TEMP_1
+			sConfig.Channel = ADC_CHANNEL_0;
+			break;
+		case 1:		// TEMP_2
+			sConfig.Channel = ADC_CHANNEL_1;
+			break;
+		case 2:		// TEMP_3
+			sConfig.Channel = ADC_CHANNEL_2;
+			break;
+		case 3:		// TEMP_4
+			sConfig.Channel = ADC_CHANNEL_3;
+			break;
+		case 4:		// ISENSE2
+			sConfig.Channel = ADC_CHANNEL_4;
+			break;
+		case 5:		// VSENSE2
+			sConfig.Channel = ADC_CHANNEL_5;
+			break;
+		case 6:		// VSENSE1
+			sConfig.Channel = ADC_CHANNEL_6;
+			break;
+		case 7:		// ISENSE1
+			sConfig.Channel = ADC_CHANNEL_7;
+			break;
+		case 8:		// TEMP_7
+			sConfig.Channel = ADC_CHANNEL_8;
+			break;
+		case 9:		// TEMP_8
+			sConfig.Channel = ADC_CHANNEL_9;
+			break;
+		case 10:	// NOT IN USE
+			//sConfig.Channel = ADC_CHANNEL_10;
+			break;
+		case 11:	// NOT IN USE
+			//sConfig.Channel = ADC_CHANNEL_11;
+			break;
+		case 12:	// NOT IN USE
+			//sConfig.Channel = ADC_CHANNEL_12;
+			break;
+		case 13:	// NOT IN USE
+			//sConfig.Channel = ADC_CHANNEL_13;
+			break;
+		case 14:	// TEMP_5
+			sConfig.Channel = ADC_CHANNEL_14;
+			break;
+		case 15:	// TEMP_6
+			sConfig.Channel = ADC_CHANNEL_15;
+			break;
+	}
+
 	sConfig.Rank = 1;
-	// Not sure about below sampling time
-	sConfig.SamplingTime = ADC_SAMPLETIME_28CYCLES;	// defined above
+	sConfig.SamplingTime = ADC_SAMPLETIME_28CYCLES;	// may need to change?
+
 	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
 	{
 		Error_Handler();
 	}
 }
 
-/* Current Channel */
-void ADC_Select_CH4(void)
-{
-	ADC_ChannelConfTypeDef sConfig = {0};
-	/* Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. */
-	sConfig.Channel = ADC_CHANNEL_4;
-	sConfig.Rank = 1;
-	// Not sure about below Sampling Time
-	sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;	// defined above
-	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-	{
-		Error_Handler();
-	}
-}
 
-/* Temperature Channel */
-void ADC_Select_CH2(void)
-{
-	ADC_ChannelConfTypeDef sConfig = {0};
-	/* Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. */
-	sConfig.Channel = ADC_CHANNEL_2;
-	sConfig.Rank = 1;
-	// Not sure about below sampling time
-	sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;		// defined above
-	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-	{
-		Error_Handler();
-	}
-}
+
+/* Voltage Channels*/
+
+///* vsense 1 = channel 5*/
+//void ADC_Select_CH5(void)
+//{
+//	ADC_ChannelConfTypeDef sConfig = {0};
+//	/*Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. */
+//	sConfig.Channel = ADC_CHANNEL_5;
+//	sConfig.Rank = 1;
+//	// Not sure about below sampling time
+//	sConfig.SamplingTime = ADC_SAMPLETIME_28CYCLES;	// defined above
+//	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+//	{
+//		Error_Handler();
+//	}
+//}
+
+///* vsense2 = channel 6 */
+//void ADC_Select_CH6(void)
+//{
+//	ADC_ChannelConfTypeDef sConfig = {0};
+//	/*Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. */
+//	sConfig.Channel = ADC_CHANNEL_6;
+//	sConfig.Rank = 1;
+//	// Not sure about below sampling time
+//	sConfig.SamplingTime = ADC_SAMPLETIME_28CYCLES;	// defined above
+//	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+//	{
+//		Error_Handler();
+//	}
+//
+//}
+//
+///* Current Channel */
+//void ADC_Select_CH4(void)
+//{
+//	ADC_ChannelConfTypeDef sConfig = {0};
+//	/* Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. */
+//	sConfig.Channel = ADC_CHANNEL_4;
+//	sConfig.Rank = 1;
+//	// Not sure about below Sampling Time
+//	sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;	// defined above
+//	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+//	{
+//		Error_Handler();
+//	}
+//}
+//
+///* Temperature Channel */
+//void ADC_Select_CH2(void)
+//{
+//	ADC_ChannelConfTypeDef sConfig = {0};
+//	/* Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. */
+//	sConfig.Channel = ADC_CHANNEL_2;
+//	sConfig.Rank = 1;
+//	// Not sure about below sampling time
+//	sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;		// defined above
+//	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+//	{
+//		Error_Handler();
+//	}
+//}
 
 /* USER CODE END 1 */
 

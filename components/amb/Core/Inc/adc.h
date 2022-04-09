@@ -41,9 +41,12 @@ void MX_ADC1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
-void ADC_Select_CH0 (void);
-void ADC_Select_CH1 (void);
-void ADC_Select_CHTemp (void);
+//void ADC_Select_CH0 (void);
+//void ADC_Select_CH1 (void);
+//void ADC_Select_CHTemp (void);
+
+void ADC_Select(uint8_t channel);
+
 
 /* USER CODE END Prototypes */
 

@@ -67,6 +67,41 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+uint32_t ADC_VALUES[16] = {0};	// unprocessed ADC Values
+double CONVERTED_VALUES[16] = {0};	// processed values
+
+void Convert_Values(uint8_t index) {
+	/* Convert value with appropriate relationship given the index */
+
+	switch(index) {
+		case 5:
+			/* Relationship for converting ADC for Vsense 1 and modify CONVERTED_VALUES[index] */
+			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 82.621) / 40.271;	// slightly undercompensates
+			break;
+		case 6:
+			/* Relationship for converting ADC for Vsense 1 and modify CONVERTED_VALUES[index] */
+			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 81.822) / 40.441;	// slightly overcompensates
+			break;
+
+		case 4:
+		case 7:
+			/* Relationship for converting to current and modify CONVERTED_VALUES[index] */
+
+			break;
+
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+		case 8:
+		case 9:
+		case 14:
+		case 15:
+			/* Relationship for converting to temperature and modify CONVERTED_VALUES[index] */
+			break;
+	}
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -113,10 +148,8 @@ int main(void)
    */
 
   // Values from ADC; index 0 = voltage, 1 = current; 2 = raw temperature
-  uint32_t ADC_VAL[3] = {0};
-  uint32_t voltage_measurement = 0;
-  uint32_t current_measurement = 0;
-  uint32_t temperature_measurement = 0;
+
+
 
 //  if (HAL_OK !=  HAL_ADCEx_InjectedStart(&hadc1)) {
 //	  Error_Handler();
@@ -142,24 +175,56 @@ int main(void)
 	  //code here
 	  //read ADC, process, then output to CANbus
 
-	  /* Channel 5 (or 6) - Voltage from Voltage Sensor */
-	  ADC_Select_CH5();
-	  HAL_ADC_PollForConversion(&hadc1, 1000);		// arguments: ADC_HandleTypeDef * hadc, uint32_t timeout = 1 second
-	  voltage_measurement = HAL_ADC_GetValue(&hadc1);
-	  // HAL_ADCEx_InjectedStop(&hadc1);
+	  ADC_Select((uint8_t) 6);	// VSENSE1
+	  HAL_ADC_PollForConversion(&hadc1, 1000);
+	  ADC_VALUES[6] = HAL_ADC_GetValue(&hadc1);
+	  Convert_Values((uint8_t) 6);
 
-	  /* Channel (4 or 7) - Current from Current Sensor */
-	  ADC_Select_CH4();	// fix channel
-	  HAL_ADC_PollForConversion(&hadc1, 1000);		// arguments: ADC_HandleTypeDef * hadc, uint32_t timeout = 1 second
-	  current_measurement = HAL_ADC_GetValue(&hadc1);
-	  //HAL_ADCEx_InjectedStop(&hadc1);
+	  ADC_Select((uint8_t) 5); // VSENSE2
+	  HAL_ADC_PollForConversion(&hadc1, 1000);
+	  ADC_VALUES[5] = HAL_ADC_GetValue(&hadc1);
+	  Convert_Values((uint8_t) 5);
 
-	  /* Channel 2 - Temperature */
-	  ADC_Select_CH2();
-	  HAL_ADC_PollForConversion(&hadc1, 1000);		// arguments: ADC_HandleTypeDef * hadc, uint32_t timeout = 1 second
-	  temperature_measurement = HAL_ADC_GetValue(&hadc1);
-	  //HAL_ADCEx_InjectedStop(&hadc1);
-	  // Modify below line to include conversion model for temperature
+	  ADC_Select((uint8_t) 7);	// ISENSE1
+	  HAL_ADC_PollForConversion(&hadc1, 1000);
+	  ADC_VALUES[7] = HAL_ADC_GetValue(&hadc1);
+
+	  ADC_Select((uint8_t) 4);	// ISENSE2
+	  HAL_ADC_PollForConversion(&hadc1, 1000);
+	  ADC_VALUES[4] = HAL_ADC_GetValue(&hadc1);
+
+	  ADC_Select((uint8_t) 0);	// TEMP_1
+	  HAL_ADC_PollForConversion(&hadc1, 1000);
+	  ADC_VALUES[0] = HAL_ADC_GetValue(&hadc1);
+
+	  ADC_Select((uint8_t) 1); // TEMP_2
+	  HAL_ADC_PollForConversion(&hadc1, 1000);
+	  ADC_VALUES[1] = HAL_ADC_GetValue(&hadc1);
+
+	  ADC_Select((uint8_t) 2);	// TEMP_3
+	  HAL_ADC_PollForConversion(&hadc1, 1000);
+	  ADC_VALUES[2] = HAL_ADC_GetValue(&hadc1);
+
+	  ADC_Select((uint8_t) 3);	// TEMP_4
+	  HAL_ADC_PollForConversion(&hadc1, 1000);
+	  ADC_VALUES[3] = HAL_ADC_GetValue(&hadc1);
+
+	  ADC_Select((uint8_t) 14);	// TEMP_5
+	  HAL_ADC_PollForConversion(&hadc1, 1000);
+	  ADC_VALUES[14] = HAL_ADC_GetValue(&hadc1);
+
+	  ADC_Select((uint8_t) 15); // TEMP_6
+	  HAL_ADC_PollForConversion(&hadc1, 1000);
+	  ADC_VALUES[15] = HAL_ADC_GetValue(&hadc1);
+
+	  ADC_Select((uint8_t) 8);	// TEMP_7
+	  HAL_ADC_PollForConversion(&hadc1, 1000);
+	  ADC_VALUES[8] = HAL_ADC_GetValue(&hadc1);
+
+	  ADC_Select((uint8_t) 9);	// TEMP_8
+	  HAL_ADC_PollForConversion(&hadc1, 1000);
+	  ADC_VALUES[9] = HAL_ADC_GetValue(&hadc1);
+
 
 	  HAL_Delay (1000);
 

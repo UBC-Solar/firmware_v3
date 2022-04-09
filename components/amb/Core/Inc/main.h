@@ -54,10 +54,13 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+void Convert_Values(uint8_t index);
 
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define TEMP_1_Pin GPIO_PIN_0
+#define TEMP_1_GPIO_Port GPIOA
 #define TEMP_2_Pin GPIO_PIN_1
 #define TEMP_2_GPIO_Port GPIOA
 #define TEMP_3_Pin GPIO_PIN_2
