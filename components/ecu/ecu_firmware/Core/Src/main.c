@@ -53,12 +53,8 @@ CAN_HandleTypeDef hcan;
 TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN PV */
-<<<<<<< HEAD
-volatile int adc1_buff[ADC3_BUF_LENGTH] = {0};
-=======
-volatile int adc1_buf[ADC1_BUF_LENGTH] = {0};
->>>>>>> user/jaynith/ecu/ecu-update
-volatile int adc3_buf[ADC3_BUF_LENGTH] = {0};
+volatile uint32_t adc1_buf[ADC1_BUF_LENGTH] = {0};
+volatile uint32_t adc3_buf[ADC3_BUF_LENGTH] = {0};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -114,12 +110,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
   CAN_hcan = &hcan;
   HAL_CAN_Start (&hcan);  
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adc1_buf, ADC1_BUF_LENGTH);
   HAL_ADC_Start_DMA(&hadc3, (uint32_t *) adc3_buf, ADC3_BUF_LENGTH);
-<<<<<<< HEAD
   HAL_TIM_Base_Start(&htim1);
-=======
-  HAL_TIM_Base_Start(&htim2);
->>>>>>> user/jaynith/ecu/ecu-update
   FSM_init();
   /* USER CODE END 2 */
 
@@ -201,11 +194,11 @@ static void MX_ADC1_Init(void)
   */
   hadc1.Instance = ADC1;
   hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
-  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T1_CC3;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.NbrOfConversion = 4;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();
@@ -216,6 +209,33 @@ static void MX_ADC1_Init(void)
   sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_4;
+  sConfig.Rank = ADC_REGULAR_RANK_2;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_5;
+  sConfig.Rank = ADC_REGULAR_RANK_3;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_10;
+  sConfig.Rank = ADC_REGULAR_RANK_4;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -350,7 +370,7 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 2000-1;
+  htim1.Init.Period = 16000;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -358,7 +378,7 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_OC3REF;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
   {
@@ -433,21 +453,12 @@ static void MX_GPIO_Init(void)
                           |DIST_RST_Pin|LLIM_CTRL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-<<<<<<< HEAD
   HAL_GPIO_WritePin(GPIOA, OC_LATCH_SET_Pin|HLIM_CTRL_Pin|NEG_CTRL_Pin|DCDC_NEG_CTRL_Pin
                           |DCDC_POS_CTRL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, FAN3_CTRL_Pin|FAN2_CTRL_Pin|FAN1_CTRL_Pin|FLT_OUT_Pin
                           |SUPP_LOW_Pin|FAN4_CTRL_Pin|MDUFAN_CTRL_Pin|DASH_CTRL_Pin, GPIO_PIN_RESET);
-=======
-  HAL_GPIO_WritePin(GPIOA, FAN2_CTRL_Pin|OC_LATCH_SET_Pin|HLIM_CTRL_Pin|NEG_CTRL_Pin
-                          |DCDC_NEG_CTRL_Pin|DCDC_POS_CTRL_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, FAN3_CTRL_Pin|FAN1_CTRL_Pin|FLT_OUT_Pin|SUPP_LOW_Pin
-                          |FAN4_CTRL_Pin|MDUFAN_CTRL_Pin|DASH_CTRL_Pin, GPIO_PIN_RESET);
->>>>>>> user/jaynith/ecu/ecu-update
 
   /*Configure GPIO pins : SPAR1_CTRL_Pin AMB_CTRL_Pin SPAR2_CTRL_Pin ESTOP_CTRL_Pin
                            TELEM_CTRL_Pin OT_OUT_Pin SWAP_CTRL_Pin PC_CTRL_Pin
@@ -460,7 +471,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-<<<<<<< HEAD
   /*Configure GPIO pin : ESTOP_3_3V_IN_Pin */
   GPIO_InitStruct.Pin = ESTOP_3_3V_IN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
@@ -471,34 +481,15 @@ static void MX_GPIO_Init(void)
                            DCDC_POS_CTRL_Pin */
   GPIO_InitStruct.Pin = OC_LATCH_SET_Pin|HLIM_CTRL_Pin|NEG_CTRL_Pin|DCDC_NEG_CTRL_Pin
                           |DCDC_POS_CTRL_Pin;
-=======
-  /*Configure GPIO pins : FAN2_CTRL_Pin OC_LATCH_SET_Pin HLIM_CTRL_Pin NEG_CTRL_Pin
-                           DCDC_NEG_CTRL_Pin DCDC_POS_CTRL_Pin */
-  GPIO_InitStruct.Pin = FAN2_CTRL_Pin|OC_LATCH_SET_Pin|HLIM_CTRL_Pin|NEG_CTRL_Pin
-                          |DCDC_NEG_CTRL_Pin|DCDC_POS_CTRL_Pin;
->>>>>>> user/jaynith/ecu/ecu-update
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-<<<<<<< HEAD
   /*Configure GPIO pins : FAN3_CTRL_Pin FAN2_CTRL_Pin FAN1_CTRL_Pin FLT_OUT_Pin
                            SUPP_LOW_Pin FAN4_CTRL_Pin MDUFAN_CTRL_Pin DASH_CTRL_Pin */
   GPIO_InitStruct.Pin = FAN3_CTRL_Pin|FAN2_CTRL_Pin|FAN1_CTRL_Pin|FLT_OUT_Pin
                           |SUPP_LOW_Pin|FAN4_CTRL_Pin|MDUFAN_CTRL_Pin|DASH_CTRL_Pin;
-=======
-  /*Configure GPIO pin : ESTOP_3_3V_IN_Pin */
-  GPIO_InitStruct.Pin = ESTOP_3_3V_IN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(ESTOP_3_3V_IN_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : FAN3_CTRL_Pin FAN1_CTRL_Pin FLT_OUT_Pin SUPP_LOW_Pin
-                           FAN4_CTRL_Pin MDUFAN_CTRL_Pin DASH_CTRL_Pin */
-  GPIO_InitStruct.Pin = FAN3_CTRL_Pin|FAN1_CTRL_Pin|FLT_OUT_Pin|SUPP_LOW_Pin
-                          |FAN4_CTRL_Pin|MDUFAN_CTRL_Pin|DASH_CTRL_Pin;
->>>>>>> user/jaynith/ecu/ecu-update
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -534,9 +525,9 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
     ADC3_processRawReadings(0, adc3_buf, result);
 
     // convert averaged raw readings into corresponding voltage and current values
-    ADC3_setSuppBattVoltage(result[0]);
-    ADC3_setMotorCurrent(result[1]);
-    ADC3_setArrayCurrent(result[2]);
+    ADC_setSuppBattVoltage(result[0]);
+    ADC_setMotorCurrent(result[1]);
+    ADC_setArrayCurrent(result[2]);
 
     ADC3_setBusyStatus(0); //indicates now the DMA is not in process
   }
@@ -544,11 +535,7 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
   else
   {
     ADC3_setFaultStatus(1); //fault status when previous DMA processing is not finished beforehand
-<<<<<<< HEAD
-    HAL_TIM_Base_Stop(&htim1); //stop TIM8: the trigger timer for ADC3
-=======
-    //HAL_TIM_Base_Stop(&htim8); //stop TIM8: the trigger timer for ADC3
->>>>>>> user/jaynith/ecu/ecu-update
+    HAL_TIM_Base_Stop(&htim1); //stop TIM1: the trigger timer for ADC3
   }
 }
 
@@ -564,9 +551,9 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     ADC3_processRawReadings(1, adc3_buf, result);
   
     // convert averaged raw readings into corresponding voltage and current values
-    ADC3_setSuppBattVoltage(result[0]);
-    ADC3_setMotorCurrent(result[1]);
-    ADC3_setArrayCurrent(result[2]);
+    ADC_setSuppBattVoltage(result[0]);
+    ADC_setMotorCurrent(result[1]);
+    ADC_setArrayCurrent(result[2]);
 
     ADC3_setBusyStatus(0); //indicates now the DMA is not in process
   }
@@ -574,11 +561,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
   else
   {
     ADC3_setFaultStatus(1); //fault status when previous DMA processing is not finished beforehand
-<<<<<<< HEAD
     HAL_TIM_Base_Stop(&htim1); //stop TIM8: the trigger timer for ADC3
-=======
-    //HAL_TIM_Base_Stop(&htim8); //stop TIM8: the trigger timer for ADC3
->>>>>>> user/jaynith/ecu/ecu-update
   }
 }
 

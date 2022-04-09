@@ -70,24 +70,16 @@ void Error_Handler(void);
 #define SPAR2_CTRL_GPIO_Port GPIOC
 #define OFFSET_REF_AM_Pin GPIO_PIN_0
 #define OFFSET_REF_AM_GPIO_Port GPIOA
-<<<<<<< HEAD
-=======
 #define Bsense_Pin GPIO_PIN_1
 #define Bsense_GPIO_Port GPIOA
->>>>>>> user/jaynith/ecu/ecu-update
 #define Msense_Pin GPIO_PIN_2
 #define Msense_GPIO_Port GPIOA
 #define Asense_Pin GPIO_PIN_3
 #define Asense_GPIO_Port GPIOA
 #define LVS_CURR_SENSE_Pin GPIO_PIN_4
 #define LVS_CURR_SENSE_GPIO_Port GPIOA
-<<<<<<< HEAD
-#define SUPP_SENS_Pin GPIO_PIN_5
-#define SUPP_SENS_GPIO_Port GPIOA
-=======
-#define FAN2_CTRL_Pin GPIO_PIN_5
-#define FAN2_CTRL_GPIO_Port GPIOA
->>>>>>> user/jaynith/ecu/ecu-update
+#define SUPP_SENSE_Pin GPIO_PIN_5
+#define SUPP_SENSE_GPIO_Port GPIOA
 #define ESTOP_3_3V_IN_Pin GPIO_PIN_6
 #define ESTOP_3_3V_IN_GPIO_Port GPIOA
 #define OC_LATCH_SET_Pin GPIO_PIN_7
@@ -100,11 +92,8 @@ void Error_Handler(void);
 #define FAN3_CTRL_GPIO_Port GPIOB
 #define GPIO_BMS_Pin GPIO_PIN_1
 #define GPIO_BMS_GPIO_Port GPIOB
-<<<<<<< HEAD
 #define FAN2_CTRL_Pin GPIO_PIN_10
 #define FAN2_CTRL_GPIO_Port GPIOB
-=======
->>>>>>> user/jaynith/ecu/ecu-update
 #define FAN1_CTRL_Pin GPIO_PIN_11
 #define FAN1_CTRL_GPIO_Port GPIOB
 #define FLT_OUT_Pin GPIO_PIN_12

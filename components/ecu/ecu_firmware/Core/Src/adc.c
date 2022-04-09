@@ -11,12 +11,7 @@
 #include "adc.h"
 #include "stm32f1xx_hal.h"
 
-//global variables to store ADC readings
-int ADC3_supp_batt_volt; //stores supplemental battery voltage readings in ADC3
-int ADC3_motor_current; //stores current readings, flowing form the motor to the battery, in ADC3
-int ADC3_array_current; //stores current readings, flowing from solar arrays to the battery, in ADC3
-volatile int ADC3_DMA_in_process_flag; //flag that indicates the DMA interrupt if ADC3 has been called and is in process
-volatile int ADC3_DMA_fault_flag; //flag that indicates the DMA interrupt if ADC3 has been called and is at fault
+
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
@@ -25,29 +20,95 @@ volatile int ADC3_DMA_fault_flag; //flag that indicates the DMA interrupt if ADC
 /* PUBLIC FUNCTIONS */
 
 /**
- * @brief Provides the voltage of the supplemental battery (mV)
+ * @brief calculates the relevant value for the given ADC channel based on raw value. 
  * 
- * The supplemental battery voltage input is provided as an float, which is mainly processed and averaged
- * by the ADC3_processRawReadings function (see below), with units of volts (V).
- * Function then uses the input (note that it comes from a voltage divider) to output the voltage of the supplemental battery.
- * From the ADC3_processRawReadings function (see below), the voltage is averaged over 1 second in 100 readings (100Hz).
- * Supp battery only for startup not really in driving
+ * 'adc_reading' is the averaged out raw value from the ADC buffer, and 'adc_channel' is the channel being read,
+ * based on the 'adc_channel_list' structure.  
  * 
- * @param supp_voltage float variable
- * @retval sets the global variable ADC3_supp_batt_volt (int datatype) to its input (supp_voltage)
+ * @date 2022/04/08
+ * @author Janith Wijekoon
  */
-void ADC3_setSuppBattVoltage(float supp_voltage)
+
+void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
 {
-    //assign the average ADC voltage to supp_voltage
-    //adc voltage comes from a voltage divider made of R1=10k and R2=1k (v_adc = 1/11 * v_supp)
+  float adc_voltage = adc_reading;
+  if (adc_voltage < 0) adc_voltage = 0;
+  else if (adc_voltage >= ADC_RESOLUTION) adc_voltage = ADC_RESOLUTION;
+  adc_voltage = adc_voltage * 1000.0 * ADC_MAX_VOLT_READING/ADC_RESOLUTION;
+  float offset_ref = HASS_SENSOR_DEFAULT_VOLTAGE_OFFSET;
 
-    float adc_val = supp_voltage;
-    if (adc_val < 0 ) adc_val = 0;
-    else if (adc_val > ADC_RESOLUTION)  adc_val = ADC_RESOLUTION;
+  switch (adc_channel)
+  {
+  case OFFSET_REF_AM__ADC1_IN0: //Records array and motor current sensor voltage offset in mV
+    ADC_am_ref_offset = adc_voltage; 
+    break;
+  
+  case LVS_CURR_SENSE__ADC1_IN4: //Records ECU low voltage current in cA
+    ADC_lvs_current = (int)((adc_voltage - ACS781xLR_VOLTAGE_OFFSET * 1000) / ACS782xLR_CURRENT_SCALE_FACTOR * 100);
+    break; 
+  
+  case SUPP_SENSE__ADC1_IN5: //Records supplementary battery voltage in mV
+    ADC_supp_batt_volt = (int)(adc_voltage*SUPP_BATT_VOLTAGE_DIVIDER);
+    break;
 
-    //printf("\n%d\n", (int)((adc_val * ADC_MAX_VOLT_READING / ADC_RESOLUTION) * SUPP_BATT_VOLTAGE_DIVIDER * 1000));
+  case OFFSET_REF_BAT__ADC1_IN10: //Records battery current sensor voltage offset in mV
+    ADC_batt_ref_offset = adc_voltage;
+    break;
 
-    ADC3_supp_batt_volt = (int)((adc_val * ADC_MAX_VOLT_READING / ADC_RESOLUTION) * SUPP_BATT_VOLTAGE_DIVIDER * 1000); 
+  case B_SENSE__ADC3_IN1: //Records battery current in cA
+    offset_ref = (float)(ADC_getOffsetRef_Batt());
+    ADC_battery_current = (int)(((adc_voltage - offset_ref)/1000.0) * HASS_100_S_CURRENT_SCALE_FACTOR * 100.0);
+    break;
+
+  case M_SENSE__ADC3_IN2: //Records motor current in cA
+    offset_ref = (float)ADC_getOffsetRef_AM();
+    ADC_motor_current = (int)(((adc_voltage - offset_ref)/1000.0) * HASS_50_600_S_CURRENT_SCALE_FACTOR * 100.0);
+    break;
+  
+  case A_SENSE__ADC3_IN3: //Records array current in cA
+    offset_ref = (float)ADC_getOffsetRef_AM();
+    ADC_array_current = (int)(((adc_voltage - offset_ref)/1000.0) * HASS_50_600_S_CURRENT_SCALE_FACTOR * 100.0);
+    break;
+
+  default:
+    break;
+  }
+}
+
+/**
+ * @brief Retrieves voltage offset of the motor and array current sensors
+ * 
+ */
+
+float ADC_getOffsetRef_AM()
+{
+  return (float)ADC_am_ref_offset;
+}
+
+/**
+ * @brief Retrieves voltage offset of the battery current sensor
+ * 
+ */
+float ADC_getOffsetRef_Batt()
+{
+  return (float)ADC_batt_ref_offset;
+}
+
+/**
+ * @brief Retrieves current input to the low voltage system
+ * 
+ */
+int ADC_getLowVoltageCurrent()
+{
+  return ADC_lvs_current;
+}
+
+/**
+ * @brief Retrieves battery current draw
+ * 
+ */
+int ADC_getBatteryCurrent(){
+  return ADC_battery_current;
 }
 
 /**
@@ -60,37 +121,9 @@ void ADC3_setSuppBattVoltage(float supp_voltage)
  * @param -
  * @retval returns the global variable ADC3_supp_batt_volt (int datatype)
  */
-int ADC3_getSuppBattVoltage()
+int ADC_getSuppBattVoltage()
 {
-    return ADC3_supp_batt_volt;
-}
-
-/**
- * @brief Provides the current flowing between the motor controller and battery pack (cA)
- * 
- * The motor current input is provided as an float, which is mainly processed and averaged
- * by the ADC3_processRawReadings function (see below), with units of volts (V).
- * Function then uses the input  to output the current according to the datasheet of our
- * hall effect sensor (HASS 50 600-S).
- * From the ADC3_processRawReadings function (see below), the current is averaged over 1 second in 100 readings (100Hz).
- * 
- * Current flowing **OUT** of the pack is positive.
- * Hardware exists to detect overcurrent
- * Output pins are wired to comparators to a set voltage
- * 
- * @param motor_current float variable
- * @retval sets the global variable ADC3_motor_current (int datatype) to its input (motor_current)
- */
-void ADC3_setMotorCurrent(float motor_current)
-{
-    //convert volt readings into current
-    //good references: https://www.lem.com/sites/default/files/products_datasheets/hass_50_600-s.pdf 
-    float adc_val = motor_current;
-    if (adc_val < 0) adc_val = 0;
-    else if (adc_val > ADC_RESOLUTION) adc_val = ADC_RESOLUTION;
-    adc_val = adc_val * ADC_MAX_VOLT_READING / ADC_RESOLUTION;
-
-    ADC3_motor_current = (adc_val - HASS_50_600_S_VOLTAGE_OFFSET) * HASS_50_600_S_CURRENT_SCALE_FACTOR * 100; //output in cA 
+    return ADC_supp_batt_volt;
 }
 
 /**
@@ -103,41 +136,10 @@ void ADC3_setMotorCurrent(float motor_current)
  * @param -
  * @retval returns the global variable ADC3_motor_current (int datatype)
  */
-int ADC3_getMotorCurrent()
+int ADC_getMotorCurrent()
 {
-    return ADC3_motor_current;
+    return ADC_motor_current;
 }
-
-/**
- * @brief Provides current flowing between the solar array and battery pack (cA)
- * 
- * The array current input is provided as an float, which is mainly processed and averaged
- * by the ADC3_processRawReadings function (see below), with units of volts (V).
- * Function then uses the input  to output the current according to the datasheet of our
- * hall effect sensor (HASS 50 600-S).
- * From the ADC3_processRawReadings function (see below), the current is averaged over 1 second in 100 readings (100Hz).
- * 
- * Current is averaged over 1 second. The result is provided as a
- * signed integer with units of 100ths of an amp (cA).
- * Current flowing **INTO** the pack is positive.
- * 
- * @param array_current float variable
- * @retval sets the global variable ADC3_array_current (int datatype) to its input (array_current)
- */
-void ADC3_setArrayCurrent(float array_current)
-{
-    //convert raw readings to voltage readings
-    float adc_val = array_current;
-    if (adc_val < 0) adc_val =0;
-    else if (adc_val > ADC_RESOLUTION) adc_val = ADC_RESOLUTION;
-    adc_val = adc_val * ADC_MAX_VOLT_READING / ADC_RESOLUTION;
-    
-    //convert volt readings into current
-    //good references: https://www.lem.com/sites/default/files/products_datasheets/hass_50_600-s.pdf 
-
-    ADC3_array_current = (adc_val - HASS_50_600_S_VOLTAGE_OFFSET) * HASS_50_600_S_CURRENT_SCALE_FACTOR * 100; //output in cA
-}
-
 
 /**
  * @brief Retrieves the current flowing between the solar array and battery pack (cA)
@@ -149,10 +151,11 @@ void ADC3_setArrayCurrent(float array_current)
  * @param -
  * @retval returns the global variable ADC3_array_current (int datatype)
  */
-int ADC3_getArrayCurrent()
+int ADC_getArrayCurrent()
 {
-    return ADC3_array_current;
+    return ADC_array_current;
 }
+
 
 /**
  * @brief Calculates the net current flowing out of the battery
@@ -166,9 +169,33 @@ int ADC3_getArrayCurrent()
  * @param array_current Current from array (positive into pack)
  * @retval net current out of battery, in the same format as the inputs
  */
-int ADC3_netCurrentOut()
+int ADC_netCurrentOut()
 {
-  return ADC3_motor_current - ADC3_array_current;
+  return ADC_motor_current - ADC_array_current;
+}
+
+/**
+ * @brief converts the raw readings of ADC1 into ADC voltage readings and
+ * averages these values at half of its buffer size per channel, 
+ * when the DMA interrupt for ADC1 is called when half of its scan 
+ * conversion sequence is completed. These output values will then be converted
+ * into supplemental battery voltage, current flowing between motor controller
+ * and battery pack, and the current flowing between solar arrays and battery pack 
+ * 
+ * @param half integer (1 or 0) indicating if the averaging is from the first half (0)
+ *             of its circular buffer or its second half (1)
+ * @param adc3_buf volatile int array that represents ADC1's DMA circular buffer 
+ *                 (200 elements per channel/measurement values; 600 in total. 
+ *                  Each time the the ADC is read, the next 3 elements get populated 
+ *                  with the battery current, motor current, and array current in 
+ *                  that specific order)
+ * @param result float array of size 3, storing the averaged ADC voltages (float) for
+ *               supplemental battery voltage, motor current, array current
+ * @retval stores the averaged readings of ADC1 to result[]
+ */
+void ADC1_processRawReadings(int half, volatile uint32_t adc1_buf[], float result[])
+{
+
 }
 
 
@@ -183,14 +210,15 @@ int ADC3_netCurrentOut()
  * @param half integer (1 or 0) indicating if the averaging is from the first half (0)
  *             of its circular buffer or its second half (1)
  * @param adc3_buf volatile int array that represents ADC3's DMA circular buffer 
- *                 (200 elements per channel/measurement values; 600 in total where the
- *                 first 200 elments stores supplemental battery voltage, then the next
- *                 200 elements stores the motor current, and finally the last 200 for array current)
+ *                 (200 elements per channel/measurement values; 600 in total. 
+ *                  Each time the the ADC is read, the next 3 elements get populated 
+ *                  with the battery current, motor current, and array current in 
+ *                  that specific order)
  * @param result float array of size 3, storing the averaged ADC voltages (float) for
  *               supplemental battery voltage, motor current, array current
  * @retval stores the averaged readings of ADC3 to result[]
  */
-void ADC3_processRawReadings(int half, volatile int adc3_buf[], float result[])
+void ADC3_processRawReadings(int half, volatile uint32_t adc3_buf[], float result[])
 {
   int32_t sum[ADC3_NUM_ANALOG_CHANNELS] = {0}; //used for summing in the averaging process
   
@@ -203,15 +231,20 @@ void ADC3_processRawReadings(int half, volatile int adc3_buf[], float result[])
     limit = ADC3_BUF_LENGTH_PER_CHANNEL;
   }
 
+  //for (int n =0; n < 600; n++) printf("%d\n", adc3_buf[n]);
+  //printf("%d || %d\n", sample_num, limit);
   // Average the samples
   for(; sample_num < limit; sample_num++) //summing the readings in the averaging process
   {
+    
+    //printf("%f\n", adc3_buf[sample_num]);
     for(int channel = 0; channel < ADC3_NUM_ANALOG_CHANNELS; channel++)
     {
       //adc3_buf is organized as [supp batt x 200 ... motor curr x 200 ... array curr x 200]
       //when sampling at 100Hz
-      sum[channel] += adc3_buf[ADC3_NUM_ANALOG_CHANNELS * sample_num + channel];
+      sum[channel] += (float)adc3_buf[ADC3_NUM_ANALOG_CHANNELS * sample_num + channel];
     }
+    //printf("%d\n", adc3_buf[sample_num]); 
   }
   
   //the division process of the averaging

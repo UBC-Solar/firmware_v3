@@ -1,19 +1,25 @@
 #MicroXplorer Configuration settings - do not modify
 ADC1.Channel-6\#ChannelRegularConversion=ADC_CHANNEL_0
-ADC1.ContinuousConvMode=ENABLE
+ADC1.Channel-7\#ChannelRegularConversion=ADC_CHANNEL_4
+ADC1.Channel-8\#ChannelRegularConversion=ADC_CHANNEL_5
+ADC1.Channel-9\#ChannelRegularConversion=ADC_CHANNEL_10
+ADC1.ContinuousConvMode=DISABLE
 ADC1.EnableInjectedConversion=DISABLE
 ADC1.EnableRegularConversion=ENABLE
 ADC1.ExternalTrigConv=ADC_EXTERNALTRIGCONV_T1_CC3
 ADC1.ExternalTrigInjecConv=ADC_EXTERNALTRIGINJECCONV_T2_CC1
-<<<<<<< HEAD
-ADC1.IPParameters=ContinuousConvMode,EnableInjectedConversion,InjNumberOfConversion,EnableRegularConversion,ExternalTrigInjecConv,Rank-6\#ChannelRegularConversion,Channel-6\#ChannelRegularConversion,SamplingTime-6\#ChannelRegularConversion,NbrOfConversionFlag,ExternalTrigConv,master
-=======
-ADC1.IPParameters=master,ContinuousConvMode,EnableInjectedConversion,InjNumberOfConversion,EnableRegularConversion,ExternalTrigInjecConv,Rank-6\#ChannelRegularConversion,Channel-6\#ChannelRegularConversion,SamplingTime-6\#ChannelRegularConversion,NbrOfConversionFlag,ExternalTrigConv
->>>>>>> user/jaynith/ecu/ecu-update
+ADC1.IPParameters=ContinuousConvMode,EnableInjectedConversion,InjNumberOfConversion,EnableRegularConversion,ExternalTrigInjecConv,Rank-6\#ChannelRegularConversion,Channel-6\#ChannelRegularConversion,SamplingTime-6\#ChannelRegularConversion,NbrOfConversionFlag,ExternalTrigConv,master,Rank-7\#ChannelRegularConversion,Channel-7\#ChannelRegularConversion,SamplingTime-7\#ChannelRegularConversion,Rank-8\#ChannelRegularConversion,Channel-8\#ChannelRegularConversion,SamplingTime-8\#ChannelRegularConversion,Rank-9\#ChannelRegularConversion,Channel-9\#ChannelRegularConversion,SamplingTime-9\#ChannelRegularConversion,NbrOfConversion
 ADC1.InjNumberOfConversion=3
+ADC1.NbrOfConversion=4
 ADC1.NbrOfConversionFlag=1
 ADC1.Rank-6\#ChannelRegularConversion=1
+ADC1.Rank-7\#ChannelRegularConversion=2
+ADC1.Rank-8\#ChannelRegularConversion=3
+ADC1.Rank-9\#ChannelRegularConversion=4
 ADC1.SamplingTime-6\#ChannelRegularConversion=ADC_SAMPLETIME_1CYCLE_5
+ADC1.SamplingTime-7\#ChannelRegularConversion=ADC_SAMPLETIME_1CYCLE_5
+ADC1.SamplingTime-8\#ChannelRegularConversion=ADC_SAMPLETIME_1CYCLE_5
+ADC1.SamplingTime-9\#ChannelRegularConversion=ADC_SAMPLETIME_1CYCLE_5
 ADC1.master=1
 ADC3.Channel-1\#ChannelRegularConversion=ADC_CHANNEL_1
 ADC3.Channel-2\#ChannelRegularConversion=ADC_CHANNEL_2
@@ -81,7 +87,6 @@ Mcu.Pin12=PC4
 Mcu.Pin13=PC5
 Mcu.Pin14=PB0
 Mcu.Pin15=PB1
-<<<<<<< HEAD
 Mcu.Pin16=PB10
 Mcu.Pin17=PB11
 Mcu.Pin18=PB12
@@ -112,52 +117,18 @@ Mcu.Pin4=PA0-WKUP
 Mcu.Pin40=PB8
 Mcu.Pin41=PB9
 Mcu.Pin42=VP_SYS_VS_Systick
-=======
-Mcu.Pin16=PB11
-Mcu.Pin17=PB12
-Mcu.Pin18=PB13
-Mcu.Pin19=PB14
-Mcu.Pin2=PC2
-Mcu.Pin20=PB15
-Mcu.Pin21=PC6
-Mcu.Pin22=PC7
-Mcu.Pin23=PC8
-Mcu.Pin24=PC9
-Mcu.Pin25=PA8
-Mcu.Pin26=PA9
-Mcu.Pin27=PA10
-Mcu.Pin28=PA11
-Mcu.Pin29=PA12
-Mcu.Pin3=PC3
-Mcu.Pin30=PA13
-Mcu.Pin31=PA14
-Mcu.Pin32=PC10
-Mcu.Pin33=PC11
-Mcu.Pin34=PB3
-Mcu.Pin35=PB4
-Mcu.Pin36=PB5
-Mcu.Pin37=PB6
-Mcu.Pin38=PB7
-Mcu.Pin39=PB8
-Mcu.Pin4=PA0-WKUP
-Mcu.Pin40=PB9
-Mcu.Pin41=VP_SYS_VS_Systick
->>>>>>> user/jaynith/ecu/ecu-update
 Mcu.Pin5=PA1
 Mcu.Pin6=PA2
 Mcu.Pin7=PA3
 Mcu.Pin8=PA4
 Mcu.Pin9=PA5
-<<<<<<< HEAD
 Mcu.PinsNb=43
-=======
-Mcu.PinsNb=42
->>>>>>> user/jaynith/ecu/ecu-update
 Mcu.ThirdPartyNb=0
 Mcu.UserConstants=
 Mcu.UserName=STM32F103RCTx
 MxCube.Version=6.5.0
 MxDb.Version=DB.6.0.50
+NVIC.ADC1_2_IRQn=true\:0\:0\:false\:false\:true\:true\:true\:true
 NVIC.BusFault_IRQn=true\:0\:0\:false\:false\:true\:false\:false\:true
 NVIC.DMA1_Channel1_IRQn=true\:0\:0\:false\:false\:true\:false\:true\:true
 NVIC.DMA2_Channel4_5_IRQn=true\:0\:0\:false\:false\:true\:false\:true\:true
@@ -175,11 +146,8 @@ PA0-WKUP.GPIOParameters=GPIO_Label
 PA0-WKUP.GPIO_Label=OFFSET_REF_AM
 PA0-WKUP.Locked=true
 PA0-WKUP.Signal=ADCx_IN0
-<<<<<<< HEAD
-=======
 PA1.GPIOParameters=GPIO_Label
 PA1.GPIO_Label=Bsense
->>>>>>> user/jaynith/ecu/ecu-update
 PA1.Locked=true
 PA1.Signal=ADCx_IN1
 PA10.Signal=S_TIM1_CH3
@@ -213,15 +181,9 @@ PA4.GPIO_Label=LVS_CURR_SENSE
 PA4.Locked=true
 PA4.Signal=ADCx_IN4
 PA5.GPIOParameters=GPIO_Label
-<<<<<<< HEAD
-PA5.GPIO_Label=SUPP_SENS
+PA5.GPIO_Label=SUPP_SENSE
 PA5.Locked=true
 PA5.Signal=ADCx_IN5
-=======
-PA5.GPIO_Label=FAN2_CTRL
-PA5.Locked=true
-PA5.Signal=GPIO_Output
->>>>>>> user/jaynith/ecu/ecu-update
 PA6.GPIOParameters=GPIO_Label
 PA6.GPIO_Label=ESTOP_3.3V_IN
 PA6.Locked=true
@@ -246,13 +208,10 @@ PB1.GPIOParameters=GPIO_Label
 PB1.GPIO_Label=GPIO_BMS
 PB1.Locked=true
 PB1.Signal=GPIO_Input
-<<<<<<< HEAD
 PB10.GPIOParameters=GPIO_Label
 PB10.GPIO_Label=FAN2_CTRL
 PB10.Locked=true
 PB10.Signal=GPIO_Output
-=======
->>>>>>> user/jaynith/ecu/ecu-update
 PB11.GPIOParameters=GPIO_Label
 PB11.GPIO_Label=FAN1_CTRL
 PB11.Locked=true
@@ -372,14 +331,10 @@ ProjectManager.ProjectFileName=ecu_firmware.ioc
 ProjectManager.ProjectName=ecu_firmware
 ProjectManager.RegisterCallBack=
 ProjectManager.StackSize=0x400
-ProjectManager.TargetToolchain=STM32CubeIDE
+ProjectManager.TargetToolchain=Makefile
 ProjectManager.ToolChainLocation=
-ProjectManager.UnderRoot=true
-<<<<<<< HEAD
+ProjectManager.UnderRoot=false
 ProjectManager.functionlistsort=1-MX_GPIO_Init-GPIO-false-HAL-true,2-SystemClock_Config-RCC-false-HAL-false,3-MX_ADC1_Init-ADC1-false-HAL-true,4-MX_DMA_Init-DMA-false-HAL-true,5-MX_ADC3_Init-ADC3-false-HAL-true,6-MX_CAN_Init-CAN-false-HAL-true,7-MX_TIM1_Init-TIM1-false-HAL-true
-=======
-ProjectManager.functionlistsort=1-MX_GPIO_Init-GPIO-false-HAL-true,2-SystemClock_Config-RCC-false-HAL-false,3-MX_ADC1_Init-ADC1-false-HAL-true,4-MX_DMA_Init-DMA-false-HAL-true,5-MX_ADC3_Init-ADC3-false-HAL-true,6-MX_CAN_Init-CAN-false-HAL-true,7-MX_TIM2_Init-TIM2-false-HAL-true,8-MX_TIM1_Init-TIM1-false-HAL-true
->>>>>>> user/jaynith/ecu/ecu-update
 RCC.ADCFreqValue=4000000
 RCC.AHBFreq_Value=64000000
 RCC.APB1CLKDivider=RCC_HCLK_DIV8
@@ -407,12 +362,7 @@ RCC.USBFreq_Value=64000000
 SH.ADCx_IN0.0=ADC1_IN0,IN0
 SH.ADCx_IN0.ConfNb=1
 SH.ADCx_IN1.0=ADC3_IN1,IN1
-<<<<<<< HEAD
-SH.ADCx_IN1.1=ADC1_IN1
-SH.ADCx_IN1.ConfNb=2
-=======
 SH.ADCx_IN1.ConfNb=1
->>>>>>> user/jaynith/ecu/ecu-update
 SH.ADCx_IN10.0=ADC1_IN10,IN10
 SH.ADCx_IN10.ConfNb=1
 SH.ADCx_IN2.0=ADC3_IN2,IN2
@@ -421,18 +371,15 @@ SH.ADCx_IN3.0=ADC3_IN3,IN3
 SH.ADCx_IN3.ConfNb=1
 SH.ADCx_IN4.0=ADC1_IN4,IN4
 SH.ADCx_IN4.ConfNb=1
-<<<<<<< HEAD
 SH.ADCx_IN5.0=ADC1_IN5,IN5
 SH.ADCx_IN5.ConfNb=1
-=======
->>>>>>> user/jaynith/ecu/ecu-update
 SH.S_TIM1_CH3.0=TIM1_CH3,Output Compare3 CH3
 SH.S_TIM1_CH3.ConfNb=1
 TIM1.Channel-Output\ Compare3\ CH3=TIM_CHANNEL_3
 TIM1.IPParameters=Channel-Output Compare3 CH3,Period,TIM_MasterOutputTrigger,OC3Preload
 TIM1.OC3Preload=DISABLE
-TIM1.Period=2000-1
-TIM1.TIM_MasterOutputTrigger=TIM_TRGO_OC3REF
+TIM1.Period=16000
+TIM1.TIM_MasterOutputTrigger=TIM_TRGO_UPDATE
 VP_SYS_VS_Systick.Mode=SysTick
 VP_SYS_VS_Systick.Signal=SYS_VS_Systick
 board=custom
