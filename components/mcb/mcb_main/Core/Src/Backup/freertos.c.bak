@@ -19,7 +19,6 @@
 
 #include "attributes.h"
 #include "can.h"
-#include "tim.h"
 #include "encoder.h"
 
 /* USER CODE END Includes */
@@ -239,7 +238,7 @@ __NO_RETURN void readEncoderTask(void *argument) {
     EncoderInit();
 
     while (1) {
-        encoder_reading = __HAL_TIM_GET_COUNTER(&htim1);
+        encoder_reading = __HAL_TIM_GET_COUNTER(&htim3);
 
         // update the event flags struct
         event_flags.encoder_value_is_zero = (encoder_reading == 0);
