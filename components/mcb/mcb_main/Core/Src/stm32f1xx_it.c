@@ -37,6 +37,7 @@
 
 extern osSemaphoreId_t eventFlagsSemaphoreHandle;
 extern osSemaphoreId_t nextScreenSemaphoreHandle;
+extern uint16_t encoder_reading;
 
 /* USER CODE END PV */
 
@@ -182,10 +183,11 @@ void EXTI2_IRQHandler(void)
 
     // EXTI2 corresponds to the BRK_IN pin
 
-    event_flags.brake_in = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
-
     // when brake_in goes high, cruise control should be disengaged
     event_flags.cruise_status = DISABLE;
+
+    event_flags.brake_in = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
+
 
   /* USER CODE END EXTI2_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
@@ -260,14 +262,21 @@ void EXTI9_5_IRQHandler(void)
     // checks if the CRUISE_UP external interrupt is triggered
     else if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_UP_Pin))
     {
-        if ((cruise_value + CRUISE_INCREMENT_VALUE) > CRUISE_MAX)
-        {
-            cruise_value = CRUISE_MAX;
-        }
-        else
-        {
-            cruise_value += CRUISE_INCREMENT_VALUE;
-        }
+    	if(event_flags.cruise_status == DISABLE) {
+    		cruise_value = encoder_reading;
+    	}
+    	else
+    	{
+			if ((cruise_value + CRUISE_INCREMENT_VALUE) > CRUISE_MAX)
+			{
+				cruise_value = CRUISE_MAX;
+			}
+			else
+			{
+				cruise_value += CRUISE_INCREMENT_VALUE;
+			}
+    	}
+        event_flags.cruise_status = ENABLE;
     }
 
     // checks if the CRUISE_DOWN external interrupt is triggered
