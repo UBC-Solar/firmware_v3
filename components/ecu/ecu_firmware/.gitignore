@@ -3,6 +3,7 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+.vscode
 STM32F103RCTx_FLASH.ld
 .mxproject
 Makefile

@@ -47,7 +47,8 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-
+void averageAndSaveValues_ADC1(int adc_half);
+void averageAndSaveValues_ADC3(int adc_half);
 /* USER CODE END EM */
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);

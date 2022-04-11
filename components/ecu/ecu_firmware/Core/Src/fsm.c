@@ -15,6 +15,7 @@
 #include "adc.h"
 #include "can.h"
 #include "fsm.h"
+#include "stm32f1xx_hal.h"
 
 
 /*============================================================================*/

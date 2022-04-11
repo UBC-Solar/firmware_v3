@@ -84,11 +84,13 @@ void ADC1_processRawReadings(int half, volatile uint32_t adc1_buf[], float resul
 
 int ADC3_getBusyStatus();
 void ADC3_setBusyStatus(int flag_value);
-
-void ADC3_setFaultStatus(int flag_value);
+int ADC1_getBusyStatus();
+void ADC1_setBusyStatus(int flag_value);
 
 int ADC3_getFaultStatus(); 
 void ADC3_setFaultStatus(int flag_value);
+int ADC1_getFaultStatus(); 
+void ADC1_setFaultStatus(int flag_value);
 
 int ADC_getReading(int adc_channel);
 void ADC_setReading(float adc_reading, adc_channel_list adc_channel);

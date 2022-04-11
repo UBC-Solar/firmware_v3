@@ -7,10 +7,7 @@
 
 //#include "mock_stm32f1xx_hal.h"
 
-float ** enumerateGetSetValsOverRange(int adc_channel, int (*getFunction)(), float start_point[], float end_point[], 
-                    int num_samples, float adc_offset, double adc_scale_factor);
-
-float ** enumerateGetSetValsOverRange_floatType(int adc_channel, float (*get_function)(), float start_point[], float end_point[], 
+float ** enumerateGetSetValsOverRange(int adc_channel, int (*get_function_int)(), float (*get_function_float)(), float start_point[], float end_point[], 
                     int num_samples, float adc_offset, double adc_scale_factor);
 
 uint32_t* generateSineCurve(int num_points, int num_cycles, float amplitude, float y_offset);
@@ -34,7 +31,7 @@ void test_ADC_getAndSetOffsetRef_AM()
     float end_point[] = {15.0, 5250.0};
 
     printf("\nTesting AM offset reference...\n     Input:   expected||    actual\n");
-    float** test_results = enumerateGetSetValsOverRange_floatType(OFFSET_REF_AM__ADC1_IN0, ADC_getOffsetRef_AM, start_point, end_point,
+    float** test_results = enumerateGetSetValsOverRange(OFFSET_REF_AM__ADC1_IN0, NULL, ADC_getOffsetRef_AM, start_point, end_point,
                                                         num_samples, 0.0, 1000.0);
     for (int n = 0; n < num_samples; n++) TEST_ASSERT_FLOAT_WITHIN(1.0f, test_results[0][n], test_results[1][n]);
 }
@@ -48,7 +45,7 @@ void test_ADC_getAndSetOffsetRef_Batt()
     float end_point[] = {15.0, 5250.0};
 
     printf("\nTesting battery offset reference...\n     Input:   expected||    actual\n");
-    float** test_results = enumerateGetSetValsOverRange_floatType(OFFSET_REF_BAT__ADC1_IN10, ADC_getOffsetRef_Batt, start_point, end_point,
+    float** test_results = enumerateGetSetValsOverRange(OFFSET_REF_BAT__ADC1_IN10, NULL, ADC_getOffsetRef_Batt, start_point, end_point,
                                                         num_samples, 0.0, 1000.0);
     for (int n = 0; n < num_samples; n++) TEST_ASSERT_FLOAT_WITHIN(1.0f, test_results[0][n], test_results[1][n]);
 }
@@ -62,7 +59,7 @@ void test_ADC_getAndSetLowVoltageCurrent()
     float end_point[] = {15.0, 5250.0};
 
     printf("\nTesting low voltage current...\n     Input:   expected||    actual\n");
-    float** test_results = enumerateGetSetValsOverRange(LVS_CURR_SENSE__ADC1_IN4, ADC_getLowVoltageCurrent, start_point, end_point,
+    float** test_results = enumerateGetSetValsOverRange(LVS_CURR_SENSE__ADC1_IN4, ADC_getLowVoltageCurrent, NULL, start_point, end_point,
                                                         num_samples, -3.3/2, (1.0/26.4)*100.0*1000.0);
     for (int n = 0; n < num_samples; n++) TEST_ASSERT_FLOAT_WITHIN(1.0f, test_results[0][n], test_results[1][n]);
 }   
@@ -74,7 +71,7 @@ void test_ADC_getAndSetSuppBatteryVoltage()
     float end_point[] = {15.0, 5250.0};
 
     printf("\nTesting supplimentary battery voltage...\n     Input:   expected||    actual\n");
-    float** test_results = enumerateGetSetValsOverRange(SUPP_SENSE__ADC1_IN5, ADC_getSuppBattVoltage, start_point, end_point,
+    float** test_results = enumerateGetSetValsOverRange(SUPP_SENSE__ADC1_IN5, ADC_getSuppBattVoltage, NULL, start_point, end_point,
                                                         num_samples, 0.0, 11.0*1000);
     for (int n = 0; n < num_samples; n++) TEST_ASSERT_FLOAT_WITHIN(2.0f, test_results[0][n], test_results[1][n]);
 }
@@ -88,7 +85,7 @@ void test_ADC_getAndSetBatteryCurrent()
 
     printf("\nTesting main battery current...\n     Input:   expected||    actual\n");
     ADC_setReading(offset_adc_val, OFFSET_REF_BAT__ADC1_IN10);
-    float** test_results = enumerateGetSetValsOverRange(B_SENSE__ADC3_IN1, ADC_getBatteryCurrent, start_point, end_point,
+    float** test_results = enumerateGetSetValsOverRange(B_SENSE__ADC3_IN1, ADC_getBatteryCurrent, NULL, start_point, end_point,
                                                         num_samples, -3.3*offset_adc_val/4095.0, 40.0*100.0);
     for (int n = 0; n < num_samples; n++) TEST_ASSERT_FLOAT_WITHIN(4.0f, test_results[0][n], test_results[1][n]);
 }
@@ -102,7 +99,7 @@ void test_ADC_getAndSetMotorCurrent()
 
     printf("\nTesting motor current...\n     Input:   expected||    actual\n");
     ADC_setReading(offset_adc_val, OFFSET_REF_AM__ADC1_IN0);
-    float** test_results = enumerateGetSetValsOverRange(M_SENSE__ADC3_IN2, ADC_getMotorCurrent, start_point, end_point,
+    float** test_results = enumerateGetSetValsOverRange(M_SENSE__ADC3_IN2, ADC_getMotorCurrent, NULL, start_point, end_point,
                                                         num_samples, -3.3*offset_adc_val/4095.0, 80.0*100.0);
     for (int n = 0; n < num_samples; n++) TEST_ASSERT_FLOAT_WITHIN(7.0f, test_results[0][n], test_results[1][n]);
 }
@@ -115,7 +112,7 @@ void test_ADC_getAndSetArrayCurrent(){
 
     printf("\nTesting array current...\n     Input:   expected||    actual\n");
     ADC_setReading(offset_adc_val, OFFSET_REF_AM__ADC1_IN0);
-    float** test_results = enumerateGetSetValsOverRange(A_SENSE__ADC3_IN3, ADC_getArrayCurrent, start_point, end_point,
+    float** test_results = enumerateGetSetValsOverRange(A_SENSE__ADC3_IN3, ADC_getArrayCurrent, NULL, start_point, end_point,
                                                         num_samples, -3.3*offset_adc_val/4095.0, 80.0*100.0);
     for (int n = 0; n < num_samples; n++) TEST_ASSERT_FLOAT_WITHIN(7.0f, test_results[0][n], test_results[1][n]);
 }
@@ -178,10 +175,18 @@ void test_ADC3_processRawReadings()
 
 }
 
+/**
+ * @brief This function returns an array of uint32_t values representing a Sine signal.
+ * 
+ * @param num_points Each point has an arbitrary time step of 1s
+ * @param num_cycles Number of complete cycles the signal has
+ * 
+ * @return uint32_t* 
+ */
+
+
 uint32_t* generateSineCurve(int num_points, int num_cycles, float amplitude, float y_offset)
 {
-
-    printf("\nGenerating sine curve with offset %f and amplitude %f...\n", y_offset, amplitude);
     uint32_t* signal_out = (int*)malloc(sizeof(int)*num_points);
     float total_time = 1.0 * num_points;
     float frequency = ((float)num_cycles/total_time);
@@ -194,42 +199,8 @@ uint32_t* generateSineCurve(int num_points, int num_cycles, float amplitude, flo
     return signal_out;
 }
 
-float ** enumerateGetSetValsOverRange_floatType(int adc_channel, float (*get_function)(), float start_point[], float end_point[], 
-                    int num_samples, float adc_offset, double adc_scale_factor)
-{
-    float test_plot_gradient = (end_point[1] - start_point[1])/(end_point[0] - start_point[0]);
-    float test_plot_intercept = end_point[1] - test_plot_gradient * end_point[0];
-    float test_plot_delta_x = (end_point[0] - start_point[0])/(num_samples-1);
 
-    float** results_array = (float**)malloc(2*sizeof(float*));
-    results_array[0] = (float*)malloc(num_samples*sizeof(float));
-    results_array[1] = (float*)malloc(num_samples*sizeof(float));
-
-    float test_val, expected_val, actual_val;
-    int adc_resolution = 4096-1;
-    int n = 0;
-    
-    for (float x = start_point[0]; x <= end_point[0]; x += test_plot_delta_x){
-        test_val = test_plot_gradient*x + test_plot_intercept;
-        if (test_val < 0) expected_val = adc_offset * adc_scale_factor;
-        else if (test_val >= 0 && test_val <= adc_resolution) expected_val = (3.3*(test_val/adc_resolution)+adc_offset)*adc_scale_factor;
-        else if (test_val > adc_resolution) expected_val = (3.3+adc_offset)*adc_scale_factor;
-
-        ADC_setReading(test_val, adc_channel);
-        actual_val = get_function();
-
-        printf("%9.2f : %9.2f || %9.2f\n", test_val, expected_val, actual_val);
-
-        results_array[0][n] = expected_val;
-        results_array[1][n] = actual_val;
-
-        n++;
-    }
-
-    return results_array;
-}
-
-float ** enumerateGetSetValsOverRange(int adc_channel, int (*get_function)(), float start_point[], float end_point[], 
+float ** enumerateGetSetValsOverRange(int adc_channel, int (*get_function_int)(), float (*get_function_float)(), float start_point[], float end_point[], 
                     int num_samples, float adc_offset, double adc_scale_factor)
 {
 
@@ -252,7 +223,7 @@ float ** enumerateGetSetValsOverRange(int adc_channel, int (*get_function)(), fl
         else if (test_val > adc_resolution) expected_val = (3.3+adc_offset)*adc_scale_factor;
 
         ADC_setReading(test_val, adc_channel);
-        actual_val = get_function();
+        actual_val = get_function_int != NULL ? get_function_int() : get_function_float();
 
         printf("%9.2f : %9.2f || %9.2f\n", test_val, expected_val, actual_val);
 
@@ -265,3 +236,5 @@ float ** enumerateGetSetValsOverRange(int adc_channel, int (*get_function)(), fl
     return results_array;
 
 }
+
+

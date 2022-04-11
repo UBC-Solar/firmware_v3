@@ -516,48 +516,57 @@ static void MX_GPIO_Init(void)
 // Conversion half complete DMA interrupt callback for ADC3
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 {
-  if (!ADC3_getBusyStatus()) //make sure DMA processing stops when processing ADC3 readings
-  {
-    ADC3_setBusyStatus(1); //indicates DMA right now is in process
-    static float result[ADC3_NUM_ANALOG_CHANNELS] = {0.0}; //stores supplemental battery voltage, motor and array currents
+  if (hadc == &hadc1) averageAndSaveValues_ADC1(0);
+  else if (hadc == &hadc3) averageAndSaveValues_ADC3(0);
+}
 
-    // Average 1st half of the buffer
-    ADC3_processRawReadings(0, adc3_buf, result);
+// Conversion full complete DMA interrupt callback for ADCs
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+  if (hadc == &hadc1) averageAndSaveValues_ADC1(1);
+  else if (hadc == &hadc3) averageAndSaveValues_ADC3(1);
+}
 
-    // convert averaged raw readings into corresponding voltage and current values
-    ADC_setSuppBattVoltage(result[0]);
-    ADC_setMotorCurrent(result[1]);
-    ADC_setArrayCurrent(result[2]);
+void averageAndSaveValues_ADC1(int adc_half)
+{
+  if (!ADC1_getBusyStatus()){
+    ADC1_setBusyStatus(1);
+    static float result[ADC1_NUM_ANALOG_CHANNELS];
 
-    ADC3_setBusyStatus(0); //indicates now the DMA is not in process
-  }
+    ADC1_processRawReadings(adc_half, adc1_buf, result);
 
+    DC_setReading(result[0], OFFSET_REF_AM__ADC1_IN0);
+    ADC_setReading(result[1], LVS_CURR_SENSE__ADC1_IN4);
+    ADC_setReading(result[2], SUPP_SENSE__ADC1_IN5);
+    ADC_setReading(result[3], OFFSET_REF_BAT__ADC1_IN10);
+
+    ADC1_setBusyStatus(0);
+  }  
   else
   {
-    ADC3_setFaultStatus(1); //fault status when previous DMA processing is not finished beforehand
-    HAL_TIM_Base_Stop(&htim1); //stop TIM1: the trigger timer for ADC3
+    ADC1_setFaultStatus(1);
+    HAL_TIM_Base_Stop(&htim1);
   }
 }
 
-// Conversion full complete DMA interrupt callback for ADC3
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+void averageAndSaveValues_ADC3(int adc_half)
 {
-  if (!ADC3_getBusyStatus()) //make sure DMA processing stops when processing ADC3 readings
+if (!ADC3_getBusyStatus()) //make sure DMA processing stops when processing ADC3 readings
   {
     ADC3_setBusyStatus(1); //indicates DMA right now is in process
     static float result[ADC3_NUM_ANALOG_CHANNELS] = {0.0}; //stores supplemental battery voltage, motor and array currents
 
     // Average 2nd half of the buffer
     ADC3_processRawReadings(1, adc3_buf, result);
-  
+    
     // convert averaged raw readings into corresponding voltage and current values
-    ADC_setSuppBattVoltage(result[0]);
-    ADC_setMotorCurrent(result[1]);
-    ADC_setArrayCurrent(result[2]);
+    ADC_setReading(result[0], B_SENSE__ADC3_IN1);
+    ADC_setReading(result[1], M_SENSE__ADC3_IN2);
+    ADC_setReading(result[2], A_SENSE__ADC3_IN3);
 
     ADC3_setBusyStatus(0); //indicates now the DMA is not in process
   }
-  
+    
   else
   {
     ADC3_setFaultStatus(1); //fault status when previous DMA processing is not finished beforehand

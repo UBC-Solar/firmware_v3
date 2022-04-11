@@ -179,23 +179,51 @@ int ADC_netCurrentOut()
  * averages these values at half of its buffer size per channel, 
  * when the DMA interrupt for ADC1 is called when half of its scan 
  * conversion sequence is completed. These output values will then be converted
- * into supplemental battery voltage, current flowing between motor controller
- * and battery pack, and the current flowing between solar arrays and battery pack 
+ * into am voltage offset, battery voltage offset, lvs current, and supplimentary 
+ * battery voltage. 
  * 
  * @param half integer (1 or 0) indicating if the averaging is from the first half (0)
  *             of its circular buffer or its second half (1)
  * @param adc3_buf volatile int array that represents ADC1's DMA circular buffer 
- *                 (200 elements per channel/measurement values; 600 in total. 
- *                  Each time the the ADC is read, the next 3 elements get populated 
- *                  with the battery current, motor current, and array current in 
- *                  that specific order)
- * @param result float array of size 3, storing the averaged ADC voltages (float) for
- *               supplemental battery voltage, motor current, array current
+ *                 (200 elements per channel/measurement values; 800 in total. 
+ *                  Each time the the ADC is read, the next 4 elements get populated 
+ *                  with the am voltage offset, lvs current, supplimentary battery voltage,
+ *                  and battery voltage offset in that specific order)
+ * @param result float array of size 4, storing the averaged ADC voltages (float) for
+ *               each reading.
  * @retval stores the averaged readings of ADC1 to result[]
  */
 void ADC1_processRawReadings(int half, volatile uint32_t adc1_buf[], float result[])
 {
+  int32_t sum[ADC1_NUM_ANALOG_CHANNELS] = {0}; //used for summing in the averaging process
+  
+  int sample_num = 0; //start index for averaging the ADC readings
+  int limit = ADC1_BUF_LENGTH_PER_CHANNEL >> 1; // divide by 2; the end index of the averaging process
 
+  if(half == 1) //start and end indices if averaging the second half of the ADC3's DMA circular buffer
+  {
+    sample_num = ADC1_BUF_LENGTH_PER_CHANNEL >> 1; 
+    limit = ADC1_BUF_LENGTH_PER_CHANNEL;
+  }
+
+  // Average the samples
+  for(; sample_num < limit; sample_num++) //summing the readings in the averaging process
+  {
+    
+    for(int channel = 0; channel < ADC1_NUM_ANALOG_CHANNELS; channel++)
+    {
+      //adc3_buf is organized as [supp batt x 200 ... motor curr x 200 ... array curr x 200]
+      //when sampling at 100Hz
+      sum[channel] += (float)adc1_buf[ADC1_NUM_ANALOG_CHANNELS * sample_num + channel];
+    }
+  }
+  
+  //the division process of the averaging
+  for(int channel = 0; channel < ADC1_NUM_ANALOG_CHANNELS; channel++)
+  {
+    //averages for supplemental batery voltage, motor current, and array current
+    result[channel] = ((float) sum[channel]) / (ADC1_BUF_LENGTH_PER_CHANNEL >> 1);
+  }
 }
 
 
@@ -215,7 +243,7 @@ void ADC1_processRawReadings(int half, volatile uint32_t adc1_buf[], float resul
  *                  with the battery current, motor current, and array current in 
  *                  that specific order)
  * @param result float array of size 3, storing the averaged ADC voltages (float) for
- *               supplemental battery voltage, motor current, array current
+ *               battery current, motor current, and array current
  * @retval stores the averaged readings of ADC3 to result[]
  */
 void ADC3_processRawReadings(int half, volatile uint32_t adc3_buf[], float result[])
@@ -283,28 +311,80 @@ int ADC3_getBusyStatus()
 
 
 /**
- * @brief sets the Fault flag in the global variable ADC3_DMA_fault_flag
- * depending if ADC3 attempts to read values in the middle of a DMA interrupt callback process
+ * @brief sets the Fault flag in the global variable ADC1_DMA_fault_flag
+ * depending if ADC1 attempts to read values in the middle of a DMA interrupt callback process
  * 
  * @param flag_value integer value: 1 is at fault, 0 is not at fault
- * @retval sets ADC3_DMA_fault_flag with flag_value
+ * @retval sets ADC1_DMA_fault_flag with flag_value
  */
-void ADC3_setFaultStatus(int flag_value)
+void ADC1_setFaultStatus(int flag_value)
 {
-  ADC3_DMA_fault_flag = flag_value;
+  ADC1_DMA_fault_flag = flag_value;
 }
 
 /**
- * @brief Retrieves the fault status of ADC3, stored in global variable
- * ADC3_DMA_fault_flag
+ * @brief Retrieves the fault status of ADC1, stored in global variable
+ * ADC1_DMA_fault_flag
  * 
  * @param -
- * @retval returns the global variable ADC3_DMA_fault_flag (int datatype).
+ * @retval returns the global variable ADC1_DMA_fault_flag (int datatype).
  *         1 means at fault; 0 means not at fault
  */
-int ADC3_getFaultStatus() 
+int ADC1_getFaultStatus() 
 {
-  return ADC3_DMA_fault_flag;
+  return ADC1_DMA_fault_flag;
+}
+
+
+/**
+ * @brief sets the busy flag in the global variable ADC1_DMA_in_process_flag
+ * depending if ADC1 attempts to read values in the middle of a DMA interrupt callback process
+ * 
+ * @param flag_value integer value: 1 is busy, 0 is not at busy
+ * @retval sets ADC1_DMA_in_process_flag with flag_value
+ */
+void ADC1_setBusyStatus(int flag_value)
+{
+  ADC1_DMA_in_process_flag = flag_value;
+}
+
+/**
+ * @brief Retrieves the busy status of ADC1, stored in global variable
+ * ADC1_DMA_in_process_flag
+ * 
+ * @param -
+ * @retval returns the global variable ADC1_DMA_in_process_flag (int datatype).
+ *         1 means at busy; 0 means not at busy
+ */
+int ADC1_getBusyStatus() 
+{
+  return ADC1_DMA_in_process_flag;
+}
+
+
+/**
+ * @brief sets the Fault flag in the global variable ADC1_DMA_fault_flag
+ * depending if ADC1 attempts to read values in the middle of a DMA interrupt callback process
+ * 
+ * @param flag_value integer value: 1 is at fault, 0 is not at fault
+ * @retval sets ADC1_DMA_fault_flag with flag_value
+ */
+void ADC1_setFaultStatus(int flag_value)
+{
+  ADC1_DMA_fault_flag = flag_value;
+}
+
+/**
+ * @brief Retrieves the fault status of ADC1, stored in global variable
+ * ADC1_DMA_fault_flag
+ * 
+ * @param -
+ * @retval returns the global variable ADC1_DMA_fault_flag (int datatype).
+ *         1 means at fault; 0 means not at fault
+ */
+int ADC1_getFaultStatus() 
+{
+  return ADC1_DMA_fault_flag;
 }
 
 /*============================================================================*/
