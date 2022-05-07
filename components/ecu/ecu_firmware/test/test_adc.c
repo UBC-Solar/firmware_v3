@@ -1,3 +1,5 @@
+#ifdef TEST
+
 #include <unity.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -237,4 +239,4 @@ float ** enumerateGetSetValsOverRange(int adc_channel, int (*get_function_int)()
 
 }
 
-
+#endif //TEST

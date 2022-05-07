@@ -369,7 +369,7 @@ int ADC1_getBusyStatus()
  * @param flag_value integer value: 1 is at fault, 0 is not at fault
  * @retval sets ADC1_DMA_fault_flag with flag_value
  */
-void ADC1_setFaultStatus(int flag_value)
+void ADC3_setFaultStatus(int flag_value)
 {
   ADC1_DMA_fault_flag = flag_value;
 }
@@ -382,7 +382,7 @@ void ADC1_setFaultStatus(int flag_value)
  * @retval returns the global variable ADC1_DMA_fault_flag (int datatype).
  *         1 means at fault; 0 means not at fault
  */
-int ADC1_getFaultStatus() 
+int ADC3_getFaultStatus() 
 {
   return ADC1_DMA_fault_flag;
 }

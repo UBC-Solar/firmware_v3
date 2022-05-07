@@ -43,7 +43,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
- ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc3;
 DMA_HandleTypeDef hdma_adc1;
 DMA_HandleTypeDef hdma_adc3;
@@ -535,7 +535,7 @@ void averageAndSaveValues_ADC1(int adc_half)
 
     ADC1_processRawReadings(adc_half, adc1_buf, result);
 
-    DC_setReading(result[0], OFFSET_REF_AM__ADC1_IN0);
+    ADC_setReading(result[0], OFFSET_REF_AM__ADC1_IN0);
     ADC_setReading(result[1], LVS_CURR_SENSE__ADC1_IN4);
     ADC_setReading(result[2], SUPP_SENSE__ADC1_IN5);
     ADC_setReading(result[3], OFFSET_REF_BAT__ADC1_IN10);

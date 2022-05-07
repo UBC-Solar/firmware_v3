@@ -4,6 +4,7 @@
 .vscode/launch.json
 .vscode/ipch
 .vscode
+.vscode/extensions.json
 STM32F103RCTx_FLASH.ld
 .mxproject
 Makefile
