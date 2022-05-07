@@ -1,0 +1,41 @@
+@startuml
+
+actor system
+/'CAN_manager handles the management of when messages get complied'/
+participant CAN_manager as manager
+
+/'CAN_complier handles data reading. get, and sorting'/
+participant CAN_compiler as compiler
+
+/'HAL_library refers to the stm32 HAL_Library'/
+participant HAL_Library as HAL
+
+/'messageSeries is the object that holds the CAN messages in a series (a struct array)'/
+participant messageSeries as message
+
+participant queue_manager as queue
+
+system  ->  message      : get message pointer
+message --> system       : Brightside_CAN_MessageSeries * pSeries
+system  ->  manager      : CANstate(pSeries)
+activate manager
+manager ->  HAL          : HAL_GetTick()
+HAL     --> manager      : tickValue
+manager ->  manager      : check for tickValue overflow
+manager ->  manager      : calculate tickDelta since the last interval
+
+loop if tickDelta >= interval time (1s)
+    manager -> manager      : update tickInterval to be the most recent interval increment passed.
+    manager -> manager      : check for stale condition
+    note right: there is not a response for stale condition currently.
+    manager -> compiler     : compile messages with CANstate_compileAll(pSeries)
+    compiler --> message    : write new battery data
+    note right: needs more detail about complier work
+    manager -> message      : reset internal message-sent counter; CANstate_resetRequestQueue()
+    manager -> queue        : transmit messages in order (FIFO); CANstate_requestQueue()
+    queue -> message        : 
+
+end
+
+deactivate manager
+@enduml

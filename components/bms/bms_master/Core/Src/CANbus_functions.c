@@ -7,6 +7,8 @@ This file contains the suite of functions used for CAN functionality.
 
 */
 
+
+
 #ifdef ATOM_SYMBOLS_LABELLING
 #define Include_statements
 #endif
@@ -54,7 +56,7 @@ uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
 #ifdef CODEWORD_DEBUG_BRIGHTSIDE
 /**
 \note
-    I think this prototype was included for the sake of testing cubeIDE 
+    I think this prototype was included for the sake of testing cubeIDE
     compilation. Needs to be double checked.
 */
 double BTM_TEMP_volts2temp(double vout);
@@ -234,6 +236,8 @@ void CAN_InitMessageSeries_Dynamic(
 
         - this function used to be called "CANstate_EntryCheck"
 */
+
+
 extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
 {
     uint32_t
