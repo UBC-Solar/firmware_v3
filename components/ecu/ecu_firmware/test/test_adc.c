@@ -50,6 +50,7 @@ void test_ADC_getAndSetOffsetRef_Batt()
     float** test_results = enumerateGetSetValsOverRange(OFFSET_REF_BAT__ADC1_IN10, NULL, ADC_getOffsetRef_Batt, start_point, end_point,
                                                         num_samples, 0.0, 1000.0);
     for (int n = 0; n < num_samples; n++) TEST_ASSERT_FLOAT_WITHIN(1.0f, test_results[0][n], test_results[1][n]);
+
 }
 
 
