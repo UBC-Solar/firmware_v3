@@ -1,0 +1,3 @@
+---
+- Drivers/CMSIS/Include/cmsis_version.h
+- Drivers/CMSIS/Include/cmsis_compiler.h

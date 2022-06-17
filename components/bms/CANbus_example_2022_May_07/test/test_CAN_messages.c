@@ -3,17 +3,19 @@
 #include "unity.h"
 #include <stdlib.h>
 
-// #include "mock_headers_for_mocking.h"
 #include "mock_Pack_packdata.h"
 #include "CAN_messages.h"
+
+
 // #include "mock_CAN_messages.h"
+//#include "mock_stm32f103xb.h"
+//#include "mock_stm32f1xx.h"
+//#include "stm32f1xx_hal.h"
+//#include "stm32f1xx_hal_conf.h"
+//#include "mock_core_cm3.h"
 
 
-
-// #include "stm32f1xx.h"
-#include "mock_stm32f1xx_hal.h"
-// #include "mock_stm32f1xx_hal_conf.h"
-#include "CANbus_functions.h"
+//#include "CANbus_functions.h"
 
 uint16_t TEST_PACK_CURRENT = 7;
 
@@ -43,10 +45,10 @@ void test_message_currentStatus_bitsAreSetProperly()
     expectedDataFramePtr = CAN_createExpectedMessage624(electricCurrent);
     actualDataFramePtr = CAN_createMessage624();
 
-    // for(int i = 0; i < MESSAGE624_SIZE; ++i)
-    // {
-    //     TEST_ASSERT_EQUAL(expectedDataFramePtr[i], actualDataFramePtr[i]);
-    // }
+//     for(int i = 0; i < MESSAGE624_SIZE; ++i)
+//     {
+//         TEST_ASSERT_EQUAL(expectedDataFramePtr[i], actualDataFramePtr[i]);
+//     }
 
     for(int i = 0; i < MESSAGE624_SIZE; ++i)
     {

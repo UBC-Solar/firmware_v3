@@ -31,6 +31,7 @@
     - Core/**
     - Drivers/STM32F1xx_HAL_Driver/**
     - Drivers/CMSIS/**
+    - Drivers/CMSIS/Device/ST/STM32F1xx/Include/**
   :support:
     - test/support
   :libraries: []
@@ -40,12 +41,12 @@
   #  1) remove the trailing [] from the :common: section
   #  2) add entries to the :common: section (e.g. :test: has TEST defined)
   :test:
-    - STM32F103xE
+    - STM32F103xB
     - USE_HAL_DRIVERS
     - DEBUG
     - TEST
   :test_preprocess:
-    - STM32F103xE
+    - STM32F103xB
     - USE_HAL_DRIVERS
     - DEBUG
     - TEST

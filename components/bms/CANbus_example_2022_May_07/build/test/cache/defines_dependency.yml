@@ -1,0 +1,51 @@
+---
+build/test/mocks/mock_Pack_packdata.c:
+- STM32F103xB
+- USE_HAL_DRIVERS
+- DEBUG
+- TEST
+build/test/mocks/mock_stm32f1xx_hal.c:
+- STM32F103xB
+- USE_HAL_DRIVERS
+- DEBUG
+- TEST
+Core/Src/CAN_messages.c:
+- STM32F103xB
+- USE_HAL_DRIVERS
+- DEBUG
+- TEST
+Core/Src/CANbus_functions.c:
+- STM32F103xB
+- USE_HAL_DRIVERS
+- DEBUG
+- TEST
+build/test/mocks/mock_stm32f1xx.c:
+- STM32F103xB
+- USE_HAL_DRIVERS
+- DEBUG
+- TEST
+build/test/mocks/mock_stm32f1xb.c:
+- STM32F103xE
+- USE_HAL_DRIVERS
+- DEBUG
+- TEST
+build/test/mocks/mock_stm32f1xx_hal_conf.c:
+- STM32F103xB
+- USE_HAL_DRIVERS
+- DEBUG
+- TEST
+Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.c:
+- STM32F103xB
+- USE_HAL_DRIVERS
+- DEBUG
+- TEST
+build/test/mocks/mock_core_cm3.c:
+- STM32F103xB
+- USE_HAL_DRIVERS
+- DEBUG
+- TEST
+build/test/mocks/mock_stm32f103xb.c:
+- STM32F103xB
+- USE_HAL_DRIVERS
+- DEBUG
+- TEST
