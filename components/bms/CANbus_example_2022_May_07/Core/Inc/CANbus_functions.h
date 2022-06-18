@@ -21,17 +21,16 @@ Purpose: Goes with CANbus_function.c
 #include "stm32f1xx_hal.h"
 #include "ltc6813_btm.h"
 #include "analysis.h"
-//#include "stm32f3xx_hal_can.h"
+#include "stm32f1xx_hal_can.h"
 #include <math.h>
 #include <stdio.h>
 //#endif
 
 //#ifdef TEST
 //#include <stdint.h>
-//#include "mock_stm32f1xx_hal.h"
-//#include "mock_ltc6813_btm.h"
-//#include "mock_analysis.h"
-////#include "stm32f3xx_hal_can.h"
+//#include "stm32f1xx_hal.h"
+//#include "ltc6813_btm.h"
+//#include "analysis.h"
 //#include <math.h>
 //#include <stdio.h>
 //#endif
