@@ -126,3 +126,8 @@ uint8_t * CAN_createExpectedMessage624(short packCurrent)
 
     return expectedMessage624;
 }
+
+uint8_t * CAN_createIdealMessage624withBitFlag(uint8_t bitNumber)
+{
+    return CAN_createExpectedMessage622withBitFlag(bitNumber);
+}

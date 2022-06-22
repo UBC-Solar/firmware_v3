@@ -5,6 +5,7 @@
 #include "unity.h"
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "mock_Pack_packdata.h"
 // #include "CAN_OnlyTestingFunctions.h"
@@ -24,6 +25,10 @@
 #include "CANbus_functions.h"
 
 uint16_t TEST_PACK_CURRENT = 7;
+
+
+
+
 
 void hello_world(int i);
 
@@ -137,30 +142,72 @@ Algorithm:
 */
 void test_message622_faultsMessage_formatVerification()
 {
-                           // 18446744073709551615"
-    // uint64_t longlong = 18446744073709551614;
-    // int_least64_t longlong = -18446744073709551614;
-    // unsigned long long int thelongone = ULLONG_MAX;
-    unsigned long long int thelongone = ULLONG_MAX;
-    thelongone = 18446744073709551615ULL;
-    printf("%lli\r\n", LLONG_MAX);
-    printf("%lli\r\n", LLONG_MIN);
-    printf("%llu\r\n", ULLONG_MAX);
-    printf("%llu\r\n", thelongone);
-    thelongone = (0b1 << 29);
-    printf("%llu\r\n", thelongone);
-    thelongone = (uint64_t)0b1ULL << 55;
-    printf("%llu\r\n", thelongone);
-    thelongone = (1ULL << 63);
-    printf("%llu\r\n", thelongone);
-    thelongone = (ULLONG_MAX >> 63);
-    printf("%llu\r\n", thelongone);
-    // printf("%llu\r\n", LLONG_MIN);
-    hello_world(1);
-    for(int i; i < 10; i++)
+    uint8_t* expectedMessage = NULL;
+    uint8_t* actualMessage = NULL;
+    int expectedSize = 0;
+    int actualSize = 0;
+
+    const char * debugStrings_faults[64];
+    debugStrings_faults[0]  = "BMS fault bit";
+    debugStrings_faults[29] = "HLIM is set: cannot charge";
+    debugStrings_faults[30] = "LLIM is set: cannot discharge";
+    debugStrings_faults[41] = "Interlock is tripped";
+    debugStrings_faults[42] = "Communication fault with cell";
+    debugStrings_faults[43] = "Charge overcurrent";
+    debugStrings_faults[44] = "Discharge overcurrent";
+    debugStrings_faults[45] = "Over temperature";
+    debugStrings_faults[46] = "Under voltage";
+    debugStrings_faults[47] = "Over voltage";
+    debugStrings_faults[48] = "Low voltage warning";
+    debugStrings_faults[49] = "High voltage warning";
+    debugStrings_faults[50] = "Charge overcurrent warning";
+    debugStrings_faults[51] = "Discharge overcurrent warning";
+    debugStrings_faults[52] = "Cold temperature warning";
+    debugStrings_faults[53] = "Hot temperature warning";
+    debugStrings_faults[54] = "Low SOH warning";
+    debugStrings_faults[55] = "Isolation fault warning";
+
+
+
+    //testing all fault flags
+    CAN_createExpectedMessage622withFaultFlag(0b11111111);
+
+    ///testing all bit flags
+    for(int i; i < 64; ++i)
     {
-        printf("i is %i\r", i);
+        int bitNumber = i;
+        if(
+                (bitNumber == 0)
+            ||  (bitNumber == 29)
+            ||  (bitNumber == 30)
+            ||  (bitNumber >= 41 && bitNumber <= 55)
+        )
+        {
+            printf("%s \r\n", debugStrings_faults[i]);
+            expectedMessage = CAN_createExpectedMessage622withBitFlag(i);
+            actualMessage   = CAN_createIdealMessage624withBitFlag(i);
+
+            //check size of messages
+            expectedSize = sizeof(expectedMessage)/sizeof(expectedMessage[0]);
+            actualSize   = sizeof(actualMessage)  /sizeof(actualMessage[0]);
+
+            TEST_ASSERT_EQUAL(expectedSize, actualSize);
+
+            //compare message contents
+            TEST_ASSERT_EQUAL(expectedMessage[0], actualMessage[0]);
+            TEST_ASSERT_EQUAL(expectedMessage[1], actualMessage[1]);
+            TEST_ASSERT_EQUAL(expectedMessage[2], actualMessage[2]);
+            TEST_ASSERT_EQUAL(expectedMessage[3], actualMessage[3]);
+            TEST_ASSERT_EQUAL(expectedMessage[4], actualMessage[4]);
+            TEST_ASSERT_EQUAL(expectedMessage[5], actualMessage[5]);
+            TEST_ASSERT_EQUAL(expectedMessage[6], actualMessage[6]);
+        }
     }
+
+    //testing time field
+    CAN_createExpectedMessage622withTime(0b1111000011110000);
+
+    //test min time, min + 100 time, and max time
 }
 
 void hello_world(int i)
@@ -189,5 +236,35 @@ void test_CANstate_staleCheck()
 // {
 //     TEST_IGNORE_MESSAGE("Need to Implement CAN_messages");
 // }
+
+
+
+void test_randomStuff()
+{
+                           // 18446744073709551615"
+    // uint64_t longlong = 18446744073709551614;
+    // int_least64_t longlong = -18446744073709551614;
+    // unsigned long long int thelongone = ULLONG_MAX;
+    unsigned long long int thelongone = ULLONG_MAX;
+    thelongone = 18446744073709551615ULL;
+    printf("%lli\r\n", LLONG_MAX);
+    printf("%lli\r\n", LLONG_MIN);
+    printf("%llu\r\n", ULLONG_MAX);
+    printf("%llu\r\n", thelongone);
+    thelongone = (0b1 << 29);
+    printf("%llu\r\n", thelongone);
+    thelongone = (uint64_t)0b1ULL << 55;
+    printf("%llu\r\n", thelongone);
+    thelongone = (1ULL << 63);
+    printf("%llu\r\n", thelongone);
+    thelongone = (ULLONG_MAX >> 63);
+    printf("%llu\r\n", thelongone);
+    // printf("%llu\r\n", LLONG_MIN);
+    hello_world(1);
+    for(int i; i < 10; i++)
+    {
+        printf("i is %i\r", i);
+    }
+}
 
 #endif // TEST

@@ -16,6 +16,9 @@ uint8_t * CAN_createMessage624();
 
 uint8_t * CAN_createExpectedMessage622withFaultFlag(uint8_t faultFlag);
 uint8_t * CAN_createExpectedMessage622withBitFlag(uint8_t bitNumber);
+uint8_t * CAN_createExpectedMessage622withTime(uint16_t time);
+
+uint8_t * CAN_createIdealMessage624withBitFlag(uint8_t bitNumber);
 
 uint8_t * CAN_createExpectedMessage624(short packCurrent);
 

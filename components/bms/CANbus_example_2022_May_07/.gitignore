@@ -1,3 +1,5 @@
 build/
 build/test/
-debug/
+build/test/cache/
+
+Debug/
