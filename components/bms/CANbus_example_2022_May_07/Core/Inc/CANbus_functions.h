@@ -22,6 +22,7 @@ Purpose: Goes with CANbus_function.c
 #include "ltc6813_btm.h"
 #include "analysis.h"
 #include "stm32f1xx_hal_can.h"
+#include "Pack_packdata.h"
 #include <math.h>
 #include <stdio.h>
 //#endif

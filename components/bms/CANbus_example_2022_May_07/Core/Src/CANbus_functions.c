@@ -479,7 +479,7 @@ void CAN_CompileMessage622(uint8_t aData_series622[CAN_BRIGHTSIDE_DATA_LENGTH])
 
     int
         // status_var = pPACKDATA->PH_status; //should access the variable that summarizes the whole pack's warning and fault flags
-				status_var = Pack_getStatusBits();
+				status_var = Pack_getFaultAndWarningStatusBits();
     /*
     Update stateBYTE.
     */
@@ -618,17 +618,9 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH])
   //Collecting and translating the collected data into CAN frame format
 
   //gather min and max voltages
-    Pack_VoltageInfoRetrieval(
-        // pPACKDATA,
-        &minVtg,
-        &maxVtg,
-        &minStack,
-        &minModule,
-        &maxStack,
-        &maxModule
-    );
+    Pack_getVoltageInfo();
 
-	packVoltage = Pack_getPackVoltage();
+    packVoltage = Pack_getPackVoltage();
     if(packVoltage < +0)
     {
         //this would check for out of bounds events, but idk if we care enough to raise a fault or warning flag
@@ -738,26 +730,17 @@ void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH]){
         maxTmpModule = 0,
         outOfBounds = 0;
     uint16_t
-        averageTemperature2BYTE,
-        minTmp,
-        maxTmp;
+        averageTemperature2BYTE = 0,
+        minTmp = 0,
+        maxTmp = 0;
 
     double
-        averageTemperatureDOUBLE,
-        minTmpDOUBLE,
-        maxTmpDOUBLE;
+        averageTemperatureDOUBLE = 0,
+        minTmpDOUBLE = 0,
+        maxTmpDOUBLE = 0;
 
     //1) scans the struct and calculates the relevant information needed
-    temperatureDataRetrieval(
-        // pPACKDATA,
-        &averageTemperature2BYTE,
-        &minTmp,
-        &maxTmp,
-        &minTmpStack,
-        &maxTmpStack,
-        &minTmpModule,
-        &maxTmpModule
-    );
+    Pack_getTemperatureInfo();
 
     //2) Translating Data
 
@@ -798,7 +781,6 @@ void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH]){
                 Else, return exact value casted to uint8_t.
 
 @param      float moduleVoltageFLOAT - The voltage to check.
-@param      uint8_t * outOfBounds - The pointer to a variable used as a flag for if bounds are broken.
 
 @returns    The moduleVoltage100mV value, casted to uint8_t.
 @note       moduleVoltage100mV is moduleVoltageFLOAT converted to units of 100mV.
