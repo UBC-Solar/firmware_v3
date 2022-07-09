@@ -30,10 +30,13 @@ typedef struct temperatureInfoStruct{
     uint8_t maxTmpModuleIndex;
 }temperatureInfoStruct;
 
+<<<<<<< HEAD
 extern voltageInfoStruct voltageInfo;
 
 extern temperatureInfoStruct temperatureInfo;
 
+=======
+>>>>>>> df0b720fffdc0c75f8ce0dcc60a6854daf556297
 void Pack_initPackdataPtr(BTM_PackData_t * ptr);
 
 short Pack_getPackCurrent();
@@ -41,6 +44,7 @@ int32_t Pack_getPackVoltage();
 uint64_t Pack_getFaultAndWarningStatusBits();
 uint8_t Pack_getSOC();
 
+<<<<<<< HEAD
 voltageInfoStruct * Pack_getVoltageInfo();
 
 voltageInfoStruct * Pack_setVoltageInfo(
@@ -62,6 +66,11 @@ temperatureInfoStruct * Pack_setTemperatureInfo(
     uint8_t minTmpModuleIndex,
     uint8_t maxTmpModuleIndex
 );
+=======
+voltageInfoStruct Pack_getVoltageInfo();
+
+temperatureInfoStruct Pack_getTemperatureInfo();
+>>>>>>> df0b720fffdc0c75f8ce0dcc60a6854daf556297
 
 uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * outOfBounds);
 
