@@ -2,17 +2,8 @@
 
 BTM_PackData_t * pPACKDATA = NULL;
 
-<<<<<<< HEAD
 voltageInfoStruct voltageInfo;
 
-=======
-
-
-voltageInfoStruct voltageInfo;
-
-
-
->>>>>>> df0b720fffdc0c75f8ce0dcc60a6854daf556297
 temperatureInfoStruct temperatureInfo;
 
 void Pack_initPackdataPtr(BTM_PackData_t * ptr)
@@ -205,11 +196,7 @@ uint8_t Pack_getSOC()
     return pPACKDATA->PH_SOC_LOCATION;
 }
 
-<<<<<<< HEAD
 voltageInfoStruct * Pack_getVoltageInfo()
-=======
-voltageInfoStruct Pack_getVoltageInfo()
->>>>>>> df0b720fffdc0c75f8ce0dcc60a6854daf556297
 {
     uint16_t
         localMinVolt = 65535, //note that the raw register readings are decimal-shifted to avoid storing floating points. 2^16 - 1
@@ -256,7 +243,6 @@ voltageInfoStruct Pack_getVoltageInfo()
     voltageInfo.MaxStackIndex = maxStack;
     voltageInfo.MaxModuleIndex = maxModule;
 
-<<<<<<< HEAD
     return &voltageInfo;
 }
 
@@ -277,9 +263,6 @@ voltageInfoStruct * Pack_setVoltageInfo(
     voltageInfo.MaxModuleIndex  = MaxModuleIndex;
 
     return &voltageInfo;
-=======
-    return voltageInfo;
->>>>>>> df0b720fffdc0c75f8ce0dcc60a6854daf556297
 }
 
 
@@ -314,11 +297,7 @@ voltageInfoStruct * Pack_setVoltageInfo(
         2.1) The running average of all module temperatures is now the entire pack's temperature average.
 
 */
-<<<<<<< HEAD
 temperatureInfoStruct * Pack_getTemperatureInfo()
-=======
-temperatureInfoStruct Pack_getTemperatureInfo()
->>>>>>> df0b720fffdc0c75f8ce0dcc60a6854daf556297
 {
     uint16_t
         localTemperature = 0,
@@ -390,11 +369,7 @@ temperatureInfoStruct Pack_getTemperatureInfo()
     temperatureInfo.maxTmpStackIndex = maxStack;
     temperatureInfo.maxTmpModuleIndex = maxModule;
 
-<<<<<<< HEAD
     return &temperatureInfo;
-=======
-    return temperatureInfo;
->>>>>>> df0b720fffdc0c75f8ce0dcc60a6854daf556297
 }
 
 temperatureInfoStruct * Pack_setTemperatureInfo(
