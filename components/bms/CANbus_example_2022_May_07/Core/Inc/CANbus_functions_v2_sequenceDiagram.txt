@@ -1,0 +1,39 @@
+@startuml
+actor programmer                as user
+'actor BMS
+participant main
+participant message_memory      as message
+participant message_compiler    as compiler
+participant mailroom_sorter     as mailman
+participant packdata
+participant STM32_library       as STM
+
+group add message
+    user -> message:            hard allocate array space
+    user -> compiler:           create compiler function
+    user -> main:               add compiler to the main algorithm
+end
+
+group compile X message
+    main -> compiler++:         main calls compiler
+    compiler -> packdata++:     get necessary info\n from packdata data pool
+    return info
+    compiler -> message:        arrange and place data\n into global array
+    compiler--
+end
+
+group send message on CANbus
+    main -> mailman++:          main calls mailman
+    mailman -> message:         mailman references pointers\n for messages
+    mailman -> STM++:           mailman places up to three messages,\n one into each of the three mailboxes
+    loop while there is more messages than available mailboxes
+    mailman -> STM:             check for available mailboxes\n (mailboxes whose messages\n have been succesfully sent)
+        alt if mailbox/mailboxes are free
+            mailman -> STM:     mailman places as many unsent messages\n into the free mailboxes as possible
+        end
+        mailman -> mailman:     wait for Y time to pass \n to allow CANbus peripheral to send
+    end
+end
+
+
+@enduml
