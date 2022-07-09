@@ -1,5 +1,5 @@
 "./Core/Src/BLINKY_bluepill.o"
-"./Core/Src/CAN_messages.o"
+"./Core/Src/CAN_OnlyTestingFunctions.o"
 "./Core/Src/CANbus_functions.o"
 "./Core/Src/Pack_packdata.o"
 "./Core/Src/analysis.o"
