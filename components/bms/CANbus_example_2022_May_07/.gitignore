@@ -1,5 +1,12 @@
 build/
 build/test/
 build/test/cache/
-
+/.metadata/
+/metadata/
+\.metadata\
+\metadata\
+.metadata/
+metadata/
+.metadata\
+metadata\
 Debug/
