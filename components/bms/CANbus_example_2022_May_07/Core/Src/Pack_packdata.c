@@ -2,24 +2,9 @@
 
 BTM_PackData_t * pPACKDATA = NULL;
 
-struct voltageInfo{
-    uint16_t MinVoltage;
-    uint16_t MaxVoltage;
-    uint8_t MinStackIndex;
-    uint8_t MinModuleIndex;
-    uint8_t MaxStackIndex;
-    uint8_t MaxModuleIndex;
-}voltageInfo;
+voltageInfoStruct voltageInfo;
 
-struct temperatureInfo{
-    uint16_t averageTemperature;
-    uint16_t minTmp;
-    uint16_t maxTmp;
-    uint8_t minTmpStackIndex;
-    uint8_t maxTmpStackIndex;
-    uint8_t minTmpModuleIndex;
-    uint8_t maxTmpModuleIndex;
-}temperatureInfo;
+temperatureInfoStruct temperatureInfo;
 
 void Pack_initPackdataPtr(BTM_PackData_t * ptr)
 {
@@ -177,7 +162,7 @@ int32_t Pack_getPackVoltage()
 
 
 /**
-@brief      Function Name: Pack_Pack_VoltageInfoRetrieval
+@brief      Function Name: Pack_getVoltageInfo
 @details    Function Purpose: Scan the array of voltages of the modules per stacks, and return the min and max voltages
 
 @param      pMinVoltage - pointer to variable to hold minimum voltage found.
@@ -211,15 +196,7 @@ uint8_t Pack_getSOC()
     return pPACKDATA->PH_SOC_LOCATION;
 }
 
-void Pack_VoltageInfoRetrieval(
-    // BTM_PackData_t * pPACKDATA,
-    uint16_t * pMinVoltage,
-    uint16_t * pMaxVoltage,
-    uint8_t * pMinStack,
-    uint8_t * pMinModule,
-    uint8_t * pMaxStack,
-    uint8_t * pMaxModule
-)
+voltageInfoStruct * Pack_getVoltageInfo()
 {
     uint16_t
         localMinVolt = 65535, //note that the raw register readings are decimal-shifted to avoid storing floating points. 2^16 - 1
@@ -259,18 +236,38 @@ void Pack_VoltageInfoRetrieval(
     }
 
   //"return" min and max voltage
-    *pMinVoltage = localMinVolt;
-    *pMaxVoltage = localMaxVolt;
-    *pMinStack = minStack;
-    *pMinModule = minModule;
-    *pMaxStack = maxStack;
-    *pMaxModule = maxModule;
+    voltageInfo.MinVoltage = localMinVolt;
+    voltageInfo.MaxVoltage = localMaxVolt;
+    voltageInfo.MinStackIndex = minStack;
+    voltageInfo.MinModuleIndex = minModule;
+    voltageInfo.MaxStackIndex = maxStack;
+    voltageInfo.MaxModuleIndex = maxModule;
 
+    return &voltageInfo;
+}
+
+voltageInfoStruct * Pack_setVoltageInfo(
+    uint16_t MinVoltage,
+    uint16_t MaxVoltage,
+    uint8_t MinStackIndex,
+    uint8_t MinModuleIndex,
+    uint8_t MaxStackIndex,
+    uint8_t MaxModuleIndex
+)
+{
+    voltageInfo.MinVoltage      = MinVoltage;
+    voltageInfo.MaxVoltage      = MaxVoltage;
+    voltageInfo.MinStackIndex   = MinStackIndex;
+    voltageInfo.MinModuleIndex  = MinModuleIndex;
+    voltageInfo.MaxStackIndex   = MaxStackIndex;
+    voltageInfo.MaxModuleIndex  = MaxModuleIndex;
+
+    return &voltageInfo;
 }
 
 
 /**
-@brief      Function Name: temperatureDataRetrieval
+@brief      Function Name: Pack_getTemperatureInfo
 @details    Function Purpose: Scan the array of temperature-voltages of the modules per stacks, find the min and max temperature-voltages, and calculate the average temperature.
 @note       Note: The voltage measurements are from thermistors, whose resistances vary with temperature.
             This and related functions do NOT return temperature in units of degree Celcius unless it explicitly says it does.
@@ -300,16 +297,7 @@ void Pack_VoltageInfoRetrieval(
         2.1) The running average of all module temperatures is now the entire pack's temperature average.
 
 */
-void temperatureDataRetrieval(
-    // BTM_PackData_t * pPACKDATA,
-    uint16_t * pAverageTemperature,
-    uint16_t * pMinTmp,
-    uint16_t * pMaxTmp,
-    uint8_t * pMinTmpStack,
-    uint8_t * pMaxTmpStack,
-    uint8_t * pMinTmpModule,
-    uint8_t * pMaxTmpModule
-)
+temperatureInfoStruct * Pack_getTemperatureInfo()
 {
     uint16_t
         localTemperature = 0,
@@ -373,15 +361,37 @@ void temperatureDataRetrieval(
         localAverage = 0;
     }
 
-    *pAverageTemperature = (uint16_t)localAverage;
-    *pMinTmp = localMinTmp;
-    *pMaxTmp = localMaxTmp;
-    *pMinTmpStack = minStack;
-    *pMinTmpModule = minModule;
-    *pMaxTmpStack = maxStack;
-    *pMaxTmpModule = maxModule;
+    temperatureInfo.averageTemperature = (uint16_t)localAverage;
+    temperatureInfo.minTmp = localMinTmp;
+    temperatureInfo.maxTmp = localMaxTmp;
+    temperatureInfo.minTmpStackIndex = minStack;
+    temperatureInfo.minTmpModuleIndex = minModule;
+    temperatureInfo.maxTmpStackIndex = maxStack;
+    temperatureInfo.maxTmpModuleIndex = maxModule;
+
+    return &temperatureInfo;
 }
 
+temperatureInfoStruct * Pack_setTemperatureInfo(
+    uint16_t averageTemperature,
+    uint16_t minTmp,
+    uint16_t maxTmp,
+    uint8_t minTmpStackIndex,
+    uint8_t maxTmpStackIndex,
+    uint8_t minTmpModuleIndex,
+    uint8_t maxTmpModuleIndex
+)
+{
+    temperatureInfo.averageTemperature = averageTemperature;
+    temperatureInfo.minTmp = minTmp;
+    temperatureInfo.maxTmp = maxTmp;
+    temperatureInfo.minTmpStackIndex = minTmpStackIndex;
+    temperatureInfo.minTmpModuleIndex = maxTmpStackIndex;
+    temperatureInfo.maxTmpStackIndex = minTmpModuleIndex;
+    temperatureInfo.maxTmpModuleIndex = maxTmpModuleIndex;
+
+    return &temperatureInfo;
+}
 
 /**
 @brief      Function Name: TwosComplement_TemperatureConverter

@@ -11,6 +11,29 @@
 #include "stdint.h"
 #include "ltc6813_btm.h"
 
+typedef struct voltageInfoStruct{
+    uint16_t MinVoltage;
+    uint16_t MaxVoltage;
+    uint8_t MinStackIndex;
+    uint8_t MinModuleIndex;
+    uint8_t MaxStackIndex;
+    uint8_t MaxModuleIndex;
+}voltageInfoStruct;
+
+typedef struct temperatureInfoStruct{
+    uint16_t averageTemperature;
+    uint16_t minTmp;
+    uint16_t maxTmp;
+    uint8_t minTmpStackIndex;
+    uint8_t maxTmpStackIndex;
+    uint8_t minTmpModuleIndex;
+    uint8_t maxTmpModuleIndex;
+}temperatureInfoStruct;
+
+extern voltageInfoStruct voltageInfo;
+
+extern temperatureInfoStruct temperatureInfo;
+
 void Pack_initPackdataPtr(BTM_PackData_t * ptr);
 
 short Pack_getPackCurrent();
@@ -18,24 +41,27 @@ int32_t Pack_getPackVoltage();
 uint64_t Pack_getFaultAndWarningStatusBits();
 uint8_t Pack_getSOC();
 
-void Pack_VoltageInfoRetrieval(
-    // BTM_PackData_t * pPACKDATA,
-    uint16_t * pMinVoltage,
-    uint16_t * pMaxVoltage,
-    uint8_t * pMinStack,
-    uint8_t * pMinModule,
-    uint8_t * pMaxStack,
-    uint8_t * pMaxModule);
+voltageInfoStruct * Pack_getVoltageInfo();
 
-void temperatureDataRetrieval(
-    // BTM_PackData_t * pPACKDATA,
-    uint16_t * averageTemperature,
-    uint16_t * minTmp,
-    uint16_t * maxTmp,
-    uint8_t * minTmpStack,
-    uint8_t * maxTmpStack,
-    uint8_t * minTmpModule,
-    uint8_t * maxTmpModule);
+voltageInfoStruct * Pack_setVoltageInfo(
+    uint16_t MinVoltage,
+    uint16_t MaxVoltage,
+    uint8_t MinStackIndex,
+    uint8_t MinModuleIndex,
+    uint8_t MaxStackIndex,
+    uint8_t MaxModuleIndex
+);
+
+temperatureInfoStruct * Pack_getTemperatureInfo();
+temperatureInfoStruct * Pack_setTemperatureInfo(
+    uint16_t averageTemperature,
+    uint16_t minTmp,
+    uint16_t maxTmp,
+    uint8_t minTmpStackIndex,
+    uint8_t maxTmpStackIndex,
+    uint8_t minTmpModuleIndex,
+    uint8_t maxTmpModuleIndex
+);
 
 uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * outOfBounds);
 
