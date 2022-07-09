@@ -31,6 +31,8 @@ uint16_t TEST_PACK_CURRENT = 7;
 
 
 void hello_world(int i);
+void compareArraysOfSize6(uint8_t* expectedArray, uint8_t* actualArray);
+void compareArraysOfSize7(uint8_t* expectedArray, uint8_t* actualArray);
 
 
 
@@ -148,29 +150,49 @@ void test_message622_faultsMessage_formatVerification()
     int actualSize = 0;
 
     const char * debugStrings_faults[64];
-    debugStrings_faults[0]  = "BMS fault bit";
-    debugStrings_faults[29] = "HLIM is set: cannot charge";
-    debugStrings_faults[30] = "LLIM is set: cannot discharge";
-    debugStrings_faults[41] = "Interlock is tripped";
-    debugStrings_faults[42] = "Communication fault with cell";
-    debugStrings_faults[43] = "Charge overcurrent";
-    debugStrings_faults[44] = "Discharge overcurrent";
-    debugStrings_faults[45] = "Over temperature";
-    debugStrings_faults[46] = "Under voltage";
-    debugStrings_faults[47] = "Over voltage";
-    debugStrings_faults[48] = "Low voltage warning";
-    debugStrings_faults[49] = "High voltage warning";
-    debugStrings_faults[50] = "Charge overcurrent warning";
-    debugStrings_faults[51] = "Discharge overcurrent warning";
-    debugStrings_faults[52] = "Cold temperature warning";
-    debugStrings_faults[53] = "Hot temperature warning";
-    debugStrings_faults[54] = "Low SOH warning";
-    debugStrings_faults[55] = "Isolation fault warning";
+    debugStrings_faults[0]  = "Bit  0: BMS fault bit";
+    debugStrings_faults[29] = "Bit 29: HLIM is set: cannot charge";
+    debugStrings_faults[30] = "Bit 30: LLIM is set: cannot discharge";
+    debugStrings_faults[41] = "Bit 41: Interlock is tripped";
+    debugStrings_faults[42] = "Bit 42: Communication fault with cell";
+    debugStrings_faults[43] = "Bit 43: Charge overcurrent";
+    debugStrings_faults[44] = "Bit 44: Discharge overcurrent";
+    debugStrings_faults[45] = "Bit 45: Over temperature";
+    debugStrings_faults[46] = "Bit 46: Under voltage";
+    debugStrings_faults[47] = "Bit 47: Over voltage";
+    debugStrings_faults[48] = "Bit 48: Low voltage warning";
+    debugStrings_faults[49] = "Bit 49: High voltage warning";
+    debugStrings_faults[50] = "Bit 50: Charge overcurrent warning";
+    debugStrings_faults[51] = "Bit 51: Discharge overcurrent warning";
+    debugStrings_faults[52] = "Bit 52: Cold temperature warning";
+    debugStrings_faults[53] = "Bit 53: Hot temperature warning";
+    debugStrings_faults[54] = "Bit 54: Low SOH warning";
+    debugStrings_faults[55] = "Bit 55: Isolation fault warning";
 
 
 
     //testing all fault flags
-    CAN_createExpectedMessage622withFaultFlag(0b11111111);
+    for(int i; i<= 19; ++i)
+    {
+        expectedMessage = CAN_createExpectedMessage622withFaultFlag(i);
+        //INSERT MOCK CALLS HERE
+        actualMessage   = CAN_createIdealMessage622withFaultFlag(i);
+
+        //check size of messages
+        expectedSize = sizeof(expectedMessage)/sizeof(expectedMessage[0]);
+        actualSize   = sizeof(actualMessage)  /sizeof(actualMessage[0]);
+
+        //compare message contents
+        TEST_ASSERT_EQUAL(expectedMessage[0], actualMessage[0]);
+        TEST_ASSERT_EQUAL(expectedMessage[1], actualMessage[1]);
+        TEST_ASSERT_EQUAL(expectedMessage[2], actualMessage[2]);
+        TEST_ASSERT_EQUAL(expectedMessage[3], actualMessage[3]);
+        TEST_ASSERT_EQUAL(expectedMessage[4], actualMessage[4]);
+        TEST_ASSERT_EQUAL(expectedMessage[5], actualMessage[5]);
+        TEST_ASSERT_EQUAL(expectedMessage[6], actualMessage[6]);
+    }
+
+
 
     ///testing all bit flags
     for(int i; i < 64; ++i)
@@ -183,9 +205,10 @@ void test_message622_faultsMessage_formatVerification()
             ||  (bitNumber >= 41 && bitNumber <= 55)
         )
         {
-            printf("%s \r\n", debugStrings_faults[i]);
+            printf("iter %2.0i,  %s \r\n", i, debugStrings_faults[i]);
             expectedMessage = CAN_createExpectedMessage622withBitFlag(i);
-            actualMessage   = CAN_createIdealMessage624withBitFlag(i);
+            //INSERT MOCK CALLS HERE
+            actualMessage   = CAN_createIdealMessage622withBitFlag(i);
 
             //check size of messages
             expectedSize = sizeof(expectedMessage)/sizeof(expectedMessage[0]);
@@ -193,22 +216,184 @@ void test_message622_faultsMessage_formatVerification()
 
             TEST_ASSERT_EQUAL(expectedSize, actualSize);
 
-            //compare message contents
-            TEST_ASSERT_EQUAL(expectedMessage[0], actualMessage[0]);
-            TEST_ASSERT_EQUAL(expectedMessage[1], actualMessage[1]);
-            TEST_ASSERT_EQUAL(expectedMessage[2], actualMessage[2]);
-            TEST_ASSERT_EQUAL(expectedMessage[3], actualMessage[3]);
-            TEST_ASSERT_EQUAL(expectedMessage[4], actualMessage[4]);
-            TEST_ASSERT_EQUAL(expectedMessage[5], actualMessage[5]);
-            TEST_ASSERT_EQUAL(expectedMessage[6], actualMessage[6]);
+            {//compare message contents
+                TEST_ASSERT_EQUAL(expectedMessage[0], actualMessage[0]);
+                TEST_ASSERT_EQUAL(expectedMessage[1], actualMessage[1]);
+                TEST_ASSERT_EQUAL(expectedMessage[2], actualMessage[2]);
+                TEST_ASSERT_EQUAL(expectedMessage[3], actualMessage[3]);
+                TEST_ASSERT_EQUAL(expectedMessage[4], actualMessage[4]);
+                TEST_ASSERT_EQUAL(expectedMessage[5], actualMessage[5]);
+                TEST_ASSERT_EQUAL(expectedMessage[6], actualMessage[6]);
+            }
         }
     }
 
-    //testing time field
-    CAN_createExpectedMessage622withTime(0b1111000011110000);
+    //testing time field with just zero
+    expectedMessage = CAN_createExpectedMessage622withTime(0);
+    //INSERT MOCK CALLS HERE
+    actualMessage   = CAN_createIdealMessage622withTime(0);
+
+    //check size of messages
+    expectedSize = sizeof(expectedMessage)/sizeof(expectedMessage[0]);
+    actualSize   = sizeof(actualMessage)  /sizeof(actualMessage[0]);
+    TEST_ASSERT_EQUAL(expectedSize, actualSize);
+
+    {//compare message contents
+        TEST_ASSERT_EQUAL(expectedMessage[0], actualMessage[0]);
+        TEST_ASSERT_EQUAL(expectedMessage[1], actualMessage[1]);
+        TEST_ASSERT_EQUAL(expectedMessage[2], actualMessage[2]);
+        TEST_ASSERT_EQUAL(expectedMessage[3], actualMessage[3]);
+        TEST_ASSERT_EQUAL(expectedMessage[4], actualMessage[4]);
+        TEST_ASSERT_EQUAL(expectedMessage[5], actualMessage[5]);
+        TEST_ASSERT_EQUAL(expectedMessage[6], actualMessage[6]);
+    }
+
+    //testing time field with 100 seconds
+    expectedMessage = CAN_createExpectedMessage622withTime(100);
+    //INSERT MOCK CALLS HERE
+    actualMessage   = CAN_createIdealMessage622withTime(100);
+
+    //check size of messages
+    expectedSize = sizeof(expectedMessage)/sizeof(expectedMessage[0]);
+    actualSize   = sizeof(actualMessage)  /sizeof(actualMessage[0]);
+    TEST_ASSERT_EQUAL(expectedSize, actualSize);
+
+    {//compare message contents
+        TEST_ASSERT_EQUAL(expectedMessage[0], actualMessage[0]);
+        TEST_ASSERT_EQUAL(expectedMessage[1], actualMessage[1]);
+        TEST_ASSERT_EQUAL(expectedMessage[2], actualMessage[2]);
+        TEST_ASSERT_EQUAL(expectedMessage[3], actualMessage[3]);
+        TEST_ASSERT_EQUAL(expectedMessage[4], actualMessage[4]);
+        TEST_ASSERT_EQUAL(expectedMessage[5], actualMessage[5]);
+        TEST_ASSERT_EQUAL(expectedMessage[6], actualMessage[6]);
+    }
+
+    //testing time field with max size
+    expectedMessage = CAN_createExpectedMessage622withTime(65535);
+    //INSERT MOCK CALLS HERE
+    actualMessage   = CAN_createIdealMessage622withTime(65535);
+
+    //check size of messages
+    expectedSize = sizeof(expectedMessage)/sizeof(expectedMessage[0]);
+    actualSize   = sizeof(actualMessage)  /sizeof(actualMessage[0]);
+    TEST_ASSERT_EQUAL(expectedSize, actualSize);
+
+    {//compare message contents
+        TEST_ASSERT_EQUAL(expectedMessage[0], actualMessage[0]);
+        TEST_ASSERT_EQUAL(expectedMessage[1], actualMessage[1]);
+        TEST_ASSERT_EQUAL(expectedMessage[2], actualMessage[2]);
+        TEST_ASSERT_EQUAL(expectedMessage[3], actualMessage[3]);
+        TEST_ASSERT_EQUAL(expectedMessage[4], actualMessage[4]);
+        TEST_ASSERT_EQUAL(expectedMessage[5], actualMessage[5]);
+        TEST_ASSERT_EQUAL(expectedMessage[6], actualMessage[6]);
+    }
 
     //test min time, min + 100 time, and max time
 }
+
+
+
+void test_message623_voltageStatus()
+{
+uint8_t* expectedMessage = NULL;
+uint8_t* actualMessage = NULL;
+
+//test all zero
+expectedMessage = CAN_createExpectedMessage623(0,0,0,0,0);
+actualMessage   = CAN_createExpectedMessage623(0,0,0,0,0);
+
+compareArraysOfSize6(expectedMessage, actualMessage);
+
+//test max pack voltage
+expectedMessage = CAN_createExpectedMessage623(65535,0,0,0,0);
+actualMessage   = CAN_createExpectedMessage623(65535,0,0,0,0);
+
+compareArraysOfSize6(expectedMessage, actualMessage);
+
+//test max lowestChargedVoltage
+expectedMessage = CAN_createExpectedMessage623(0,255,0,0,0);
+actualMessage   = CAN_createExpectedMessage623(0,255,0,0,0);
+
+compareArraysOfSize6(expectedMessage, actualMessage);
+
+//test max IDofLowestVoltageCell
+expectedMessage = CAN_createExpectedMessage623(0,0,255,0,0);
+actualMessage   = CAN_createExpectedMessage623(0,0,255,0,0);
+
+compareArraysOfSize6(expectedMessage, actualMessage);
+
+//test max highestChargedVoltage
+expectedMessage = CAN_createExpectedMessage623(0,0,0,255,0);
+actualMessage   = CAN_createExpectedMessage623(0,0,0,255,0);
+
+compareArraysOfSize6(expectedMessage, actualMessage);
+
+//test max IDofLowestVoltageCell
+expectedMessage = CAN_createExpectedMessage623(0,0,0,0,255);
+actualMessage   = CAN_createExpectedMessage623(0,0,0,0,255);
+
+compareArraysOfSize6(expectedMessage, actualMessage);
+}
+
+
+void test_message623_packHealth()
+{
+
+}
+
+void test_message623_Temperature()
+{
+
+}
+
+void compareArraysOfSize6(uint8_t* expectedArray, uint8_t* actualArray)
+{
+    int expectedSize = 0;
+    int actualSize = 0;
+
+    //check size of arrays
+    expectedSize = sizeof(&expectedArray)/sizeof(expectedArray[0]);
+    actualSize   = sizeof(&actualArray)  /sizeof(actualArray[0]);
+    TEST_ASSERT_EQUAL(expectedSize, actualSize);
+    printf("actualSize %i\r\n",actualSize);
+    printf("actualArray %i\r\n",sizeof(actualArray));
+    printf("actualArray[0] %i\r\n",sizeof(actualArray[0]));
+    TEST_ASSERT_EQUAL(6, actualSize);
+    TEST_ASSERT_EQUAL(6, expectedSize);
+
+    {//compare array contents
+        TEST_ASSERT_EQUAL(expectedArray[0], actualArray[0]);
+        TEST_ASSERT_EQUAL(expectedArray[1], actualArray[1]);
+        TEST_ASSERT_EQUAL(expectedArray[2], actualArray[2]);
+        TEST_ASSERT_EQUAL(expectedArray[3], actualArray[3]);
+        TEST_ASSERT_EQUAL(expectedArray[4], actualArray[4]);
+        TEST_ASSERT_EQUAL(expectedArray[5], actualArray[5]);
+    }
+}
+
+void compareArraysOfSize7(uint8_t* expectedArray, uint8_t* actualArray)
+{
+    int expectedSize = 0;
+    int actualSize = 0;
+
+    //check size of arrays
+    expectedSize = sizeof(expectedArray)/sizeof(expectedArray[0]);
+    actualSize   = sizeof(actualArray)  /sizeof(actualArray[0]);
+    TEST_ASSERT_EQUAL(expectedSize, actualSize);
+    TEST_ASSERT_EQUAL(7, actualSize);
+    TEST_ASSERT_EQUAL(7, expectedSize);
+
+    {//compare array contents
+        TEST_ASSERT_EQUAL(expectedArray[0], actualArray[0]);
+        TEST_ASSERT_EQUAL(expectedArray[1], actualArray[1]);
+        TEST_ASSERT_EQUAL(expectedArray[2], actualArray[2]);
+        TEST_ASSERT_EQUAL(expectedArray[3], actualArray[3]);
+        TEST_ASSERT_EQUAL(expectedArray[4], actualArray[4]);
+        TEST_ASSERT_EQUAL(expectedArray[5], actualArray[5]);
+        TEST_ASSERT_EQUAL(expectedArray[6], actualArray[6]);
+    }
+}
+
 
 void hello_world(int i)
 {
@@ -238,7 +423,7 @@ void test_CANstate_staleCheck()
 // }
 
 
-
+#ifdef RANDOM_BLEH
 void test_randomStuff()
 {
                            // 18446744073709551615"
@@ -266,5 +451,6 @@ void test_randomStuff()
         printf("i is %i\r", i);
     }
 }
+#endif
 
 #endif // TEST

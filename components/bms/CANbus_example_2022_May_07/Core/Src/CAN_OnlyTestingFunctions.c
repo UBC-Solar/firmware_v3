@@ -8,6 +8,9 @@ uint8_t expectedMessage624[MESSAGE624_SIZE] = {0};
 uint8_t message624[MESSAGE624_SIZE] = {0};
 
 uint8_t expectedMessage622[MESSAGE622_SIZE] = {0};
+uint8_t expectedMessage623[MESSAGE623_SIZE] = {0};
+uint8_t expectedMessage626[MESSAGE626_SIZE] = {0};
+uint8_t expectedMessage627[MESSAGE627_SIZE] = {0};
 
 short CAN_getPackCurrent()
 {
@@ -127,7 +130,94 @@ uint8_t * CAN_createExpectedMessage624(short packCurrent)
     return expectedMessage624;
 }
 
-uint8_t * CAN_createIdealMessage624withBitFlag(uint8_t bitNumber)
+uint8_t * CAN_createIdealMessage622withFaultFlag(uint8_t faultFlag)
+{
+    return CAN_createExpectedMessage622withFaultFlag(faultFlag);
+}
+
+uint8_t * CAN_createIdealMessage622withBitFlag(uint8_t bitNumber)
 {
     return CAN_createExpectedMessage622withBitFlag(bitNumber);
+}
+
+uint8_t * CAN_createIdealMessage622withTime(uint16_t time)
+{
+    return CAN_createExpectedMessage622withTime(time);
+}
+
+
+
+uint8_t * CAN_createExpectedMessage623
+(
+    uint16_t totalPackVoltage,
+    uint8_t lowestChargedVoltage,
+    uint8_t IDofLowestVoltageCell,
+    uint8_t highestChargedVoltage,
+    uint8_t IDofHighestVoltageCell
+)
+{
+    for(int i=0; i<MESSAGE623_SIZE ; ++i)
+    {
+        expectedMessage623[i] = 0;
+    }
+
+
+    expectedMessage623[0] = (uint8_t)(totalPackVoltage>>8); //bits 0-7
+    expectedMessage623[1] = (uint8_t)totalPackVoltage;      //bits 8-15
+    expectedMessage623[2] = lowestChargedVoltage;           //bits 16-23
+    expectedMessage623[3] = IDofLowestVoltageCell;          //bits 24-31
+    expectedMessage623[4] = highestChargedVoltage;          //bits 32-39
+    expectedMessage623[5] = IDofHighestVoltageCell;         //bits 40-47
+
+    return expectedMessage623;
+}
+
+
+uint8_t * CAN_createExpectedMessage626
+(
+    uint8_t StateOfCharge,
+    uint16_t DepthOfDischarge,
+    uint16_t Capacity
+)
+{
+    for(int i=0; i<MESSAGE626_SIZE ; ++i)
+    {
+        expectedMessage626[i] = 0;
+    }
+
+
+    expectedMessage626[0] = StateOfCharge;                  //bits 0-7
+    expectedMessage626[1] = (uint8_t)(DepthOfDischarge>>8); //bits 8-15
+    expectedMessage626[2] = (uint8_t)DepthOfDischarge;      //bits 16-23
+    expectedMessage626[3] = (uint8_t)(Capacity>>8);         //bits 24-31
+    expectedMessage626[4] = (uint8_t)Capacity;              //bits 32-39
+    // expectedMessage625[5] = 0;                           //bits 40-47
+    // expectedMessage625[6] = 0;                           //bits 48-55
+
+    return expectedMessage626;
+}
+
+uint8_t * CAN_createExpectedMessage627
+(
+    uint8_t temperature,
+    uint8_t minTemp,
+    uint8_t IDofMinTempCell,
+    uint8_t maxTemp,
+    uint8_t IDofMaxTempCell
+)
+{
+    for(int i=0; i<MESSAGE627_SIZE ; ++i)
+    {
+        expectedMessage627[i] = 0;
+    }
+
+
+    expectedMessage627[0] = temperature;     //bits 0-7
+    expectedMessage627[1] = 0;               //bits 8-15
+    expectedMessage627[2] = minTemp;         //bits 16-23
+    expectedMessage627[3] = IDofMinTempCell; //bits 24-31
+    expectedMessage627[4] = maxTemp;         //bits 32-39
+    expectedMessage627[5] = IDofMaxTempCell; //bits 40-47
+
+    return expectedMessage626;
 }
