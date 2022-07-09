@@ -88,14 +88,12 @@ Purpose: Goes with CANbus_function.c
 #define CAN_WARNFLAG_HIGHVOLTAGE    0b00000010 //bit 1
 #define CAN_WARNFLAG_LOWVOLTAGE     0b00000001 //bit 0
 
-#define CAN_PACK_MINIMUM 0 //0 kV
-#define CAN_PACK_MAXIMUM 65000 //65 kV
+
 
 #define CAN_MODULE_MINIMUM 0    //0 V
 #define CAN_MODULE_MAXIMUM 255 // 25.5 V, units of 100mV
 
-#define CAN_TEMPERATURE_MINIMUM -128 //twos complement; 0x1000'0000
-#define CAN_TEMPERATURE_MAXIMUM 127 //twos complement; 0x0111'1111
+
 
 
 /************************
@@ -171,26 +169,8 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], 
 void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
 void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
 
-void VoltageInfoRetrieval(
-    BTM_PackData_t * pPACKDATA,
-    uint16_t * pMinVoltage,
-    uint16_t * pMaxVoltage,
-    uint8_t * pMinStack,
-    uint8_t * pMinModule,
-    uint8_t * pMaxStack,
-    uint8_t * pMaxModule);
-unsigned int outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * outOfBounds);
-uint8_t outOfBoundsAndConvert_moduleVoltage(float moduleVoltageFLOAT, uint8_t * outOfBounds);
-void temperatureDataRetrieval(
-    BTM_PackData_t * pPACKDATA,
-    uint16_t * averageTemperature,
-    uint16_t * minTmp,
-    uint16_t * maxTmp,
-    uint8_t * minTmpStack,
-    uint8_t * maxTmpStack,
-    uint8_t * minTmpModule,
-    uint8_t * maxTmpModule);
-uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * outOfBounds);
+uint16_t outOfBoundsAndConvert_moduleVoltage(float moduleVoltageFLOAT);
+
 
 
 /*
