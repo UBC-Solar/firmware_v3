@@ -63,7 +63,7 @@ temperatureInfoStruct * Pack_setTemperatureInfo(
     uint8_t maxTmpModuleIndex
 );
 
-uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * outOfBounds);
+uint8_t Pack_checkAndCastTemperature(double temperatureDOUBLE, uint8_t * outOfBounds);
 
 int32_t outOfBoundsAndCast_packVoltage(float packVoltageFLOAT, uint8_t * outOfBounds);
 #endif

@@ -745,13 +745,13 @@ void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH]){
     //2) Translating Data
 
     averageTemperatureDOUBLE = BTM_TEMP_volts2temp((double)averageTemperature2BYTE);
-    averageTemperatureBYTE = TwosComplement_TemperatureConverter(averageTemperatureDOUBLE, &outOfBounds);
+    averageTemperatureBYTE = Pack_checkAndCastTemperature(averageTemperatureDOUBLE, &outOfBounds);
 
     minTmpDOUBLE = BTM_TEMP_volts2temp((double)minTmp);
-    minTmpBYTE = TwosComplement_TemperatureConverter(minTmpDOUBLE, &outOfBounds);
+    minTmpBYTE = Pack_checkAndCastTemperature(minTmpDOUBLE, &outOfBounds);
 
     maxTmpDOUBLE = BTM_TEMP_volts2temp((double)maxTmp);
-    maxTmpBYTE = TwosComplement_TemperatureConverter(maxTmpDOUBLE, &outOfBounds);
+    maxTmpBYTE = Pack_checkAndCastTemperature(maxTmpDOUBLE, &outOfBounds);
 
     minTmpModuleSticker = LUT_moduleStickers[minTmpStack][minTmpModule];
     maxTmpModuleSticker = LUT_moduleStickers[maxTmpStack][maxTmpModule];

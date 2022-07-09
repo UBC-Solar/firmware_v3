@@ -394,7 +394,7 @@ temperatureInfoStruct * Pack_setTemperatureInfo(
 }
 
 /**
-@brief      Function Name: TwosComplement_TemperatureConverter
+@brief      Function Name: Pack_checkAndCastTemperature
 @details    Function purpose:
             Check if value is within expected message bounds, and returns the value converted to two's complement.
 
@@ -406,36 +406,31 @@ temperatureInfoStruct * Pack_setTemperatureInfo(
 @par        Algorithm:
 
     1) Check if greater-than upper bound.
-        If true, set outOfBounds flag and return the bound broken.
+        If true, return the negative of the bound broken.
     2) Check if less-than lower bound.
-        If true, set outOfBounds flag and return the bound broken.
-        Note that the bounds are intentionally set to two's complement min and max for uint8_t size.
-    3) Cast temperatureDOUBLE to uint8_t and assign to temperatureBYTE
-    4) Convert temperatureBYTE to two's complement, then return the value.
+        If true, return the negative of the bound broken.
+        Note that the bounds are intentionally set to min and max for int8_t,
+        -128 and 127, which should be using two's complement
+        (i.e. the first bit is the signed bit)
+    3) Cast temperatureDOUBLE to int8_t and assign to temperatureBYTE, then return the value.
 
 @note       We use twos complement to match the Elithion Lithiumate format.
 */
-uint8_t TwosComplement_TemperatureConverter(double temperatureDOUBLE, uint8_t * outOfBounds)
+int8_t Pack_checkAndCastTemperature(double temperatureDOUBLE)
 {
-    uint8_t temperatureBYTE;
+    int8_t temperatureBYTE;
 
     if(temperatureDOUBLE > CAN_TEMPERATURE_MAXIMUM)
     {
-        *outOfBounds = 1;
-        return CAN_TEMPERATURE_MAXIMUM;
+        temperatureBYTE = -CAN_TEMPERATURE_MAXIMUM;
     }
     else if(temperatureDOUBLE < CAN_TEMPERATURE_MINIMUM)
     {
-        *outOfBounds = 1;
-        return ~(CAN_TEMPERATURE_MINIMUM)+1;
+        temperatureBYTE = -CAN_TEMPERATURE_MINIMUM;
     }
     else
     {
-        temperatureBYTE = (uint8_t)fabs(temperatureDOUBLE);
-        if(temperatureDOUBLE >= 0)
-            return temperatureBYTE;
-        else
-            //Conversion to two's complement, for negative numbers.
-            return ~temperatureBYTE + 1;
+        temperatureBYTE = (int8_t)temperatureDOUBLE;
     }
+    return temperatureBYTE
 }
