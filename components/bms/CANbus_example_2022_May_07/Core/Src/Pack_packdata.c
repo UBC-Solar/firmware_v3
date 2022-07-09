@@ -2,11 +2,135 @@
 
 BTM_PackData_t * pPACKDATA = NULL;
 
+struct voltageInfo{
+    uint16_t MinVoltage;
+    uint16_t MaxVoltage;
+    uint8_t MinStackIndex;
+    uint8_t MinModuleIndex;
+    uint8_t MaxStackIndex;
+    uint8_t MaxModuleIndex;
+}voltageInfo;
+
+struct temperatureInfo{
+    uint16_t averageTemperature;
+    uint16_t minTmp;
+    uint16_t maxTmp;
+    uint8_t minTmpStackIndex;
+    uint8_t maxTmpStackIndex;
+    uint8_t minTmpModuleIndex;
+    uint8_t maxTmpModuleIndex;
+}temperatureInfo;
+
+void Pack_initPackdataPtr(BTM_PackData_t * ptr)
+{
+    pPACKDATA = ptr;
+}
+
 short Pack_getPackCurrent()
 {
     return 0;
 }
 
+/**
+WIP
+*/
+uint64_t Pack_getFaultAndWarningStatusBits()
+{
+    uint32_t status_var = pPACKDATA->PH_status;
+    // /*
+    // Update stateBYTE.
+    // */
+    // //Bit 0: fault state.
+    // if( (status_var & CAN_FAULT_VALUES) != 0)
+    // {
+    //   stateBYTE |= CAN_BITFLAG_FAULT_STATE;
+    // }
+    //
+    // /*
+    // Update faultCodeBYTE.
+    // */
+    //
+    // // if(status_var & BMS_FAULT_COMM != 0)
+    // // if(status_var & BMS_FAULT_OT != 0)
+    // // if(status_var & BMS_FAULT_UV != 0)
+    // // if(status_var & BMS_FAULT_OV != 0)
+    // // if(status_var & BMS_FAULT_NO_VOLT != 0)
+    //
+    //
+    // /*
+    // Update levelFaultFlagsBYTE.
+    // */
+    // // Bit 7: Over voltage.
+    // if((status_var & BMS_FAULT_OV) != 0)
+    // {
+    //   levelFaultFlagsBYTE |= CAN_FAULTFLAG_OVERVOLTAGE;
+    // }
+    // // Bit 6: Under voltage.
+    // if((status_var & BMS_FAULT_UV) != 0)
+    // {
+    //   levelFaultFlagsBYTE |= CAN_FAULTFLAG_UNDERVOLTAGE;
+    // }
+    //
+    // // Bit 5: Over-temperature.
+    // if((status_var & BMS_FAULT_OT) != 0)
+    // {
+    //   levelFaultFlagsBYTE |= CAN_FAULTFLAG_OVERTEMP;
+    // }
+    //
+    // // Bit 4: Discharge overcurrent.
+    // // Bit 3: Charge overcurrent.
+    //
+    // // Bit 2: Communication fault with a bank or cell.
+    // if((status_var & BMS_FAULT_COMM) != 0)
+    // {
+    //   levelFaultFlagsBYTE |= CAN_FAULTFLAG_COMMFAULT;
+    // }
+    // // Bit 1: Interlock is tripped.
+    // // Bit 0: Driving off while plugged in.
+    //
+    // /*
+    // Update warningFlagsBYTE.
+    // */
+    //
+    // // Bit 7 : isolation fault.
+    // // Bit 6 : low SOH.
+    // // Bit 5 : hot temperature.
+    // if((status_var & BMS_WARNING_HIGH_T) != 0)
+    // {
+    //   warningFlagsBYTE |= CAN_WARNFLAG_HIGHTEMP;
+    // }
+    //
+    // // Bit 4 : cold temperature.
+    // if((status_var & BMS_WARNING_LOW_T) != 0)
+    // {
+    //   warningFlagsBYTE |= CAN_WARNFLAG_LOWTEMP;
+    // }
+    //
+    // // Bit 3 : discharge overcurrent.
+    // // Bit 2 : charge overcurrent.
+    // // Bit 1 : high voltage.
+    // if((status_var & BMS_WARNING_HIGH_V) != 0)
+    // {
+    //   warningFlagsBYTE |= CAN_WARNFLAG_HIGHVOLTAGE;
+    // }
+    // // Bit 0 : low voltage.
+    // if((status_var & BMS_WARNING_LOW_V) != 0)
+    // {
+    //   warningFlagsBYTE |= CAN_WARNFLAG_LOWVOLTAGE;
+    // }
+
+    return 0;
+}
+
+uint8_t Pack_getFaultCode()
+{
+    return 0;
+}
+
+uint8_t Pack_getTimeAfterPowerOn()
+{
+    return 0;
+}
 /**
 @brief      Function Name: Pack_getPackVoltage
 @details    Function purpose:
@@ -50,8 +174,10 @@ int32_t Pack_getPackVoltage()
     return packVoltage;
 }
 
+
+
 /**
-@brief      Function Name: VoltageInfoRetrieval
+@brief      Function Name: Pack_Pack_VoltageInfoRetrieval
 @details    Function Purpose: Scan the array of voltages of the modules per stacks, and return the min and max voltages
 
 @param      pMinVoltage - pointer to variable to hold minimum voltage found.
@@ -78,8 +204,15 @@ int32_t Pack_getPackVoltage()
     2) Assign final numbers to pointed-to variables.
 
 */
-void VoltageInfoRetrieval(
-    BTM_PackData_t * pPACKDATA,
+
+uint8_t Pack_getSOC()
+{
+    // StateOfChargeBYTE = pPACKDATA->PH_SOC_LOCATION;
+    return pPACKDATA->PH_SOC_LOCATION;
+}
+
+void Pack_VoltageInfoRetrieval(
+    // BTM_PackData_t * pPACKDATA,
     uint16_t * pMinVoltage,
     uint16_t * pMaxVoltage,
     uint8_t * pMinStack,
@@ -168,7 +301,7 @@ void VoltageInfoRetrieval(
 
 */
 void temperatureDataRetrieval(
-    BTM_PackData_t * pPACKDATA,
+    // BTM_PackData_t * pPACKDATA,
     uint16_t * pAverageTemperature,
     uint16_t * pMinTmp,
     uint16_t * pMaxTmp,

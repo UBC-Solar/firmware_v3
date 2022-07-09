@@ -11,11 +11,15 @@
 #include "stdint.h"
 #include "ltc6813_btm.h"
 
+void Pack_initPackdataPtr(BTM_PackData_t * ptr);
+
 short Pack_getPackCurrent();
 int32_t Pack_getPackVoltage();
+uint64_t Pack_getFaultAndWarningStatusBits();
+uint8_t Pack_getSOC();
 
-void VoltageInfoRetrieval(
-    BTM_PackData_t * pPACKDATA,
+void Pack_VoltageInfoRetrieval(
+    // BTM_PackData_t * pPACKDATA,
     uint16_t * pMinVoltage,
     uint16_t * pMaxVoltage,
     uint8_t * pMinStack,
@@ -24,7 +28,7 @@ void VoltageInfoRetrieval(
     uint8_t * pMaxModule);
 
 void temperatureDataRetrieval(
-    BTM_PackData_t * pPACKDATA,
+    // BTM_PackData_t * pPACKDATA,
     uint16_t * averageTemperature,
     uint16_t * minTmp,
     uint16_t * maxTmp,

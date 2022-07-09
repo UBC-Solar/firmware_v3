@@ -34,6 +34,8 @@ group send message on CANbus
         mailman -> mailman:     wait for Y time to pass \n to allow CANbus peripheral to send
     end
 end
+mailman--
+STM--
 
 
 @enduml

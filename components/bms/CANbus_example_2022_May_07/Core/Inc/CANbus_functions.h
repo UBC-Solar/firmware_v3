@@ -74,6 +74,8 @@ Purpose: Goes with CANbus_function.c
 #define ADDRESS_627 627
 
 //value bounds
+
+//from old version of CANbus messages. To be replaced by new bits
 #define CAN_FAULT_VALUES            0b01111111
 
 #define CAN_BITFLAG_FAULT_STATE     0b00000001 //bit 0
@@ -87,6 +89,26 @@ Purpose: Goes with CANbus_function.c
 #define CAN_WARNFLAG_LOWTEMP        0b00010000 //bit 4
 #define CAN_WARNFLAG_HIGHVOLTAGE    0b00000010 //bit 1
 #define CAN_WARNFLAG_LOWVOLTAGE     0b00000001 //bit 0
+
+//fault codes are now defined as bit shifts, because 64 bit binary constants are a pain to write and document
+#define CAN_BITSHIFT_BMS_FAULT                      (1<<0 ) //bit 0
+#define CAN_BITSHIFT_HLIM_IS_SET                    (1<<29)
+#define CAN_BITSHIFT_LLIM_IS_SET                    (1<<30)
+#define CAN_BITSHIFT_INTERLOCK_IS_TRIPPER           (1<<41)
+#define CAN_BITSHIFT_COMM_FAULT_WITH_CELL           (1<<42)
+#define CAN_BITSHIFT_CHARGE_OVERCURRENT             (1<<43)
+#define CAN_BITSHIFT_DISCHARGE_OVERCURRENT          (1<<44)
+#define CAN_BITSHIFT_OVER_TEMP                      (1<<45)
+#define CAN_BITSHIFT_UNDER_VOLT                     (1<<46)
+#define CAN_BITSHIFT_OVER_VOLT                      (1<<47)
+#define CAN_BITSHIFT_LOW_VOLTAGE_WARNING            (1<<48)
+#define CAN_BITSHIFT_HIGH_VOLTAGE_WARNING           (1<<49)
+#define CAN_BITSHIFT_CHARGE_OVERCURRENT_WARNING     (1<<50)
+#define CAN_BITSHIFT_DISCHARGE_OVERCURRENT_WARNING  (1<<51)
+#define CAN_BITSHIFT_COLD_TEMPERATURE_WARNING       (1<<52)
+#define CAN_BITSHIFT_HOT_TEMPERATURE_WARNING        (1<<53)
+#define CAN_BITSHIFT_LOW_SOH_WARNING                (1<<54)
+#define CAN_BITSHIFT_ISOLATION_FAULT_WARNING        (1<<55) //bit 55
 
 
 
@@ -164,10 +186,10 @@ void CAN_InitMessageSeries_Dynamic(
         uint8_t messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH],
         int messageSeriesSize);
 
-void CAN_CompileMessage622(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
-void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
-void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
-void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA);
+void CAN_CompileMessage622(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH]);
+void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH]);
+void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH]);
+void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH]);
 
 uint16_t outOfBoundsAndConvert_moduleVoltage(float moduleVoltageFLOAT);
 

@@ -356,10 +356,10 @@ Design Notes:
 */
 void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries)
 {
-    CAN_CompileMessage622(pSeries->message[0].dataFrame, CAN_PACKDATA_POINTER);
-    CAN_CompileMessage623(pSeries->message[1].dataFrame, CAN_PACKDATA_POINTER);
-    CAN_CompileMessage626(pSeries->message[2].dataFrame, CAN_PACKDATA_POINTER);
-    CAN_CompileMessage627(pSeries->message[3].dataFrame, CAN_PACKDATA_POINTER);
+    // CAN_CompileMessage622(pSeries->message[0].dataFrame, CAN_PACKDATA_POINTER);
+    // CAN_CompileMessage623(pSeries->message[1].dataFrame, CAN_PACKDATA_POINTER);
+    // CAN_CompileMessage626(pSeries->message[2].dataFrame, CAN_PACKDATA_POINTER);
+    // CAN_CompileMessage627(pSeries->message[3].dataFrame, CAN_PACKDATA_POINTER);
 }
 
 /**
@@ -465,7 +465,7 @@ void CANstate_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries)//PH_ rem
     2) Place fault flag data into Elithion format.
     3) Place data into message array, while following Elithion format.
 */
-void CAN_CompileMessage622(uint8_t aData_series622[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA)
+void CAN_CompileMessage622(uint8_t aData_series622[CAN_BRIGHTSIDE_DATA_LENGTH])
 {
     uint8_t
         stateBYTE           = 0,
@@ -478,7 +478,8 @@ void CAN_CompileMessage622(uint8_t aData_series622[CAN_BRIGHTSIDE_DATA_LENGTH], 
 
 
     int
-        status_var = pPACKDATA->PH_status; //should access the variable that summarizes the whole pack's warning and fault flags
+        // status_var = pPACKDATA->PH_status; //should access the variable that summarizes the whole pack's warning and fault flags
+				status_var = Pack_getStatusBits();
     /*
     Update stateBYTE.
     */
@@ -590,7 +591,7 @@ Function name: CAN_CompileMessage623
                 units, and where the numbers are casted to uint8_t.
         3) Place data into message array, while following Elithion format.
 */
-void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA)
+void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH])
 {
     int32_t
         packVoltage = 0;
@@ -617,8 +618,8 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH], 
   //Collecting and translating the collected data into CAN frame format
 
   //gather min and max voltages
-    VoltageInfoRetrieval(
-        pPACKDATA,
+    Pack_VoltageInfoRetrieval(
+        // pPACKDATA,
         &minVtg,
         &maxVtg,
         &minStack,
@@ -672,11 +673,12 @@ Function name: CAN_CompileMessage626
         1) Retrieve state of charge
         2) Place data into message array, while following Elithion format.
 */
-void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA)
+void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH])
 {
     uint8_t StateOfChargeBYTE;
 
-    StateOfChargeBYTE = pPACKDATA->PH_SOC_LOCATION;
+    // StateOfChargeBYTE = pPACKDATA->PH_SOC_LOCATION;
+		StateOfChargeBYTE = Pack_getSOC();
 
     //setting byte order in aData_series626 array
     aData_series626[0] = StateOfChargeBYTE;
@@ -722,7 +724,7 @@ Function name: CAN_CompileMessage627
         3) Place data into message array, while matching the Elithion format.
 
 */
-void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], BTM_PackData_t * pPACKDATA){
+void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH]){
     uint8_t
         averageTemperatureBYTE = 0,
         minTmpBYTE = 0,
@@ -747,7 +749,7 @@ void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH], 
 
     //1) scans the struct and calculates the relevant information needed
     temperatureDataRetrieval(
-        pPACKDATA,
+        // pPACKDATA,
         &averageTemperature2BYTE,
         &minTmp,
         &maxTmp,

@@ -336,14 +336,20 @@ compareArraysOfSize6(expectedMessage, actualMessage);
 }
 
 
-void test_message623_packHealth()
+void test_message626_packHealth()
 {
+    uint8_t* expectedMessage = NULL;
+    uint8_t* actualMessage = NULL;
 
+    expectedMessage = CAN_createExpectedMessage626(225,65535,65535);
 }
 
-void test_message623_Temperature()
+void test_message627_Temperature()
 {
+    uint8_t* expectedMessage = NULL;
+    uint8_t* actualMessage = NULL;
 
+    expectedMessage = CAN_createExpectedMessage627(255,255,255,255,255);
 }
 
 void compareArraysOfSize6(uint8_t* expectedArray, uint8_t* actualArray)
