@@ -4,6 +4,10 @@
 #include "unity.h"
 #include "cmock.h"
 #include "mock_Pack_packdata.h"
+#include "mock_stm32f1xx_hal.h"
+#include "mock_ltc6813_btm.h"
+#include "mock_analysis.h"
+#include "mock_stm32f1xx_hal_can.h"
 
 int GlobalExpectCount;
 int GlobalVerifyOrder;
@@ -12,7 +16,12 @@ char* GlobalOrderError;
 /*=======External Functions This Runner Calls=====*/
 extern void setUp(void);
 extern void tearDown(void);
-extern void test_message_currentStatus_bitsAreSetProperly();
+extern void test_message624_currentStatus();
+extern void test_message622_faultsMessage_formatVerification();
+extern void test_message623_voltageStatus();
+extern void test_message623_packHealth();
+extern void test_message623_Temperature();
+extern void test_CANstate_staleCheck();
 
 
 /*=======Mock Management=====*/
@@ -22,14 +31,26 @@ static void CMock_Init(void)
   GlobalVerifyOrder = 0;
   GlobalOrderError = NULL;
   mock_Pack_packdata_Init();
+  mock_stm32f1xx_hal_Init();
+  mock_ltc6813_btm_Init();
+  mock_analysis_Init();
+  mock_stm32f1xx_hal_can_Init();
 }
 static void CMock_Verify(void)
 {
   mock_Pack_packdata_Verify();
+  mock_stm32f1xx_hal_Verify();
+  mock_ltc6813_btm_Verify();
+  mock_analysis_Verify();
+  mock_stm32f1xx_hal_can_Verify();
 }
 static void CMock_Destroy(void)
 {
   mock_Pack_packdata_Destroy();
+  mock_stm32f1xx_hal_Destroy();
+  mock_ltc6813_btm_Destroy();
+  mock_analysis_Destroy();
+  mock_stm32f1xx_hal_can_Destroy();
 }
 
 /*=======Test Reset Options=====*/
@@ -80,7 +101,12 @@ static void run_test(UnityTestFunction func, const char* name, UNITY_LINE_TYPE l
 int main(void)
 {
   UnityBegin("test_CAN_messages.c");
-  run_test(test_message_currentStatus_bitsAreSetProperly, "test_message_currentStatus_bitsAreSetProperly", 32);
+  run_test(test_message624_currentStatus, "test_message624_currentStatus", 56);
+  run_test(test_message622_faultsMessage_formatVerification, "test_message622_faultsMessage_formatVerification", 145);
+  run_test(test_message623_voltageStatus, "test_message623_voltageStatus", 296);
+  run_test(test_message623_packHealth, "test_message623_packHealth", 339);
+  run_test(test_message623_Temperature, "test_message623_Temperature", 344);
+  run_test(test_CANstate_staleCheck, "test_CANstate_staleCheck", 411);
 
   CMock_Guts_MemFreeFinal();
   return UnityEnd();

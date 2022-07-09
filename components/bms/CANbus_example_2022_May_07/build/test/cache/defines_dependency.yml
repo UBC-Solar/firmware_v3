@@ -49,3 +49,23 @@ build/test/mocks/mock_stm32f103xb.c:
 - USE_HAL_DRIVERS
 - DEBUG
 - TEST
+build/test/mocks/mock_ltc6813_btm.c:
+- STM32F103xB
+- USE_HAL_DRIVERS
+- DEBUG
+- TEST
+build/test/mocks/mock_analysis.c:
+- STM32F103xB
+- USE_HAL_DRIVERS
+- DEBUG
+- TEST
+build/test/mocks/mock_stm32f1xx_hal_can.c:
+- STM32F103xB
+- USE_HAL_DRIVERS
+- DEBUG
+- TEST
+Core/Src/CAN_OnlyTestingFunctions.c:
+- STM32F103xB
+- USE_HAL_DRIVERS
+- DEBUG
+- TEST

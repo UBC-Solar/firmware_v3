@@ -1,4 +1,9 @@
 ---
 - Documents/GIT/firmware_v3/tools/ceedling/vendor/unity/src/unity.h
 - build/test/mocks/mock_Pack_packdata.h
-- Core/Inc/CAN_messages.h
+- Core/Inc/CAN_OnlyTestingFunctions.h
+- build/test/mocks/mock_stm32f1xx_hal.h
+- build/test/mocks/mock_ltc6813_btm.h
+- build/test/mocks/mock_analysis.h
+- build/test/mocks/mock_stm32f1xx_hal_can.h
+- Core/Inc/CANbus_functions.h

@@ -1,16 +1,4 @@
 0
-123
-0
-0
-0
-0
-0
-123
-0
-0
-0
-0
-0
 111
 0
 0
@@ -22,3 +10,21 @@
 0
 0
 0
+iter 0,  Bit 0: BMS fault bit 
+iter 29,  Bit 29: HLIM is set: cannot charge 
+iter 30,  Bit 30: LLIM is set: cannot discharge 
+iter 41,  Bit 41: Interlock is tripped 
+iter 42,  Bit 42: Communication fault with cell 
+iter 43,  Bit 43: Charge overcurrent 
+iter 44,  Bit 44: Discharge overcurrent 
+iter 45,  Bit 45: Over temperature 
+iter 46,  Bit 46: Under voltage 
+iter 47,  Bit 47: Over voltage 
+iter 48,  Bit 48: Low voltage warning 
+iter 49,  Bit 49: High voltage warning 
+iter 50,  Bit 50: Charge overcurrent warning 
+iter 51,  Bit 51: Discharge overcurrent warning 
+iter 52,  Bit 52: Cold temperature warning 
+iter 53,  Bit 53: Hot temperature warning 
+iter 54,  Bit 54: Low SOH warning 
+iter 55,  Bit 55: Isolation fault warning 
