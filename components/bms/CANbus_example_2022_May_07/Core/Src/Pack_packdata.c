@@ -399,16 +399,15 @@ temperatureInfoStruct * Pack_setTemperatureInfo(
             Check if value is within expected message bounds, and returns the value converted to two's complement.
 
 @param      double temperatureDOUBLE - the temperature in Celcius.
-@param      uint8_t * outOfBounds - The pointer to a variable used as a flag for if bounds are broken.
 
 @returns    Tmperature, casted to uint8_t.
 
 @par        Algorithm:
 
     1) Check if greater-than upper bound.
-        If true, return the negative of the bound broken.
+        If true, return the bound broken.
     2) Check if less-than lower bound.
-        If true, return the negative of the bound broken.
+        If true, return the bound broken.
         Note that the bounds are intentionally set to min and max for int8_t,
         -128 and 127, which should be using two's complement
         (i.e. the first bit is the signed bit)
@@ -422,15 +421,15 @@ int8_t Pack_checkAndCastTemperature(double temperatureDOUBLE)
 
     if(temperatureDOUBLE > CAN_TEMPERATURE_MAXIMUM)
     {
-        temperatureBYTE = -CAN_TEMPERATURE_MAXIMUM;
+        temperatureBYTE = CAN_TEMPERATURE_MAXIMUM;
     }
     else if(temperatureDOUBLE < CAN_TEMPERATURE_MINIMUM)
     {
-        temperatureBYTE = -CAN_TEMPERATURE_MINIMUM;
+        temperatureBYTE = CAN_TEMPERATURE_MINIMUM;
     }
     else
     {
         temperatureBYTE = (int8_t)temperatureDOUBLE;
     }
-    return temperatureBYTE
+    return temperatureBYTE;
 }
