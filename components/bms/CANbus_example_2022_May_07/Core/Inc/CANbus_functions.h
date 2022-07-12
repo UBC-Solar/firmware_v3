@@ -166,8 +166,8 @@ Brightside_CAN_MessageSeries;
 /************************
 external function prototypes
 ************************/
-extern Brightside_CAN_MessageSeries* CANstate_InitAll(CAN_HandleTypeDef * hcan);
-extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries);
+extern Brightside_CAN_MessageSeries*    CAN_initStructsAndStuff(CAN_HandleTypeDef * hcan);
+extern HAL_StatusTypeDef                CAN_main(Brightside_CAN_MessageSeries * pSeries);
 
 
 /************************
@@ -175,24 +175,24 @@ function prototypes
 ************************/
 
 //void CANstate_depreciated(Brightside_CAN_MessageSeries * pSeries);
-uint8_t CANstate_staleCheck();
-void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries); //PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
-HAL_StatusTypeDef CANstate_requestQueue();
-void CANstate_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries); //PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
+uint8_t             CAN_staleCheck();
+void                CAN_compileAllMessages(Brightside_CAN_MessageSeries * pSeries); //PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
+HAL_StatusTypeDef   CAN_requestQueue();
+void                CAN_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries); //PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
 
-void CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int messageArraySize);
-void CAN_InitMessageSeries_Dynamic(
-        Brightside_CAN_MessageSeries * seriesStruct,
-        Brightside_CAN_Message * messageWiseContent,
-        uint8_t messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH],
-        int messageSeriesSize);
+void                CAN_InitHeaderStruct(Brightside_CAN_Message * CANmessageWiseContent, int messageArraySize);
+void                CAN_InitMessageSeries_Dynamic(
+                        Brightside_CAN_MessageSeries * seriesStruct,
+                        Brightside_CAN_Message * messageWiseContent,
+                        uint8_t messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHTSIDE_DATA_LENGTH],
+                        int messageSeriesSize);
 
 void CAN_CompileMessage622(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH]);
 void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH]);
 void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH]);
 void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH]);
 
-uint16_t outOfBoundsAndConvert_moduleVoltage(float moduleVoltageFLOAT);
+uint16_t checkAndConvertModuleVoltage(float moduleVoltageFLOAT);
 
 
 

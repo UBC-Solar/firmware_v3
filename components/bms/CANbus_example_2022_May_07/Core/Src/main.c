@@ -95,7 +95,7 @@ int main(void)
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
 
-  pSeries = CANstate_InitAll(&hcan);
+  pSeries = CAN_initStructsAndStuff(&hcan);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -103,7 +103,7 @@ int main(void)
   while (1)
   {
 	  BLINKY_bluepill(100, 400);
-	  CANstate(pSeries);
+	  CAN_main(pSeries);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

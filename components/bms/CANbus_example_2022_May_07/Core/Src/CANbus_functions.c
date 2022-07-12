@@ -83,7 +83,7 @@ double BTM_TEMP_volts2temp(double vout);
 
 /**
 *@brief
-*Function Name: CANstate_InitAll
+*Function Name: CAN_initStructsAndStuff
 *
 *@details
 *Function purpose:
@@ -99,7 +99,7 @@ double BTM_TEMP_volts2temp(double vout);
 *    of message structures preinitialised as global static
 *    variables, arrays, and structs.
 */
-extern Brightside_CAN_MessageSeries* CANstate_InitAll(CAN_HandleTypeDef * hcan)
+extern Brightside_CAN_MessageSeries* CAN_initStructsAndStuff(CAN_HandleTypeDef * hcan)
 {
     //initialize handles from cubeMX
 	Brightside_CAN_handle = hcan;
@@ -220,7 +220,7 @@ void CAN_InitMessageSeries_Dynamic(
 }
 
 /**
-@brief      Function Name: CANstate
+@brief      Function Name: CAN_main
 @details    Function Purpose: TO limit the number of CANstate calls to at most 5 times per second.
 
 @param      Brightside_CAN_MessageSeries * pSeries : pointer to the full messageSeries struct.
@@ -249,7 +249,7 @@ void CAN_InitMessageSeries_Dynamic(
 */
 
 
-extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
+extern HAL_StatusTypeDef CAN_main(Brightside_CAN_MessageSeries * pSeries)
 {
     uint32_t
         tickValue = HAL_GetTick(),
@@ -285,13 +285,13 @@ extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
     {
         //update lastInterval to be a multiple of 1.0s.
         STATIC_lastInterval = tickValue - (tickValue % ONE_THOUSAND_MILLISECONDS);
-        if(CANstate_staleCheck() != CAN_NOT_STALE)
+        if(CAN_staleCheck() != CAN_NOT_STALE)
         {
             //at this moment, there isn't anything special to do with stale messages
         }
-        CANstate_compileAll(pSeries);
-        CANstate_resetRequestQueue(pSeries);
-        status = CANstate_requestQueue(pSeries);
+        CAN_compileAllMessages(pSeries);
+        CAN_resetRequestQueue(pSeries);
+        status = CAN_requestQueue(pSeries);
         // if(status != HAL_OK)
         // {
         //     return status;
@@ -309,7 +309,7 @@ extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
     {
         //update lastSubInterval to be a multiple of 0.2s.
         STATIC_lastSubInterval = tickValue - (tickValue % TWO_HUNDRED_MILLISECONDS);
-        status = CANstate_requestQueue(pSeries);
+        status = CAN_requestQueue(pSeries);
         // if(status != HAL_OK)
         // {
         //     return status;
@@ -322,7 +322,7 @@ extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
 
 
 /**
-@brief      Function Name: CANstate_staleCheck
+@brief      Function Name: CAN_staleCheck
 @details    Function Purpose: check if the CAN-bus mailboxes still contain messages from the previous interval.
 
 @param      None.
@@ -330,7 +330,7 @@ extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
 @returns    returns 1 if there is stale data
 @returns    else, returns 0 if the mailboxes are empty, i.e. without stale data to send.
 */
-uint8_t CANstate_staleCheck() //PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
+uint8_t CAN_staleCheck() //PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
 {
     if(HAL_CAN_GetTxMailboxesFreeLevel(Brightside_CAN_handle) != 3)
     {
@@ -340,7 +340,7 @@ uint8_t CANstate_staleCheck() //PH_ removed "static inline" to allow compilation
 }
 
 /**
-@brief      Function Name: CANstate_compileAll
+@brief      Function Name: CAN_compileAllMessages
 
 @details    Function Purpose:
             Run all functions that compile messages.
@@ -354,7 +354,7 @@ uint8_t CANstate_staleCheck() //PH_ removed "static inline" to allow compilation
 Design Notes:
     Each CompileMessage() function call takes the message[].dataFrame element of the struct parameter.
 */
-void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries)
+void CAN_compileAllMessages(Brightside_CAN_MessageSeries * pSeries)
 {
     // CAN_CompileMessage622(pSeries->message[0].dataFrame, CAN_PACKDATA_POINTER);
     // CAN_CompileMessage623(pSeries->message[1].dataFrame, CAN_PACKDATA_POINTER);
@@ -363,7 +363,7 @@ void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries)
 }
 
 /**
-@brief      Function Name: CANstate_requestQueue
+@brief      Function Name: CAN_requestQueue
 @details    Function Purpose:
                 Queue messages within a message series into the 3 transmission
                 mailboxes of the stm32 chip we're using.
@@ -378,7 +378,7 @@ void CANstate_compileAll(Brightside_CAN_MessageSeries * pSeries)
 
 @note       Design Notes: This function should NOT reset the runningIndex.
 */
-HAL_StatusTypeDef CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
+HAL_StatusTypeDef CAN_requestQueue(Brightside_CAN_MessageSeries * pSeries)
 {
 
     //else
@@ -439,7 +439,7 @@ HAL_StatusTypeDef CANstate_requestQueue(Brightside_CAN_MessageSeries * pSeries)
 /**
 @note This is the function that resets the running index in the struct
 */
-void CANstate_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries)//PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
+void CAN_resetRequestQueue(Brightside_CAN_MessageSeries * pSeries)//PH_ removed "static inline" to allow compilation. Consider adding keywords later or refactoring this function to be inline.
 {
     pSeries -> runningIndex = 0;
 }
@@ -630,11 +630,11 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH])
     //Then check if value is out of out of expected bounds, and cast uint16_t to uint8_t.
     //minVtgFLOAT = BTM_regValToVoltage(minVtg);
     minVtgFLOAT = (float)minVtg * 0.0001;
-    minVtgBYTE = outOfBoundsAndConvert_moduleVoltage(minVtgFLOAT);
+    minVtgBYTE = checkAndConvertModuleVoltage(minVtgFLOAT);
 
     //maxVtgFLOAT = BTM_regValToVoltage(maxVtg);
     maxVtgFLOAT = (float)maxVtg * 0.0001;
-    maxVtgBYTE = outOfBoundsAndConvert_moduleVoltage(maxVtgFLOAT);
+    maxVtgBYTE = checkAndConvertModuleVoltage(maxVtgFLOAT);
 
     minBattModuleSticker = LUT_moduleStickers[minStack][minModule];
     maxBattModuleSticker = LUT_moduleStickers[maxStack][maxModule];
@@ -745,13 +745,13 @@ void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH]){
     //2) Translating Data
 
     averageTemperatureDOUBLE = BTM_TEMP_volts2temp((double)averageTemperature2BYTE);
-    averageTemperatureBYTE = Pack_checkAndCastTemperature(averageTemperatureDOUBLE, &outOfBounds);
+    averageTemperatureBYTE = Pack_checkAndCastTemperature(averageTemperatureDOUBLE);
 
     minTmpDOUBLE = BTM_TEMP_volts2temp((double)minTmp);
-    minTmpBYTE = Pack_checkAndCastTemperature(minTmpDOUBLE, &outOfBounds);
+    minTmpBYTE = Pack_checkAndCastTemperature(minTmpDOUBLE);
 
     maxTmpDOUBLE = BTM_TEMP_volts2temp((double)maxTmp);
-    maxTmpBYTE = Pack_checkAndCastTemperature(maxTmpDOUBLE, &outOfBounds);
+    maxTmpBYTE = Pack_checkAndCastTemperature(maxTmpDOUBLE);
 
     minTmpModuleSticker = LUT_moduleStickers[minTmpStack][minTmpModule];
     maxTmpModuleSticker = LUT_moduleStickers[maxTmpStack][maxTmpModule];
@@ -774,7 +774,7 @@ void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH]){
 
 
 /**
-@brief      Function Name: outOfBoundsAndConvert_moduleVoltage
+@brief      Function Name: checkAndConvertModuleVoltage
 @details    Function Purpose:
             Check if the module voltage collected is outside the expected message.
                 If out of bounds, assign the broken bound and cast to uint8_t.
@@ -785,7 +785,7 @@ void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH]){
 @returns    The moduleVoltage100mV value, casted to uint8_t.
 @note       moduleVoltage100mV is moduleVoltageFLOAT converted to units of 100mV.
 */
-uint16_t outOfBoundsAndConvert_moduleVoltage(float moduleVoltageFLOAT){
+uint16_t checkAndConvertModuleVoltage(float moduleVoltageFLOAT){
     float moduleVoltage100mV = moduleVoltageFLOAT * 10;
 
     if(moduleVoltage100mV < CAN_MODULE_MINIMUM){
