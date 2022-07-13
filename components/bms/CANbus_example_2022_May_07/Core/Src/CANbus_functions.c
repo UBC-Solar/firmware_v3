@@ -649,6 +649,7 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH])
     //aData_series623[6] = 0;                        //redundant
     aData_series623[7] = (uint8_t)outOfBounds;
 
+		// return ;
   //end of function
 }
 

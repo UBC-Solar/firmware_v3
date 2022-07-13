@@ -3,6 +3,7 @@
 // #define ENABLE_PRINTF_MESSAGES
 
 #include "unity.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -31,16 +32,31 @@ uint16_t TEST_PACK_CURRENT = 7;
 
 
 void hello_world(int i);
-void compareArraysOfSize6(uint8_t* expectedArray, uint8_t* actualArray);
+void compareArraysOfSize6(uint8_t expectedArray[6], uint8_t actualArray[6]);
 void compareArraysOfSize7(uint8_t* expectedArray, uint8_t* actualArray);
 
 
+// typedef struct voltageInfoStruct{
+//     uint16_t MinVoltage;
+//     uint16_t MaxVoltage;
+//     uint8_t MinStackIndex;
+//     uint8_t MinModuleIndex;
+//     uint8_t MaxStackIndex;
+//     uint8_t MaxModuleIndex;
+// }voltageInfoStruct;
 
+voltageInfoStruct Placeholder_voltageInfo;
 
 
 
 void setUp(void)
 {
+    Placeholder_voltageInfo.MinVoltage = 0;
+    Placeholder_voltageInfo.MaxVoltage = 0;
+    Placeholder_voltageInfo.MinStackIndex = 0;
+    Placeholder_voltageInfo.MinModuleIndex = 0;
+    Placeholder_voltageInfo.MaxStackIndex = 0;
+    Placeholder_voltageInfo.MaxModuleIndex = 0;
 }
 
 void tearDown(void)
@@ -300,36 +316,54 @@ uint8_t* actualMessage = NULL;
 
 //test all zero
 expectedMessage = CAN_createExpectedMessage623(0,0,0,0,0);
+
+Pack_getVoltageInfo_IgnoreAndReturn(&Placeholder_voltageInfo);
+Pack_getPackVoltage_IgnoreAndReturn(0);
 actualMessage   = CAN_createExpectedMessage623(0,0,0,0,0);
 
 compareArraysOfSize6(expectedMessage, actualMessage);
 
 //test max pack voltage
 expectedMessage = CAN_createExpectedMessage623(65535,0,0,0,0);
+
+Pack_getVoltageInfo_IgnoreAndReturn(&Placeholder_voltageInfo);
+Pack_getPackVoltage_IgnoreAndReturn(0);
 actualMessage   = CAN_createExpectedMessage623(65535,0,0,0,0);
 
 compareArraysOfSize6(expectedMessage, actualMessage);
 
 //test max lowestChargedVoltage
 expectedMessage = CAN_createExpectedMessage623(0,255,0,0,0);
+
+Pack_getVoltageInfo_IgnoreAndReturn(&Placeholder_voltageInfo);
+Pack_getPackVoltage_IgnoreAndReturn(0);
 actualMessage   = CAN_createExpectedMessage623(0,255,0,0,0);
 
 compareArraysOfSize6(expectedMessage, actualMessage);
 
 //test max IDofLowestVoltageCell
 expectedMessage = CAN_createExpectedMessage623(0,0,255,0,0);
+
+Pack_getVoltageInfo_IgnoreAndReturn(&Placeholder_voltageInfo);
+Pack_getPackVoltage_IgnoreAndReturn(0);
 actualMessage   = CAN_createExpectedMessage623(0,0,255,0,0);
 
 compareArraysOfSize6(expectedMessage, actualMessage);
 
 //test max highestChargedVoltage
 expectedMessage = CAN_createExpectedMessage623(0,0,0,255,0);
+
+Pack_getVoltageInfo_IgnoreAndReturn(&Placeholder_voltageInfo);
+Pack_getPackVoltage_IgnoreAndReturn(0);
 actualMessage   = CAN_createExpectedMessage623(0,0,0,255,0);
 
 compareArraysOfSize6(expectedMessage, actualMessage);
 
 //test max IDofLowestVoltageCell
 expectedMessage = CAN_createExpectedMessage623(0,0,0,0,255);
+
+Pack_getVoltageInfo_IgnoreAndReturn(&Placeholder_voltageInfo);
+Pack_getPackVoltage_IgnoreAndReturn(0);
 actualMessage   = CAN_createExpectedMessage623(0,0,0,0,255);
 
 compareArraysOfSize6(expectedMessage, actualMessage);
@@ -352,20 +386,20 @@ void test_message627_Temperature()
     expectedMessage = CAN_createExpectedMessage627(255,255,255,255,255);
 }
 
-void compareArraysOfSize6(uint8_t* expectedArray, uint8_t* actualArray)
+void compareArraysOfSize6(uint8_t expectedArray[6], uint8_t actualArray[6])
 {
-    int expectedSize = 0;
-    int actualSize = 0;
+    uint32_t expectedSize = 0;
+    uint32_t actualSize = 0;
 
     //check size of arrays
-    expectedSize = sizeof(&expectedArray)/sizeof(expectedArray[0]);
-    actualSize   = sizeof(&actualArray)  /sizeof(actualArray[0]);
-    TEST_ASSERT_EQUAL(expectedSize, actualSize);
-    printf("actualSize %i\r\n",actualSize);
-    printf("actualArray %i\r\n",sizeof(actualArray));
-    printf("actualArray[0] %i\r\n",sizeof(actualArray[0]));
-    TEST_ASSERT_EQUAL(6, actualSize);
-    TEST_ASSERT_EQUAL(6, expectedSize);
+    // expectedSize = sizeof(*expectedArray)/sizeof(expectedArray[0]);
+    // actualSize   = sizeof(*actualArray)  /sizeof(actualArray[0]);
+    // TEST_ASSERT_EQUAL(expectedSize, actualSize);
+    // printf("actualSize %i\r\n",actualSize);
+    // printf("actualArray %i\r\n",sizeof(*actualArray));
+    // printf("actualArray[0] %i\r\n",sizeof(actualArray[0]));
+    // TEST_ASSERT_EQUAL(6, actualSize);
+    // TEST_ASSERT_EQUAL(6, expectedSize);
 
     {//compare array contents
         TEST_ASSERT_EQUAL(expectedArray[0], actualArray[0]);
@@ -383,11 +417,11 @@ void compareArraysOfSize7(uint8_t* expectedArray, uint8_t* actualArray)
     int actualSize = 0;
 
     //check size of arrays
-    expectedSize = sizeof(expectedArray)/sizeof(expectedArray[0]);
-    actualSize   = sizeof(actualArray)  /sizeof(actualArray[0]);
-    TEST_ASSERT_EQUAL(expectedSize, actualSize);
-    TEST_ASSERT_EQUAL(7, actualSize);
-    TEST_ASSERT_EQUAL(7, expectedSize);
+    // expectedSize = sizeof(expectedArray)/sizeof(expectedArray[0]);
+    // actualSize   = sizeof(actualArray)  /sizeof(actualArray[0]);
+    // TEST_ASSERT_EQUAL(expectedSize, actualSize);
+    // TEST_ASSERT_EQUAL(7, actualSize);
+    // TEST_ASSERT_EQUAL(7, expectedSize);
 
     {//compare array contents
         TEST_ASSERT_EQUAL(expectedArray[0], actualArray[0]);
@@ -414,11 +448,11 @@ Purpose:
 
 Other notes: This test was only made to ensure that Ceedling mocking actually works.
 */
-void test_CANstate_staleCheck()
+void test_CAN_staleCheck()
 {
         uint8_t expectValue = CAN_STALE;
         HAL_CAN_GetTxMailboxesFreeLevel_IgnoreAndReturn(expectValue);
-        uint8_t actualValue = CANstate_staleCheck();
+        uint8_t actualValue = CAN_staleCheck();
 
         TEST_ASSERT_EQUAL_UINT8(expectValue,actualValue);
 }
