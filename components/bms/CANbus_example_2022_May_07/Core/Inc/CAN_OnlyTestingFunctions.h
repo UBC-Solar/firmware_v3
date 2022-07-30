@@ -6,13 +6,29 @@
 #include "headers_for_mocking.h"
 #include "Pack_packdata.h"
 
-#define MESSAGE622_SIZE 7
-#define MESSAGE623_SIZE 6
+// #define MESSAGE622_SIZE 7
 // #define MESSAGE623_SIZE 6
-#define MESSAGE624_SIZE 6
-#define MESSAGE626_SIZE 7
-#define MESSAGE627_SIZE 6
+// // #define MESSAGE623_SIZE 6
+// #define MESSAGE624_SIZE 6
+// #define MESSAGE626_SIZE 7
+// #define MESSAGE627_SIZE 6
 
+#define MESSAGE622_SIZE 8
+#define MESSAGE623_SIZE 8
+#define MESSAGE624_SIZE 8
+#define MESSAGE626_SIZE 8
+#define MESSAGE627_SIZE 8
+
+
+
+extern uint8_t expectedMessage624[MESSAGE624_SIZE];
+extern uint8_t message624[MESSAGE624_SIZE];
+
+extern uint8_t expectedMessage622[MESSAGE622_SIZE];
+extern uint8_t expectedMessage623[MESSAGE623_SIZE];
+extern uint8_t PH_message623[MESSAGE623_SIZE];
+extern uint8_t expectedMessage626[MESSAGE626_SIZE];
+extern uint8_t expectedMessage627[MESSAGE627_SIZE];
 
 short CAN_getPackCurrent();
 
@@ -51,6 +67,17 @@ uint8_t * CAN_createExpectedMessage627
     uint8_t IDofMinTempCell,
     uint8_t maxTemp,
     uint8_t IDofMaxTempCell
+);
+
+voltageInfoStruct * NONMOCKVERSION_setVoltageInfo
+(
+    voltageInfoStruct * voltageInfo,
+    uint16_t MinVoltage,
+    uint16_t MaxVoltage,
+    uint8_t MinStackIndex,
+    uint8_t MinModuleIndex,
+    uint8_t MaxStackIndex,
+    uint8_t MaxModuleIndex
 );
 
 #endif // CAN_MESSAGES_H

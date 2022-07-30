@@ -9,6 +9,7 @@ uint8_t message624[MESSAGE624_SIZE] = {0};
 
 uint8_t expectedMessage622[MESSAGE622_SIZE] = {0};
 uint8_t expectedMessage623[MESSAGE623_SIZE] = {0};
+uint8_t PH_message623[MESSAGE623_SIZE] = {0};
 uint8_t expectedMessage626[MESSAGE626_SIZE] = {0};
 uint8_t expectedMessage627[MESSAGE627_SIZE] = {0};
 
@@ -220,4 +221,28 @@ uint8_t * CAN_createExpectedMessage627
     expectedMessage627[5] = IDofMaxTempCell; //bits 40-47
 
     return expectedMessage626;
+}
+/*
+Since CANbus_functions is mocked during testing, the setVoltageInfo function
+had to be copied and modified here to not be mocked and use a different struct
+name.
+*/
+voltageInfoStruct * NONMOCKVERSION_setVoltageInfo(
+    voltageInfoStruct * voltageInfo,
+    uint16_t MinVoltage,
+    uint16_t MaxVoltage,
+    uint8_t MinStackIndex,
+    uint8_t MinModuleIndex,
+    uint8_t MaxStackIndex,
+    uint8_t MaxModuleIndex
+)
+{
+    voltageInfo->MinVoltage      = MinVoltage;
+    voltageInfo->MaxVoltage      = MaxVoltage;
+    voltageInfo->MinStackIndex   = MinStackIndex;
+    voltageInfo->MinModuleIndex  = MinModuleIndex;
+    voltageInfo->MaxStackIndex   = MaxStackIndex;
+    voltageInfo->MaxModuleIndex  = MaxModuleIndex;
+
+    return voltageInfo;
 }
