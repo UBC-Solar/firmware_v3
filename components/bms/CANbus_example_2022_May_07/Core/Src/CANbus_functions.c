@@ -614,11 +614,19 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH])
 //        packVoltageFLOAT = 0,
         minVtgFLOAT = 0,
         maxVtgFLOAT = 0;
+    voltageInfoStruct *
+        voltageInfoPtr = NULL;
 
   //Collecting and translating the collected data into CAN frame format
 
   //gather min and max voltages
-    Pack_getVoltageInfo();
+    voltageInfoPtr = Pack_getVoltageInfo();
+    minVtg      = voltageInfoPtr->MinVoltage;
+    maxVtg      = voltageInfoPtr->MaxVoltage;
+    minStack    = voltageInfoPtr->MinStackIndex;
+    minModule   = voltageInfoPtr->MinModuleIndex;
+    maxStack    = voltageInfoPtr->MaxStackIndex;
+    maxModule   = voltageInfoPtr->MaxModuleIndex;
 
     packVoltage = Pack_getPackVoltage();
     if(packVoltage < +0)
