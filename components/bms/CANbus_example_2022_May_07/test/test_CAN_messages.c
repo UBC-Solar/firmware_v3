@@ -27,13 +27,10 @@
 
 uint16_t TEST_PACK_CURRENT = 7;
 
-
-
-
-
 void hello_world(int i);
 void compareArraysOfSize6(uint8_t expectedArray[6], uint8_t actualArray[6]);
 void compareArraysOfSize7(uint8_t* expectedArray, uint8_t* actualArray);
+void compareArraysOfSize8(uint8_t* expectedArray, uint8_t* actualArray);
 
 
 // typedef struct voltageInfoStruct{
@@ -308,6 +305,39 @@ void test_message622_faultsMessage_formatVerification()
 }
 
 
+//function under test: CAN_CompileMessage623()
+void test_message623_just_one_test()
+{
+    uint8_t* expectedMessage = NULL;
+    uint8_t* actualMessage = NULL;
+
+    //test all minimal values (0 or 1)
+    //expected outcome: messages are successfully compiled
+
+    //function under test: CAN_CompileMessage623()
+    Pack_getVoltageInfo_IgnoreAndReturn(&Placeholder_voltageInfo);
+    NONMOCKVERSION_setVoltageInfo
+    (
+        &Placeholder_voltageInfo,
+        00000,00000,000,000,000,000 //NOTE: ideally would be parameterized for code reuse
+    );
+    Pack_getPackVoltage_IgnoreAndReturn(0);
+
+    CAN_CompileMessage623(PH_message623);
+
+    //input 3 and 5 only go down to value 1, because battery stickers start at 1
+    expectedMessage = CAN_createExpectedMessage623(0,0,1,0,1);
+    actualMessage = PH_message623;
+
+    for(int i = 0; i < MESSAGE623_SIZE; ++i)
+    {
+        printf("expected: %5.2i, actual %5.2i\r\n", expectedMessage[i], actualMessage[i]);
+    }
+
+    compareArraysOfSize8(expectedMessage, actualMessage);
+
+    return;
+}
 
 void test_message623_voltageStatus()
 {
@@ -318,7 +348,17 @@ uint8_t* actualMessage = NULL;
 expectedMessage = CAN_createExpectedMessage623(0,0,0,0,0);
 
 Pack_getVoltageInfo_IgnoreAndReturn(&Placeholder_voltageInfo);
+NONMOCKVERSION_setVoltageInfo(
+    &Placeholder_voltageInfo,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+);
 Pack_getPackVoltage_IgnoreAndReturn(0);
+
 actualMessage   = CAN_createExpectedMessage623(0,0,0,0,0);
 
 compareArraysOfSize6(expectedMessage, actualMessage);
@@ -434,6 +474,29 @@ void compareArraysOfSize7(uint8_t* expectedArray, uint8_t* actualArray)
     }
 }
 
+void compareArraysOfSize8(uint8_t* expectedArray, uint8_t* actualArray)
+{
+    int expectedSize = 0;
+    int actualSize = 0;
+
+    //check size of arrays
+    // expectedSize = sizeof(expectedArray)/sizeof(expectedArray[0]);
+    // actualSize   = sizeof(actualArray)  /sizeof(actualArray[0]);
+    // TEST_ASSERT_EQUAL(expectedSize, actualSize);
+    // TEST_ASSERT_EQUAL(7, actualSize);
+    // TEST_ASSERT_EQUAL(7, expectedSize);
+
+    {//compare array contents
+        TEST_ASSERT_EQUAL(expectedArray[0], actualArray[0]);
+        TEST_ASSERT_EQUAL(expectedArray[1], actualArray[1]);
+        TEST_ASSERT_EQUAL(expectedArray[2], actualArray[2]);
+        TEST_ASSERT_EQUAL(expectedArray[3], actualArray[3]);
+        TEST_ASSERT_EQUAL(expectedArray[4], actualArray[4]);
+        TEST_ASSERT_EQUAL(expectedArray[5], actualArray[5]);
+        TEST_ASSERT_EQUAL(expectedArray[6], actualArray[6]);
+        TEST_ASSERT_EQUAL(expectedArray[7], actualArray[7]);
+    }
+}
 
 void hello_world(int i)
 {
