@@ -37,7 +37,7 @@ extern temperatureInfoStruct temperatureInfo;
 void Pack_initPackdataPtr(BTM_PackData_t * ptr);
 
 short Pack_getPackCurrent();
-int32_t Pack_getPackVoltage();
+uint32_t Pack_getPackVoltage();
 uint64_t Pack_getFaultAndWarningStatusBits();
 uint8_t Pack_getSOC();
 

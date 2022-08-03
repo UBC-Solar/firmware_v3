@@ -136,7 +136,7 @@ uint8_t Pack_getTimeAfterPowerOn()
 @note      The packVoltage value is returned as int32_t, but it should be treated and casted to uint16_t after checking for negative value. A negative value indicates an out-of-bounds event.
 */
 
-int32_t Pack_getPackVoltage()
+uint32_t Pack_getPackVoltage()
 {
     float packVoltageFLOAT;
     int32_t packVoltage;
@@ -153,7 +153,7 @@ int32_t Pack_getPackVoltage()
         packVoltage = -CAN_PACK_MAXIMUM; //should be -65000, below 16 bits, negative to indicate error
     }
     else{ //if packVolage is within bounds
-        packVoltage = (int32_t)(round(packVoltageFLOAT)); //DOUBLE CHECK IF THE CASTING WORKS
+        packVoltage = (uint32_t)(round(packVoltageFLOAT)); //DOUBLE CHECK IF THE CASTING WORKS
     }
 
     return packVoltage;
