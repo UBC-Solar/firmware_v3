@@ -305,8 +305,45 @@ void test_message622_faultsMessage_formatVerification()
 }
 
 
-//function under test: CAN_CompileMessage623()
-void test_message623_just_one_test()
+/**
+
+\brief  Function Name: FOR_message623_assert_equal
+        Purpose: Test the compilation function for CAN message623, by creating
+                 both an actual and an expected message with given parameters.
+
+\par An ideallized formatting of this function, for ease of readability and
+    compactness of code:
+
+FOR_message623_assert_equal
+(
+    voltageInfoStructPtr,
+//  total, min V,  labels ,  max V,  labels ,
+    00000, 00000,  000,000,  00000,  000,000, //actual input data
+    00000, 000,    000,      000,    000      //expected values
+);
+*/
+
+
+void FOR_message623_assert_equal
+(
+    voltageInfoStruct * voltageInfoStructPtr,
+
+    uint16_t ActualTotalVoltage,
+
+    uint16_t ActualMinVoltage,
+    uint8_t ActualMinStackIndex,
+    uint8_t ActualMinModuleIndex,
+    uint16_t ActualMaxVoltage,
+    uint8_t ActualMaxStackIndex,
+    uint8_t ActualMaxModuleIndex,
+
+    uint16_t ExpectedTotalVoltage,
+
+    uint8_t ExpectedMinVoltage,
+    uint8_t ExpectedMinVoltageSticker,
+    uint8_t ExpectedMaxVoltage,
+    uint8_t ExpectedMaxVoltageSticker
+)
 {
     uint8_t* expectedMessage = NULL;
     uint8_t* actualMessage = NULL;
@@ -315,100 +352,75 @@ void test_message623_just_one_test()
     //expected outcome: messages are successfully compiled
 
     //function under test: CAN_CompileMessage623()
-    Pack_getVoltageInfo_IgnoreAndReturn(&Placeholder_voltageInfo);
+    Pack_getVoltageInfo_IgnoreAndReturn(voltageInfoStructPtr);
     NONMOCKVERSION_setVoltageInfo
     (
-        &Placeholder_voltageInfo,
-        00000,00000,000,000,000,000 //NOTE: ideally would be parameterized for code reuse
+        voltageInfoStructPtr,
+        ActualMinVoltage,
+        ActualMaxVoltage,
+        ActualMinStackIndex,
+        ActualMinModuleIndex,
+        ActualMaxStackIndex,
+        ActualMaxModuleIndex
     );
-    Pack_getPackVoltage_IgnoreAndReturn(0);
+    Pack_getPackVoltage_IgnoreAndReturn(ActualTotalVoltage);
 
     CAN_CompileMessage623(PH_message623);
 
     //input 3 and 5 only go down to value 1, because battery stickers start at 1
-    expectedMessage = CAN_createExpectedMessage623(0,0,1,0,1);
+    expectedMessage = CAN_createExpectedMessage623
+    (
+        ExpectedTotalVoltage,
+        ExpectedMinVoltage,
+        ExpectedMinVoltageSticker,
+        ExpectedMaxVoltage,
+        ExpectedMaxVoltageSticker
+    );
     actualMessage = PH_message623;
 
+    printf("Start of new comparison.\r\n");
     for(int i = 0; i < MESSAGE623_SIZE; ++i)
     {
         printf("expected: %5.2i, actual %5.2i\r\n", expectedMessage[i], actualMessage[i]);
     }
 
-    compareArraysOfSize8(expectedMessage, actualMessage);
+    // compareArraysOfSize8(expectedMessage, actualMessage);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(expectedMessage, actualMessage, MESSAGE623_SIZE);
 
     return;
 }
 
-void test_message623_voltageStatus()
+void test_message623_voltageStatus_all_mins()
 {
-uint8_t* expectedMessage = NULL;
-uint8_t* actualMessage = NULL;
+    uint8_t* expectedMessage = NULL;
+    uint8_t* actualMessage = NULL;
+    voltageInfoStruct* voltageInfoStructPtr = &Placeholder_voltageInfo;
 
-//test all zero
-expectedMessage = CAN_createExpectedMessage623(0,0,0,0,0);
-
-Pack_getVoltageInfo_IgnoreAndReturn(&Placeholder_voltageInfo);
-NONMOCKVERSION_setVoltageInfo(
-    &Placeholder_voltageInfo,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0
-);
-Pack_getPackVoltage_IgnoreAndReturn(0);
-
-actualMessage   = CAN_createExpectedMessage623(0,0,0,0,0);
-
-compareArraysOfSize6(expectedMessage, actualMessage);
-
-//test max pack voltage
-expectedMessage = CAN_createExpectedMessage623(65535,0,0,0,0);
-
-Pack_getVoltageInfo_IgnoreAndReturn(&Placeholder_voltageInfo);
-Pack_getPackVoltage_IgnoreAndReturn(0);
-actualMessage   = CAN_createExpectedMessage623(65535,0,0,0,0);
-
-compareArraysOfSize6(expectedMessage, actualMessage);
-
-//test max lowestChargedVoltage
-expectedMessage = CAN_createExpectedMessage623(0,255,0,0,0);
-
-Pack_getVoltageInfo_IgnoreAndReturn(&Placeholder_voltageInfo);
-Pack_getPackVoltage_IgnoreAndReturn(0);
-actualMessage   = CAN_createExpectedMessage623(0,255,0,0,0);
-
-compareArraysOfSize6(expectedMessage, actualMessage);
-
-//test max IDofLowestVoltageCell
-expectedMessage = CAN_createExpectedMessage623(0,0,255,0,0);
-
-Pack_getVoltageInfo_IgnoreAndReturn(&Placeholder_voltageInfo);
-Pack_getPackVoltage_IgnoreAndReturn(0);
-actualMessage   = CAN_createExpectedMessage623(0,0,255,0,0);
-
-compareArraysOfSize6(expectedMessage, actualMessage);
-
-//test max highestChargedVoltage
-expectedMessage = CAN_createExpectedMessage623(0,0,0,255,0);
-
-Pack_getVoltageInfo_IgnoreAndReturn(&Placeholder_voltageInfo);
-Pack_getPackVoltage_IgnoreAndReturn(0);
-actualMessage   = CAN_createExpectedMessage623(0,0,0,255,0);
-
-compareArraysOfSize6(expectedMessage, actualMessage);
-
-//test max IDofLowestVoltageCell
-expectedMessage = CAN_createExpectedMessage623(0,0,0,0,255);
-
-Pack_getVoltageInfo_IgnoreAndReturn(&Placeholder_voltageInfo);
-Pack_getPackVoltage_IgnoreAndReturn(0);
-actualMessage   = CAN_createExpectedMessage623(0,0,0,0,255);
-
-compareArraysOfSize6(expectedMessage, actualMessage);
+    //test all min values
+    FOR_message623_assert_equal
+    (
+        voltageInfoStructPtr,
+    //  total, min V,  labels ,  max V,  labels ,
+        00000, 00000,  000,000,  00000,  000,000, //actual input data
+        00000, 000,    1,        000,    1        //expected values
+    );
 }
 
+void test_message623_voltageStatus_all_maxs()
+{
+    uint8_t* expectedMessage = NULL;
+    uint8_t* actualMessage = NULL;
+    voltageInfoStruct* voltageInfoStructPtr = &Placeholder_voltageInfo;
+
+    //test all max values
+    FOR_message623_assert_equal
+    (
+        voltageInfoStructPtr,
+    //  total, min V,  labels ,  max V,  labels ,
+        65535, 65535,  1,  17,   65535,  1  , 17, //actual input data
+        65535, 65,     94,       65,     94       //expected values
+    );
+}
 
 void test_message626_packHealth()
 {
@@ -525,10 +537,13 @@ void test_CAN_staleCheck()
 //     TEST_IGNORE_MESSAGE("Need to Implement CAN_messages");
 // }
 
-
+// #define RANDOM_BLEH
 #ifdef RANDOM_BLEH
 void test_randomStuff()
 {
+    uint8_t array1[3] = {1, 2, 3};
+    uint8_t array2[3] = {1, 2, 3};
+    uint8_t array3[3] = {1, 4, 4};
                            // 18446744073709551615"
     // uint64_t longlong = 18446744073709551614;
     // int_least64_t longlong = -18446744073709551614;
@@ -553,6 +568,11 @@ void test_randomStuff()
     {
         printf("i is %i\r", i);
     }
+
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(array1, array2, 3);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(array1, array3, 3);
+
+
 }
 #endif
 
