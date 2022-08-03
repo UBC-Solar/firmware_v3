@@ -192,7 +192,8 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH]);
 void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH]);
 void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH]);
 
-uint16_t checkAndConvertModuleVoltage(float moduleVoltageFLOAT);
+uint8_t CAN_convertVoltage_100uVto100mV(uint16_t voltage_100uV);
+uint8_t CAN_lookupModuleSticker(uint8_t stackIndex, uint8_t moduleIndex);
 
 
 

@@ -51,10 +51,20 @@ static uint8_t STATIC_messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHT
 */
 uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
 {
-    { 1, 2, 3, 4, 5,91, 6, 7, 8, 9,10,92}
+//    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17
+    { 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,91,92},
+    {17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,93,94}
 };
     //note that the 9X numbers (91, 92, 93, 94) indicate the garbage channels.
     //Should any of the 9X numbers appear in a CAN message, something is not right.
+
+
+// uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
+// {
+// //    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17
+//     { 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18},
+//     {19,20,21,22,23,24,25,26,27,28,29,30,31,32,91,92,93,94}
+// };
 
 //function prototypes
 #define CODEWORD_DEBUG_BRIGHTSIDE
@@ -593,7 +603,7 @@ Function name: CAN_CompileMessage623
 */
 void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH])
 {
-    int32_t
+    uint32_t
         packVoltage = 0;
     uint16_t
         minVtg = 0,
@@ -636,16 +646,19 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH])
 
     //Convert units of 100uV to V.
     //Then check if value is out of out of expected bounds, and cast uint16_t to uint8_t.
-    //minVtgFLOAT = BTM_regValToVoltage(minVtg);
-    minVtgFLOAT = (float)minVtg * 0.0001;
-    minVtgBYTE = checkAndConvertModuleVoltage(minVtgFLOAT);
 
-    //maxVtgFLOAT = BTM_regValToVoltage(maxVtg);
-    maxVtgFLOAT = (float)maxVtg * 0.0001;
-    maxVtgBYTE = checkAndConvertModuleVoltage(maxVtgFLOAT);
+    // minVtgFLOAT = (float)minVtg * 0.0001;
+    // minVtgBYTE = checkAndConvertModuleVoltage(minVtgFLOAT);
 
-    minBattModuleSticker = LUT_moduleStickers[minStack][minModule];
-    maxBattModuleSticker = LUT_moduleStickers[maxStack][maxModule];
+    minVtgBYTE = CAN_convertVoltage_100uVto100mV(minVtg);
+
+    // maxVtgFLOAT = (float)maxVtg * 0.0001;
+    // maxVtgBYTE = checkAndConvertModuleVoltage(maxVtgFLOAT);
+
+    maxVtgBYTE = CAN_convertVoltage_100uVto100mV(maxVtg);
+
+    minBattModuleSticker = CAN_lookupModuleSticker(minStack,minModule);
+    maxBattModuleSticker = CAN_lookupModuleSticker(maxStack,maxModule);
 
     //setting byte order in aData_series623 array
     aData_series623[0] = (uint8_t)(packVoltage >> 8);//intent: most-sig half of pack_voltage is bit-shifted right by 8 bits, such that ONLY the MSH is casted.
@@ -783,30 +796,62 @@ void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH]){
 
 
 /**
-@brief      Function Name: checkAndConvertModuleVoltage
+@brief      Function Name: CAN_convertVoltage_100uVto100mV
 @details    Function Purpose:
-            Check if the module voltage collected is outside the expected message.
-                If out of bounds, assign the broken bound and cast to uint8_t.
-                Else, return exact value casted to uint8_t.
+            Convert a voltage in units of 100uV to units of 100mV
 
-@param      float moduleVoltageFLOAT - The voltage to check.
+@param      uint16_t voltage_100uV
 
-@returns    The moduleVoltage100mV value, casted to uint8_t.
-@note       moduleVoltage100mV is moduleVoltageFLOAT converted to units of 100mV.
+@returns    uint8_t voltage_100mV
+
+@note       The math for converting from values in units of 100uV to units of 100mV:
+
+            gpio voltage [100mV] = (cell value)[100uV] * ([V]x10^-6*100/[uV*100]) x ([mV]*10*100/[V])
+                                 = (cell value)*10^-3
+
+            or, 100uV to 100mV is the same magnitude difference as uV to mV; 10^-3
 */
-uint16_t checkAndConvertModuleVoltage(float moduleVoltageFLOAT){
-    float moduleVoltage100mV = moduleVoltageFLOAT * 10;
+uint8_t CAN_convertVoltage_100uVto100mV(uint16_t voltage_100uV)
+{
+    uint8_t voltage_100mV = 0;
+    voltage_100mV = (uint8_t)((float)voltage_100uV * 0.001);
 
-    if(moduleVoltage100mV < CAN_MODULE_MINIMUM){
-        return -CAN_MODULE_MINIMUM;
-    }
-    else if(moduleVoltage100mV > CAN_MODULE_MAXIMUM){
-        return -CAN_MODULE_MAXIMUM;
-    }
-    else
-    return (uint8_t)moduleVoltage100mV; //DOUBLE CHECK IF THE CASTING WORKS
+    return voltage_100mV;
 }
 
+
+/**
+@brief      Function Name:  CAN_lookupModuleSticker
+@details    Function Purpose:
+            Lookup the sticker number for a module based on the stack index (the
+            ltc6813 it's connected to) and the module index (the pin on the
+            ltc6813 it's connected to)
+
+            If the indices given are out of bounds, the max value 255 is
+            returned to indicate an error.
+
+@param      uint8_t stackIndex, moduleIndex
+
+@returns    uint8_t LUT_moduleStickers[stackIndex][moduleIndex]
+
+@note
+*/
+uint8_t CAN_lookupModuleSticker(uint8_t stackIndex, uint8_t moduleIndex)
+{
+    if
+    (
+        stackIndex  >= 0 && stackIndex  <= 1
+     && moduleIndex >= 0 && moduleIndex <= 17
+    )
+    {
+        return LUT_moduleStickers[stackIndex][moduleIndex];
+    }
+    //else
+    {
+        return 255;
+    }
+
+}
 /*
 
 Other Functions
