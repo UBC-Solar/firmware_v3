@@ -51,9 +51,9 @@ static uint8_t STATIC_messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHT
 */
 uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
 {
-//    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17
-    { 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,91,92},
-    {17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,93,94}
+//    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,    13,14,15,16,17
+    { 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,000091,13,14,15,16,000092},
+    {17,18,19,20,21,22,23,24,25,26,27,28,000093,29,30,31,32,000094}
 };
     //note that the 9X numbers (91, 92, 93, 94) indicate the garbage channels.
     //Should any of the 9X numbers appear in a CAN message, something is not right.
@@ -690,19 +690,24 @@ Function name: CAN_CompileMessage626
 void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH])
 {
     uint8_t StateOfChargeBYTE;
+    uint16_t DepthOfDischarge;
+    uint16_t Capacity;
+
 
     // StateOfChargeBYTE = pPACKDATA->PH_SOC_LOCATION;
 		StateOfChargeBYTE = Pack_getSOC();
+        DepthOfDischarge  = Pack_getDOD();
+        Capacity          = Pack_getCapacity();
 
     //setting byte order in aData_series626 array
     aData_series626[0] = StateOfChargeBYTE;
-    // aData_series623[1] = 0;
-    // aData_series623[2] = 0;
-    // aData_series626[3] = 0;
-    // aData_series626[4] = 0;
+    aData_series626[1] = (uint8_t)(DepthOfDischarge >> 8);
+    aData_series626[2] = (uint8_t)DepthOfDischarge;
+    aData_series626[3] = (uint8_t)(Capacity >> 8);
+    aData_series626[4] = (uint8_t)Capacity;
     // aData_series626[5] = 0;
     // aData_series626[6] = 0;
-    // aData_series623[7] = 0;
+    // aData_series626[7] = 0;
 }
 
 /**
