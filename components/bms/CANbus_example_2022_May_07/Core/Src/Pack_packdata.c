@@ -139,7 +139,7 @@ uint8_t Pack_getTimeAfterPowerOn()
 uint32_t Pack_getPackVoltage()
 {
     float packVoltageFLOAT;
-    int32_t packVoltage;
+    uint32_t packVoltage;
 
     //Convert units of 100uV to V.
 
@@ -147,13 +147,13 @@ uint32_t Pack_getPackVoltage()
 
     //check if value is outside of expected bounds
     if(packVoltageFLOAT < CAN_PACK_MINIMUM){
-        packVoltage = -CAN_PACK_MINIMUM; //should be -0, negative to indicate error
+        packVoltage = CAN_PACK_MINIMUM;
     }
     else if(packVoltageFLOAT > CAN_PACK_MAXIMUM){
-        packVoltage = -CAN_PACK_MAXIMUM; //should be -65000, below 16 bits, negative to indicate error
+        packVoltage = CAN_PACK_MAXIMUM;
     }
     else{ //if packVolage is within bounds
-        packVoltage = (uint32_t)(round(packVoltageFLOAT)); //DOUBLE CHECK IF THE CASTING WORKS
+        packVoltage = (uint32_t)(round(packVoltageFLOAT)); //TODO: DOUBLE CHECK IF THE CASTING WORKS
     }
 
     return packVoltage;
@@ -194,6 +194,15 @@ uint8_t Pack_getSOC()
 {
     // StateOfChargeBYTE = pPACKDATA->PH_SOC_LOCATION;
     return pPACKDATA->PH_SOC_LOCATION;
+}
+
+uint16_t Pack_getDOD()
+{
+    return 0;
+}
+uint16_t Pack_getCapacity()
+{
+    return 0;
 }
 
 voltageInfoStruct * Pack_getVoltageInfo()

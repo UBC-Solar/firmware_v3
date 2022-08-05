@@ -40,6 +40,8 @@ short Pack_getPackCurrent();
 uint32_t Pack_getPackVoltage();
 uint64_t Pack_getFaultAndWarningStatusBits();
 uint8_t Pack_getSOC();
+uint16_t Pack_getDOD();
+uint16_t Pack_getCapacity();
 
 voltageInfoStruct * Pack_getVoltageInfo();
 
