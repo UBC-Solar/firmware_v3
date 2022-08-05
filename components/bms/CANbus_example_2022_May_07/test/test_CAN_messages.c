@@ -28,6 +28,28 @@
 uint16_t TEST_PACK_CURRENT = 7;
 
 void hello_world(int i);
+
+void FOR_message623_assert_equal
+(
+    voltageInfoStruct * voltageInfoStructPtr,
+
+    uint16_t ActualTotalVoltage,
+
+    uint16_t ActualMinVoltage,
+    uint8_t ActualMinStackIndex,
+    uint8_t ActualMinModuleIndex,
+    uint16_t ActualMaxVoltage,
+    uint8_t ActualMaxStackIndex,
+    uint8_t ActualMaxModuleIndex,
+
+    uint16_t ExpectedTotalVoltage,
+
+    uint8_t ExpectedMinVoltage,
+    uint8_t ExpectedMinVoltageSticker,
+    uint8_t ExpectedMaxVoltage,
+    uint8_t ExpectedMaxVoltageSticker
+);
+
 void compareArraysOfSize6(uint8_t expectedArray[6], uint8_t actualArray[6]);
 void compareArraysOfSize7(uint8_t* expectedArray, uint8_t* actualArray);
 void compareArraysOfSize8(uint8_t* expectedArray, uint8_t* actualArray);
@@ -392,8 +414,6 @@ void FOR_message623_assert_equal
 
 void test_message623_voltageStatus_all_mins()
 {
-    uint8_t* expectedMessage = NULL;
-    uint8_t* actualMessage = NULL;
     voltageInfoStruct* voltageInfoStructPtr = &Placeholder_voltageInfo;
 
     //test all min values
@@ -408,8 +428,6 @@ void test_message623_voltageStatus_all_mins()
 
 void test_message623_voltageStatus_all_maxs()
 {
-    uint8_t* expectedMessage = NULL;
-    uint8_t* actualMessage = NULL;
     voltageInfoStruct* voltageInfoStructPtr = &Placeholder_voltageInfo;
 
     //test all max values
@@ -422,13 +440,44 @@ void test_message623_voltageStatus_all_maxs()
     );
 }
 
-void test_message626_packHealth()
+void FOR_message626_assert_equal
+(
+    uint8_t StateOfCharge,
+    uint16_t DepthOfDischarge,
+    uint16_t Capacity
+)
 {
     uint8_t* expectedMessage = NULL;
     uint8_t* actualMessage = NULL;
 
-    expectedMessage = CAN_createExpectedMessage626(225,65535,65535);
+    expectedMessage = CAN_createExpectedMessage626(StateOfCharge,DepthOfDischarge,Capacity);
+
+    Pack_getSOC_IgnoreAndReturn(StateOfCharge);
+    Pack_getDOD_IgnoreAndReturn(DepthOfDischarge);
+    Pack_getCapacity_IgnoreAndReturn(Capacity);
+    
+    CAN_CompileMessage626(PH_message626);
+    actualMessage = PH_message626;
+
+    printf("message626.\r\n");
+    for(int i = 0; i < MESSAGE626_SIZE; ++i)
+    {
+        printf("expected: %5.2i, actual %5.2i\r\n", expectedMessage[i], actualMessage[i]);
+    }
+
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(expectedMessage, actualMessage, MESSAGE626_SIZE);
 }
+
+void test_message626_packHealth_AllZeros()
+{
+    FOR_message626_assert_equal(0,0,0);
+}
+
+void test_message626_packHealth_AllMax()
+{
+    FOR_message626_assert_equal(255,65535,65535);
+}
+
 
 void test_message627_Temperature()
 {

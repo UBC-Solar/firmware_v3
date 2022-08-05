@@ -11,6 +11,7 @@ uint8_t expectedMessage622[MESSAGE622_SIZE] = {0};
 uint8_t expectedMessage623[MESSAGE623_SIZE] = {0};
 uint8_t PH_message623[MESSAGE623_SIZE] = {0};
 uint8_t expectedMessage626[MESSAGE626_SIZE] = {0};
+uint8_t PH_message626[MESSAGE626_SIZE] = {0};
 uint8_t expectedMessage627[MESSAGE627_SIZE] = {0};
 
 short CAN_getPackCurrent()
