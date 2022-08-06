@@ -56,8 +56,13 @@ dkms.conf
 .metadata*
 .vscode*
 RemoteSystemsTempFiles*
+.settings/*
 
 # Compiled binaries
-**/Debug/
-**/Release/
+*.elf
+*.bin
+
+.cache*
+
+# Doxygen files
 Doxyfile-firmwarev3
