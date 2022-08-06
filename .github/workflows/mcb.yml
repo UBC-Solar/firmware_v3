@@ -19,10 +19,15 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install toolchain (arm-none-eabi)
-      run: sudo apt-get update && sudo apt-get install gcc-arm-none-eabi
+      run: |
+        sudo apt-get update
+        sudo apt-get install gcc-arm-none-eabi
       
     - name: Build debug target
-      run: cd components/mcb/mcb_main/Debug/ && make -j$(nproc) all && arm-none-eabi-objcopy -O binary mcb_main.elf mcb_main.bin
+      run: | 
+        cd components/mcb/mcb_main/Debug/
+        make -j$(nproc) all 
+        arm-none-eabi-objcopy -O binary mcb_main.elf mcb_main.bin
       
     - name: Get branch name and commit hash
       run: |
@@ -30,7 +35,9 @@ jobs:
         echo "commit_hash=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
     - name: Collect build artifacts
-      run: mkdir build && cp components/mcb/mcb_main/Debug/*.* build
+      run: |
+        mkdir build
+        cp components/mcb/mcb_main/Debug/*.* build
       
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3
