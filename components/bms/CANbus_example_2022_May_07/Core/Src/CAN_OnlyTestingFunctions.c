@@ -13,6 +13,7 @@ uint8_t PH_message623[MESSAGE623_SIZE] = {0};
 uint8_t expectedMessage626[MESSAGE626_SIZE] = {0};
 uint8_t PH_message626[MESSAGE626_SIZE] = {0};
 uint8_t expectedMessage627[MESSAGE627_SIZE] = {0};
+uint8_t PH_message627[MESSAGE627_SIZE] = {0};
 
 short CAN_getPackCurrent()
 {
@@ -221,10 +222,10 @@ uint8_t * CAN_createExpectedMessage627
     expectedMessage627[4] = maxTemp;         //bits 32-39
     expectedMessage627[5] = IDofMaxTempCell; //bits 40-47
 
-    return expectedMessage626;
+    return expectedMessage627;
 }
 /*
-Since CANbus_functions is mocked during testing, the setVoltageInfo function
+Since Pack_packdata.h is mocked during testing, the setVoltageInfo function
 had to be copied and modified here to not be mocked and use a different struct
 name.
 */
@@ -246,4 +247,31 @@ voltageInfoStruct * NONMOCKVERSION_setVoltageInfo(
     voltageInfo->MaxModuleIndex  = MaxModuleIndex;
 
     return voltageInfo;
+}
+
+/*
+Since Pack_packdata.h is mocked during testing, the setVoltageInfo function
+had to be copied and modified here to not be mocked and use a different struct
+name.
+*/
+temperatureInfoStruct * NONMOCKVERSION_setTemperatureInfo(
+    temperatureInfoStruct * temperatureInfo,
+    int16_t averageTemperature,
+    int16_t minTmp,
+    int16_t maxTmp,
+    uint8_t minTmpStackIndex,
+    uint8_t minTmpModuleIndex,
+    uint8_t maxTmpStackIndex,
+    uint8_t maxTmpModuleIndex
+)
+{
+    temperatureInfo->averageTemperature = averageTemperature;
+    temperatureInfo->minTmp             = minTmp;
+    temperatureInfo->maxTmp             = maxTmp;
+    temperatureInfo->minTmpStackIndex   = minTmpStackIndex;
+    temperatureInfo->minTmpModuleIndex  = maxTmpStackIndex;
+    temperatureInfo->maxTmpStackIndex   = minTmpModuleIndex;
+    temperatureInfo->maxTmpModuleIndex  = maxTmpModuleIndex;
+
+    return temperatureInfo;
 }

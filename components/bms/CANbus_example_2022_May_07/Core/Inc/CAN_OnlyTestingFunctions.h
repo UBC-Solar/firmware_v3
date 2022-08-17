@@ -30,6 +30,7 @@ extern uint8_t PH_message623[MESSAGE623_SIZE];
 extern uint8_t expectedMessage626[MESSAGE626_SIZE];
 extern uint8_t PH_message626[MESSAGE626_SIZE];
 extern uint8_t expectedMessage627[MESSAGE627_SIZE];
+extern uint8_t PH_message627[MESSAGE627_SIZE];
 
 short CAN_getPackCurrent();
 
