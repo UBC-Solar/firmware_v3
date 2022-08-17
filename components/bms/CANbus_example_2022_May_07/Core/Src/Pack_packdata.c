@@ -308,10 +308,10 @@ voltageInfoStruct * Pack_setVoltageInfo(
 */
 temperatureInfoStruct * Pack_getTemperatureInfo()
 {
-    uint16_t
+    int16_t
         localTemperature = 0,
-        localMinTmp = 65535,
-        localMaxTmp = 0;
+        localMinTmp = 32767,
+        localMaxTmp = -32768;
     uint8_t
         minStack = 255,
         maxStack = 255,
@@ -334,7 +334,7 @@ temperatureInfoStruct * Pack_getTemperatureInfo()
                 localTemperature = pPACKDATA -> stack[i].module[j].temperature;
 
                 //double type is used to avoid possible integer overflow.
-                //localTemperature is uint16_t. Reasonably, in this loop, it should
+                //localTemperature is int16_t. Reasonably, in this loop, it should
                 //never add up to a number greater than the max double value.
                 //assuming that the thermistors can handle up to the solder melting point,
                 //about 300 degree Celcius, the three digits multiplied by 12 is way-way-way
@@ -360,17 +360,17 @@ temperatureInfoStruct * Pack_getTemperatureInfo()
 
     localAverage = temperatureTotal / total_mux_read;
 
-    //Ensuring that the value fits into the uint16_t size.
+    //Ensuring that the value fits into the int16_t size.
     //If it's breaks the bounds, it will be set to the bounds.
     //If the bounds ever appear, that is a sign that something may be off.
-    if(localAverage > 65535){
-        localAverage = 65535;
+    if(localAverage > 32767){
+        localAverage = 32767;
     }
-    else if(localAverage < 0){
-        localAverage = 0;
+    else if(localAverage < -32768){
+        localAverage = -32768;
     }
 
-    temperatureInfo.averageTemperature = (uint16_t)localAverage;
+    temperatureInfo.averageTemperature = (int16_t)localAverage;
     temperatureInfo.minTmp = localMinTmp;
     temperatureInfo.maxTmp = localMaxTmp;
     temperatureInfo.minTmpStackIndex = minStack;
@@ -382,12 +382,12 @@ temperatureInfoStruct * Pack_getTemperatureInfo()
 }
 
 temperatureInfoStruct * Pack_setTemperatureInfo(
-    uint16_t averageTemperature,
-    uint16_t minTmp,
-    uint16_t maxTmp,
+    int16_t averageTemperature,
+    int16_t minTmp,
+    int16_t maxTmp,
     uint8_t minTmpStackIndex,
-    uint8_t maxTmpStackIndex,
     uint8_t minTmpModuleIndex,
+    uint8_t maxTmpStackIndex,
     uint8_t maxTmpModuleIndex
 )
 {

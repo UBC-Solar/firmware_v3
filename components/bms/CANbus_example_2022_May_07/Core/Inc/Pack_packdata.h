@@ -21,12 +21,12 @@ typedef struct voltageInfoStruct{
 }voltageInfoStruct;
 
 typedef struct temperatureInfoStruct{
-    uint16_t averageTemperature;
-    uint16_t minTmp;
-    uint16_t maxTmp;
+    int16_t averageTemperature;
+    int16_t minTmp;
+    int16_t maxTmp;
     uint8_t minTmpStackIndex;
-    uint8_t maxTmpStackIndex;
     uint8_t minTmpModuleIndex;
+    uint8_t maxTmpStackIndex;
     uint8_t maxTmpModuleIndex;
 }temperatureInfoStruct;
 
@@ -56,12 +56,12 @@ voltageInfoStruct * Pack_setVoltageInfo(
 
 temperatureInfoStruct * Pack_getTemperatureInfo();
 temperatureInfoStruct * Pack_setTemperatureInfo(
-    uint16_t averageTemperature,
-    uint16_t minTmp,
-    uint16_t maxTmp,
+    int16_t averageTemperature,
+    int16_t minTmp,
+    int16_t maxTmp,
     uint8_t minTmpStackIndex,
-    uint8_t maxTmpStackIndex,
     uint8_t minTmpModuleIndex,
+    uint8_t maxTmpStackIndex,
     uint8_t maxTmpModuleIndex
 );
 
