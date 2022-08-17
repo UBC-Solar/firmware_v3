@@ -193,6 +193,7 @@ void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH]);
 void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH]);
 
 uint8_t CAN_convertVoltage_100uVto100mV(uint16_t voltage_100uV);
+uint8_t CAN_convertTemperature_int16_to_uint8(int16_t temperature_INT16);
 uint8_t CAN_lookupModuleSticker(uint8_t stackIndex, uint8_t moduleIndex);
 
 

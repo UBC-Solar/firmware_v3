@@ -52,8 +52,8 @@ static uint8_t STATIC_messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHT
 uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
 {
 //    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,    13,14,15,16,17
-    { 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,000091,13,14,15,16,000092},
-    {17,18,19,20,21,22,23,24,25,26,27,28,000093,29,30,31,32,000094}
+    { 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,91,13,14,15,16,92},
+    {17,18,19,20,21,22,23,24,25,26,27,28,93,29,30,31,32,94}
 };
     //note that the 9X numbers (91, 92, 93, 94) indicate the garbage channels.
     //Should any of the 9X numbers appear in a CAN message, something is not right.
@@ -112,9 +112,9 @@ double BTM_TEMP_volts2temp(double vout);
 extern Brightside_CAN_MessageSeries* CAN_initStructsAndStuff(CAN_HandleTypeDef * hcan)
 {
     //initialize handles from cubeMX
-	Brightside_CAN_handle = hcan;
+    Brightside_CAN_handle = hcan;
 
-	//Initialize static variables
+    //Initialize static variables
     STATIC_lastInterval = 0;
     STATIC_lastSubInterval = 0;
     //STATIC_messageArrays = 0;
@@ -489,7 +489,7 @@ void CAN_CompileMessage622(uint8_t aData_series622[CAN_BRIGHTSIDE_DATA_LENGTH])
 
     int
         // status_var = pPACKDATA->PH_status; //should access the variable that summarizes the whole pack's warning and fault flags
-				status_var = Pack_getFaultAndWarningStatusBits();
+    status_var = Pack_getFaultAndWarningStatusBits();
     /*
     Update stateBYTE.
     */
@@ -620,10 +620,6 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH])
         maxBattModuleSticker = 0;
     uint8_t
         outOfBounds = 0;
-    float
-//        packVoltageFLOAT = 0,
-        minVtgFLOAT = 0,
-        maxVtgFLOAT = 0;
     voltageInfoStruct *
         voltageInfoPtr = NULL;
 
@@ -670,7 +666,7 @@ void CAN_CompileMessage623(uint8_t aData_series623[CAN_BRIGHTSIDE_DATA_LENGTH])
     //aData_series623[6] = 0;                        //redundant
     aData_series623[7] = (uint8_t)outOfBounds;
 
-		// return ;
+    // return ;
   //end of function
 }
 
@@ -695,7 +691,7 @@ void CAN_CompileMessage626(uint8_t aData_series626[CAN_BRIGHTSIDE_DATA_LENGTH])
 
 
     // StateOfChargeBYTE = pPACKDATA->PH_SOC_LOCATION;
-		StateOfChargeBYTE = Pack_getSOC();
+    StateOfChargeBYTE = Pack_getSOC();
         DepthOfDischarge  = Pack_getDOD();
         Capacity          = Pack_getCapacity();
 
@@ -744,44 +740,46 @@ Function name: CAN_CompileMessage627
 
 */
 void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH]){
+    //values to put into message data array
     uint8_t
         averageTemperatureBYTE = 0,
         minTmpBYTE = 0,
         maxTmpBYTE = 0,
         minTmpModuleSticker = 255,
         maxTmpModuleSticker = 255;
+
+    //direct values from packdata data pool
+    int16_t
+        averageTemperature = 0,
+        minTmp = 0,
+        maxTmp = 0;
     uint8_t
         minTmpStack = 0,
         maxTmpStack = 0,
         minTmpModule = 0,
-        maxTmpModule = 0,
-        outOfBounds = 0;
-    uint16_t
-        averageTemperature2BYTE = 0,
-        minTmp = 0,
-        maxTmp = 0;
+        maxTmpModule = 0;
 
-    double
-        averageTemperatureDOUBLE = 0,
-        minTmpDOUBLE = 0,
-        maxTmpDOUBLE = 0;
+    temperatureInfoStruct *
+        tempInfoPtr = NULL;
+
 
     //1) scans the struct and calculates the relevant information needed
-    Pack_getTemperatureInfo();
+    tempInfoPtr = Pack_getTemperatureInfo();
+        averageTemperature  = tempInfoPtr->averageTemperature;
+        minTmp              = tempInfoPtr->minTmp;
+        maxTmp              = tempInfoPtr->maxTmp;
+        minTmpStack         = tempInfoPtr->minTmpStackIndex;
+        minTmpModule        = tempInfoPtr->minTmpModuleIndex;
+        maxTmpStack         = tempInfoPtr->maxTmpStackIndex;
+        maxTmpModule        = tempInfoPtr->maxTmpModuleIndex;
 
     //2) Translating Data
+    averageTemperatureBYTE = CAN_convertTemperature_int16_to_uint8(averageTemperature);
+    minTmpBYTE             = CAN_convertTemperature_int16_to_uint8(minTmp);
+    maxTmpBYTE             = CAN_convertTemperature_int16_to_uint8(maxTmp);
 
-    averageTemperatureDOUBLE = BTM_TEMP_volts2temp((double)averageTemperature2BYTE);
-    averageTemperatureBYTE = Pack_checkAndCastTemperature(averageTemperatureDOUBLE);
-
-    minTmpDOUBLE = BTM_TEMP_volts2temp((double)minTmp);
-    minTmpBYTE = Pack_checkAndCastTemperature(minTmpDOUBLE);
-
-    maxTmpDOUBLE = BTM_TEMP_volts2temp((double)maxTmp);
-    maxTmpBYTE = Pack_checkAndCastTemperature(maxTmpDOUBLE);
-
-    minTmpModuleSticker = LUT_moduleStickers[minTmpStack][minTmpModule];
-    maxTmpModuleSticker = LUT_moduleStickers[maxTmpStack][maxTmpModule];
+    minTmpModuleSticker = CAN_lookupModuleSticker(minTmpStack,minTmpModule);
+    maxTmpModuleSticker = CAN_lookupModuleSticker(maxTmpStack,maxTmpModule);
 
     //3) Placing data into message array.
     aData_series627[0] = averageTemperatureBYTE;
@@ -791,7 +789,7 @@ void CAN_CompileMessage627(uint8_t aData_series627[CAN_BRIGHTSIDE_DATA_LENGTH]){
     aData_series627[4] = maxTmpBYTE;
     aData_series627[5] = maxTmpModuleSticker;
     // aData_series627[6] = 0; //redundant
-    aData_series627[7] = outOfBounds;
+    // aData_series627[7] = outOfBounds;
 }
 
 
@@ -824,6 +822,53 @@ uint8_t CAN_convertVoltage_100uVto100mV(uint16_t voltage_100uV)
     return voltage_100mV;
 }
 
+
+/**
+@brief      Function Name: CAN_convertTemperature_int16_to_uint8
+@details    Function Purpose:
+            Convert a temperature from a type of signed double to unsigned byte
+
+@param      double averageTemperature
+
+@returns    uint8_t averageTemp_UINT8
+
+@note       although converted to uint8, the uint8 value should be interpretted
+            (casted) to signed int8 to get the actual temperature value.
+
+            Also, the signed int8 variable within the algorithm is probably
+            redundant and not optimal, but it reduces headaches about the
+            conversion between signed two's complement values and types in my
+            head
+*/
+uint8_t CAN_convertTemperature_int16_to_uint8(int16_t temperature_INT16)
+{
+    int8_t  temperature_INT8;
+    uint8_t temperature_UINT8;
+
+
+    //check if out of bounds
+    if(temperature_INT16 > 127)
+    {
+        temperature_INT8 = 127;
+    }
+    else if(temperature_INT16 < -127)
+    {
+        temperature_INT8 = -127;
+    }
+    //else, convert.
+        /* I can directly cast to a smaller type of int8_t and retain the same
+        sign, since I've already checked for the bounds.
+        This works because the leading digits of a negative two's complement are
+        all ones. */
+    else
+    {
+        temperature_INT8 = (int8_t)(temperature_INT16);
+    }
+
+    temperature_UINT8 = (uint8_t)(temperature_INT8);
+
+    return temperature_UINT8;
+}
 
 /**
 @brief      Function Name:  CAN_lookupModuleSticker
@@ -914,7 +959,7 @@ Other Functions
 */
 double BTM_TEMP_volts2temp(double vout)
 {
-	return 1337.1337;
+    return 1337.1337;
 }
 #endif
 
