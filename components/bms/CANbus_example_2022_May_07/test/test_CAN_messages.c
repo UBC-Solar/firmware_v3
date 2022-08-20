@@ -65,7 +65,7 @@ void compareArraysOfSize8(uint8_t* expectedArray, uint8_t* actualArray);
 // }voltageInfoStruct;
 
 voltageInfoStruct Placeholder_voltageInfo;
-
+temperatureInfoStruct Placeholder_temperatureInfo;
 
 
 void setUp(void)
@@ -328,7 +328,6 @@ void test_message622_faultsMessage_formatVerification()
 
 
 /**
-
 \brief  Function Name: FOR_message623_assert_equal
         Purpose: Test the compilation function for CAN message623, by creating
                  both an actual and an expected message with given parameters.
@@ -406,7 +405,6 @@ void FOR_message623_assert_equal
         printf("expected: %5.2i, actual %5.2i\r\n", expectedMessage[i], actualMessage[i]);
     }
 
-    // compareArraysOfSize8(expectedMessage, actualMessage);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(expectedMessage, actualMessage, MESSAGE623_SIZE);
 
     return;
@@ -455,7 +453,7 @@ void FOR_message626_assert_equal
     Pack_getSOC_IgnoreAndReturn(StateOfCharge);
     Pack_getDOD_IgnoreAndReturn(DepthOfDischarge);
     Pack_getCapacity_IgnoreAndReturn(Capacity);
-    
+
     CAN_CompileMessage626(PH_message626);
     actualMessage = PH_message626;
 
@@ -479,13 +477,125 @@ void test_message626_packHealth_AllMax()
 }
 
 
-void test_message627_Temperature()
+/**
+\brief  Function Name: FOR_message627_assert_equal
+        Purpose: Test the compilation function for CAN message627, by creating
+                 both an actual and an expected message with given parameters.
+
+\par An ideallized formatting of this function, for ease of readability and
+    compactness of code:
+
+FOR_message627_assert_equal
+(
+    tempInfoPtr,
+//  avg.T, min V,  labels ,  max V,  labels ,
+    00000, 00000,  000,000,  00000,  000,000, //actual input data
+    00000, 000,    000,      000,    000      //expected values
+);
+*/
+void FOR_message627_assert_equal(
+    temperatureInfoStruct * tempInfoPtr,
+
+    int16_t averageTemperature,
+
+    int16_t minTmp,
+    uint8_t minTmpStackIndex,
+    uint8_t minTmpModuleIndex,
+    int16_t maxTmp,
+    uint8_t maxTmpStackIndex,
+    uint8_t maxTmpModuleIndex,
+
+    uint8_t expectedAverageTemperature,
+
+    uint8_t minTemp,
+    uint8_t IDofMinTempCell,
+    uint8_t maxTemp,
+    uint8_t IDofMaxTempCell
+)
 {
     uint8_t* expectedMessage = NULL;
     uint8_t* actualMessage = NULL;
 
-    expectedMessage = CAN_createExpectedMessage627(255,255,255,255,255);
+    expectedMessage = CAN_createExpectedMessage627(
+        expectedAverageTemperature,
+        minTemp,
+        IDofMinTempCell,
+        maxTemp,
+        IDofMaxTempCell
+    );
+
+    NONMOCKVERSION_setTemperatureInfo(
+        tempInfoPtr,
+        averageTemperature,
+        minTmp,
+        maxTmp,
+        minTmpStackIndex,
+        minTmpModuleIndex,
+        maxTmpStackIndex,
+        maxTmpModuleIndex
+    );
+    Pack_getTemperatureInfo_IgnoreAndReturn(tempInfoPtr);
+    CAN_CompileMessage627(PH_message627);
+    actualMessage = PH_message627;
+
+    printf("message 627: Start of new comparison.\r\n");
+    for(int i = 0; i < MESSAGE623_SIZE; ++i)
+    {
+        printf("expected: %5.2i, actual %5.2i\r\n", expectedMessage[i], actualMessage[i]);
+    }
+
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(expectedMessage,actualMessage, MESSAGE627_SIZE);
 }
+
+void test_message627_Temperature_allMin()
+{
+    temperatureInfoStruct *tempInfoPtr = &Placeholder_temperatureInfo;
+
+    FOR_message627_assert_equal(
+        tempInfoPtr,
+    //  avg.T          ,          min V,  labels ,          max V,  labels ,
+                 (-128),         (-128),  000,000,         (-128),  000,000, //actual input data
+        (uint8_t)(-128),(uint8_t)(-128),      001,(uint8_t)(-128),    001      //expected values
+    );
+}
+
+void test_message627_Temperature_allMax()
+{
+    temperatureInfoStruct *tempInfoPtr = &Placeholder_temperatureInfo;
+
+    FOR_message627_assert_equal(
+        tempInfoPtr,
+    //  avg.T, min V,  labels ,  max V,  labels ,
+        127  , 00127,  017,001,  00127,  017,001, //actual input data
+        127  , 127,    094,      127,    094      //expected values
+    );
+}
+
+void test_message627_Temperature_breakMinBounds()
+{
+    temperatureInfoStruct *tempInfoPtr = &Placeholder_temperatureInfo;
+
+    FOR_message627_assert_equal(
+        tempInfoPtr,
+    //  avg.T, min V,  labels ,  max V,  labels ,
+        00000, 00000,  000,000,  00000,  000,000, //actual input data
+        00000, 000,    000,      000,    000      //expected values
+    );
+}
+
+void test_message627_Temperature_breakMaxBounds()
+{
+    temperatureInfoStruct *tempInfoPtr = &Placeholder_temperatureInfo;
+
+    FOR_message627_assert_equal(
+        tempInfoPtr,
+    //  avg.T, min V,  labels ,  max V,  labels ,
+        00000, 00000,  000,000,  00000,  000,000, //actual input data
+        00000, 000,    000,      000,    000      //expected values
+    );
+}
+
+
 
 void compareArraysOfSize6(uint8_t expectedArray[6], uint8_t actualArray[6])
 {

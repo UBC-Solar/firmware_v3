@@ -51,7 +51,7 @@ static uint8_t STATIC_messageArrays[CAN_ELITHION_MESSAGE_SERIES_SIZE][CAN_BRIGHT
 */
 uint8_t LUT_moduleStickers[BTM_NUM_DEVICES][BTM_NUM_MODULES] =
 {
-//    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,    13,14,15,16,17
+//    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17
     { 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,91,13,14,15,16,92},
     {17,18,19,20,21,22,23,24,25,26,27,28,93,29,30,31,32,94}
 };
@@ -856,10 +856,15 @@ uint8_t CAN_convertTemperature_int16_to_uint8(int16_t temperature_INT16)
         temperature_INT8 = -127;
     }
     //else, convert.
-        /* I can directly cast to a smaller type of int8_t and retain the same
+        /*
+        I can directly cast to a smaller type of int8_t and retain the same
         sign, since I've already checked for the bounds.
         This works because the leading digits of a negative two's complement are
-        all ones. */
+        all ones. Since the number is bounded to be within the bounds for signed
+        int8_t, the leading bits, which include bits 15 (sign bit for int16) and
+        7 (sign bit for int8) all have the same value. This means the
+        the signed bit is retained at the MSB (bit 7) for int8.
+        */
     else
     {
         temperature_INT8 = (int8_t)(temperature_INT16);

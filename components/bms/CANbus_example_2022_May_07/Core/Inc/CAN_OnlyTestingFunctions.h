@@ -82,4 +82,15 @@ voltageInfoStruct * NONMOCKVERSION_setVoltageInfo
     uint8_t MaxModuleIndex
 );
 
+temperatureInfoStruct * NONMOCKVERSION_setTemperatureInfo(
+    temperatureInfoStruct * temperatureInfo,
+    int16_t averageTemperature,
+    int16_t minTmp,
+    int16_t maxTmp,
+    uint8_t minTmpStackIndex,
+    uint8_t minTmpModuleIndex,
+    uint8_t maxTmpStackIndex,
+    uint8_t maxTmpModuleIndex
+);
+
 #endif // CAN_MESSAGES_H
