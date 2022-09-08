@@ -18,7 +18,7 @@
 #ifndef TEST
 STATIC_TESTABLE int indexOfNearestCellVoltage(float cell_votlage);
 STATIC_TESTABLE float calculateDeltaDOD(float present_current, float present_time, float past_current, float past_time);
-#endif // TEST 
+#endif // TEST
 
 /*============================================================================*/
 
@@ -197,6 +197,8 @@ void SOC_allModulesEst(BTM_PackData_t * pack, int32_t current_reading, uint32_t 
 {
   float cell_voltage_reading = 0.0;
   float last_module_SOC = 0.0;
+  float min_module_SOC = 100.0;
+  float module_wise_SOC = 0.0;
 
   for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++) 
   {
@@ -204,10 +206,17 @@ void SOC_allModulesEst(BTM_PackData_t * pack, int32_t current_reading, uint32_t 
     {
       cell_voltage_reading = pack->stack[stack_num].module[module_num].voltage;
       last_module_SOC = pack->stack[stack_num].module[module_num].soc;
+      module_wise_SOC = SOC_moduleEst(last_module_SOC, cell_voltage_reading, current_reading, total_time_elasped);
+      if(module_wise_SOC < min_module_SOC){
+        min_module_SOC = module_wise_SOC; //find minimum SOC of all modules
+      }
       
-      pack->stack[stack_num].module[module_num].soc = SOC_moduleEst(last_module_SOC, cell_voltage_reading, current_reading, total_time_elasped);
+      pack->stack[stack_num].module[module_num].soc = module_wise_SOC;
     }
   }
+
+  pack->PH_SOC_LOCATION = (uint8_t) min_module_SOC; //pack SOC is the lowest SOC of all modules
+  //note casting
 
   SOC_last_CAN_current_reading = current_reading; //update current globally
   SOC_last_FSM_time = total_time_elasped; //update time globally
@@ -266,4 +275,26 @@ STATIC_TESTABLE int indexOfNearestCellVoltage(float cell_voltage)
   }
   
   return result_index;
+}
+
+/**
+ * @brief helper function to get the DoD (depth of discharge) of the pack
+ *        DoD is needed for CAN message 0x626
+ *
+ * @param pack battery pack data structure
+ */
+
+uint8_t getDOD(BTM_PackData_t * pack){
+  return 100 - (pack->PH_SOC_LOCATION);
+}
+
+/**
+ * @brief helper function to get the Capacity (mAh) of pack
+ *        Capacity is needed for CAN message 0x626
+ *
+ * @param pack battery pack data structure
+ */
+
+uint8_t getCapacity(BTM_PackData_t * pack){
+  return SOC_MODULE_RATED_CAPACITY * (pack->PH_SOC_LOCATION / 100);
 }

@@ -45,7 +45,13 @@ void SOC_allModulesInit(BTM_PackData_t * pack);
 float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, int32_t current_reading, uint32_t total_time_elasped);
 void SOC_allModulesEst(BTM_PackData_t * pack, int32_t current_reading, uint32_t total_time_elasped);
 
-//private helper functions
+//functions to get data for CAN message 0x626
+uint8_t getDOD(BTM_PackData_t * pack);
+uint8_t getCapacity(BTM_PackData_t * pack);
+
+/*============================================================================*/
+
+/* PRIVATE HELPER FUNCTIONS */
 #ifdef TEST
 #include <stdio.h> //for debugging
 STATIC_TESTABLE int indexOfNearestCellVoltage(float cell_votlage);
