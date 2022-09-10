@@ -50,11 +50,6 @@ void FOR_message623_assert_equal
     uint8_t ExpectedMaxVoltageSticker
 );
 
-void compareArraysOfSize6(uint8_t expectedArray[6], uint8_t actualArray[6]);
-void compareArraysOfSize7(uint8_t* expectedArray, uint8_t* actualArray);
-void compareArraysOfSize8(uint8_t* expectedArray, uint8_t* actualArray);
-
-
 // typedef struct voltageInfoStruct{
 //     uint16_t MinVoltage;
 //     uint16_t MaxVoltage;
@@ -555,7 +550,7 @@ void test_message627_Temperature_allMin()
         tempInfoPtr,
     //  avg.T          ,          min V,  labels ,          max V,  labels ,
                  (-128),         (-128),  000,000,         (-128),  000,000, //actual input data
-        (uint8_t)(-128),(uint8_t)(-128),      001,(uint8_t)(-128),    001      //expected values
+        (uint8_t)(-128),(uint8_t)(-128),        1,(uint8_t)(-128),        1      //expected values
     );
 }
 
@@ -566,8 +561,8 @@ void test_message627_Temperature_allMax()
     FOR_message627_assert_equal(
         tempInfoPtr,
     //  avg.T, min V,  labels ,  max V,  labels ,
-        127  , 00127,  017,001,  00127,  017,001, //actual input data
-        127  , 127,    094,      127,    094      //expected values
+        127  , 127,    17,001,  127,    017,001, //actual input data
+        127  , 127,    94,      127,    94      //expected values
     );
 }
 
@@ -596,87 +591,6 @@ void test_message627_Temperature_breakMaxBounds()
 }
 
 
-
-void compareArraysOfSize6(uint8_t expectedArray[6], uint8_t actualArray[6])
-{
-    uint32_t expectedSize = 0;
-    uint32_t actualSize = 0;
-
-    //check size of arrays
-    // expectedSize = sizeof(*expectedArray)/sizeof(expectedArray[0]);
-    // actualSize   = sizeof(*actualArray)  /sizeof(actualArray[0]);
-    // TEST_ASSERT_EQUAL(expectedSize, actualSize);
-    // printf("actualSize %i\r\n",actualSize);
-    // printf("actualArray %i\r\n",sizeof(*actualArray));
-    // printf("actualArray[0] %i\r\n",sizeof(actualArray[0]));
-    // TEST_ASSERT_EQUAL(6, actualSize);
-    // TEST_ASSERT_EQUAL(6, expectedSize);
-
-    {//compare array contents
-        TEST_ASSERT_EQUAL(expectedArray[0], actualArray[0]);
-        TEST_ASSERT_EQUAL(expectedArray[1], actualArray[1]);
-        TEST_ASSERT_EQUAL(expectedArray[2], actualArray[2]);
-        TEST_ASSERT_EQUAL(expectedArray[3], actualArray[3]);
-        TEST_ASSERT_EQUAL(expectedArray[4], actualArray[4]);
-        TEST_ASSERT_EQUAL(expectedArray[5], actualArray[5]);
-    }
-}
-
-void compareArraysOfSize7(uint8_t* expectedArray, uint8_t* actualArray)
-{
-    int expectedSize = 0;
-    int actualSize = 0;
-
-    //check size of arrays
-    // expectedSize = sizeof(expectedArray)/sizeof(expectedArray[0]);
-    // actualSize   = sizeof(actualArray)  /sizeof(actualArray[0]);
-    // TEST_ASSERT_EQUAL(expectedSize, actualSize);
-    // TEST_ASSERT_EQUAL(7, actualSize);
-    // TEST_ASSERT_EQUAL(7, expectedSize);
-
-    {//compare array contents
-        TEST_ASSERT_EQUAL(expectedArray[0], actualArray[0]);
-        TEST_ASSERT_EQUAL(expectedArray[1], actualArray[1]);
-        TEST_ASSERT_EQUAL(expectedArray[2], actualArray[2]);
-        TEST_ASSERT_EQUAL(expectedArray[3], actualArray[3]);
-        TEST_ASSERT_EQUAL(expectedArray[4], actualArray[4]);
-        TEST_ASSERT_EQUAL(expectedArray[5], actualArray[5]);
-        TEST_ASSERT_EQUAL(expectedArray[6], actualArray[6]);
-    }
-}
-
-void compareArraysOfSize8(uint8_t* expectedArray, uint8_t* actualArray)
-{
-    int expectedSize = 0;
-    int actualSize = 0;
-
-    //check size of arrays
-    // expectedSize = sizeof(expectedArray)/sizeof(expectedArray[0]);
-    // actualSize   = sizeof(actualArray)  /sizeof(actualArray[0]);
-    // TEST_ASSERT_EQUAL(expectedSize, actualSize);
-    // TEST_ASSERT_EQUAL(7, actualSize);
-    // TEST_ASSERT_EQUAL(7, expectedSize);
-
-    {//compare array contents
-        TEST_ASSERT_EQUAL(expectedArray[0], actualArray[0]);
-        TEST_ASSERT_EQUAL(expectedArray[1], actualArray[1]);
-        TEST_ASSERT_EQUAL(expectedArray[2], actualArray[2]);
-        TEST_ASSERT_EQUAL(expectedArray[3], actualArray[3]);
-        TEST_ASSERT_EQUAL(expectedArray[4], actualArray[4]);
-        TEST_ASSERT_EQUAL(expectedArray[5], actualArray[5]);
-        TEST_ASSERT_EQUAL(expectedArray[6], actualArray[6]);
-        TEST_ASSERT_EQUAL(expectedArray[7], actualArray[7]);
-    }
-}
-
-void hello_world(int i)
-{
-    if(i == 1)
-        printf("hello world, my name is Edward\r\n");
-}
-
-
-
 /**
 Purpose:
 
@@ -695,6 +609,13 @@ void test_CAN_staleCheck()
 // {
 //     TEST_IGNORE_MESSAGE("Need to Implement CAN_messages");
 // }
+
+void hello_world(int i)
+{
+    if(i == 1)
+        printf("hello world, my name is Edward\r\n");
+}
+
 
 // #define RANDOM_BLEH
 #ifdef RANDOM_BLEH
