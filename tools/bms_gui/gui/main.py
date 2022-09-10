@@ -140,8 +140,8 @@ class Ui_MainWindow():
 
         self.highlight_curbut()
 
-    
-    
+
+
 
     def update_status_table(self, array, letter):
         """This function updates the status table, and the variables inside it"""
@@ -312,7 +312,7 @@ class Ui_MainWindow():
 
     def change_font(self,_):
         if self.resizetextBox.currentText()=="Large":
-            self.main_button.setFont(QtGui.QFont("Segoe UI", self.fonty(14))) 
+            self.main_button.setFont(QtGui.QFont("Segoe UI", self.fonty(14)))
             self.voltage.setFont(QtGui.QFont("Segoe UI", self.fonty(14)))
             self.temp.setFont(QtGui.QFont("Segoe UI", self.fonty(14)))
             self.status_button.setFont(QtGui.QFont("Segoe UI", self.fonty(14)))
@@ -320,7 +320,7 @@ class Ui_MainWindow():
             self.textsizelabel.setFont(QtGui.QFont("Segoe UI", self.fonty(10)))
             self.textsizelabel.setGeometry(self.relx(35), self.rely(415), self.relx(300), self.rely(40))
             self.pack_wide_voltage.change_textsize(self.pack_wide_voltage.labels,self.fonty(11)) #find the right size
-            for i in range (32):   
+            for i in range (32):
                 self.check_box_labels[i].setFont((QtGui.QFont("Segoe UI", self.fonty(10)))) #find the right size
                 self.boxes[i].change_textsize(self.boxes[i].labels,self.fonty(11)) #find the right size
             self.status.setFont(QtGui.QFont("Segoe UI", self.fonty(10)))
@@ -330,9 +330,9 @@ class Ui_MainWindow():
             self.path_widget.setFont(QtGui.QFont("Segoe UI", self.fonty(10)))
 
         elif self.resizetextBox.currentText()=="Medium":
-            self.main_button.setFont(QtGui.QFont("Segoe UI", self.fonty(12))) 
+            self.main_button.setFont(QtGui.QFont("Segoe UI", self.fonty(12)))
             self.voltage.setFont(QtGui.QFont("Segoe UI", self.fonty(12)))
-            self.temp.setFont(QtGui.QFont("Segoe UI", self.fonty(12))) 
+            self.temp.setFont(QtGui.QFont("Segoe UI", self.fonty(12)))
             self.status_button.setFont(QtGui.QFont("Segoe UI", self.fonty(12)))
             self.pack_wide_box.setFont(QtGui.QFont("Segoe UI", self.fonty(12)))
             self.textsizelabel.setFont(QtGui.QFont("Segoe UI", self.fonty(9)))
@@ -348,9 +348,9 @@ class Ui_MainWindow():
             self.path_widget.setFont(QtGui.QFont("Segoe UI", self.fonty(8)))
 
         else:
-            self.main_button.setFont(QtGui.QFont("Segoe UI", self.fonty(8))) 
+            self.main_button.setFont(QtGui.QFont("Segoe UI", self.fonty(8)))
             self.voltage.setFont(QtGui.QFont("Segoe UI", self.fonty(8)))
-            self.temp.setFont(QtGui.QFont("Segoe UI", self.fonty(8))) 
+            self.temp.setFont(QtGui.QFont("Segoe UI", self.fonty(8)))
             self.status_button.setFont(QtGui.QFont("Segoe UI", self.fonty(8)))
             self.pack_wide_box.setFont(QtGui.QFont("Segoe UI", self.fonty(8)))
             self.textsizelabel.setFont(QtGui.QFont("Segoe UI", self.fonty(8)))
@@ -364,7 +364,7 @@ class Ui_MainWindow():
             self.logbutton.setFont(QtGui.QFont("Helvetica", self.fonty(5)))
             self.path_label.setFont(QtGui.QFont("Segoe UI", int(self.rely(6) * 1.2)))
             self.path_widget.setFont(QtGui.QFont("Segoe UI", self.fonty(6)))
-            
+
 
     # Every coordinate for this GUI was originally designed to be on a 1366x768 screen.
     # In order to resize everything, we need to scale the original coordinate to your screensize
@@ -408,7 +408,7 @@ class Ui_MainWindow():
         self.textsizelabel.setText("Text Size")
         self.textsizelabel.setGeometry(self.relx(35), self.rely(415), self.relx(300), self.rely(40))
         self.textsizelabel.show()
-        
+
         self.resizetextBox = QtWidgets.QComboBox(self.centralwidget)
         self.resizetextBox.setGeometry(QtCore.QRect(self.relx(20), self.rely(450), self.relx(100), self.rely(40)))
         self.resizetextBox.setObjectName("resizetextBox")
@@ -418,7 +418,7 @@ class Ui_MainWindow():
         self.main_button = QtWidgets.QPushButton(self.centralwidget)
         self.main_button.setGeometry(QtCore.QRect(self.relx(20), self.rely(0), self.relx(141), self.rely(51)))
         self.main_button.setObjectName("main")
-        self.main_button.setFont(QtGui.QFont("Segoe UI", self.fonty(14))) 
+        self.main_button.setFont(QtGui.QFont("Segoe UI", self.fonty(14)))
 
         self.voltage = QtWidgets.QPushButton(self.centralwidget)
         self.voltage.setGeometry(QtCore.QRect(self.relx(160), self.rely(0), self.relx(141), self.rely(51)))
@@ -428,7 +428,7 @@ class Ui_MainWindow():
         self.temp = QtWidgets.QPushButton(self.centralwidget)
         self.temp.setGeometry(QtCore.QRect(self.relx(300), self.rely(0), self.relx(141), self.rely(51)))
         self.temp.setObjectName("temp")
-        self.temp.setFont(QtGui.QFont("Segoe UI", self.fonty(14))) 
+        self.temp.setFont(QtGui.QFont("Segoe UI", self.fonty(14)))
 
         self.status_button = QtWidgets.QPushButton(self.centralwidget)
         self.status_button.setGeometry(QtCore.QRect(self.relx(440), 0, self.relx(141), self.rely(51)))
@@ -481,7 +481,7 @@ class Ui_MainWindow():
         self.status.setGeometry(self.relx(1000), self.rely(10), self.relx(300), self.rely(31))
         self.status.setText("Not reading any port at the moment.")
         self.status.setFont(QtGui.QFont("Segoe UI", self.fonty(10)))
-    
+
 
     def retranslateUi(self):
         # CONFIGURING SOME NAMES:
@@ -608,7 +608,7 @@ class Ui_MainWindow():
             label = QtWidgets.QLabel(parent=self.MainWindow)
             label.setAlignment(QtCore.Qt.AlignLeft)
             label.setGeometry(self.relx(840), self.rely(70 + i * spacing), self.relx(145), self.rely(15))
-            label.setFont(QtGui.QFont("Segoe UI", self.fonty(10))) 
+            label.setFont(QtGui.QFont("Segoe UI", self.fonty(10)))
             label.setText("Module " + str(i + 1))
             label.hide()
 
