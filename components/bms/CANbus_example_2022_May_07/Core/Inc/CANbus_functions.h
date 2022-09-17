@@ -147,7 +147,7 @@ Brightside_CAN_Message;
 
 typedef struct
 {
-    //Pointer to the struct holding the actual message data.
+    //Pointer to the array of structs holding the actual message data.
     Brightside_CAN_Message * message;
 
     //Used to track which messages have been placed in
