@@ -16,9 +16,6 @@
  * more distinctly.
  */
 
-// Comment out the line below to disable printf debugging
-#define PRINTF_DEBUG
-
 #include "fsm.h"
 
 #ifdef PRINTF_DEBUG
@@ -29,29 +26,24 @@
 /* PRIVATE FUNCTION PROTOTYPES */
 
 // State functions:
-void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
-void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
-void FSM_fault_comm(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
-void FSM_fault_general(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack);
+void FSM_reset(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack);
+void FSM_normal(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack);
+void FSM_fault_comm(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack);
+void FSM_fault_general(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack);
 
 // Helper functions:
-int commsProblem(BTM_Status_t func_status, int * sys_status);
-void analysisStatusUpdate(BTM_PackData_t * pack, int * status);
+int commsProblem(BTM_Status_t func_status, int *sys_status);
+void analysisStatusUpdate(BTM_PackData_t *pack, int *status);
 int doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
                       uint8_t reg_group2[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE]);
 void driveControlSignals(int status);
-#ifdef PRINTF_DEBUG
-void printBTMStatus(BTM_Status_t status, int print_ok);
-void printMeasurements(BTM_PackData_t * pack);
-#endif
 
 /*============================================================================*/
 /* BMS FSM STATE FUNCTIONS POINTER ARRAY */
 
 // Function names go in this array declaration, and must be in the same order
 // as the FSM_BMS_state_t enumeration.
-void (* FSM_state_table[])(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack)
-    = {FSM_reset, FSM_normal, FSM_fault_comm, FSM_fault_general};
+void (*FSM_state_table[])(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack) = {FSM_reset, FSM_normal, FSM_fault_comm, FSM_fault_general};
 
 /*============================================================================*/
 /* FSM GLOBAL VARIABLES */
@@ -59,8 +51,7 @@ void (* FSM_state_table[])(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dc
 FSM_state_t FSM_state;
 unsigned int last_uptime_tick; // for keeping track of uptime
 unsigned int last_update_tick; // for control of measurement timing
-int system_status; // status code for system
-
+int system_status;             // status code for system
 
 /*============================================================================*/
 /* FSM FUNCTIONS */
@@ -75,14 +66,10 @@ void FSM_init()
     last_uptime_tick = HAL_GetTick();
     system_status = 0;
     FSM_state = FSM_RESET;
-#ifdef PRINTF_DEBUG
-    printf("FSM initialized\n");
-#endif
 }
 
-
 // This function should be placed in the main firmware loop
-void FSM_run(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack)
+void FSM_run(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack)
 {
     unsigned int current_tick;
 
@@ -90,11 +77,11 @@ void FSM_run(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack
 
     // Update uptime
     current_tick = HAL_GetTick();
-    if (current_tick - last_uptime_tick >= 1000) {
+    if (current_tick - last_uptime_tick >= 1000)
+    {
         uptime++;
     }
 }
-
 
 /**
  * @brief Performs initialization of BMS hardware and initial system checks.
@@ -105,10 +92,9 @@ void FSM_run(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack
  * If communication can be established but any self test fails or a measured value is
  * outside the relevant safe range.
  */
-void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack)
+void FSM_reset(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack)
 {
-    uint8_t test_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE]
-        = {{0x55, 0x6E, 0x69, 0x42, 0x43, 0x20}/*, {0x53, 0x6f, 0x6c, 0x61, 0x72, 0x21}*/};
+    uint8_t test_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {{0x55, 0x6E, 0x69, 0x42, 0x43, 0x20} /*, {0x53, 0x6f, 0x6c, 0x61, 0x72, 0x21}*/};
     // TODO: ^ Add second subarray once configured for 2 LTC6813's
     uint8_t test_data_rx[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
     BTM_Status_t func_status = {BTM_OK, 0};
@@ -122,54 +108,38 @@ void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pa
     BTM_init(pack);
     BTM_BAL_initDchPack(dch_setting_pack);
     // Initialize CAN
-    //CAN_initAll();
+    // CAN_initAll();
 
     // initialize other stuff here in future
-
-#ifdef PRINTF_DEBUG
-    printf("BTM system initialized\nChecking communication with LTC devices: ");
-#endif
 
     // Perform startup system self checks
     BTM_writeRegisterGroup(CMD_WRCOMM, test_data);
     func_status = BTM_readRegisterGroup(CMD_RDCOMM, test_data_rx);
     reg_group_match_failed = doesRegGroupMatch(test_data, test_data_rx);
-#ifdef PRINTF_DEBUG
-    printBTMStatus(func_status, 1);
-    putchar('\n');
-#endif
+
     if (reg_group_match_failed)
     {
         system_status |= BMS_FAULT_COMM;
-#ifdef PRINTF_DEBUG
-        printf("Comms check data match FAILED\n");
-#endif
     }
-    if (commsProblem(func_status, &system_status)) return;
-
+    if (commsProblem(func_status, &system_status))
+        return;
 
     // TODO: more self tests...
 
-    //if (commsProblem(func_status, &system_status)) return;
+    // if (commsProblem(func_status, &system_status)) return;
 
     // perform initial voltage measurement
     last_update_tick = HAL_GetTick(); // initialize last_measurement_tick
     func_status = BTM_readBatt(pack);
-#ifdef PRINTF_DEBUG
-    printf("Performing initial measurements\nVolt: ");
-    printBTMStatus(func_status, 1);
-    putchar(' ');
-#endif
-    if (commsProblem(func_status, &system_status)) return;
+
+    if (commsProblem(func_status, &system_status))
+        return;
 
     // perform initial temperature measurement
     func_status = BTM_TEMP_measureState(pack);
-#ifdef PRINTF_DEBUG
-    printf("\nTemp: ");
-    printBTMStatus(func_status, 1);
-    putchar('\n');
-#endif
-    if (commsProblem(func_status, &system_status)) return;
+
+    if (commsProblem(func_status, &system_status))
+        return;
 
     // perform initial SOC estimations
     SOC_allModulesInit(pack);
@@ -182,24 +152,18 @@ void FSM_reset(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pa
     // switch state
     if (system_status & MASK_BMS_FAULT) // If any faults are active
     {
-#ifdef PRINTF_DEBUG
-        printf("ENTERING GENERAL FAULT STATE\n");
-#endif
         CONT_FAN_PWM_set(FAN_FULL);
         FSM_state = FSM_FAULT_GENERAL;
     }
     else
     {
-#ifdef PRINTF_DEBUG
-        printf("Entering NORMAL state\n");
-#endif
         FSM_state = FSM_NORMAL;
     }
 
     return;
 }
 
-void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack)
+void FSM_normal(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack)
 {
     unsigned int current_tick;
     BTM_Status_t func_status = {BTM_OK, 0};
@@ -215,19 +179,13 @@ void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_p
 
         // perform measurements
         func_status = BTM_readBatt(pack);
-#ifdef PRINTF_DEBUG
-        printf("V: ");
-        printBTMStatus(func_status, 1);
-        putchar('\n');
-#endif
-        if (commsProblem(func_status, &system_status)) return;
+
+        if (commsProblem(func_status, &system_status))
+            return;
         func_status = BTM_TEMP_measureState(pack);
-#ifdef PRINTF_DEBUG
-        printf("T: ");
-        printBTMStatus(func_status, 1);
-        putchar('\n');
-#endif
-        if (commsProblem(func_status, &system_status)) return;
+
+        if (commsProblem(func_status, &system_status))
+            return;
 
         // analyze measurements, update system status code
         analysisStatusUpdate(pack, &system_status);
@@ -238,17 +196,9 @@ void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_p
         // drive control signals based on status code
         driveControlSignals(system_status);
 
-#ifdef PRINTF_DEBUG
-        // dump voltage and temp data through printf
-        printMeasurements(pack);
-#endif
-
         // drive fans, potentially switch state
         if (system_status & MASK_BMS_FAULT) // If any faults are active
         {
-#ifdef PRINTF_DEBUG
-            printf("ENTERING GENERAL FAULT STATE\n");
-#endif
             CONT_FAN_PWM_set(FAN_FULL); // drive fans at full speed for fault
             // Stop all balancing (see note about fault balancing in FAULT_GENERAL state)
             BTM_BAL_initDchPack(dch_setting_pack);
@@ -273,24 +223,24 @@ void FSM_normal(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_p
 
     // Perform CAN communication
     // this is not necessarily synchronous to the main system update
-    //CANState();
+    // CANState();
 
     return;
 }
 
-void FSM_fault_comm(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack)
+void FSM_fault_comm(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack)
 {
     // do not attempt any more slave-board communication - means we do nothing
     // drive fans at full power - should be set on transition to this state
     // system status should not change, since no readings can take place.
 
     // TODO: send status-only CAN messages (no data)?
-    //CANState();
+    // CANState();
 
     return;
 }
 
-void FSM_fault_general(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_setting_pack)
+void FSM_fault_general(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack)
 {
     unsigned int current_tick;
     BTM_Status_t func_status = {BTM_OK, 0};
@@ -304,19 +254,13 @@ void FSM_fault_general(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_se
 
         // perform measurements
         func_status = BTM_readBatt(pack);
-#ifdef PRINTF_DEBUG
-        printf("V: ");
-        printBTMStatus(func_status, 1);
-        putchar('\n');
-#endif
-        if (commsProblem(func_status, &system_status)) return;
+
+        if (commsProblem(func_status, &system_status))
+            return;
         func_status = BTM_TEMP_measureState(pack);
-#ifdef PRINTF_DEBUG
-        printf("T: ");
-        printBTMStatus(func_status, 1);
-        putchar('\n');
-#endif
-        if (commsProblem(func_status, &system_status)) return;
+
+        if (commsProblem(func_status, &system_status))
+            return;
 
         // analyze measurements, update system status code
         analysisStatusUpdate(pack, &system_status);
@@ -324,22 +268,17 @@ void FSM_fault_general(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_se
         // TODO: Balancing under fault
         // if there is an OV fault, **and** no other faults,
         // discharge any OV modules to try to alleviate the problem
-        //BTM_BAL_balanceUnderFault(pack, system_status);
-        //BTM_BAL_settings(pack, dch_setting_pack);
+        // BTM_BAL_balanceUnderFault(pack, system_status);
+        // BTM_BAL_settings(pack, dch_setting_pack);
         // Alternatively, stop all balancing (done in transition to this state)
 
         // drive control signals based on status code
         driveControlSignals(system_status);
-
-#ifdef PRINTF_DEBUG
-        // dump voltage and temp data through printf
-        printMeasurements(pack);
-#endif
     }
 
     // TODO: perform CAN communication
     // this is not necessarily synchronous to the main system update
-    //CANState();
+    // CANState();
 
     // fans should have been set at full power when the transition to this state took place
     // can ONLY switch from here to FAULT_COMM, or stay in this state
@@ -372,16 +311,13 @@ void FSM_fault_general(BTM_PackData_t * pack, BTM_BAL_dch_setting_pack_t* dch_se
 // Checks for a communication fault condition, switches FSM to FAULT_COMM
 // state if necessary
 // Returns 1 if there is a communication fault, 0 otherwise
-int commsProblem(BTM_Status_t func_status, int * sys_status)
+int commsProblem(BTM_Status_t func_status, int *sys_status)
 {
     if (func_status.error != BTM_OK || (*sys_status & BMS_FAULT_COMM))
     {
-#ifdef PRINTF_DEBUG
-        printf("ENTERING COMM FAULT STATE\n");
-#endif
         *sys_status |= BMS_FAULT_COMM;
         driveControlSignals(*sys_status); // Update control signals
-        CONT_FAN_PWM_set(FAN_FULL); // Drive fans at full power
+        CONT_FAN_PWM_set(FAN_FULL);       // Drive fans at full power
         FSM_state = FSM_FAULT_COMM;
         return 1;
     }
@@ -389,7 +325,7 @@ int commsProblem(BTM_Status_t func_status, int * sys_status)
     return 0;
 }
 
-void analysisStatusUpdate(BTM_PackData_t * pack, int * status)
+void analysisStatusUpdate(BTM_PackData_t *pack, int *status)
 {
     ANA_analyzeModules(pack);
     *status = (system_status & MASK_BMS_SYSTEM_FAULT);
@@ -409,8 +345,10 @@ void analysisStatusUpdate(BTM_PackData_t * pack, int * status)
 int doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
                       uint8_t reg_group2[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
 {
-    for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++) {
-        for(int i = 0; i < BTM_REG_GROUP_SIZE; i++) {
+    for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+    {
+        for (int i = 0; i < BTM_REG_GROUP_SIZE; i++)
+        {
             if (reg_group1[ic_num][i] != reg_group2[ic_num][i])
                 return 1;
         }
@@ -418,47 +356,14 @@ int doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
     return 0;
 }
 
-void driveControlSignals(int status) {
-    CONT_FLT_switch( (status & MASK_BMS_FAULT) ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_BAL_switch( (status & BMS_TRIP_BAL)   ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_COM_switch( (status & BMS_FAULT_COMM) ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_HLIM_switch((status & BMS_TRIP_HLIM)  ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_LLIM_switch((status & BMS_TRIP_LLIM)  ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_OT_switch(  (status & BMS_FAULT_OT)   ? CONT_ACTIVE : CONT_INACTIVE);
-    return;
-}
-
-#ifdef PRINTF_DEBUG
-void printBTMStatus(BTM_Status_t status, int print_ok)
+void driveControlSignals(int status)
 {
-    switch (status.error) {
-    case BTM_OK:
-        if (print_ok) printf("BTM OK");
-        break;
-    case BTM_ERROR_PEC:
-        printf("BTM PEC error");
-        break;
-    case BTM_ERROR_TIMEOUT:
-        printf("BTM timeout error");
-        break;
-    case BTM_ERROR_HAL:
-        printf("BTM general HAL error");
-        break;
-    case BTM_ERROR_HAL_BUSY:
-        printf("BTM HAL busy error");
-        break;
-    case BTM_ERROR_HAL_TIMEOUT:
-        printf("BTM HAL timeout error");
-        break;
-    default:
-        printf("Unknown BTM error");
-        break;
-    }
-
-    if (status.device_num != 0)
-    {
-        printf("at LTC device #%d", status.device_num);
-    }
+    CONT_FLT_switch((status & MASK_BMS_FAULT) ? CONT_ACTIVE : CONT_INACTIVE);
+    CONT_BAL_switch((status & BMS_TRIP_BAL) ? CONT_ACTIVE : CONT_INACTIVE);
+    CONT_COM_switch((status & BMS_FAULT_COMM) ? CONT_ACTIVE : CONT_INACTIVE);
+    CONT_HLIM_switch((status & BMS_TRIP_HLIM) ? CONT_ACTIVE : CONT_INACTIVE);
+    CONT_LLIM_switch((status & BMS_TRIP_LLIM) ? CONT_ACTIVE : CONT_INACTIVE);
+    CONT_OT_switch((status & BMS_FAULT_OT) ? CONT_ACTIVE : CONT_INACTIVE);
     return;
 }
 
