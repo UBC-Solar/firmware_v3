@@ -43,22 +43,27 @@
 // TODO: update bitmasks with new bit order and values
 
 // BMS Status Code Bitmasks
-#define BMS_FAULT_COMM 0x0001
-#define BMS_FAULT_ST 0x0002
-#define BMS_FAULT_OT 0x0004
-#define BMS_FAULT_UV 0x0008
-#define BMS_FAULT_OV 0x0010
-#define BMS_FAULT_NO_VOLT 0x0020
-#define BMS_FAULT_TEMP_RANGE 0x0040
 
-#define BMS_TRIP_BAL 0x0100
-#define BMS_TRIP_LLIM 0x0200
-#define BMS_TRIP_HLIM 0x0400
-#define BMS_TRIP_CHARGE_OT 0x0800
-#define BMS_WARNING_LOW_V 0x1000
-#define BMS_WARNING_HIGH_V 0x2000
-#define BMS_WARNING_LOW_T 0x4000
-#define BMS_WARNING_HIGH_T 0x8000
+//Faults
+#define FLT_COMM_MASK 0x0001
+#define FLT_ST_MASK 0x0002
+#define FLT_OT_MASK 0x0004
+#define FLT_UV_MASK 0x0008
+#define FLT_OV_MASK 0x0010
+#define FLT_NO_VOLT_MASK 0x0020
+#define FLT_TEMP_RANGE_MASK 0x0040
+
+//Trips
+#define TRIP_BAL_MASK 0x0100
+#define TRIP_LLIM_MASK 0x0200
+#define TRIP_HLIM_MASK 0x0400
+#define TRIP_CHARGE_OT_MASK 0x0800
+
+//Warns
+#define WARN_LOW_V_MASK 0x1000
+#define WARN_HIGH_V_MASK 0x2000
+#define WARN_LOW_T_MASK 0x4000
+#define WARN_HIGH_T_MASK 0x8000
 
 #define MASK_BMS_FAULT 0x007F        // Covers all faults
 #define MASK_BMS_SYSTEM_FAULT 0x0003 // Covers COMM and ST faults

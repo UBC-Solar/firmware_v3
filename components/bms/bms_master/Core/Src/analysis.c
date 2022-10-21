@@ -54,7 +54,6 @@ void ANA_analyzeModules(BTM_PackData_t *pack)
 int findModuleVoltState(int status, uint16_t voltage)
 {
     // Some conditionals here have no else because faults don't clear
-    // TODO: update variable names from header file
 
     if (voltage >= OV_FAULT_VOLTAGE)
     {
