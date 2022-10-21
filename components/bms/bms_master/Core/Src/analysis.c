@@ -42,11 +42,8 @@ void ANA_analyzeModules(BTM_PackData_t *pack)
                 module_status = findModuleTempState(module_status, temp);
                 module_p->status = module_status;
             }
-        } // end inner for loop
-    }     // end outer for loop
-
-    //
-
+        }
+    }
     return;
 }
 
@@ -55,55 +52,61 @@ int findModuleVoltState(int status, uint16_t voltage)
 {
     // Some conditionals here have no else because faults don't clear
 
-    if (voltage >= OV_FAULT_VOLTAGE)
+    // Faults
+
+    if (voltage <= FLT_UV_THRESHOLD)
     {
-        status |= BMS_FAULT_OV; // Set FAULT_OV bit
+        status |= FLT_UV_MASK; // Set FLT_UV bit
     }
 
-    if (voltage >= HLIM_TRIP_VOLTAGE)
+    if (voltage >= FLT_OV_THRESHOLD)
     {
-        status |= BMS_TRIP_HLIM; // Set TRIP_HLIM bit
+        status |= FLT_OV_MASK; // Set FLT_OV bit
+    }
+
+    if (voltage <= FLT_SHORT_THRESHOLD)
+    {
+        status |= FLT_SHORT_MASK; // Set FLT_SHORT bit
+    }
+
+    // Trips
+
+    if (voltage <= TRIP_LLIM_THRESHOLD)
+    {
+        status |= TRIP_LLIM_MASK; // Set TRIP_LLIM bit
     }
     else
     {
-        status &= ~BMS_TRIP_HLIM; // Clear TRIP_HLIM bit
+        status &= ~TRIP_LLIM_MASK; // Clear TRIP_LLIM bit
     }
 
-    if (voltage >= HIGH_WARNING_VOLTAGE)
+    if (voltage >= TRIP_HLIM_THRESHOLD)
     {
-        status |= BMS_WARNING_HIGH_V; // Set WARNING_HIGH_V bit
+        status |= TRIP_HLIM_MASK; // Set TRIP_HLIM bit
     }
     else
     {
-        status &= ~BMS_WARNING_HIGH_V; // Clear WARNING_HIGH_V bit
+        status &= ~TRIP_HLIM_MASK; // Clear TRIP_HLIM bit
     }
 
-    if (voltage <= SHORT_FAULT_VOLTAGE)
-    {
-        status |= BMS_FAULT_NO_VOLT; // Set FAULT_NO_VOLT bit
-    }
+    // Warns
 
-    if (voltage <= UV_FAULT_VOLTAGE)
+    if (voltage >= WARN_HIGH_V_THRESHOLD)
     {
-        status |= BMS_FAULT_UV; // Set BMS_FAULT_UV
-    }
-
-    if (voltage <= LLIM_TRIP_VOLTAGE)
-    {
-        status |= BMS_TRIP_LLIM; // Set TRIP_LLIM bit
+        status |= WARN_HIGH_V_MASK; // Set WARN_HIGH_V bit
     }
     else
     {
-        status &= ~BMS_TRIP_LLIM; // Clear TRIP_LLIM bit
+        status &= ~WARN_HIGH_V_MASK; // Clear WARN_HIGH_V bit
     }
 
-    if (voltage <= LOW_WARNING_VOLTAGE)
+    if (voltage <= WARN_LOW_V_THRESHOLD)
     {
-        status |= BMS_WARNING_LOW_V; // Set WARNING_LOW_V bit
+        status |= WARN_LOW_V_MASK; // Set WARN_LOW_V bit
     }
     else
     {
-        status &= ~BMS_WARNING_LOW_V; // Clear WARNING_LOW_V bit
+        status &= ~WARN_LOW_V_MASK; // Clear WARN_LOW_V bit
     }
 
     return status;
@@ -114,41 +117,46 @@ int findModuleTempState(int status, float temp)
 {
     // Some conditionals here have no else because faults don't clear
 
-    if (temp >= HIGH_READ_LIMIT_TEMP || temp <= LOW_READ_LIMIT_TEMP)
+    // Faults
+    if (temp >= FLT_OT_THRESHOLD)
     {
-        status |= BMS_FAULT_TEMP_RANGE; // Set FAULT_TEMP_RANGE bit
+        status |= FLT_OT_MASK; // Set FLT_OT bit
     }
 
-    if (temp >= OT_FAULT_TEMP)
+    if (temp >= FLT_TEMP_RANGE_HIGH_THRESHOLD || temp <= FLT_TEMP_RANGE_LOW_THRESHOLD)
     {
-        status |= BMS_FAULT_OT; // Set FAULT_OT bit
+        status |= FLT_TEMP_RANGE_MASK; // Set FLT_TEMP_RANGE bit
     }
 
-    if (temp >= CHARGE_OT_TEMP)
+    // Trips
+
+    if (temp >= TRIP_CHARGE_OT_THRESHOLD)
     {
-        status |= BMS_TRIP_CHARGE_OT; // Set TRIP_CHARGE_OT bit
+        status |= TRIP_CHARGE_OT_MASK; // Set TRIP_CHARGE_OT bit
     }
     else
     {
-        status &= ~BMS_TRIP_CHARGE_OT; // Clear TRIP_CHARGE_OT bit
+        status &= ~TRIP_CHARGE_OT_MASK; // Clear TRIP_CHARGE_OT bit
     }
 
-    if (temp >= HIGH_WARNING_TEMP)
+    // Warns
+
+    if (temp >= WARN_HIGH_T_THRESHOLD)
     {
-        status |= BMS_WARNING_HIGH_T; // Set WARNING_HIGH_T bit
+        status |= WARN_HIGH_T_MASK; // Set WARN_HIGH_T bit
     }
     else
     {
-        status &= ~BMS_WARNING_HIGH_T; // Clear WARNING_HIGH_T bit
+        status &= ~WARN_HIGH_T_MASK; // Clear WARN_HIGH_T bit
     }
 
-    if (temp <= LOW_WARNING_TEMP)
+    if (temp <= WARN_LOW_T_THRESHOLD)
     {
-        status |= BMS_WARNING_LOW_T; // Set WARNING_LOW_T bit
+        status |= WARN_LOW_T_MASK; // Set WARN_LOW_T bit
     }
     else
     {
-        status &= ~BMS_WARNING_LOW_T; // Clear WARNING_LOW_T bit
+        status &= ~WARN_LOW_T_MASK; // Clear WARN_LOW_T bit
     }
 
     return status;
