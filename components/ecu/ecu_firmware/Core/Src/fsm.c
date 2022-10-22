@@ -144,7 +144,7 @@ void DCDC_minus()
  */
 void DCDC_plus()
 {
-    if (timer_check(DCDC_POWER_ON_INTERVAL))
+    if (timer_check(SHORT_INTERVAL))
     {
         HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, HIGH);
         HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, HIGH);

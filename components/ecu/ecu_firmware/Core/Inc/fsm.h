@@ -59,7 +59,6 @@ static bool last_LLIM_status;
 #define SHORT_INTERVAL 300
 #define FLT_BLINK_INTERVAL 250
 #define LVS_INTERVAL 200
-#define DCDC_POWER_ON_INTERVAL 700
 
 #define SUPP_LIMIT 10500
 #define LOW false
