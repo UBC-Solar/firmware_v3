@@ -1,14 +1,13 @@
 /**
  * @file fsm.h
  * @brief Header file for the finite state machine of the ECU
- * 
+ *
  * @date 2021/01/25
  * @author Blake Shular (blake-shular)
  */
 
 #ifndef __FSM_H
 #define __FSM_H
-
 
 #include "main.h"
 #include <stdbool.h>
@@ -21,7 +20,8 @@
 /*============================================================================*/
 /* STATE MACHINE STATES */
 
-typedef enum {
+typedef enum
+{
     FSM_RESET = 0,
     WAIT_FOR_BMS_POWERUP,
     WAIT_FOR_BMS_READY,
@@ -40,7 +40,6 @@ typedef enum {
     FAULT
 } FSM_state_t;
 
-
 /*============================================================================*/
 /* GLOBAL VARIABLES */
 
@@ -53,17 +52,18 @@ static bool last_LLIM_status;
 /*============================================================================*/
 /* DEFINED CONSTANTS */
 
+// Time intervals are in milliseconds
 #define BMS_STARTUP_INTERVAL 5000
 #define MESSAGE_INTERVAL 1000
 #define MDU_DCH_INTERVAL 500
 #define SHORT_INTERVAL 300
 #define FLT_BLINK_INTERVAL 250
 #define LVS_INTERVAL 200
+#define DCDC_POWER_ON_INTERVAL 700
+
 #define SUPP_LIMIT 10500
 #define LOW false
 #define HIGH true
-
-
 
 // Helper Functions:
 bool timer_check(unsigned int millis);
@@ -107,8 +107,7 @@ static void (*FSM_state_table[])(void) = {
     TELEM_on,
     AMB_on,
     ECU_monitor,
-    fault
-};
+    fault};
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
