@@ -95,7 +95,7 @@ void Convert_Values(uint8_t index);
 /* Number of ADC Channels Total */
 #define ADC_CHANNELS 16
 
-/* 12 ADC Channel Assignments */
+/* 12 ADC Channel Assignments (10-13 NOT IN USE) */
 #define VSENSE1			6
 #define VSENSE2			5
 #define ISENSE1			7

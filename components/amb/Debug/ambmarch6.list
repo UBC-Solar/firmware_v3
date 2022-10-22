@@ -27,9 +27,9 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  11 .ARM.attributes 00000029  00000000  00000000  0002000c  2**0
                   CONTENTS, READONLY
- 12 .debug_info   0000ba03  00000000  00000000  00020035  2**0
+ 12 .debug_info   0000ba04  00000000  00000000  00020035  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_abbrev 0000201f  00000000  00000000  0002ba38  2**0
+ 13 .debug_abbrev 0000201f  00000000  00000000  0002ba39  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  14 .debug_aranges 00000c20  00000000  00000000  0002da58  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
@@ -37,11 +37,11 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  16 .debug_macro  00019efc  00000000  00000000  0002f180  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   0000e070  00000000  00000000  0004907c  2**0
+ 17 .debug_line   0000e072  00000000  00000000  0004907c  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    0009a437  00000000  00000000  000570ec  2**0
+ 18 .debug_str    0009a437  00000000  00000000  000570ee  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000053  00000000  00000000  000f1523  2**0
+ 19 .comment      00000053  00000000  00000000  000f1525  2**0
                   CONTENTS, READONLY
  20 .debug_frame  00003248  00000000  00000000  000f1578  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
@@ -1350,8 +1350,8 @@ void Convert_Values(uint8_t index) {
  8000db0:	08000e61 	.word	0x08000e61
  8000db4:	08000e61 	.word	0x08000e61
  8000db8:	08000e61 	.word	0x08000e61
- 8000dbc:	08000de9 	.word	0x08000de9
- 8000dc0:	08000e25 	.word	0x08000e25
+ 8000dbc:	08000e25 	.word	0x08000e25
+ 8000dc0:	08000de9 	.word	0x08000de9
  8000dc4:	08000e61 	.word	0x08000e61
  8000dc8:	08000e61 	.word	0x08000e61
  8000dcc:	08000e61 	.word	0x08000e61
@@ -1361,9 +1361,9 @@ void Convert_Values(uint8_t index) {
  8000ddc:	08000e63 	.word	0x08000e63
  8000de0:	08000e61 	.word	0x08000e61
  8000de4:	08000e61 	.word	0x08000e61
-		case 5:
+		case VSENSE1:
 			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
-			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 82.621) / 40.271;	// slightly undercompensates
+			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 81.822) / 40.441;	// slightly overcompensates
  8000de8:	79fb      	ldrb	r3, [r7, #7]
  8000dea:	4a29      	ldr	r2, [pc, #164]	; (8000e90 <Convert_Values+0x100>)
  8000dec:	f852 3023 	ldr.w	r3, [r2, r3, lsl #2]
@@ -1388,9 +1388,9 @@ void Convert_Values(uint8_t index) {
  8000e1e:	e9c1 2300 	strd	r2, r3, [r1]
 			break;
  8000e22:	e01e      	b.n	8000e62 <Convert_Values+0xd2>
-		case 6:
+		case VSENSE2:
 			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
-			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 81.822) / 40.441;	// slightly overcompensates
+			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 82.621) / 40.271;	// slightly undercompensates
  8000e24:	79fb      	ldrb	r3, [r7, #7]
  8000e26:	4a1a      	ldr	r2, [pc, #104]	; (8000e90 <Convert_Values+0x100>)
  8000e28:	f852 3023 	ldr.w	r3, [r2, r3, lsl #2]
@@ -1415,13 +1415,17 @@ void Convert_Values(uint8_t index) {
  8000e5a:	e9c1 2300 	strd	r2, r3, [r1]
 			break;
  8000e5e:	e000      	b.n	8000e62 <Convert_Values+0xd2>
-		case 8:
-		case 9:
-		case 14:
-		case 15:
-			/* Relationship for converting to temperature and modify CONVERTED_VALUES[index] */
+		case ISENSE2:
+			/* Relationship for converting to current and modify CONVERTED_VALUES[index] */
+			break;
+
+		case TEMP_1:
 			break;
  8000e60:	bf00      	nop
+			break;
+		case TEMP_8:
+			/* Relationship for converting to temperature and modify CONVERTED_VALUES[index] */
+			break;
 	}
 }
  8000e62:	bf00      	nop
@@ -1430,14 +1434,14 @@ void Convert_Values(uint8_t index) {
  8000e68:	bd90      	pop	{r4, r7, pc}
  8000e6a:	bf00      	nop
  8000e6c:	f3af 8000 	nop.w
- 8000e70:	76c8b439 	.word	0x76c8b439
- 8000e74:	4054a7be 	.word	0x4054a7be
- 8000e78:	20c49ba6 	.word	0x20c49ba6
- 8000e7c:	404422b0 	.word	0x404422b0
- 8000e80:	a5e353f8 	.word	0xa5e353f8
- 8000e84:	4054749b 	.word	0x4054749b
- 8000e88:	b020c49c 	.word	0xb020c49c
- 8000e8c:	40443872 	.word	0x40443872
+ 8000e70:	a5e353f8 	.word	0xa5e353f8
+ 8000e74:	4054749b 	.word	0x4054749b
+ 8000e78:	b020c49c 	.word	0xb020c49c
+ 8000e7c:	40443872 	.word	0x40443872
+ 8000e80:	76c8b439 	.word	0x76c8b439
+ 8000e84:	4054a7be 	.word	0x4054a7be
+ 8000e88:	20c49ba6 	.word	0x20c49ba6
+ 8000e8c:	404422b0 	.word	0x404422b0
  8000e90:	2000002c 	.word	0x2000002c
  8000e94:	20000070 	.word	0x20000070
 

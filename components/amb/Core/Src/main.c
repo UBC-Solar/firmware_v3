@@ -75,30 +75,47 @@ void Convert_Values(uint8_t index) {
 	/* Convert value with appropriate relationship given the index */
 
 	switch(index) {
-		case 5:
-			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
-			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 82.621) / 40.271;	// slightly undercompensates
-			break;
-		case 6:
+		case VSENSE1:
 			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
 			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 81.822) / 40.441;	// slightly overcompensates
 			break;
-
-		case 4:
-		case 7:
-			/* Relationship for converting to current and modify CONVERTED_VALUES[index] */
-
+		case VSENSE2:
+			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
+			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 82.621) / 40.271;	// slightly undercompensates
 			break;
 
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-		case 8:
-		case 9:
-		case 14:
-		case 15:
+		case ISENSE1:
+			/* TODO */
+			break;
+		case ISENSE2:
+			/* Relationship for converting to current and modify CONVERTED_VALUES[index] */
+			/* TODO */
+			break;
+
+		case TEMP_1:
+			/* TODO */
+			break;
+		case TEMP_2:
+			/* TODO */
+			break;
+		case TEMP_3:
+			/* TODO */
+			break;
+		case TEMP_4:
+			/* TODO */
+			break;
+		case TEMP_5:
+			/* TODO */
+			break;
+		case TEMP_6:
+			/* TODO */
+			break;
+		case TEMP_7:
+			/* TODO */
+			break;
+		case TEMP_8:
 			/* Relationship for converting to temperature and modify CONVERTED_VALUES[index] */
+			/* TODO */
 			break;
 	}
 }
@@ -173,9 +190,10 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  //code here
-	  //read ADC, process, then output to CANbus
+	  /* Read ADC, process, then output to CANbus */
+
 	  /* TODO: Output to CANbus */
+	  /* TODO: Characterization for Current and Temperature */
 
 	  /* VSENSE1 */
 	  ADC_Select((uint8_t) VSENSE1);
