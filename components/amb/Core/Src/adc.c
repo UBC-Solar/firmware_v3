@@ -19,6 +19,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "adc.h"
+#include "main.h"
 
 /* USER CODE BEGIN 0 */
 
@@ -27,6 +28,7 @@
 #define ADC_SAMPLETIME_28CYCLES ((uint32_t)ADC_SMPR1_SMP10_1)
 #define ADC_SAMPLETIME_84CYCLES ((uint32_t)ADC_SMPR1_SMP10_2)
 #define ADC_SAMPLETIME_112CYCLES ((uint32_t)(ADC_SMPR1_SMP10_2 | ADC_SMPR1_SMP10_0))
+
 
 /* USER CODE END 0 */
 
@@ -163,34 +165,34 @@ void ADC_Select(uint8_t channel)
 	ADC_ChannelConfTypeDef sConfig = {0};
 
 	switch(channel) {
-		case 0:		// TEMP_1
+		case TEMP_1:		// TEMP_1
 			sConfig.Channel = ADC_CHANNEL_0;
 			break;
-		case 1:		// TEMP_2
+		case TEMP_2:		// TEMP_2
 			sConfig.Channel = ADC_CHANNEL_1;
 			break;
-		case 2:		// TEMP_3
+		case TEMP_3:		// TEMP_3
 			sConfig.Channel = ADC_CHANNEL_2;
 			break;
-		case 3:		// TEMP_4
+		case TEMP_4:		// TEMP_4
 			sConfig.Channel = ADC_CHANNEL_3;
 			break;
-		case 4:		// ISENSE2
+		case ISENSE2:		// ISENSE2
 			sConfig.Channel = ADC_CHANNEL_4;
 			break;
-		case 5:		// VSENSE2
+		case VSENSE2:		// VSENSE2
 			sConfig.Channel = ADC_CHANNEL_5;
 			break;
-		case 6:		// VSENSE1
+		case VSENSE1:		// VSENSE1
 			sConfig.Channel = ADC_CHANNEL_6;
 			break;
-		case 7:		// ISENSE1
+		case ISENSE1:		// ISENSE1
 			sConfig.Channel = ADC_CHANNEL_7;
 			break;
-		case 8:		// TEMP_7
+		case TEMP_7:		// TEMP_7
 			sConfig.Channel = ADC_CHANNEL_8;
 			break;
-		case 9:		// TEMP_8
+		case TEMP_8:		// TEMP_8
 			sConfig.Channel = ADC_CHANNEL_9;
 			break;
 		case 10:	// NOT IN USE
@@ -205,10 +207,10 @@ void ADC_Select(uint8_t channel)
 		case 13:	// NOT IN USE
 			//sConfig.Channel = ADC_CHANNEL_13;
 			break;
-		case 14:	// TEMP_5
+		case TEMP_5:	// TEMP_5
 			sConfig.Channel = ADC_CHANNEL_14;
 			break;
-		case 15:	// TEMP_6
+		case TEMP_6:	// TEMP_6
 			sConfig.Channel = ADC_CHANNEL_15;
 			break;
 	}
@@ -222,7 +224,9 @@ void ADC_Select(uint8_t channel)
 	}
 }
 
-
+/* Below is code that can be deleted once the above ADC code is complete.
+ * Just keep it for now for reference to how to set up the channel for reading
+ */
 
 /* Voltage Channels*/
 

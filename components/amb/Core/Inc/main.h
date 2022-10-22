@@ -89,6 +89,26 @@ void Convert_Values(uint8_t index);
 #define SWCLK_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
 
+/* Number of ADC Channels Used */
+#define ADC_BUF_SIZE	12
+
+/* Number of ADC Channels Total */
+#define ADC_CHANNELS 16
+
+/* 12 ADC Channel Assignments */
+#define VSENSE1			6
+#define VSENSE2			5
+#define ISENSE1			7
+#define ISENSE2			4
+#define TEMP_1			0
+#define TEMP_2			1
+#define TEMP_3			2
+#define TEMP_4			3
+#define TEMP_5			14
+#define TEMP_6			15
+#define TEMP_7			8
+#define TEMP_8			9
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

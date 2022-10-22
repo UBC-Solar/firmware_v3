@@ -27,23 +27,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  11 .ARM.attributes 00000029  00000000  00000000  0002000c  2**0
                   CONTENTS, READONLY
- 12 .debug_info   0000ba00  00000000  00000000  00020035  2**0
+ 12 .debug_info   0000ba03  00000000  00000000  00020035  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_abbrev 0000201f  00000000  00000000  0002ba35  2**0
+ 13 .debug_abbrev 0000201f  00000000  00000000  0002ba38  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  14 .debug_aranges 00000c20  00000000  00000000  0002da58  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  15 .debug_ranges 00000b08  00000000  00000000  0002e678  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_macro  00019eaa  00000000  00000000  0002f180  2**0
+ 16 .debug_macro  00019efc  00000000  00000000  0002f180  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   0000e070  00000000  00000000  0004902a  2**0
+ 17 .debug_line   0000e070  00000000  00000000  0004907c  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    0009a3b5  00000000  00000000  0005709a  2**0
+ 18 .debug_str    0009a437  00000000  00000000  000570ec  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000053  00000000  00000000  000f144f  2**0
+ 19 .comment      00000053  00000000  00000000  000f1523  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  00003248  00000000  00000000  000f14a4  2**2
+ 20 .debug_frame  00003248  00000000  00000000  000f1578  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -963,61 +963,61 @@ void ADC_Select(uint8_t channel)
  8000b70:	08000bc5 	.word	0x08000bc5
  8000b74:	08000bb9 	.word	0x08000bb9
  8000b78:	08000bbf 	.word	0x08000bbf
-		case 0:		// TEMP_1
+		case TEMP_1:		// TEMP_1
 			sConfig.Channel = ADC_CHANNEL_0;
  8000b7c:	2300      	movs	r3, #0
  8000b7e:	60fb      	str	r3, [r7, #12]
 			break;
  8000b80:	e020      	b.n	8000bc4 <ADC_Select+0xac>
-		case 1:		// TEMP_2
+		case TEMP_2:		// TEMP_2
 			sConfig.Channel = ADC_CHANNEL_1;
  8000b82:	2301      	movs	r3, #1
  8000b84:	60fb      	str	r3, [r7, #12]
 			break;
  8000b86:	e01d      	b.n	8000bc4 <ADC_Select+0xac>
-		case 2:		// TEMP_3
+		case TEMP_3:		// TEMP_3
 			sConfig.Channel = ADC_CHANNEL_2;
  8000b88:	2302      	movs	r3, #2
  8000b8a:	60fb      	str	r3, [r7, #12]
 			break;
  8000b8c:	e01a      	b.n	8000bc4 <ADC_Select+0xac>
-		case 3:		// TEMP_4
+		case TEMP_4:		// TEMP_4
 			sConfig.Channel = ADC_CHANNEL_3;
  8000b8e:	2303      	movs	r3, #3
  8000b90:	60fb      	str	r3, [r7, #12]
 			break;
  8000b92:	e017      	b.n	8000bc4 <ADC_Select+0xac>
-		case 4:		// ISENSE2
+		case ISENSE2:		// ISENSE2
 			sConfig.Channel = ADC_CHANNEL_4;
  8000b94:	2304      	movs	r3, #4
  8000b96:	60fb      	str	r3, [r7, #12]
 			break;
  8000b98:	e014      	b.n	8000bc4 <ADC_Select+0xac>
-		case 5:		// VSENSE2
+		case VSENSE2:		// VSENSE2
 			sConfig.Channel = ADC_CHANNEL_5;
  8000b9a:	2305      	movs	r3, #5
  8000b9c:	60fb      	str	r3, [r7, #12]
 			break;
  8000b9e:	e011      	b.n	8000bc4 <ADC_Select+0xac>
-		case 6:		// VSENSE1
+		case VSENSE1:		// VSENSE1
 			sConfig.Channel = ADC_CHANNEL_6;
  8000ba0:	2306      	movs	r3, #6
  8000ba2:	60fb      	str	r3, [r7, #12]
 			break;
  8000ba4:	e00e      	b.n	8000bc4 <ADC_Select+0xac>
-		case 7:		// ISENSE1
+		case ISENSE1:		// ISENSE1
 			sConfig.Channel = ADC_CHANNEL_7;
  8000ba6:	2307      	movs	r3, #7
  8000ba8:	60fb      	str	r3, [r7, #12]
 			break;
  8000baa:	e00b      	b.n	8000bc4 <ADC_Select+0xac>
-		case 8:		// TEMP_7
+		case TEMP_7:		// TEMP_7
 			sConfig.Channel = ADC_CHANNEL_8;
  8000bac:	2308      	movs	r3, #8
  8000bae:	60fb      	str	r3, [r7, #12]
 			break;
  8000bb0:	e008      	b.n	8000bc4 <ADC_Select+0xac>
-		case 9:		// TEMP_8
+		case TEMP_8:		// TEMP_8
 			sConfig.Channel = ADC_CHANNEL_9;
  8000bb2:	2309      	movs	r3, #9
  8000bb4:	60fb      	str	r3, [r7, #12]
@@ -1027,13 +1027,13 @@ void ADC_Select(uint8_t channel)
 		case 13:	// NOT IN USE
 			//sConfig.Channel = ADC_CHANNEL_13;
 			break;
-		case 14:	// TEMP_5
+		case TEMP_5:	// TEMP_5
 			sConfig.Channel = ADC_CHANNEL_14;
  8000bb8:	230e      	movs	r3, #14
  8000bba:	60fb      	str	r3, [r7, #12]
 			break;
  8000bbc:	e002      	b.n	8000bc4 <ADC_Select+0xac>
-		case 15:	// TEMP_6
+		case TEMP_6:	// TEMP_6
 			sConfig.Channel = ADC_CHANNEL_15;
  8000bbe:	230f      	movs	r3, #15
  8000bc0:	60fb      	str	r3, [r7, #12]
@@ -1327,8 +1327,8 @@ void MX_GPIO_Init(void)
 08000d90 <Convert_Values>:
 /* USER CODE BEGIN 0 */
 
-uint32_t ADC_VALUES[16] = {0};	// unprocessed ADC Values
-double CONVERTED_VALUES[16] = {0};	// processed values
+uint32_t ADC_VALUES[ADC_CHANNELS] = {0};	// unprocessed ADC Values
+double CONVERTED_VALUES[ADC_CHANNELS] = {0};	// processed values
 
 void Convert_Values(uint8_t index) {
  8000d90:	b590      	push	{r4, r7, lr}
@@ -1362,8 +1362,8 @@ void Convert_Values(uint8_t index) {
  8000de0:	08000e61 	.word	0x08000e61
  8000de4:	08000e61 	.word	0x08000e61
 		case 5:
-			/* Relationship for converting ADC for Vsense 1 and modify CONVERTED_VALUES[index] */
-			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 82.621) / 40.271;
+			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
+			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 82.621) / 40.271;	// slightly undercompensates
  8000de8:	79fb      	ldrb	r3, [r7, #7]
  8000dea:	4a29      	ldr	r2, [pc, #164]	; (8000e90 <Convert_Values+0x100>)
  8000dec:	f852 3023 	ldr.w	r3, [r2, r3, lsl #2]
@@ -1389,8 +1389,8 @@ void Convert_Values(uint8_t index) {
 			break;
  8000e22:	e01e      	b.n	8000e62 <Convert_Values+0xd2>
 		case 6:
-			/* Relationship for converting ADC for Vsense 1 and modify CONVERTED_VALUES[index] */
-			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 81.822) / 40.441;
+			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
+			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 81.822) / 40.441;	// slightly overcompensates
  8000e24:	79fb      	ldrb	r3, [r7, #7]
  8000e26:	4a1a      	ldr	r2, [pc, #104]	; (8000e90 <Convert_Values+0x100>)
  8000e28:	f852 3023 	ldr.w	r3, [r2, r3, lsl #2]
@@ -1495,179 +1495,190 @@ int main(void)
  8000ec4:	d001      	beq.n	8000eca <main+0x32>
 	  Error_Handler();
  8000ec6:	f000 f90b 	bl	80010e0 <Error_Handler>
-    /* USER CODE BEGIN 3 */
-
 	  //code here
 	  //read ADC, process, then output to CANbus
+	  /* TODO: Output to CANbus */
 
-	  ADC_Select((uint8_t) 6);	// VSENSE1
+	  /* VSENSE1 */
+	  ADC_Select((uint8_t) VSENSE1);
  8000eca:	2006      	movs	r0, #6
  8000ecc:	f7ff fe24 	bl	8000b18 <ADC_Select>
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
  8000ed0:	f44f 717a 	mov.w	r1, #1000	; 0x3e8
  8000ed4:	4856      	ldr	r0, [pc, #344]	; (8001030 <main+0x198>)
  8000ed6:	f000 fc1d 	bl	8001714 <HAL_ADC_PollForConversion>
-	  ADC_VALUES[6] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[VSENSE1] = HAL_ADC_GetValue(&hadc1);
  8000eda:	4855      	ldr	r0, [pc, #340]	; (8001030 <main+0x198>)
  8000edc:	f000 fd14 	bl	8001908 <HAL_ADC_GetValue>
  8000ee0:	4603      	mov	r3, r0
  8000ee2:	4a55      	ldr	r2, [pc, #340]	; (8001038 <main+0x1a0>)
  8000ee4:	6193      	str	r3, [r2, #24]
-	  Convert_Values((uint8_t) 6);
+	  Convert_Values((uint8_t) VSENSE1);
  8000ee6:	2006      	movs	r0, #6
  8000ee8:	f7ff ff52 	bl	8000d90 <Convert_Values>
 
-	  ADC_Select((uint8_t) 5); // VSENSE2
+	  /* VSENSE 2 */
+	  ADC_Select((uint8_t) VSENSE2);
  8000eec:	2005      	movs	r0, #5
  8000eee:	f7ff fe13 	bl	8000b18 <ADC_Select>
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
  8000ef2:	f44f 717a 	mov.w	r1, #1000	; 0x3e8
  8000ef6:	484e      	ldr	r0, [pc, #312]	; (8001030 <main+0x198>)
  8000ef8:	f000 fc0c 	bl	8001714 <HAL_ADC_PollForConversion>
-	  ADC_VALUES[5] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[VSENSE2] = HAL_ADC_GetValue(&hadc1);
  8000efc:	484c      	ldr	r0, [pc, #304]	; (8001030 <main+0x198>)
  8000efe:	f000 fd03 	bl	8001908 <HAL_ADC_GetValue>
  8000f02:	4603      	mov	r3, r0
  8000f04:	4a4c      	ldr	r2, [pc, #304]	; (8001038 <main+0x1a0>)
  8000f06:	6153      	str	r3, [r2, #20]
-	  Convert_Values((uint8_t) 5);
+	  Convert_Values((uint8_t) VSENSE2);
  8000f08:	2005      	movs	r0, #5
  8000f0a:	f7ff ff41 	bl	8000d90 <Convert_Values>
 
-	  ADC_Select((uint8_t) 7);	// ISENSE1
+	  /* ISENSE1 */
+	  ADC_Select((uint8_t) ISENSE1);
  8000f0e:	2007      	movs	r0, #7
  8000f10:	f7ff fe02 	bl	8000b18 <ADC_Select>
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
  8000f14:	f44f 717a 	mov.w	r1, #1000	; 0x3e8
  8000f18:	4845      	ldr	r0, [pc, #276]	; (8001030 <main+0x198>)
  8000f1a:	f000 fbfb 	bl	8001714 <HAL_ADC_PollForConversion>
-	  ADC_VALUES[7] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[ISENSE1] = HAL_ADC_GetValue(&hadc1);
  8000f1e:	4844      	ldr	r0, [pc, #272]	; (8001030 <main+0x198>)
  8000f20:	f000 fcf2 	bl	8001908 <HAL_ADC_GetValue>
  8000f24:	4603      	mov	r3, r0
  8000f26:	4a44      	ldr	r2, [pc, #272]	; (8001038 <main+0x1a0>)
  8000f28:	61d3      	str	r3, [r2, #28]
 
-	  ADC_Select((uint8_t) 4);	// ISENSE2
+	  /* ISENSE2 */
+	  ADC_Select((uint8_t) ISENSE2);
  8000f2a:	2004      	movs	r0, #4
  8000f2c:	f7ff fdf4 	bl	8000b18 <ADC_Select>
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
  8000f30:	f44f 717a 	mov.w	r1, #1000	; 0x3e8
  8000f34:	483e      	ldr	r0, [pc, #248]	; (8001030 <main+0x198>)
  8000f36:	f000 fbed 	bl	8001714 <HAL_ADC_PollForConversion>
-	  ADC_VALUES[4] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[ISENSE2] = HAL_ADC_GetValue(&hadc1);
  8000f3a:	483d      	ldr	r0, [pc, #244]	; (8001030 <main+0x198>)
  8000f3c:	f000 fce4 	bl	8001908 <HAL_ADC_GetValue>
  8000f40:	4603      	mov	r3, r0
  8000f42:	4a3d      	ldr	r2, [pc, #244]	; (8001038 <main+0x1a0>)
  8000f44:	6113      	str	r3, [r2, #16]
 
-	  ADC_Select((uint8_t) 0);	// TEMP_1
+	  /* TEMP_1 */
+	  ADC_Select((uint8_t) TEMP_1);
  8000f46:	2000      	movs	r0, #0
  8000f48:	f7ff fde6 	bl	8000b18 <ADC_Select>
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
  8000f4c:	f44f 717a 	mov.w	r1, #1000	; 0x3e8
  8000f50:	4837      	ldr	r0, [pc, #220]	; (8001030 <main+0x198>)
  8000f52:	f000 fbdf 	bl	8001714 <HAL_ADC_PollForConversion>
-	  ADC_VALUES[0] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_1] = HAL_ADC_GetValue(&hadc1);
  8000f56:	4836      	ldr	r0, [pc, #216]	; (8001030 <main+0x198>)
  8000f58:	f000 fcd6 	bl	8001908 <HAL_ADC_GetValue>
  8000f5c:	4603      	mov	r3, r0
  8000f5e:	4a36      	ldr	r2, [pc, #216]	; (8001038 <main+0x1a0>)
  8000f60:	6013      	str	r3, [r2, #0]
 
-	  ADC_Select((uint8_t) 1); // TEMP_2
+	  /* TEMP_2 */
+	  ADC_Select((uint8_t) TEMP_2);
  8000f62:	2001      	movs	r0, #1
  8000f64:	f7ff fdd8 	bl	8000b18 <ADC_Select>
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
  8000f68:	f44f 717a 	mov.w	r1, #1000	; 0x3e8
  8000f6c:	4830      	ldr	r0, [pc, #192]	; (8001030 <main+0x198>)
  8000f6e:	f000 fbd1 	bl	8001714 <HAL_ADC_PollForConversion>
-	  ADC_VALUES[1] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_2] = HAL_ADC_GetValue(&hadc1);
  8000f72:	482f      	ldr	r0, [pc, #188]	; (8001030 <main+0x198>)
  8000f74:	f000 fcc8 	bl	8001908 <HAL_ADC_GetValue>
  8000f78:	4603      	mov	r3, r0
  8000f7a:	4a2f      	ldr	r2, [pc, #188]	; (8001038 <main+0x1a0>)
  8000f7c:	6053      	str	r3, [r2, #4]
 
-	  ADC_Select((uint8_t) 2);	// TEMP_3
+	  /* TEMP_3 */
+	  ADC_Select((uint8_t) TEMP_3);
  8000f7e:	2002      	movs	r0, #2
  8000f80:	f7ff fdca 	bl	8000b18 <ADC_Select>
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
  8000f84:	f44f 717a 	mov.w	r1, #1000	; 0x3e8
  8000f88:	4829      	ldr	r0, [pc, #164]	; (8001030 <main+0x198>)
  8000f8a:	f000 fbc3 	bl	8001714 <HAL_ADC_PollForConversion>
-	  ADC_VALUES[2] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_3] = HAL_ADC_GetValue(&hadc1);
  8000f8e:	4828      	ldr	r0, [pc, #160]	; (8001030 <main+0x198>)
  8000f90:	f000 fcba 	bl	8001908 <HAL_ADC_GetValue>
  8000f94:	4603      	mov	r3, r0
  8000f96:	4a28      	ldr	r2, [pc, #160]	; (8001038 <main+0x1a0>)
  8000f98:	6093      	str	r3, [r2, #8]
 
-	  ADC_Select((uint8_t) 3);	// TEMP_4
+	  /* TEMP_4 */
+	  ADC_Select((uint8_t) TEMP_4);
  8000f9a:	2003      	movs	r0, #3
  8000f9c:	f7ff fdbc 	bl	8000b18 <ADC_Select>
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
  8000fa0:	f44f 717a 	mov.w	r1, #1000	; 0x3e8
  8000fa4:	4822      	ldr	r0, [pc, #136]	; (8001030 <main+0x198>)
  8000fa6:	f000 fbb5 	bl	8001714 <HAL_ADC_PollForConversion>
-	  ADC_VALUES[3] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_4] = HAL_ADC_GetValue(&hadc1);
  8000faa:	4821      	ldr	r0, [pc, #132]	; (8001030 <main+0x198>)
  8000fac:	f000 fcac 	bl	8001908 <HAL_ADC_GetValue>
  8000fb0:	4603      	mov	r3, r0
  8000fb2:	4a21      	ldr	r2, [pc, #132]	; (8001038 <main+0x1a0>)
  8000fb4:	60d3      	str	r3, [r2, #12]
 
-	  ADC_Select((uint8_t) 14);	// TEMP_5
+	  /* TEMP_5 */
+	  ADC_Select((uint8_t) TEMP_5);
  8000fb6:	200e      	movs	r0, #14
  8000fb8:	f7ff fdae 	bl	8000b18 <ADC_Select>
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
  8000fbc:	f44f 717a 	mov.w	r1, #1000	; 0x3e8
  8000fc0:	481b      	ldr	r0, [pc, #108]	; (8001030 <main+0x198>)
  8000fc2:	f000 fba7 	bl	8001714 <HAL_ADC_PollForConversion>
-	  ADC_VALUES[14] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_5] = HAL_ADC_GetValue(&hadc1);
  8000fc6:	481a      	ldr	r0, [pc, #104]	; (8001030 <main+0x198>)
  8000fc8:	f000 fc9e 	bl	8001908 <HAL_ADC_GetValue>
  8000fcc:	4603      	mov	r3, r0
  8000fce:	4a1a      	ldr	r2, [pc, #104]	; (8001038 <main+0x1a0>)
  8000fd0:	6393      	str	r3, [r2, #56]	; 0x38
 
-	  ADC_Select((uint8_t) 15); // TEMP_6
+	  /* TEMP_6 */
+	  ADC_Select((uint8_t) TEMP_6);
  8000fd2:	200f      	movs	r0, #15
  8000fd4:	f7ff fda0 	bl	8000b18 <ADC_Select>
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
  8000fd8:	f44f 717a 	mov.w	r1, #1000	; 0x3e8
  8000fdc:	4814      	ldr	r0, [pc, #80]	; (8001030 <main+0x198>)
  8000fde:	f000 fb99 	bl	8001714 <HAL_ADC_PollForConversion>
-	  ADC_VALUES[15] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_6] = HAL_ADC_GetValue(&hadc1);
  8000fe2:	4813      	ldr	r0, [pc, #76]	; (8001030 <main+0x198>)
  8000fe4:	f000 fc90 	bl	8001908 <HAL_ADC_GetValue>
  8000fe8:	4603      	mov	r3, r0
  8000fea:	4a13      	ldr	r2, [pc, #76]	; (8001038 <main+0x1a0>)
  8000fec:	63d3      	str	r3, [r2, #60]	; 0x3c
 
-	  ADC_Select((uint8_t) 8);	// TEMP_7
+	  /* TEMP_7 */
+	  ADC_Select((uint8_t) TEMP_7);
  8000fee:	2008      	movs	r0, #8
  8000ff0:	f7ff fd92 	bl	8000b18 <ADC_Select>
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
  8000ff4:	f44f 717a 	mov.w	r1, #1000	; 0x3e8
  8000ff8:	480d      	ldr	r0, [pc, #52]	; (8001030 <main+0x198>)
  8000ffa:	f000 fb8b 	bl	8001714 <HAL_ADC_PollForConversion>
-	  ADC_VALUES[8] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_7] = HAL_ADC_GetValue(&hadc1);
  8000ffe:	480c      	ldr	r0, [pc, #48]	; (8001030 <main+0x198>)
  8001000:	f000 fc82 	bl	8001908 <HAL_ADC_GetValue>
  8001004:	4603      	mov	r3, r0
  8001006:	4a0c      	ldr	r2, [pc, #48]	; (8001038 <main+0x1a0>)
  8001008:	6213      	str	r3, [r2, #32]
 
-	  ADC_Select((uint8_t) 9);	// TEMP_8
+	  /* TEMP_8 */
+	  ADC_Select((uint8_t) TEMP_8);
  800100a:	2009      	movs	r0, #9
  800100c:	f7ff fd84 	bl	8000b18 <ADC_Select>
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
  8001010:	f44f 717a 	mov.w	r1, #1000	; 0x3e8
  8001014:	4806      	ldr	r0, [pc, #24]	; (8001030 <main+0x198>)
  8001016:	f000 fb7d 	bl	8001714 <HAL_ADC_PollForConversion>
-	  ADC_VALUES[9] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_8] = HAL_ADC_GetValue(&hadc1);
  800101a:	4805      	ldr	r0, [pc, #20]	; (8001030 <main+0x198>)
  800101c:	f000 fc74 	bl	8001908 <HAL_ADC_GetValue>
  8001020:	4603      	mov	r3, r0
@@ -1678,7 +1689,7 @@ int main(void)
 	  HAL_Delay (1000);
  8001026:	f44f 707a 	mov.w	r0, #1000	; 0x3e8
  800102a:	f000 f9b7 	bl	800139c <HAL_Delay>
-	  ADC_Select((uint8_t) 6);	// VSENSE1
+	  ADC_Select((uint8_t) VSENSE1);
  800102e:	e74c      	b.n	8000eca <main+0x32>
  8001030:	200000f0 	.word	0x200000f0
  8001034:	20000148 	.word	0x20000148

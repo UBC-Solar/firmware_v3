@@ -42,7 +42,8 @@
  *
  *
  */
-#define ADC_BUF_SIZE	12
+
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -67,19 +68,19 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-uint32_t ADC_VALUES[16] = {0};	// unprocessed ADC Values
-double CONVERTED_VALUES[16] = {0};	// processed values
+uint32_t ADC_VALUES[ADC_CHANNELS] = {0};	// unprocessed ADC Values
+double CONVERTED_VALUES[ADC_CHANNELS] = {0};	// processed values
 
 void Convert_Values(uint8_t index) {
 	/* Convert value with appropriate relationship given the index */
 
 	switch(index) {
 		case 5:
-			/* Relationship for converting ADC for Vsense 1 and modify CONVERTED_VALUES[index] */
+			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
 			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 82.621) / 40.271;	// slightly undercompensates
 			break;
 		case 6:
-			/* Relationship for converting ADC for Vsense 1 and modify CONVERTED_VALUES[index] */
+			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
 			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 81.822) / 40.441;	// slightly overcompensates
 			break;
 
@@ -174,56 +175,69 @@ int main(void)
 
 	  //code here
 	  //read ADC, process, then output to CANbus
+	  /* TODO: Output to CANbus */
 
-	  ADC_Select((uint8_t) 6);	// VSENSE1
+	  /* VSENSE1 */
+	  ADC_Select((uint8_t) VSENSE1);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-	  ADC_VALUES[6] = HAL_ADC_GetValue(&hadc1);
-	  Convert_Values((uint8_t) 6);
+	  ADC_VALUES[VSENSE1] = HAL_ADC_GetValue(&hadc1);
+	  Convert_Values((uint8_t) VSENSE1);
 
-	  ADC_Select((uint8_t) 5); // VSENSE2
+	  /* VSENSE 2 */
+	  ADC_Select((uint8_t) VSENSE2);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-	  ADC_VALUES[5] = HAL_ADC_GetValue(&hadc1);
-	  Convert_Values((uint8_t) 5);
+	  ADC_VALUES[VSENSE2] = HAL_ADC_GetValue(&hadc1);
+	  Convert_Values((uint8_t) VSENSE2);
 
-	  ADC_Select((uint8_t) 7);	// ISENSE1
+	  /* ISENSE1 */
+	  ADC_Select((uint8_t) ISENSE1);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-	  ADC_VALUES[7] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[ISENSE1] = HAL_ADC_GetValue(&hadc1);
 
-	  ADC_Select((uint8_t) 4);	// ISENSE2
+	  /* ISENSE2 */
+	  ADC_Select((uint8_t) ISENSE2);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-	  ADC_VALUES[4] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[ISENSE2] = HAL_ADC_GetValue(&hadc1);
 
-	  ADC_Select((uint8_t) 0);	// TEMP_1
+	  /* TEMP_1 */
+	  ADC_Select((uint8_t) TEMP_1);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-	  ADC_VALUES[0] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_1] = HAL_ADC_GetValue(&hadc1);
 
-	  ADC_Select((uint8_t) 1); // TEMP_2
+	  /* TEMP_2 */
+	  ADC_Select((uint8_t) TEMP_2);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-	  ADC_VALUES[1] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_2] = HAL_ADC_GetValue(&hadc1);
 
-	  ADC_Select((uint8_t) 2);	// TEMP_3
+	  /* TEMP_3 */
+	  ADC_Select((uint8_t) TEMP_3);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-	  ADC_VALUES[2] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_3] = HAL_ADC_GetValue(&hadc1);
 
-	  ADC_Select((uint8_t) 3);	// TEMP_4
+	  /* TEMP_4 */
+	  ADC_Select((uint8_t) TEMP_4);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-	  ADC_VALUES[3] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_4] = HAL_ADC_GetValue(&hadc1);
 
-	  ADC_Select((uint8_t) 14);	// TEMP_5
+	  /* TEMP_5 */
+	  ADC_Select((uint8_t) TEMP_5);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-	  ADC_VALUES[14] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_5] = HAL_ADC_GetValue(&hadc1);
 
-	  ADC_Select((uint8_t) 15); // TEMP_6
+	  /* TEMP_6 */
+	  ADC_Select((uint8_t) TEMP_6);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-	  ADC_VALUES[15] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_6] = HAL_ADC_GetValue(&hadc1);
 
-	  ADC_Select((uint8_t) 8);	// TEMP_7
+	  /* TEMP_7 */
+	  ADC_Select((uint8_t) TEMP_7);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-	  ADC_VALUES[8] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_7] = HAL_ADC_GetValue(&hadc1);
 
-	  ADC_Select((uint8_t) 9);	// TEMP_8
+	  /* TEMP_8 */
+	  ADC_Select((uint8_t) TEMP_8);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-	  ADC_VALUES[9] = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUES[TEMP_8] = HAL_ADC_GetValue(&hadc1);
 
 
 	  HAL_Delay (1000);
