@@ -20,34 +20,14 @@ void writeBalStatusBit(struct BTM_module * module, BTM_module_bal_status_t bal_s
  *
  * @param[out] dch_pack discharge setting pack to write
  */
-void BTM_BAL_initDchPack(BTM_BAL_dch_setting_pack_t* dch_pack)
+void BTM_BAL_initDchPack(BTM_PackData_t* pack)
 {
-    for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
-    {
-        for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
-        {
-            dch_pack->stack[stack_num].module_dch[module_num] = DISCHARGE_OFF;
-        }
-    }
-    return;
-}
 
-/**
- * @brief Copy all discharge settings from one BTM_BAL_dch_setting_pack_t instance to another
- *
- * @param[in] dch_pack_source discharge setting pack to copy from
- * @param[out] dch_pack_target discharge setting pack to write
- */
-void BTM_BAL_copyDchPack(
-    BTM_BAL_dch_setting_pack_t* dch_pack_source,
-    BTM_BAL_dch_setting_pack_t* dch_pack_target)
-{
     for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
     {
         for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
         {
-            dch_pack_target->stack[stack_num].module_dch[module_num] =
-                dch_pack_source->stack[stack_num].module_dch[module_num];
+            pack->stack[stack_num].module[module_num].bal_status = DISCHARGE_OFF;
         }
     }
     return;
@@ -66,9 +46,7 @@ void BTM_BAL_copyDchPack(
  *  balancing status flags to and read module enable flags from
  * @param[in] dch_setting_pack The discharge settings for the entire pack.
  */
-void BTM_BAL_setDischarge(
-    BTM_PackData_t* pack,
-    BTM_BAL_dch_setting_pack_t* dch_setting_pack)
+void BTM_BAL_setDischarge(BTM_PackData_t* pack)
 {
     uint8_t cfgra_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
     uint8_t cfgrb_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
@@ -101,7 +79,7 @@ void BTM_BAL_setDischarge(
         for(int i = 0; i < 8; i++)
         {
             module_bal_status =
-                dch_setting_pack->stack[ic_num].module_dch[i];
+                pack->stack[ic_num].module[i].bal_status;
             module_enable = pack->stack[ic_num].module[i].enable;
             // Set DCH bit for this module (cell)
             // but only if module is enabled
@@ -116,7 +94,7 @@ void BTM_BAL_setDischarge(
         {
             module_i = j + 8;
             module_bal_status =
-                dch_setting_pack->stack[ic_num].module_dch[module_i];
+                pack->stack[ic_num].module[module_i].bal_status;
             module_enable = pack->stack[ic_num].module[module_i].enable;
             // Set DCH bit for this module (cell)
             // but only if module's enable flag is MODULE_ENABLED
@@ -131,7 +109,7 @@ void BTM_BAL_setDischarge(
         {
             module_i = k + 12;
             module_bal_status =
-                dch_setting_pack->stack[ic_num].module_dch[module_i];
+                pack->stack[ic_num].module[module_i].bal_status;
             module_enable = pack->stack[ic_num].module[module_i].enable;
             // Set DCH bit for this module (cell)
             // but only if module's enable flag is MODULE_ENABLED
@@ -146,7 +124,7 @@ void BTM_BAL_setDischarge(
         {
             module_i = l + 16;
             module_bal_status =
-                dch_setting_pack->stack[ic_num].module_dch[module_i];
+                pack->stack[ic_num].module[module_i].status;
             module_enable = pack->stack[ic_num].module[module_i].enable;
             // Set DCH bit for this module (cell)
             // but only if module's enable flag is MODULE_ENABLED
@@ -167,8 +145,8 @@ void BTM_BAL_setDischarge(
 void writeBalStatusBit(struct BTM_module * module, BTM_module_bal_status_t bal_status)
 {
     if (bal_status == DISCHARGE_ON)
-        module->status |= BMS_TRIP_BAL; // Set TRIP_BAL bit
+        module->status |= TRIP_BAL_MASK; // Set TRIP_BAL bit
     else
-        module->status &= ~BMS_TRIP_BAL; // Clear TRIP_BAL bit
+        module->status &= ~TRIP_BAL_MASK; // Clear TRIP_BAL bit
     return;
 }

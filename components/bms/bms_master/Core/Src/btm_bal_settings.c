@@ -17,9 +17,7 @@ void min_val(uint16_t* val, int* loc, uint16_t arr[], int size, int enable[]);
  * of each module for each stack
  * @param[out] dch_setting_pack The discharge settings for the entire pack.
 */
-void BTM_BAL_settings(
-	BTM_PackData_t* pack,
-	BTM_BAL_dch_setting_pack_t* dch_setting_pack)
+void BTM_BAL_settings(BTM_PackData_t* pack)
 {
 	const int size = 36; // size of the pack_modules array (36 modules)
 
@@ -56,21 +54,21 @@ void BTM_BAL_settings(
 				if(pack_modules[i] > Vth) {
 					// turn on the corresponding s pins
 					if (i < 18)
-						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_ON;
+						pack->stack[0].module[i].bal_status = DISCHARGE_ON;
 					else if (i < 36)
-						dch_setting_pack->stack[1].module_dch[i-18] = DISCHARGE_ON; 
+						pack->stack[1].module[i-18].bal_status = DISCHARGE_ON; 
 				}
 				
 				else {
 					if (i < 18)
-						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_OFF;
+						pack->stack[0].module[i].bal_status = DISCHARGE_OFF;
 					else if (i < 36)
-						dch_setting_pack->stack[1].module_dch[i-18] = DISCHARGE_OFF;
+						pack->stack[1].module[i-18].bal_status = DISCHARGE_OFF;
 				}
 			}
 		}
 		// Call BTM_BAL_setDischarge to send the settings to the configuration register
-		BTM_BAL_setDischarge(pack, dch_setting_pack);
+		BTM_BAL_setDischarge(pack);
 	}
 	
 	// Otherwise, balance to the lowest cell voltage
@@ -81,21 +79,21 @@ void BTM_BAL_settings(
 				if(pack_modules[i] > Vmin + Vtol) {
 					// turn on the corresponding s 
 					if (i < 18)
-						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_ON;
+						pack->stack[0].module[i].bal_status = DISCHARGE_ON;
 					else if (i < 36)
-						dch_setting_pack->stack[1].module_dch[i-18] = DISCHARGE_ON; 
+						pack->stack[1].module[i-18].bal_status = DISCHARGE_ON; 
 				}
 				
 				else {
 					if (i < 18)
-						dch_setting_pack->stack[0].module_dch[i] = DISCHARGE_OFF;
+						pack->stack[0].module[i].bal_status = DISCHARGE_OFF;
 					else if (i < 36)
-						dch_setting_pack->stack[1].module_dch[i-18] = DISCHARGE_OFF;
+						pack->stack[1].module[i-18].bal_status = DISCHARGE_OFF;
 				}
 			}
 		}
 		// Call BTM_BAL_setDischarge to send the settings to the configuration register
-		BTM_BAL_setDischarge(pack, dch_setting_pack);
+		BTM_BAL_setDischarge(pack);
 	}
 
 }
