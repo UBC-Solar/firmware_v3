@@ -83,7 +83,6 @@ int main(void)
 
   // BMS Data structures
   BTM_PackData_t pack;
-  BTM_BAL_dch_setting_pack_t dch_setting_pack;
 
   unsigned int current_blink_tick = 0;
   unsigned int last_blink_tick = 0;
@@ -130,7 +129,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    FSM_run(&pack, &dch_setting_pack);
+    FSM_run(&pack);
 
     // blink LED on master board
     current_blink_tick = HAL_GetTick();

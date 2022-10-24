@@ -308,7 +308,7 @@ typedef struct
 
     // PLACEHOLDER VARIABLES, TO ALLOW COMPILATION WITHOUT ERRORS.
     // NOT NECESSARILY THE FINAL LOCATION OF THESE VARIABLES.
-    int PH_status;           // intended to be the summary of fault/warning/trip flags
+    int status;           // intended to be the summary of fault/warning/trip flags
     uint8_t PH_SOC_LOCATION; // intended to be the summary of state of charge of entire pack
 
 } BTM_PackData_t;

@@ -4,6 +4,7 @@
  *
  *  @date 2020/05/02
  *  @author Andrew Hanlon (a2k-hanlon)
+ *  @author Mischa Johal (mjohal67) - 2022/10/23
  */
 
 /*
@@ -25,13 +26,6 @@
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
 
-// State functions:
-void FSM_reset(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack);
-void FSM_normal(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack);
-void FSM_fault_comm(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack);
-void FSM_fault_general(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack);
-
-// Helper functions:
 int commsProblem(BTM_Status_t func_status, int *sys_status);
 void analysisStatusUpdate(BTM_PackData_t *pack, int *status);
 int doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
@@ -39,118 +33,98 @@ int doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
 void driveControlSignals(int status);
 
 /*============================================================================*/
-/* BMS FSM STATE FUNCTIONS POINTER ARRAY */
-
-// Function names go in this array declaration, and must be in the same order
-// as the FSM_BMS_state_t enumeration.
-void (*FSM_state_table[])(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack) = {FSM_reset, FSM_normal, FSM_fault_comm, FSM_fault_general};
-
-/*============================================================================*/
 /* FSM GLOBAL VARIABLES */
 
 FSM_state_t FSM_state;
 unsigned int last_uptime_tick; // for keeping track of uptime
 unsigned int last_update_tick; // for control of measurement timing
-int system_status;             // status code for system
 
 /*============================================================================*/
 /* FSM FUNCTIONS */
 
 /**
- * @brief Initializes FSM state.
+ * @brief Initializes FSM.
  *
  * This must be called once, before calling FSM_run().
  */
-void FSM_init()
+void FSM_init(BTM_PackData_t *pack)
 {
     last_uptime_tick = HAL_GetTick();
-    system_status = 0;
+    pack->status = 0;
     FSM_state = FSM_RESET;
-}
-
-// This function should be placed in the main firmware loop
-void FSM_run(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack)
-{
-    unsigned int current_tick;
-
-    FSM_state_table[FSM_state](pack, dch_setting_pack);
-
-    // Update uptime
-    current_tick = HAL_GetTick();
-    if (current_tick - last_uptime_tick >= 1000)
-    {
-        uptime++;
-    }
+    return;
 }
 
 /**
- * @brief Performs initialization of BMS hardware and initial system checks.
+ * @brief
  *
- * This does not initialize the microcontroller. That must happen before running the
- * state machine.
- * If communication with all slave boards cannot be established, goes to BMS_FAULT_COMM
- * If communication can be established but any self test fails or a measured value is
- * outside the relevant safe range.
+ * FSM entry point, must be called once. 
  */
-void FSM_reset(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_setting_pack)
+void FSM_run(BTM_PackData_t *pack)
 {
-    uint8_t test_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {{0x55, 0x6E, 0x69, 0x42, 0x43, 0x20} /*, {0x53, 0x6f, 0x6c, 0x61, 0x72, 0x21}*/};
-    // TODO: ^ Add second subarray once configured for 2 LTC6813's
+    FSM_state_table[FSM_state](pack);
+}
+
+/**
+ * @brief Initilizes hardware, pack datastructure, and preforms startup self checks.
+ * Exit Condition: 
+ * 
+ * Exit Condition: 
+ * 
+ * 
+ * @note This does not initialize the microcontroller. That must happen before running the
+ * state machine.
+ */
+void FSM_reset(BTM_PackData_t *pack)
+{
+    uint8_t test_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {{0x55, 0x6E, 0x69, 0x42, 0x43, 0x20}, {0x53, 0x6f, 0x6c, 0x61, 0x72, 0x21}};
     uint8_t test_data_rx[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
-    BTM_Status_t func_status = {BTM_OK, 0};
+    BTM_Status_t comm_status = {BTM_OK, 0};
     int reg_group_match_failed = 0;
+    last_uptime_tick = HAL_GetTick(); // Reset uptime
+    
 
-    uptime = 0; // Reset uptime
-
-    // Initialize control signals
-    CONT_init();
-    // initialize the LTC6813 and system data
-    BTM_init(pack);
-    BTM_BAL_initDchPack(dch_setting_pack);
-    // Initialize CAN
-    // CAN_initAll();
-
-    // initialize other stuff here in future
+    //Initialize hardware and pack struct
+    CONT_init(); //control signals
+    BTM_init(pack); // initialize the LTC6813 and system data
+    BTM_BAL_initDchPack(pack);
+    // TODO: Initialize CAN
 
     // Perform startup system self checks
     BTM_writeRegisterGroup(CMD_WRCOMM, test_data);
-    func_status = BTM_readRegisterGroup(CMD_RDCOMM, test_data_rx);
+    comm_status = BTM_readRegisterGroup(CMD_RDCOMM, test_data_rx);
     reg_group_match_failed = doesRegGroupMatch(test_data, test_data_rx);
-
-    if (reg_group_match_failed)
-    {
-        system_status |= BMS_FAULT_COMM;
-    }
-    if (commsProblem(func_status, &system_status))
+    
+    //checks for comms error
+    if (reg_group_match_failed || comm_status.error & FLT_COMM_MASK){
+        pack->status |= FLT_COMM_MASK;
+        FSM_state = FSM_FAULT;
         return;
-
-    // TODO: more self tests...
-
-    // if (commsProblem(func_status, &system_status)) return;
+    }
 
     // perform initial voltage measurement
     last_update_tick = HAL_GetTick(); // initialize last_measurement_tick
-    func_status = BTM_readBatt(pack);
+    comm_status = BTM_readBatt(pack);
 
-    if (commsProblem(func_status, &system_status))
+    if (commsProblem(comm_status, &(pack->status)))
         return;
 
     // perform initial temperature measurement
-    func_status = BTM_TEMP_measureState(pack);
+    comm_status = BTM_TEMP_measureState(pack);
 
-    if (commsProblem(func_status, &system_status))
+    if (commsProblem(comm_status, &(pack->status)))
         return;
 
     // perform initial SOC estimations
     SOC_allModulesInit(pack);
 
     // analyze initial measurements, update system status code
-    analysisStatusUpdate(pack, &system_status);
+    analysisStatusUpdate(pack, &(pack->status));
 
-    driveControlSignals(system_status);
+    driveControlSignals((pack->status));
 
     // switch state
-    if (system_status & MASK_BMS_FAULT) // If any faults are active
+    if ((pack->status) & FLT_COMM_MASK) // If any faults are active
     {
         CONT_FAN_PWM_set(FAN_FULL);
         FSM_state = FSM_FAULT_GENERAL;
@@ -313,9 +287,9 @@ void FSM_fault_general(BTM_PackData_t *pack, BTM_BAL_dch_setting_pack_t *dch_set
 // Returns 1 if there is a communication fault, 0 otherwise
 int commsProblem(BTM_Status_t func_status, int *sys_status)
 {
-    if (func_status.error != BTM_OK || (*sys_status & BMS_FAULT_COMM))
+    if (func_status.error != BTM_OK || (*sys_status & FLT_COMM_MASK))
     {
-        *sys_status |= BMS_FAULT_COMM;
+        *sys_status |= FLT_COMM_MASK;
         driveControlSignals(*sys_status); // Update control signals
         CONT_FAN_PWM_set(FAN_FULL);       // Drive fans at full power
         FSM_state = FSM_FAULT_COMM;
