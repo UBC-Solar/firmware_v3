@@ -66,8 +66,8 @@
 #define WARN_HIGH_T_MASK 0x10000
 #define WARN_REGEN_OFF 0x20000
 
-// #define MASK_BMS_FAULT 0x007F        // Covers all faults
-// #define MASK_BMS_SYSTEM_FAULT 0x0003 // Covers COMM and ST faults
+// Helper masks
+#define FAULTS_MASK 0x001FF // Covers all faults
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */

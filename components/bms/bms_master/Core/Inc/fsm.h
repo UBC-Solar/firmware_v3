@@ -44,7 +44,6 @@ unsigned int uptime; // time in seconds since FSM started
 // balancing, status, etc. Make sure this is no longer than ~2 seconds or the
 // LTC6813 will be reset by its watchdog timer!
 
-
 /*============================================================================*/
 /* STATE MACHINE FUNCTIONS */
 void FSM_reset(BTM_PackData_t *pack);
@@ -60,9 +59,8 @@ void (*FSM_state_table[])(BTM_PackData_t *pack) = {
     FSM_reset,
     FSM_measure,
     FSM_ctrl,
-    FSM_can, 
-    FSM_fault
-};
+    FSM_can,
+    FSM_fault};
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */

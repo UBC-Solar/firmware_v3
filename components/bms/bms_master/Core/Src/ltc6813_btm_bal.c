@@ -12,20 +12,19 @@
 #include "analysis.h"
 
 // Private function prototype
-void writeBalStatusBit(struct BTM_module * module, BTM_module_bal_status_t bal_status);
-
+void writeBalStatusBit(struct BTM_module *module, BTM_module_bal_status_t bal_status);
 
 /**
  * @brief Initialize all discharge settings of a setting pack to DISCHARGE_OFF
  *
  * @param[out] dch_pack discharge setting pack to write
  */
-void BTM_BAL_initDchPack(BTM_PackData_t* pack)
+void BTM_BAL_initDchPack(BTM_PackData_t *pack)
 {
 
-    for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
+    for (int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
     {
-        for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
         {
             pack->stack[stack_num].module[module_num].bal_status = DISCHARGE_OFF;
         }
@@ -46,7 +45,7 @@ void BTM_BAL_initDchPack(BTM_PackData_t* pack)
  *  balancing status flags to and read module enable flags from
  * @param[in] dch_setting_pack The discharge settings for the entire pack.
  */
-void BTM_BAL_setDischarge(BTM_PackData_t* pack)
+void BTM_BAL_setDischarge(BTM_PackData_t *pack)
 {
     uint8_t cfgra_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
     uint8_t cfgrb_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
@@ -54,15 +53,16 @@ void BTM_BAL_setDischarge(BTM_PackData_t* pack)
     BTM_module_enable_t module_enable = MODULE_DISABLED;
     int module_i = 0; // index counter
 
-    for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+    for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
     {
         // Iterate through the bytes of both CFGR registers for each LTC6813
 
         // Don't change all the bytes of the CFGRA/B register groups,
         // so copy most of the existing configuration
-        for(int byte_num = 0; byte_num < BTM_REG_GROUP_SIZE; byte_num++)
+        for (int byte_num = 0; byte_num < BTM_REG_GROUP_SIZE; byte_num++)
         {
-            if (byte_num < 4) { // First 4 bytes
+            if (byte_num < 4)
+            { // First 4 bytes
                 cfgra_to_write[ic_num][byte_num] =
                     pack->stack[ic_num].cfgra[byte_num];
             }
@@ -76,7 +76,7 @@ void BTM_BAL_setDischarge(BTM_PackData_t* pack)
         // Now change the DCC bits, the balancing (discharge) settings
 
         // 5th byte of CFGRA - DCH setting for modules 1-8 (first 8 modules)
-        for(int i = 0; i < 8; i++)
+        for (int i = 0; i < 8; i++)
         {
             module_bal_status =
                 pack->stack[ic_num].module[i].bal_status;
@@ -90,7 +90,7 @@ void BTM_BAL_setDischarge(BTM_PackData_t* pack)
         }
 
         // 6th byte of CFGRA - DCH setting for modules 9-12
-        for(int j = 0; j < 4; j++)
+        for (int j = 0; j < 4; j++)
         {
             module_i = j + 8;
             module_bal_status =
@@ -105,7 +105,7 @@ void BTM_BAL_setDischarge(BTM_PackData_t* pack)
         }
 
         // 1st byte of CFGRB - DCH setting for modules 13-16
-        for(int k = 0; k < 4; k++)
+        for (int k = 0; k < 4; k++)
         {
             module_i = k + 12;
             module_bal_status =
@@ -120,7 +120,7 @@ void BTM_BAL_setDischarge(BTM_PackData_t* pack)
         }
 
         // 2nd byte of CFGRB - DCH setting for modules 17 and 18
-        for(int l = 0; l < 2; l++)
+        for (int l = 0; l < 2; l++)
         {
             module_i = l + 16;
             module_bal_status =
@@ -141,8 +141,7 @@ void BTM_BAL_setDischarge(BTM_PackData_t* pack)
     return;
 }
 
-
-void writeBalStatusBit(struct BTM_module * module, BTM_module_bal_status_t bal_status)
+void writeBalStatusBit(struct BTM_module *module, BTM_module_bal_status_t bal_status)
 {
     if (bal_status == DISCHARGE_ON)
         module->status |= TRIP_BAL_MASK; // Set TRIP_BAL bit
