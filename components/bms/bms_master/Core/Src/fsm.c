@@ -111,6 +111,9 @@ void FSM_measure(BTM_PackData_t *pack)
     BTM_Status_t comm_status = {BTM_OK, 0};
     unsigned int fan_PWM = 0;
     float max_temp = 0;
+    int32_t pack_current; 
+    static uint8_t soc_init_flag = 1;
+
 
     current_tick = HAL_GetTick();
     if (last_slave_communication - current_tick >= FSM_MIN_UPDATE_INTERVAL)
@@ -118,7 +121,7 @@ void FSM_measure(BTM_PackData_t *pack)
 
         /* TODO: rx ECU's CAN message, check DOC_COC bit
             DOC_COC, update status code, fault
-            !DOC_COC, store current for use in SOC calcs
+            !DOC_COC, store current in pack_current variable
         */
 
         // voltage measurements
@@ -155,7 +158,17 @@ void FSM_measure(BTM_PackData_t *pack)
             return;
         }
 
-        // TODO: SOC estimation
+        // SOC calculations
+        // check if first time initilizing 
+        if (soc_init_flag == 1)
+        {
+            SOC_allModulesInit(pack);
+            soc_init_flag = 0;
+        }
+        else
+        {
+            SOC_allModulesEst(pack, pack_current, current_tick);
+        }
 
         FSM_state = FSM_CTRL;
         return;
