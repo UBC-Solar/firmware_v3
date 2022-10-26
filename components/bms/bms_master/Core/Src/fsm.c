@@ -16,7 +16,6 @@
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
 
-int commsProblem(BTM_Status_t func_status, int *sys_status);
 void analysisStatusUpdate(BTM_PackData_t *pack, int *status);
 int doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
                       uint8_t reg_group2[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE]);
@@ -111,9 +110,8 @@ void FSM_measure(BTM_PackData_t *pack)
     BTM_Status_t comm_status = {BTM_OK, 0};
     unsigned int fan_PWM = 0;
     float max_temp = 0;
-    int32_t pack_current; 
-    static uint8_t soc_init_flag = 1;
-
+    int32_t pack_current;
+    static uint8_t initial_soc_measurement = 1;
 
     current_tick = HAL_GetTick();
     if (last_slave_communication - current_tick >= FSM_MIN_UPDATE_INTERVAL)
@@ -148,10 +146,10 @@ void FSM_measure(BTM_PackData_t *pack)
             return;
         }
 
-        // analyze measurements
+        // update status code from measurements
         analysisStatusUpdate(pack);
 
-        // checks for faults
+        // check if any faults are active
         if (pack->status & FAULTS_MASK)
         {
             FSM_state = FSM_FAULT;
@@ -159,11 +157,11 @@ void FSM_measure(BTM_PackData_t *pack)
         }
 
         // SOC calculations
-        // check if first time initilizing 
-        if (soc_init_flag == 1)
+        // check if first time initilizing
+        if (initial_soc_measurement)
         {
             SOC_allModulesInit(pack);
-            soc_init_flag = 0;
+            initial_soc_measurement = 0;
         }
         else
         {
@@ -182,27 +180,14 @@ void FSM_measure(BTM_PackData_t *pack)
 void FSM_ctrl(BTM_PackData_t *pack)
 {
 
-    CONT_FLT_switch((status & MASK_BMS_FAULT) ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_BAL_switch((status & BMS_TRIP_BAL) ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_COM_switch((status & BMS_FAULT_COMM) ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_HLIM_switch((status & BMS_TRIP_HLIM) ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_LLIM_switch((status & BMS_TRIP_LLIM) ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_OT_switch((status & BMS_FAULT_OT) ? CONT_ACTIVE : CONT_INACTIVE);
+    CONT_BAL_switch((pack->status & TRIP_BAL_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
+    CONT_HLIM_switch((pack->status & TRIP_HLIM_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
+    CONT_LLIM_switch((pack->status & TRIP_LLIM_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
 
     // run balancing calculations and set balancing accordingly
     BTM_BAL_settings(pack);
-    FSM_state = FSM_CTRL;
-
     // drive fans, potentially switch state
-    if (system_status & MASK_BMS_FAULT) // If any faults are active
-    {
-        CONT_FAN_PWM_set(FAN_FULL); // drive fans at full speed for fault
-        // Stop all balancing (see note about fault balancing in FAULT_GENERAL state)
-        BTM_BAL_initDchPack(dch_setting_pack);
-        BTM_BAL_setDischarge(pack, dch_setting_pack);
 
-        FSM_state = FSM_FAULT_GENERAL;
-    }
     else if (system_status & BMS_TRIP_CHARGE_OT)
     {
         // any module is too hot to charge (not a fault)
@@ -221,11 +206,26 @@ void FSM_ctrl(BTM_PackData_t *pack)
 
 void FSM_fault(BTM_PackData_t *pack)
 {
-    unsigned int current_tick;
-    BTM_Status_t func_status = {BTM_OK, 0};
 
-    // first thing, set fault GPIO
+    BTM_Status_t comm_status = {BTM_OK, 0};
+
+    // set fault GPIOs
     CONT_FLT_switch((pack->status & FAULTS_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
+    CONT_COM_switch((pack->status & FLT_COMM_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
+    CONT_OT_switch((pack->status & FLT_OT_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
+
+    // set all fans full
+    CONT_FAN_PWM_set(FAN_FULL);
+
+    // Stop all balancing
+    BTM_BAL_initDchPack(pack);
+    BTM_BAL_setDischarge(pack);
+
+    /*
+   need to stay in fault state, but only need to do the above once
+   BMS should continue to read pack and send data over CAN
+
+   */
 
     // Perform measurements and update the system state no more frequently than
     // FSM_MIN_UPDATE_INTERVAL milliseconds
@@ -246,16 +246,6 @@ void FSM_fault(BTM_PackData_t *pack)
 
         // analyze measurements, update system status code
         analysisStatusUpdate(pack, &system_status);
-
-        // TODO: Balancing under fault
-        // if there is an OV fault, **and** no other faults,
-        // discharge any OV modules to try to alleviate the problem
-        // BTM_BAL_balanceUnderFault(pack, system_status);
-        // BTM_BAL_settings(pack, dch_setting_pack);
-        // Alternatively, stop all balancing (done in transition to this state)
-
-        // drive control signals based on status code
-        driveControlSignals(system_status);
     }
 
     // TODO: perform CAN communication
@@ -270,6 +260,7 @@ void FSM_fault(BTM_PackData_t *pack)
 /*============================================================================*/
 /* HELPER FUNCTIONS */
 
+// TODO: update function implementation
 void analysisStatusUpdate(BTM_PackData_t *pack)
 {
     ANA_analyzeModules(pack);

@@ -107,23 +107,28 @@ void CONT_FAN_PWM_set(unsigned int pwm_val)
  * @param[in] temp Temperature to use in calculation
  * @return The duty cycle percentage for fan PWM
  */
-unsigned int CONT_fanPwmFromTemp(float temp) {
+unsigned int CONT_fanPwmFromTemp(float temp)
+{
     int new_fan_PWM = FAN_RAMP_SLOPE * temp + MIN_FAN_PWM;
     // Limit range to [MIN_FAN_PWM, 100]
-    if (new_fan_PWM < MIN_FAN_PWM) new_fan_PWM = MIN_FAN_PWM;
-    if (new_fan_PWM > 100) new_fan_PWM = 100;
+    if (new_fan_PWM < MIN_FAN_PWM)
+        new_fan_PWM = MIN_FAN_PWM;
+    if (new_fan_PWM > 100)
+        new_fan_PWM = 100;
 
     if (CONT_FAN_PWM_percent != 0) // If fans are on...
     {
         // Don't turn fans off unless temp is low enough
-        if (temp < FAN_OFF_TEMP - TEMP_HYSTERESIS) {
+        if (temp < FAN_OFF_TEMP - TEMP_HYSTERESIS)
+        {
             new_fan_PWM = 0;
         }
     }
     else // If fans are off...
     {
         // Don't turn fans on unless temp is high enough
-        if(temp < FAN_OFF_TEMP) {
+        if (temp < FAN_OFF_TEMP)
+        {
             new_fan_PWM = 0;
         }
     }

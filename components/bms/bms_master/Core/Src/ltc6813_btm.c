@@ -64,7 +64,6 @@ void calculateStackVolts(BTM_PackData_t *pack, int stack_num);
 void calculatePackVolts(BTM_PackData_t *pack);
 BTM_Status_t processHALStatus(HAL_StatusTypeDef status_HAL, unsigned int device_num);
 
-
 /**
  * @brief Calculates the PEC for "len" bytes of data (as a group).
  * Function adapted from code on pg. 76 of LTC6811 Datasheet.
@@ -150,21 +149,21 @@ void BTM_init(BTM_PackData_t *pack)
         {
             pack->stack[ic_num].cfgra[reg_num] = config_val_a[reg_num];
 			cfgra_to_write[ic_num][reg_num] = config_val_a[reg_num]; // prepare tx data
-            pack->stack[ic_num].cfgrb[reg_num] = config_val_b[reg_num];
-            cfgrb_to_write[ic_num][reg_num] = config_val_b[reg_num]; // prepare tx data
-        }
+			pack->stack[ic_num].cfgrb[reg_num] = config_val_b[reg_num];
+			cfgrb_to_write[ic_num][reg_num] = config_val_b[reg_num]; // prepare tx data
+		}
 
-        pack->stack[ic_num].stack_voltage = 0;
-        for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
-        {
-            pack->stack[ic_num].module[module_num].enable = MODULE_ENABLED;
-            pack->stack[ic_num].module[module_num].voltage = 0;
-            pack->stack[ic_num].module[module_num].temperature = 0.0;
+		pack->stack[ic_num].stack_voltage = 0;
+		for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+		{
+			pack->stack[ic_num].module[module_num].enable = MODULE_ENABLED;
+			pack->stack[ic_num].module[module_num].voltage = 0;
+			pack->stack[ic_num].module[module_num].temperature = 0.0;
 			pack->stack[ic_num].module[module_num].soc = 100.0;
-            pack->stack[ic_num].module[module_num].status = 0; // clean code
-        }
-
-    }
+			pack->stack[ic_num].module[module_num].status = 0; // clean code
+			pack->stack[ic_num].module[module_num].bal_status = DISCHARGE_OFF;
+		}
+	}
 
 	HAL_Delay(2250); // Let the LTC6813s' watchdog time out (max 2.2sec) to start IC config from a clean slate
     BTM_wakeup(); // Wake up all LTC6813's in the chain
@@ -186,11 +185,11 @@ void BTM_sendCmd(BTM_command_t command)
 	uint16_t pecValue;
 	uint8_t tx_message[4];
 
-	tx_message[0] = (uint8_t) (command >> 8);
-	tx_message[1] = (uint8_t) command;
+	tx_message[0] = (uint8_t)(command >> 8);
+	tx_message[1] = (uint8_t)command;
 	pecValue = BTM_calculatePec15(tx_message, 2);
-	tx_message[2] = (uint8_t) (pecValue >> 8);
-	tx_message[3] = (uint8_t) pecValue;
+	tx_message[2] = (uint8_t)(pecValue >> 8);
+	tx_message[3] = (uint8_t)pecValue;
 
 	// size parameter is number of bytes to transmit - here it's 4 8bit frames
 	HAL_SPI_Transmit(BTM_SPI_handle, tx_message, 4, BTM_TIMEOUT_VAL);
@@ -205,11 +204,11 @@ void BTM_sendCmd(BTM_command_t command)
  *
  * @param command The 2-byte (polling) command to send
  * @return 	Returns BTM_OK once LTC6813s have completed their conversions,
- 			or BTM_ERROR_TIMEOUT upon timeout.
+			or BTM_ERROR_TIMEOUT upon timeout.
  */
 BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 {
-    uint8_t rx_buffer = 0;
+	uint8_t rx_buffer = 0;
 	uint32_t start_tick;
 	HAL_StatusTypeDef status_HAL = HAL_OK;
 	BTM_Status_t status_BTM = {BTM_OK, 0};
@@ -226,15 +225,16 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 	{
 		if (HAL_GetTick() - start_tick > BTM_TIMEOUT_VAL)
 		{
-		    BTM_writeCS(CS_HIGH);
-		    status_BTM.error = BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
+			BTM_writeCS(CS_HIGH);
+			status_BTM.error = BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
 			return status_BTM;
 		}
 
 		rx_buffer = 0;
 		status_HAL = HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
 		status_BTM = processHALStatus(status_HAL, BTM_STATUS_DEVICE_NA);
-		if (status_BTM.error != BTM_OK) return status_BTM;
+		if (status_BTM.error != BTM_OK)
+			return status_BTM;
 
 	} while (0xff == rx_buffer);
 
@@ -246,21 +246,23 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 	rx_buffer = 0;
 	status_HAL = HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
 	status_BTM = processHALStatus(status_HAL, BTM_STATUS_DEVICE_NA);
-    if (status_BTM.error != BTM_OK) return status_BTM;
+	if (status_BTM.error != BTM_OK)
+		return status_BTM;
 
 	do
 	{
-	    if (HAL_GetTick() - start_tick > BTM_TIMEOUT_VAL)
-        {
-            BTM_writeCS(CS_HIGH);
-            status_BTM.error = BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
-            return status_BTM;
-        }
+		if (HAL_GetTick() - start_tick > BTM_TIMEOUT_VAL)
+		{
+			BTM_writeCS(CS_HIGH);
+			status_BTM.error = BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
+			return status_BTM;
+		}
 
 		rx_buffer = 0;
 		status_HAL = HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
 		status_BTM = processHALStatus(status_HAL, BTM_STATUS_DEVICE_NA);
-		if (status_BTM.error != BTM_OK) return status_BTM;
+		if (status_BTM.error != BTM_OK)
+			return status_BTM;
 
 	} while (!rx_buffer);
 
@@ -278,8 +280,8 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
  *					BTM_NUM_DEVICES x BTM_REG_GROUP_SIZE containing the data to write
  */
 void BTM_writeRegisterGroup(
-        BTM_command_t command,
-        uint8_t tx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
+	BTM_command_t command,
+	uint8_t tx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
 {
 	uint16_t pecValue = 0;
 	uint8_t tx_message[8];
@@ -293,8 +295,8 @@ void BTM_writeRegisterGroup(
 			tx_message[j] = tx_data[i][j];
 		}
 		pecValue = BTM_calculatePec15(tx_message, BTM_REG_GROUP_SIZE);
-		tx_message[6] = (uint8_t) (pecValue >> 8);
-		tx_message[7] = (uint8_t) pecValue;
+		tx_message[6] = (uint8_t)(pecValue >> 8);
+		tx_message[7] = (uint8_t)pecValue;
 		HAL_SPI_Transmit(BTM_SPI_handle, tx_message, 8, BTM_TIMEOUT_VAL);
 	}
 	BTM_writeCS(CS_HIGH);
@@ -311,12 +313,12 @@ void BTM_writeRegisterGroup(
  * @param rx_data 	Pointer to a 2-dimensional array of size
  *					BTM_NUM_DEVICES x BTM_REG_GROUP_SIZE to copy received data to
  * @return 	Returns BTM_OK if the received PEC is valid, or BTM_ERROR_PEC if
- 			a full set of valid data could not be obtained after
+			a full set of valid data could not be obtained after
 			BTM_MAX_READ_ATTEMPTS tries
  */
 BTM_Status_t BTM_readRegisterGroup(
-        BTM_command_t command,
-        uint8_t rx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
+	BTM_command_t command,
+	uint8_t rx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
 {
 	uint16_t pecValue = 0;
 	BTM_Status_t status = {BTM_OK, 0};
@@ -343,16 +345,17 @@ BTM_Status_t BTM_readRegisterGroup(
 		while ((ic_num < BTM_NUM_DEVICES) && (status.error == BTM_OK))
 		{
 			// 6 data bytes + 2 PEC bytes = 8 bytes
-		    status_HAL = HAL_SPI_Receive(BTM_SPI_handle, rx_message, 8, BTM_TIMEOUT_VAL);
-		    status = processHALStatus(status_HAL, ic_num + 1);
-            if (status.error != BTM_OK) return status;
+			status_HAL = HAL_SPI_Receive(BTM_SPI_handle, rx_message, 8, BTM_TIMEOUT_VAL);
+			status = processHALStatus(status_HAL, ic_num + 1);
+			if (status.error != BTM_OK)
+				return status;
 
 			pecValue = BTM_calculatePec15(rx_message, 8); // 0 if transfer was clean
 			if (pecValue)
 			{
 				status.error = BTM_ERROR_PEC;
 				status.device_num = ic_num + 1;
-				for(int i = 0; i < 8; i++)
+				for (int i = 0; i < 8; i++)
 				{
 					rx_message[i] = 0; // Clear buffer for next try
 				}
@@ -398,25 +401,32 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t *packData)
 	BTM_Status_t status = {BTM_OK, 0};
 
 	status = BTM_sendCmdAndPoll(CMD_ADCV);
-	if (status.error != BTM_OK) return status;
+	if (status.error != BTM_OK)
+		return status;
 
 	status = BTM_readRegisterGroup(CMD_RDCVA, ADC_data[0]);
-	if (status.error != BTM_OK) return status;
+	if (status.error != BTM_OK)
+		return status;
 
 	status = BTM_readRegisterGroup(CMD_RDCVB, ADC_data[1]);
-	if (status.error != BTM_OK) return status;
+	if (status.error != BTM_OK)
+		return status;
 
 	status = BTM_readRegisterGroup(CMD_RDCVC, ADC_data[2]);
-	if (status.error != BTM_OK) return status;
+	if (status.error != BTM_OK)
+		return status;
 
 	status = BTM_readRegisterGroup(CMD_RDCVD, ADC_data[3]);
-	if (status.error != BTM_OK) return status;
+	if (status.error != BTM_OK)
+		return status;
 
 	status = BTM_readRegisterGroup(CMD_RDCVE, ADC_data[4]);
-	if (status.error != BTM_OK) return status;
+	if (status.error != BTM_OK)
+		return status;
 
 	status = BTM_readRegisterGroup(CMD_RDCVF, ADC_data[5]);
-	if (status.error != BTM_OK) return status;
+	if (status.error != BTM_OK)
+		return status;
 
 	// Each cell voltage is provided as a 16-bit value where
 	// voltage = 0.0001V * raw value
@@ -431,11 +441,10 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t *packData)
 			{
 				// Combine the 2 bytes of each cell voltage together
 				cell_voltage_raw =
-					((uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num + 1]) << 8)
-					| (uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num]);
+					((uint16_t)(ADC_data[reg_group][ic_num][2 * reading_num + 1]) << 8) | (uint16_t)(ADC_data[reg_group][ic_num][2 * reading_num]);
 				// Store in pack data structure
 				cell_num = READINGS_PER_REG * reg_group + reading_num;
-				//voltages[ic_num][cell_num] = cell_voltage_raw;
+				// voltages[ic_num][cell_num] = cell_voltage_raw;
 				packData->stack[ic_num].module[cell_num].voltage = cell_voltage_raw;
 			}
 		}
@@ -466,7 +475,7 @@ float BTM_regValToVoltage(unsigned int raw_reading)
  */
 void BTM_writeCS(CS_state_t new_state)
 {
-    HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, new_state);
+	HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, new_state);
 }
 
 /**
@@ -477,14 +486,14 @@ void BTM_writeCS(CS_state_t new_state)
  */
 void calculateStackVolts(BTM_PackData_t *pack, int stack_num)
 {
-    unsigned int sum = 0;
+	unsigned int sum = 0;
 
-    for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
-    {
-        sum += pack->stack[stack_num].module[module_num].voltage;
-    }
-    pack->stack[stack_num].stack_voltage = sum;
-    return;
+	for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+	{
+		sum += pack->stack[stack_num].module[module_num].voltage;
+	}
+	pack->stack[stack_num].stack_voltage = sum;
+	return;
 }
 
 /**
@@ -496,28 +505,29 @@ void calculateStackVolts(BTM_PackData_t *pack, int stack_num)
  */
 void calculatePackVolts(BTM_PackData_t *pack)
 {
-    unsigned int sum = 0;
-    for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
-    {
-        sum += pack->stack[stack_num].stack_voltage;
-    }
-    pack->pack_voltage = sum;
-    return;
+	unsigned int sum = 0;
+	for (int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
+	{
+		sum += pack->stack[stack_num].stack_voltage;
+	}
+	pack->pack_voltage = sum;
+	return;
 }
 
 // Helper function to translate a HAL error into a BTM error
 BTM_Status_t processHALStatus(HAL_StatusTypeDef status_HAL, unsigned int device_num)
 {
-    BTM_Status_t status_BTM;
-    status_BTM.error = BTM_OK;
-    status_BTM.device_num = BTM_STATUS_DEVICE_NA;
+	BTM_Status_t status_BTM;
+	status_BTM.error = BTM_OK;
+	status_BTM.device_num = BTM_STATUS_DEVICE_NA;
 
-    if (status_HAL != HAL_OK) {
-        status_BTM.error = status_HAL + BTM_HAL_ERROR_OFFSET;
-        status_BTM.device_num = device_num;
-    }
+	if (status_HAL != HAL_OK)
+	{
+		status_BTM.error = status_HAL + BTM_HAL_ERROR_OFFSET;
+		status_BTM.device_num = device_num;
+	}
 
-    return status_BTM;
+	return status_BTM;
 }
 
 /*
@@ -527,20 +537,20 @@ from the example code on pg. 76 of the LTC6811 Datasheet:
 #define CRC15_POLY 0x4599
 
 void init_PEC15_Table() {
-    unsigned short int remainder = 0;
-    for (int i = 0; i < 256; i++) {
-        remainder = i << 7;
-        for (int bit = 8; bit > 0; --bit) {
-            if (remainder & 0x4000) {
-                remainder = ((remainder << 1));
-                remainder = (remainder ^ CRC15_POLY);
-            }
-            else {
-                remainder = ((remainder << 1));
-            }
-        }
-        pec15Table[i] = remainder & 0xFFFF;
-    }
+	unsigned short int remainder = 0;
+	for (int i = 0; i < 256; i++) {
+		remainder = i << 7;
+		for (int bit = 8; bit > 0; --bit) {
+			if (remainder & 0x4000) {
+				remainder = ((remainder << 1));
+				remainder = (remainder ^ CRC15_POLY);
+			}
+			else {
+				remainder = ((remainder << 1));
+			}
+		}
+		pec15Table[i] = remainder & 0xFFFF;
+	}
 }
 */
 

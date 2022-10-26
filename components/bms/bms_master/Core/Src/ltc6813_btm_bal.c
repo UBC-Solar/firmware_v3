@@ -15,24 +15,6 @@
 void writeBalStatusBit(struct BTM_module *module, BTM_module_bal_status_t bal_status);
 
 /**
- * @brief Initialize all discharge settings of a setting pack to DISCHARGE_OFF
- *
- * @param[out] dch_pack discharge setting pack to write
- */
-void BTM_BAL_initDchPack(BTM_PackData_t *pack)
-{
-
-    for (int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
-    {
-        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
-        {
-            pack->stack[stack_num].module[module_num].bal_status = DISCHARGE_OFF;
-        }
-    }
-    return;
-}
-
-/**
  * @brief Writes discharging settings to LTC6813s to trigger module discharging
  *
  * @attention dch_setting_pack must be complete. Every single module's discharge

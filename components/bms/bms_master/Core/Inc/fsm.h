@@ -28,7 +28,6 @@ typedef enum
     FSM_RESET = 0,
     FSM_MEASURE,
     FSM_CTRL,
-    FSM_CAN,
     FSM_FAULT
 } FSM_state_t;
 
@@ -59,7 +58,6 @@ void (*FSM_state_table[])(BTM_PackData_t *pack) = {
     FSM_reset,
     FSM_measure,
     FSM_ctrl,
-    FSM_can,
     FSM_fault};
 
 /*============================================================================*/

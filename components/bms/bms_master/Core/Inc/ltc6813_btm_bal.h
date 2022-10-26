@@ -19,19 +19,18 @@
 /*============================================================================*/
 /* ENUMERATIONS */
 
-typedef enum {
+typedef enum
+{
     DISCHARGE_OFF = 0,
-    DISCHARGE_ON  = 1
+    DISCHARGE_ON = 1
 } BTM_module_bal_status_t;
 
 /*============================================================================*/
 /* STRUCTURES */
 
-
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
-void BTM_BAL_initDchPack(BTM_PackData_t* pack);
-void BTM_BAL_setDischarge(BTM_PackData_t* pack);
+void BTM_BAL_setDischarge(BTM_PackData_t *pack);
 
 #endif /* INC_LTC6813_BTM_BAL_H_ */

@@ -168,7 +168,7 @@ int findModuleTempState(int status, float temp)
  * @param[in] pack Pack data structure to read module statuses from
  * @return status code as a (32-bit) integer
  */
-int ANA_mergeModuleStatusCodes(BTM_PackData_t *pack)
+unsigned int ANA_mergeModuleStatusCodes(BTM_PackData_t *pack)
 {
     int status_result = 0; // Start with a clean code
     struct BTM_module *module_p;
@@ -218,4 +218,27 @@ float ANA_findHighestModuleTemp(BTM_PackData_t *pack)
     }
 
     return max_temperature;
+}
+
+/**
+ * @brief Writes the bal status code to the pack
+ *
+ */
+
+void ANA_writePackBalStatus(BTM_PackData_t *pack)
+{
+    for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+    {
+        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+        {
+            // if a single module is being balanced, write status bal bit
+            if (pack->stack[ic_num].module[module_num].bal_status == DISCHARGE_ON)
+            {
+                pack->status |= TRIP_BAL_MASK;
+                return;
+            }
+        }
+    }
+    // no modules being balanced, reset status bal bit
+    pack->status &= ~TRIP_BAL_MASK;
 }
