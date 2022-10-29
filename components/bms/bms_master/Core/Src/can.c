@@ -1,77 +1,184 @@
 /**
- *  @file can.c
- *  @brief CAN drivers for the BMS
+ *  @file
+ *  @brief
  *
- *  @date 
+ *  @date
  *  @author
  */
-
 
 #include "CANbus_functions.h"
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
 
-
+void CAN_InitTxMessages(CAN_Tx_Messages_t txMessages[NUM_CAN_MESSAGES]);
+void CAN_Init_0x450_Filter(CAN_HandleTypeDef *hcan);
 
 /*============================================================================*/
-/* CAN DRIVER FUNCTIONS */
-
-
-/**
- * @brief 
- *
- * @param 
- */
-void CAN_InitTxMessages(CAN_Tx_Messages_t txMessageArray[NUM_CAN_MESSAGES]); {
-    for(int i=0; i<NUM_CAN_MESSAGES; i++) {
-        txMessageArray[i].tx_header.StdId = INITIAL_MESSAGE_INDEX + i;
-        txMessageArray[i].tx_header.ExtId = 0;
-        txMessageArray[i].tx_header.IDE = CAN_ID_STD;
-        txMessageArray[i].tx_header.RTR = CAN_RTR_DATA;
-        txMessageArray[i].tx_header.DLC = MAX_CAN_DATAFRAME_BYTES;
-        txMessageArray[i].tx_header.TransmitGlobalTime = DISABLE;
-    }
-}    
+/* PUBLIC FUNCTION IMPLEMENTATIONS */
 
 /**
- * @brief 
+ * @brief Initialize CAN headers and filters.
+ * Call this function once before sending any CAN messages.
  *
- * @param 
+ * @param message623 message 623 structure to populate
+ * @param pack pack data structure that data will be read from
  */
-void CAN_CompileMessage623(CAN_Tx_Message_t message623, BTM_PackData_t *pack); {
-    uint16_t // defining range of voltage in pack
-        totalPackVoltage = 0;
-        minModuleVoltage = 65535; 
-        maxModuleVoltage = 0; 
-    uint8_t // define module ID
-        minModule = 0;
-        maxModule = 0;
-        minStack = 0;
-        maxStack = 0;  
-    
-    for(int i = 0; i < BTM_NUM_DEVICES; i++) { // initializing cell IDs in stack 1      
-        for(int j = 0; j < BTM_NUM_MODULES; j++) { // initializing cell IDs in stack 2
-            if(pPACKDATA -> stack[i].module[j].enable == MODULE_ENABLED) {
-                moduleVoltage = (pPACKDATA -> stack[i].module[j].voltage);
-                if(moduleVoltage < minModuleVoltge) {
-                    minModuleVoltage = moduleVoltage;
-                    minStack = i;
-                    minModule = j;
+
+void CAN_Init(CAN_HandleTypeDef *hcan, CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES])
+{
+    CAN_InitTxMessages(txMessages);
+    CAN_Init_0x450_Filter(hcan);
+    // any additional filter configuration functions should go here
+}
+
+/**
+ * @brief Get data for message 622, populate message struct.
+ *
+ * @param message623 message 623 structure to populate
+ * @param pack pack data structure that data will be read from
+ */
+void CAN_CompileMessage623(CAN_Tx_Message_t message623, BTM_PackData_t *pack)
+{
+    uint16_t total_pack_voltage = pack->pack_voltage;
+    uint16_t min_module_voltage = 65535;
+    uint16_t max_module_voltage = 0;
+    uint16_t local_module_voltage;
+
+    // locations of min and max voltage
+    uint8_t min_module = 0;
+    uint8_t max_module = 0;
+    uint8_t min_stack = 0;
+    uint8_t max_stack = 0;
+
+    for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+    {
+        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+        {
+            if (pack->stack[ic_num].module[module_num].enable)
+            {
+                local_module_voltage = (pack->stack[ic_num].module[module_num].voltage);
+                // check and store minimum voltage
+                if (local_module_voltage < min_module_voltage)
+                {
+                    min_module_voltage = local_module_voltage; // store minimum voltage
+                    min_stack = ic_num;                        // store stack with minimum voltage
+                    min_module = module_num;                   // store module with minimum voltage
                 }
-                if(moduleVoltage > maxModuleVoltge) {
-                    maxModuleVoltage = moduleVoltage;
-                    maxStack = i;
-                    maxModule = j;
-                }   
+                // check and store maximum voltage
+                if (local_module_voltage > max_module_voltage)
+                {
+                    max_module_voltage = local_module_voltage;
+                    max_module = module_num;
+                    max_stack = ic_num;
+                }
             }
         }
     }
+
+    // rescale and cast values here, store in message623 array
 }
 
-//TODO: implement reciept of CAN message (in CAN init, probably need to add filter initilization)
-void CAN_RecieveMessage()
+/**
+ * @brief Retrieves all messages pending in recieve FIFO0 and FIFO1.
+ *
+ * @param hcan CAN handle
+ * @param rxMessages Messages of type CAN_Rx_Message_t recieved from FIFOs
+ * @note Caller should check the value of the "message_status" field within each rx struct to see if a message was recieved or not
+ */
+void CAN_RecieveMessages(CAN_HandleTypeDef *hcan, CAN_Rx_Message_t rxMessages[NUM_RX_FIFOS * MAX_MESSAGES_PER_FIFO])
+{
+    CAN_Rx_Message_t *rx_msg;
+    unsigned int fifo_fill_level;
+    uint8_t rx_msg_index = 0;
 
+    for (int fifo_num = 0; fifo_num < NUM_RX_FIFOS; fifo_num++)
+    {
+        fifo_fill_level = HAL_CAN_GetRxFifoFillLevel(hcan, fifo_num); // number of messages pending in fifo
+        for (int message_num = 0; message_num < fifo_fill_level; message_num++)
+        {
+            rx_msg = &rxMessages[rx_msg_index]; // get address of local rx message struct
+            rx_msg->fifo = fifo_num;
+            if (HAL_CAN_GetRxMessage(hcan, fifo_num, rx_msg->rx_header, rx_msg->data) != HAL_OK) // retrieve message
+            {
+                Error_Handler();
+            }
+            rx_msg->message_status = MSG_RECIEVED; // sucessfully recieved message
+            rx_msg_index++;
+        }
+    }
+
+    // if rx_msg_index < MAX_MESSAGES_PER_FIFO, not all FIFOs were full
+    for (int i = rx_msg_index; i < MAX_MESSAGES_PER_FIFO; i++)
+    {
+        rxMessages[i].message_status = MSG_NOT_RECIEVED; // didn't recieve a message for struct at this index
+    }
+}
 
 /*============================================================================*/
-/* HELPER FUNCTIONS */
+/* PRIVATE/HELPER FUNCTION IMPLEMENTATIONS */
+
+/**
+ * @brief Initilize header of each CAN message
+ * Should be called once, before any CAN messages are sent
+ *
+ * @param txMessageArrray Array of relevant message information
+ * Should be declared only once, before this function is called
+ */
+void CAN_InitTxMessages(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES]);
+{
+    for (int i = 0; i < NUM_CAN_MESSAGES; i++)
+    {
+        txMessages[i].tx_header.StdId = INITIAL_MESSAGE_INDEX + i; // hexadecimal
+        txMessages[i].tx_header.ExtId = 0;                         // ext id is unused
+        txMessages[i].tx_header.IDE = CAN_ID_STD;
+        txMessages[i].tx_header.RTR = CAN_RTR_DATA; // sending data
+        txMessages[i].tx_header.DLC = MAX_CAN_DATAFRAME_BYTES;
+        txMessages[i].tx_header.TransmitGlobalTime = DISABLE;
+    }
+}
+
+/**
+ * @brief Configure recieve filters for message 0x450 (from the ECU)
+ * Additional functions should be created to configure different filter banks
+ * This function is SPECIFICALLY for the filter bank for message 0x450
+ *
+ * @param hcan CAN interface handle
+ */
+void CAN_Init_0x450_Filter(CAN_HandleTypeDef *hcan)
+{
+    /*
+    Filter Information (see page 644 onward of stm32f103 reference manual)
+
+        In ARM, CAN subsystem known as bxCAN (basic-extended)
+        14 configurable filter banks (STM32F103C8 has only one CAN interface)
+        Each filter bank consists of two, 32-bit registers, CAN_FxR0 and CAN_FxR1
+        Depending on filter scale, filter bank provides one 32-bit filter for mask and id, or two 16 bit filters (each) for id
+
+    Mask mode: Use mask to enable/disbale the bits of the filter you want to check the CAN ID against
+    Identifier list mode: mask registers used as identifier registers (incoming ID must match exactly)
+
+    For 32 bit filter, [31:21] map to STID [10:0], other bits we don't care about
+
+    Good explanation on mask mode: https://www.microchip.com/forums/m456043.aspx
+    What I followed for filter config: https://controllerstech.com/can-protocol-in-stm32/
+    */
+
+    CAN_FilterTypeDef filter_config;
+
+    filter_config.FilterActivation = CAN_FILTER_ENABLE;            // enable filters
+    filter_config.SlaveStartFilterBank = 14;                       // only one CAN interface, parameter meaningless (all filter banks for the one controller)
+    filter_config.FilterBank = 0;                                  // settings applied for filterbank 0
+    filter_config.FilterFIFOAssignment = CAN_FILTER_FIFO0;         // rx'd message will be placed into this FIFO
+    filter_config.FilterMode = CAN_FILTERMODE_IDLIST;              // identifier list mode
+    filter_config.FilterScale = CAN_FILTERSCALE_32BIT;             // don't need double layer of filters, not using EXTID, 32bit fine (if rx'ing many messages with diff ID's, could use double layer of filters)
+    filter_config.FilterMaskIdHigh = ECU_CURRENT_MSG_ID_MASK << 5; // ID upper 16 bits (not using mask), bit shift per bit order (see large comment above)
+    filter_config.FilterMaskIdLow = 0;                             // ID lower 16 bits (not using mask)
+    filter_config.FilterIdHigh = ECU_CURRENT_MSG_ID_MASK << 5;     // filter ID upper 16 bits (list mode, mask = ID)
+    filter_config.FilterIdLow = 0;                                 // filter ID lower 16 bits
+
+    if (HAL_CAN_ConfigFilter(hcan, &filter_config) != HAL_OK) // configure filter registers
+    {
+        Error_Handler();
+    }
+}
