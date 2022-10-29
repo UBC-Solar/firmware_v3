@@ -28,6 +28,7 @@
 #define ECU_CURRENT_MSG_ID_MASK 0x450
 #define NUM_RX_FIFOS 2
 #define MAX_MESSAGES_PER_FIFO 3
+#define TOTAL_NUM_MODULES 32
 
 /*============================================================================*/
 /* ENUMERATIONS */

@@ -83,6 +83,7 @@ void CAN_CompileMessage623(CAN_Tx_Message_t message623, BTM_PackData_t *pack)
     uint32_t min_volt_rescaled = (uint8_t)(min_module_voltage * rescaled_factor / 10000); // rescale max voltage of fit 8 bits of data
     uint32_t max_volt_rescaled = (uint8_t)(max_module_voltage * rescaled_factor / 10000); // 10000: conversion from 10^4mV to V
 
+    // TODO: need to deal with stack and module indices (LUT) 
     // Store in message 623 data array
     message623.data[2] = min_volt_rescaled;
     message623.data[3] = min_module;
@@ -101,14 +102,13 @@ void CAN_CompileMessage627(CAN_Tx_Message_t message627, BTM_PackData_t *pack);
     float avg_pack_temp = 0; // Measured in Celsius
     float min_module_temp = 200; 
     float max_module_temp = -200;
+    float sum = 0;
     
     // locations of min and max temperature
     uint8_t min_module = 0;
     uint8_t max_module = 0;
     uint8_t min_stack = 0;
     uint8_t max_stack = 0; 
-    
-    
 
     for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
     {
@@ -117,6 +117,9 @@ void CAN_CompileMessage627(CAN_Tx_Message_t message627, BTM_PackData_t *pack);
             if (pack->stack[ic_num].module[module_num].enable)
             {
                 local_module_temp = (pack->stack[ic_num].module[module_num].temperature);
+                
+                sum += local_module_temp; // Get sum of temperature
+
                 // check and store minimum temperature
                 if (local_module_temp < min_module_temp)
                 {
@@ -134,7 +137,17 @@ void CAN_CompileMessage627(CAN_Tx_Message_t message627, BTM_PackData_t *pack);
             }
         }
     }
-} 
+    avg_pack_temp = sum/BTM_NUM_MODULES;
+
+    // Populate data array
+    // TODO: need to deal with stack and module indices (LUT) 
+    // message627.data[0] = avg_pack_temp;
+    message627.data[1] = 0;
+    // message627.data[2] = min_module_temp;
+    message627.data[3] = min_module; // which stack?
+    // message627.data[4] = max_module_temp;
+    message627.data[5] = max_module; // which stack?
+}
 
 /**
  * @brief Retrieves all messages pending in recieve FIFO0 and FIFO1.
