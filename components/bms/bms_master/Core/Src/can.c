@@ -50,6 +50,8 @@ void CAN_CompileMessage623(CAN_Tx_Message_t message623, BTM_PackData_t *pack)
     uint8_t max_module = 0;
     uint8_t min_stack = 0;
     uint8_t max_stack = 0;
+    
+    uint8_t rescaled_factor = 51; // (uint8_t bit size in decimal: 255)/(Max physical voltage per module: 5)
 
     for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
     {
@@ -76,7 +78,13 @@ void CAN_CompileMessage623(CAN_Tx_Message_t message623, BTM_PackData_t *pack)
         }
     }
 
-    // rescale and cast values here, store in message623 array
+
+    message623.data[0] = (uint8_t)total_pack_voltage; // casting 16 bit integer into 8 bit integer get rids of upper 8 bits, leaves lower 8 bits:[0]
+    message623.data[1] = (uint8_t)(total_pack_voltage >> 8); // casting shifted 16 bit integer into 8 bit integer get rids of upper 8 bits, leaves lower 8 bits
+    uint32_t minVoltRescaled = (uint8_t)(min_module_voltage * rescaled_factor / 10000); // rescale max voltage of fit 8 bits of data
+    uint32_t maxVoltRescaled = (uint8_t)(max_module_voltage * rescaled_factor / 10000); // 10000: conversion from 10^4mV to V
+
+    //TODO: store in message 623 data array
 }
 
 /**
