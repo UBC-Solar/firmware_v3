@@ -79,7 +79,8 @@ void CAN_Init(CAN_HandleTypeDef *hcan, CAN_Tx_Messages_t txMessageArray[NUM_CAN_
 void CAN_CompileMessage622(CAN_Tx_Message_t message622, BTM_PackData_t *pack);
 void CAN_CompileMessage623(CAN_Tx_Message_t message623, BTM_PackData_t *pack);
 void CAN_CompileMessage624(CAN_Tx_Message_t message624, BTM_PackData_t *pack);
-void CAN_CompileMessage625(CAN_Tx_Message_t message626, BTM_PackData_t *pack);
+void CAN_CompileMessage625(CAN_Tx_Message_t message625, BTM_PackData_t *pack);
+void CAN_CompileMessage627(CAN_Tx_Message_t message627, BTM_PackData_t *pack);
 void CAN_RecieveMessages(CAN_HandleTypeDef *hcan, CAN_Rx_Message_t rxMessages[NUM_RX_FIFOS * MAX_MESSAGES_PER_FIFO]);
 
 #endif // CANBUS_FUNCTION_H_

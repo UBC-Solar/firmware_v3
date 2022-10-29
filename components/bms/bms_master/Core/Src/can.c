@@ -33,7 +33,7 @@ void CAN_Init(CAN_HandleTypeDef *hcan, CAN_Tx_Message_t txMessages[NUM_CAN_MESSA
 }
 
 /**
- * @brief Get data for message 622, populate message struct.
+ * @brief Get data for message 623, populate message struct.
  *
  * @param message623 message 623 structure to populate
  * @param pack pack data structure that data will be read from
@@ -78,14 +78,63 @@ void CAN_CompileMessage623(CAN_Tx_Message_t message623, BTM_PackData_t *pack)
         }
     }
 
-
     message623.data[0] = (uint8_t)total_pack_voltage; // casting 16 bit integer into 8 bit integer get rids of upper 8 bits, leaves lower 8 bits:[0]
     message623.data[1] = (uint8_t)(total_pack_voltage >> 8); // casting shifted 16 bit integer into 8 bit integer get rids of upper 8 bits, leaves lower 8 bits
-    uint32_t minVoltRescaled = (uint8_t)(min_module_voltage * rescaled_factor / 10000); // rescale max voltage of fit 8 bits of data
-    uint32_t maxVoltRescaled = (uint8_t)(max_module_voltage * rescaled_factor / 10000); // 10000: conversion from 10^4mV to V
+    uint32_t min_volt_rescaled = (uint8_t)(min_module_voltage * rescaled_factor / 10000); // rescale max voltage of fit 8 bits of data
+    uint32_t max_volt_rescaled = (uint8_t)(max_module_voltage * rescaled_factor / 10000); // 10000: conversion from 10^4mV to V
 
-    //TODO: store in message 623 data array
+    // Store in message 623 data array
+    message623.data[2] = min_volt_rescaled;
+    message623.data[3] = min_module;
+    message623.data[4] = max_volt_rescaled;
+    message623.data[5] = max_module;
 }
+
+/**
+ * @brief Get data for message 627, populate message struct.
+ *
+ * @param message623 message 627 structure to populate
+ * @param pack pack data structure that data will be read from
+ */
+void CAN_CompileMessage627(CAN_Tx_Message_t message627, BTM_PackData_t *pack);
+{
+    float avg_pack_temp = 0; // Measured in Celsius
+    float min_module_temp = 200; 
+    float max_module_temp = -200;
+    
+    // locations of min and max temperature
+    uint8_t min_module = 0;
+    uint8_t max_module = 0;
+    uint8_t min_stack = 0;
+    uint8_t max_stack = 0; 
+    
+    
+
+    for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+    {
+        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+        {
+            if (pack->stack[ic_num].module[module_num].enable)
+            {
+                local_module_temp = (pack->stack[ic_num].module[module_num].temperature);
+                // check and store minimum temperature
+                if (local_module_temp < min_module_temp)
+                {
+                    min_module_temp = local_module_temp; // store minimum temperature
+                    min_stack = ic_num;                  // store stack with minimum temperature
+                    min_module = module_num;             // store module with minimum temperature
+                }
+                // check and store maximum temperature
+                if (local_module_temp > max_module_temp)
+                {
+                    max_module_temp = local_module_temp;
+                    max_module = module_num;
+                    max_stack = ic_num;
+                }
+            }
+        }
+    }
+} 
 
 /**
  * @brief Retrieves all messages pending in recieve FIFO0 and FIFO1.
