@@ -16,6 +16,7 @@ In addition to the firmware for hardware on the car in `/components/`, any tools
 
 - BMS GUI - An interface program capable of displaying and logging information from the BMS read via a serial port, written in Python using PyQT.
 - Ceedling - The team's copy of the open source unit testing framework. See below for more info on Ceedling.
+- MCU Bringup - An example of a very simple firmware project used to briefly bench-test the hardware of an embedded device, in this case the BMS master board. This project provides simple functions to excercise all of the board's subcircuits. This project uses PlatformIO.
 
 ## Contributing
 
