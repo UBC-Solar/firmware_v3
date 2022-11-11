@@ -465,17 +465,36 @@ static void MX_GPIO_Init(void)
 
 void packUpdateAndControl(BTM_PackData_t *pack)
 {
+  // Temp
   unsigned int fan_PWM = 0;
   float max_temp = 0;
+  // ECU CAN Message
+  CAN_Rx_Message_t rxMessages[NUM_RX_FIFOS * MAX_MESSAGES_PER_FIFO];
   int32_t pack_current;
   uint8_t DOC_COC_active = 0;
+  CAN_Rx_Message_t *rx_msg_p;
+  // Other
   unsigned int current_tick;
   static uint8_t initial_soc_measurement_flag = 1;
   unsigned int HLIM_status = 0;
 
+
   current_tick = HAL_getTick();
 
-  // TODO: recieve ECU CAN message
+  // Recieve ECU CAN message
+  CAN_RecieveMessages(&hcan, rxMessages);
+  for (int i = 0; i<(NUM_RX_FIFOS * MAX_MESSAGES_PER_FIFO); i++)
+  {
+    rx_msg_p = &rxMessages[i];
+    
+    // operate on message if it's ID matches the ID of the relevant message from the ECU 
+    if(rx_msg_p->rx_header.StdId == ECU_CURRENT_MESSAGE_ID){ // does comparing this way work?
+      DOC_COC_active = rx_msg_p.data[0];
+      pack_current = rx_msg_p.data[1]; // double check whether we need to rescale one rx'd (depends on how ECU packages up this value)
+      break; // remove if we want to rx more than just this message
+    }
+  
+  }
 
   if (DOC_COC_active)
   {
@@ -500,22 +519,23 @@ void packUpdateAndControl(BTM_PackData_t *pack)
   }
 
   // write status code
-  analyzePack(pack);
+  ANA_analyzePack(pack);
 
-  // if fault, drive FLT, COM, OT GPIOs, turn off balancing, drive fans 100%
+  // if fault, drive FLT, COM, HLIM (maybe), LLIM (maybe), OT GPIOs, turn off balancing, drive fans 100%
   if (pack->status & FAULTS_MASK)
   {
     CONT_FLT_switch((pack->status & FAULTS_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
     CONT_COM_switch((pack->status & FLT_COMM_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
     CONT_OT_switch((pack->status & FLT_OT_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
+    // TODO: drive HLIM, LLIM, update pack status code (maybe)
     stopBalancing(pack);
     CONT_BAL_switch((pack->status & TRIP_BAL_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
     CONT_FAN_PWM_set(FAN_FULL);
   }
   else // no fault, balance, drive control signals, drive fans based on temp
   {
-    BTM_BAL_settings(pack);
-    ANA_writePackBalStatus(pack);
+    BTM_BAL_settings(pack); // write bal settings, send bal commands
+    ANA_writePackBalStatus(pack); // update pack balancing status
     CONT_BAL_switch((pack->status & TRIP_BAL_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
 
     // OR together HLIM and CHARGE_OT status bits, HLIM active if either are active
@@ -546,9 +566,13 @@ void startupChecks(BTM_PackData_t *pack)
   reg_group_match_failed = doesRegGroupMatch(test_data, test_data_rx);
 
   // checks for comms error
-  if (reg_group_match_failed || comm_status.error != BTM_OK)
+  // note: a lack of comms is different than the self-tests failing
+  if (comm_status.error != BTM_OK)
   {
     pack->status |= FLT_COMM_MASK;
+  }
+  if (reg_group_match_failed){
+    pack->status |= FLT_TEST_MASK;
   }
 }
 
@@ -572,19 +596,6 @@ uint8_t doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE
 }
 
 /**
- * @brief Helper function to write the pack status code
- * Merges module status codes into the pack status code
- */
-
-void analyzePack(BTM_PackData_t *pack)
-{
-  unsigned int status;
-  ANA_analyzeModules(pack);
-  status = ANA_mergeModuleStatusCodes(pack);
-  pack->status = status;
-}
-
-/**
  * @brief Helper function to stop balancing for all modules
  *
  */
@@ -599,7 +610,7 @@ void stopBalancing(BTM_PackData_t *pack)
     }
   }
 
-  BTM_BAL_setDischarge(pack);     // will clear bal module status
+  BTM_BAL_setDischarge(pack);     // writes balancing commands for all modules
   pack->status &= ~TRIP_BAL_MASK; // clear bal pack status
 }
 

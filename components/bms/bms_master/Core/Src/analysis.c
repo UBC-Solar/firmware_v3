@@ -5,11 +5,18 @@
  *  @date 2020/07/10
  *  @author Andrew Hanlon (a2k-hanlon)
  */
+
 #include "analysis.h"
 
-// Private function prototypes
+/*============================================================================*/
+/* PRIVATE FUCNTION PROTOTYPES */
 int findModuleVoltState(int status, uint16_t pack);
 int findModuleTempState(int status, float temp);
+unsigned int ANA_mergeModuleStatusCodes(BTM_PackData_t *pack);
+float ANA_findHighestModuleTemp(BTM_PackData_t *pack);
+
+/*============================================================================*/
+/* PUBLIC FUCNTION IMPLEMENTATIONS */
 
 /**
  * @brief Determines voltage- and temperature-based state of each module in the pack
@@ -46,6 +53,167 @@ void ANA_analyzeModules(BTM_PackData_t *pack)
     }
     return;
 }
+
+
+/**
+ * @brief Preforms analysis of all modules, then writes the pack status
+ * Note: This function does not update the following bits:
+ *  FLT_COMM
+ *  FLT_TEST
+ *  FLT_ISOL
+ *  FLT_DOC_COC 
+ *  FLT_SHORT
+ *  TRIP_BAL
+ *  WARN_REGEN_OFF
+ * 
+ * @param[in] pack Pack data structure that stores pack information
+ */
+
+void ANA_analyzePack(BTM_PackData_t *pack)
+{
+  unsigned int status;
+  ANA_analyzeModules(pack);
+  status = ANA_mergeModuleStatusCodes(pack);
+  pack->status = status;
+}
+
+
+/**
+ * @brief Writes the bal status code to the pack
+ *
+ */
+
+void ANA_writePackBalStatus(BTM_PackData_t *pack)
+{
+    for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+    {
+        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+        {
+            // if a single module is being balanced, write status bal bit
+            if (pack->stack[ic_num].module[module_num].bal_status == DISCHARGE_ON)
+            {
+                pack->status |= TRIP_BAL_MASK;
+                return;
+            }
+        }
+    }
+    // no modules being balanced, reset status bal bit
+    pack->status &= ~TRIP_BAL_MASK;
+}
+
+
+/*============================================================================*/
+/* PRIVATE FUCNTION IMPLEMENTATIONS */
+
+/**
+ * @brief Finds the value of the highest module temperature in the battery pack
+ *
+ * @param pack Data pack to search for highest module temperature
+ * @return Floating point value in degrees C of the hottest module's temperature
+ */
+float ANA_findHighestModuleTemp(BTM_PackData_t *pack)
+{
+    float temperature = 0;
+    float max_temperature = 0;
+    struct BTM_module *module_p;
+
+    for (int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
+    {
+        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+        {
+            module_p = &(pack->stack[stack_num].module[module_num]);
+
+            // If module is enabled...
+            if (module_p->enable)
+            {
+                temperature = module_p->temperature;
+                if (temperature > max_temperature)
+                    max_temperature = temperature;
+            }
+        }
+    }
+
+    return max_temperature;
+}
+
+/**
+ * @brief Generates a single BMS status code as an accumulation of all enabled modules' statuses
+ *
+ * @param[in] pack Pack data structure to read module statuses from
+ * @return status code as a (32-bit) integer
+ */
+unsigned int ANA_mergeModuleStatusCodes(BTM_PackData_t *pack)
+{
+    int status_result = 0; // Start with a clean code
+    struct BTM_module *module_p;
+
+    // Just OR together status codes from all enabled modules
+    for (int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
+    {
+        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+        {
+            module_p = &(pack->stack[stack_num].module[module_num]);
+            if (module_p->enable)
+            {
+                status_result |= module_p->status;
+            }
+        }
+    }
+
+    return status_result;
+}
+
+
+// Helper function for ANA_analyzeModules()
+int findModuleTempState(int status, float temp)
+{
+    // Some conditionals here have no else because faults don't clear
+
+    // Faults
+    if (temp >= FLT_OT_THRESHOLD)
+    {
+        status |= FLT_OT_MASK; // Set FLT_OT bit
+    }
+
+    if (temp >= FLT_TEMP_RANGE_HIGH_THRESHOLD || temp <= FLT_TEMP_RANGE_LOW_THRESHOLD)
+    {
+        status |= FLT_TEMP_RANGE_MASK; // Set FLT_TEMP_RANGE bit
+    }
+
+    // Trips
+
+    if (temp >= TRIP_CHARGE_OT_THRESHOLD)
+    {
+        status |= TRIP_CHARGE_OT_MASK; // Set TRIP_CHARGE_OT bit
+    }
+    else
+    {
+        status &= ~TRIP_CHARGE_OT_MASK; // Clear TRIP_CHARGE_OT bit
+    }
+
+    // Warns
+
+    if (temp >= WARN_HIGH_T_THRESHOLD)
+    {
+        status |= WARN_HIGH_T_MASK; // Set WARN_HIGH_T bit
+    }
+    else
+    {
+        status &= ~WARN_HIGH_T_MASK; // Clear WARN_HIGH_T bit
+    }
+
+    if (temp <= WARN_LOW_T_THRESHOLD)
+    {
+        status |= WARN_LOW_T_MASK; // Set WARN_LOW_T bit
+    }
+    else
+    {
+        status &= ~WARN_LOW_T_MASK; // Clear WARN_LOW_T bit
+    }
+
+    return status;
+}
+
 
 // Helper function for ANA_analyzeModules()
 int findModuleVoltState(int status, uint16_t voltage)
@@ -110,135 +278,4 @@ int findModuleVoltState(int status, uint16_t voltage)
     }
 
     return status;
-}
-
-// Helper function for ANA_analyzeModules()
-int findModuleTempState(int status, float temp)
-{
-    // Some conditionals here have no else because faults don't clear
-
-    // Faults
-    if (temp >= FLT_OT_THRESHOLD)
-    {
-        status |= FLT_OT_MASK; // Set FLT_OT bit
-    }
-
-    if (temp >= FLT_TEMP_RANGE_HIGH_THRESHOLD || temp <= FLT_TEMP_RANGE_LOW_THRESHOLD)
-    {
-        status |= FLT_TEMP_RANGE_MASK; // Set FLT_TEMP_RANGE bit
-    }
-
-    // Trips
-
-    if (temp >= TRIP_CHARGE_OT_THRESHOLD)
-    {
-        status |= TRIP_CHARGE_OT_MASK; // Set TRIP_CHARGE_OT bit
-    }
-    else
-    {
-        status &= ~TRIP_CHARGE_OT_MASK; // Clear TRIP_CHARGE_OT bit
-    }
-
-    // Warns
-
-    if (temp >= WARN_HIGH_T_THRESHOLD)
-    {
-        status |= WARN_HIGH_T_MASK; // Set WARN_HIGH_T bit
-    }
-    else
-    {
-        status &= ~WARN_HIGH_T_MASK; // Clear WARN_HIGH_T bit
-    }
-
-    if (temp <= WARN_LOW_T_THRESHOLD)
-    {
-        status |= WARN_LOW_T_MASK; // Set WARN_LOW_T bit
-    }
-    else
-    {
-        status &= ~WARN_LOW_T_MASK; // Clear WARN_LOW_T bit
-    }
-
-    return status;
-}
-
-/**
- * @brief Generates a single BMS status code as an accumulation of all enabled modules' statuses
- *
- * @param[in] pack Pack data structure to read module statuses from
- * @return status code as a (32-bit) integer
- */
-unsigned int ANA_mergeModuleStatusCodes(BTM_PackData_t *pack)
-{
-    int status_result = 0; // Start with a clean code
-    struct BTM_module *module_p;
-
-    // Just OR together status codes from all enabled modules
-    for (int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
-    {
-        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
-        {
-            module_p = &(pack->stack[stack_num].module[module_num]);
-            if (module_p->enable)
-            {
-                status_result |= module_p->status;
-            }
-        }
-    }
-
-    return status_result;
-}
-
-/**
- * @brief Finds the value of the highest module temperature in the battery pack
- *
- * @param pack Data pack to search for highest module temperature
- * @return Floating point value in degrees C of the hottest module's temperature
- */
-float ANA_findHighestModuleTemp(BTM_PackData_t *pack)
-{
-    float temperature = 0;
-    float max_temperature = 0;
-    struct BTM_module *module_p;
-
-    for (int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
-    {
-        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
-        {
-            module_p = &(pack->stack[stack_num].module[module_num]);
-
-            // If module is enabled...
-            if (module_p->enable)
-            {
-                temperature = module_p->temperature;
-                if (temperature > max_temperature)
-                    max_temperature = temperature;
-            }
-        }
-    }
-
-    return max_temperature;
-}
-
-/**
- * @brief Writes the bal status code to the pack
- *
- */
-
-void ANA_writePackBalStatus(BTM_PackData_t *pack)
-{
-    for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
-    {
-        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
-        {
-            // if a single module is being balanced, write status bal bit
-            if (pack->stack[ic_num].module[module_num].bal_status == DISCHARGE_ON)
-            {
-                pack->status |= TRIP_BAL_MASK;
-                return;
-            }
-        }
-    }
-    // no modules being balanced, reset status bal bit
-    pack->status &= ~TRIP_BAL_MASK;
 }

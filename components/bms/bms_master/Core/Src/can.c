@@ -163,7 +163,7 @@ void CAN_CompileMessage627(CAN_Tx_Message_t message627, BTM_PackData_t *pack)
  */
 void CAN_RecieveMessages(CAN_HandleTypeDef *hcan, CAN_Rx_Message_t rxMessages[NUM_RX_FIFOS * MAX_MESSAGES_PER_FIFO])
 {
-    CAN_Rx_Message_t *rx_msg;
+    CAN_Rx_Message_t *rx_msg_p;
     unsigned int fifo_fill_level;
     uint8_t rx_msg_index = 0;
 
@@ -172,19 +172,19 @@ void CAN_RecieveMessages(CAN_HandleTypeDef *hcan, CAN_Rx_Message_t rxMessages[NU
         fifo_fill_level = HAL_CAN_GetRxFifoFillLevel(hcan, fifo_num); // number of messages pending in fifo
         for (int message_num = 0; message_num < fifo_fill_level; message_num++)
         {
-            rx_msg = &rxMessages[rx_msg_index]; // get address of local rx message struct
-            rx_msg->fifo = fifo_num;
-            if (HAL_CAN_GetRxMessage(hcan, fifo_num, rx_msg->rx_header, rx_msg->data) != HAL_OK) // retrieve message
+            rx_msg_p = &rxMessages[rx_msg_index];
+            rx_msg_p->fifo = fifo_num; // indicates which fifo message was recieved in
+            if (HAL_CAN_GetRxMessage(hcan, fifo_num, rx_msg_p->rx_header, rx_msg_p->data) != HAL_OK) // retrieve message
             {
                 Error_Handler();
             }
-            rx_msg->message_status = MSG_RECIEVED; // sucessfully recieved message
+            rx_msg_p->message_status = MSG_RECIEVED; // sucessfully recieved message
             rx_msg_index++;
         }
     }
 
     // if rx_msg_index < MAX_MESSAGES_PER_FIFO, not all FIFOs were full
-    for (int i = rx_msg_index; i < MAX_MESSAGES_PER_FIFO; i++)
+    for (int i = rx_msg_index; i < (NUM_RX_FIFOS * MAX_MESSAGES_PER_FIFO); i++)
     {
         rxMessages[i].message_status = MSG_NOT_RECIEVED; // didn't recieve a message for struct at this index
     }

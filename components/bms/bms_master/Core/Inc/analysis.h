@@ -72,8 +72,7 @@
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 void ANA_analyzeModules(BTM_PackData_t *pack);
-unsigned int ANA_mergeModuleStatusCodes(BTM_PackData_t *pack);
-float ANA_findHighestModuleTemp(BTM_PackData_t *pack);
 void ANA_writePackBalStatus(BTM_PackData_t *pack);
+void ANA_analyzePack(BTM_PackData_t *pack);
 
 #endif /* INC_ANALYSIS_H_ */
