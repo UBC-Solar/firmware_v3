@@ -81,14 +81,16 @@ void CAN_CompileMessage623(CAN_Tx_Message_t message623, BTM_PackData_t *pack)
     uint32_t min_volt_rescaled = (uint8_t)(min_module_voltage * rescaled_factor / 10000); // rescale max voltage of fit 8 bits of data
     uint32_t max_volt_rescaled = (uint8_t)(max_module_voltage * rescaled_factor / 10000); // 10000: conversion from 10^4mV to V
 
-    message623.data[0] = (uint8_t)total_pack_voltage;        // casting 16 bit integer into 8 bit integer get rids of upper 8 bits, leaves lower 8 bits:[0]
+    message623.data[0] = (uint8_t)total_pack_voltage;        // casting 16 bit integer into 8 bit integer gets rid of upper 8 bits, leaves lower 8 bits
     message623.data[1] = (uint8_t)(total_pack_voltage >> 8); // casting shifted 16 bit integer into 8 bit integer get rids of upper 8 bits, leaves lower 8 bits
-    // TODO: need to deal with stack and module indices (LUT)
+    
+    // TODO: need to deal with correct module indices (LUT)
+    
     // Store in message 623 data array
     message623.data[2] = min_volt_rescaled;
-    message623.data[3] = min_module;
+    message623.data[3] = min_module*(min_stack+1); // add one because of indexing from zero
     message623.data[4] = max_volt_rescaled;
-    message623.data[5] = max_module;
+    message623.data[5] = max_module*(max_stack+1);
 }
 
 /**
@@ -97,12 +99,14 @@ void CAN_CompileMessage623(CAN_Tx_Message_t message623, BTM_PackData_t *pack)
  * @param message623 message 627 structure to populate
  * @param pack pack data structure that data will be read from
  */
-void CAN_CompileMessage627(CAN_Tx_Message_t message627, BTM_PackData_t *pack);
+void CAN_CompileMessage627(CAN_Tx_Message_t message627, BTM_PackData_t *pack)
 {
-    float avg_pack_temp = 0; // Measured in Celsius
+    // Temperature measured in degrees celcius
+    float avg_pack_temp = 0;
     float min_module_temp = 200;
     float max_module_temp = -200;
     float sum = 0;
+    float local_module_temp;
 
     // locations of min and max temperature
     uint8_t min_module = 0;
@@ -144,10 +148,10 @@ void CAN_CompileMessage627(CAN_Tx_Message_t message627, BTM_PackData_t *pack);
     // TODO: need to deal with stack and module indices (LUT)
     // message627.data[0] = avg_pack_temp;
     message627.data[1] = 0;
-    // message627.data[2] = min_module_temp;
-    message627.data[3] = min_module; // which stack?
-    // message627.data[4] = max_module_temp;
-    message627.data[5] = max_module; // which stack?
+    message627.data[2] = min_module_temp;
+    message627.data[3] = min_module*(min_stack+1);
+    message627.data[4] = max_module_temp;
+    message627.data[5] = max_module*(max_stack+1);
 }
 
 /**

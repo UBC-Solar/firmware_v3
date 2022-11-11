@@ -76,7 +76,7 @@ typedef struct
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
-void CAN_Init(CAN_HandleTypeDef *hcan, CAN_Tx_Messages_t txMessageArray[NUM_CAN_MESSAGES]);
+void CAN_Init(CAN_HandleTypeDef *hcan, CAN_Rx_Message_t txMessageArray[NUM_CAN_MESSAGES]);
 void CAN_CompileMessage622(CAN_Tx_Message_t message622, BTM_PackData_t *pack);
 void CAN_CompileMessage623(CAN_Tx_Message_t message623, BTM_PackData_t *pack);
 void CAN_CompileMessage624(CAN_Tx_Message_t message624, BTM_PackData_t *pack);
