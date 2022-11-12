@@ -85,13 +85,13 @@ void Convert_Values(uint8_t index) {
 			break;
 
 		case ISENSE1:
-			/* TODO */
+			/* Already Have the Value Directly From ADC */
+			CONVERTED_VALUES[index] = ADC_VALUES[index];
 			break;
 		case ISENSE2:
-			/* Relationship for converting to current and modify CONVERTED_VALUES[index] */
-			/* TODO */
+			/* Already Have the Value Directly From ADC */
+			CONVERTED_VALUES[index] = ADC_VALUES[index];
 			break;
-
 		case TEMP_1:
 			/* TODO */
 			break;
