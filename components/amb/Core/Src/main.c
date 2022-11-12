@@ -77,6 +77,8 @@ void Convert_Values(uint8_t index) {
 	switch(index) {
 		case VSENSE1:
 			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
+			/* TODO: Figure out actual Voltage Equations */
+			/* V = 3.3 * ADC_VAL / 2^12 */
 			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 81.822) / 40.441;	// slightly overcompensates
 			break;
 		case VSENSE2:
@@ -85,12 +87,12 @@ void Convert_Values(uint8_t index) {
 			break;
 
 		case ISENSE1:
-			/* Already Have the Value Directly From ADC */
-			CONVERTED_VALUES[index] = ADC_VALUES[index];
+			/* ISENSE [V] = 0.11 * I [A] + 1.65 */
+			CONVERTED_VALUES[index] = (ADC_VALUES[index] - 1.65) / 0.11;
 			break;
 		case ISENSE2:
-			/* Already Have the Value Directly From ADC */
-			CONVERTED_VALUES[index] = ADC_VALUES[index];
+			/* ISENSE [V] = 0.11 * I [A] + 1.65 */
+			CONVERTED_VALUES[index] = (ADC_VALUES[index] - 1.65) / 0.11;
 			break;
 		case TEMP_1:
 			/* TODO */
