@@ -54,56 +54,91 @@ void ANA_analyzeModules(BTM_PackData_t *pack)
     return;
 }
 
-
 /**
  * @brief Preforms analysis of all modules, then writes the pack status
  * Note: This function does not update the following bits:
  *  FLT_COMM
  *  FLT_TEST
  *  FLT_ISOL
- *  FLT_DOC_COC 
- *  FLT_SHORT
+ *  FLT_DOC_COC
  *  TRIP_BAL
- *  WARN_REGEN_OFF
- * 
+ * @note This function must be called after capturing pack voltage and temperature measurements
  * @param[in] pack Pack data structure that stores pack information
  */
-
 void ANA_analyzePack(BTM_PackData_t *pack)
 {
-  unsigned int status;
-  ANA_analyzeModules(pack);
-  status = ANA_mergeModuleStatusCodes(pack);
-  pack->status = status;
+    unsigned int status;
+    ANA_analyzeModules(pack);
+    status = ANA_mergeModuleStatusCodes(pack);
+    pack->status = status;
+    ANA_writePackRegenStatus(pack);
 }
 
-
 /**
- * @brief Writes the bal status code to the pack
- *
+ * @brief Writes the bal status code to the modules and the pack
  */
-
 void ANA_writePackBalStatus(BTM_PackData_t *pack)
 {
+    struct BTM_module *module_p;  // pointer to module being analyzed
+    uint8_t module_balancing = 0; // indicates whether a module is being balanced or not
+
     for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
     {
         for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
         {
-            // if a single module is being balanced, write status bal bit
-            if (pack->stack[ic_num].module[module_num].bal_status == DISCHARGE_ON)
+            module_p = &(pack->stack[ic_num].module[module_num]);
+            if (module_p->status == DISCHARGE_ON)
             {
-                pack->status |= TRIP_BAL_MASK;
-                return;
+                module_p->status |= TRIP_BAL_MASK; // set module's TRIP_BAL bit
+                module_balancing = 1;
+            }
+            else
+            {
+                module_p->status &= ~TRIP_BAL_MASK; // clear module's TRIP_BAL bit
             }
         }
     }
-    // no modules being balanced, reset status bal bit
-    pack->status &= ~TRIP_BAL_MASK;
-}
+    if (module_balancing)
+    {
+        pack->status |= TRIP_BAL_MASK; // set pack TRIP_BAL bit
+    }
+    else
+    {
+        pack->status &= ~TRIP_BAL_MASK; // clear pack TRIP_BAL bit
+    }
 
+    return;
+}
 
 /*============================================================================*/
 /* PRIVATE FUCNTION IMPLEMENTATIONS */
+
+/**
+ * @brief Generates a single BMS status code as an accumulation of all enabled modules' statuses
+ *
+ * @param[in] pack Pack data structure to read module statuses from
+ * @return status code as a (32-bit) integer
+ */
+unsigned int ANA_mergeModuleStatusCodes(BTM_PackData_t *pack)
+{
+    int status_result = 0; // Start with a clean code
+    struct BTM_module *module_p;
+
+    // Just OR together status codes from all enabled modules
+    for (int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
+    {
+        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+        {
+            module_p = &(pack->stack[stack_num].module[module_num]);
+            if (module_p->enable)
+            {
+                status_result |= module_p->status;
+            }
+        }
+    }
+
+    return status_result;
+}
 
 /**
  * @brief Finds the value of the highest module temperature in the battery pack
@@ -137,32 +172,21 @@ float ANA_findHighestModuleTemp(BTM_PackData_t *pack)
 }
 
 /**
- * @brief Generates a single BMS status code as an accumulation of all enabled modules' statuses
- *
- * @param[in] pack Pack data structure to read module statuses from
- * @return status code as a (32-bit) integer
+ * @brief Writes the WARN_REGEN_OFF status bit to the pack status
  */
-unsigned int ANA_mergeModuleStatusCodes(BTM_PackData_t *pack)
+void ANA_writePackRegenStatus(BTM_PackData_t *pack)
 {
-    int status_result = 0; // Start with a clean code
-    struct BTM_module *module_p;
-
-    // Just OR together status codes from all enabled modules
-    for (int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
+    if (pack->status & CHECK_REGEN_MASK)
     {
-        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
-        {
-            module_p = &(pack->stack[stack_num].module[module_num]);
-            if (module_p->enable)
-            {
-                status_result |= module_p->status;
-            }
-        }
+        pack->status |= WARN_REGEN_OFF_MASK; // set WARN_REGEN_OFF bit
+    }
+    else
+    {
+        pack->status &= ~WARN_REGEN_OFF_MASK; // clear WARN_REGEN_OFF bit
     }
 
-    return status_result;
+    return;
 }
-
 
 // Helper function for ANA_analyzeModules()
 int findModuleTempState(int status, float temp)
@@ -213,7 +237,6 @@ int findModuleTempState(int status, float temp)
 
     return status;
 }
-
 
 // Helper function for ANA_analyzeModules()
 int findModuleVoltState(int status, uint16_t voltage)

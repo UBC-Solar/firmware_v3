@@ -64,10 +64,11 @@
 #define WARN_HIGH_V_MASK 0x04000
 #define WARN_LOW_T_MASK 0x08000
 #define WARN_HIGH_T_MASK 0x10000
-#define WARN_REGEN_OFF 0x20000
+#define WARN_REGEN_OFF_MASK 0x20000
 
 // Helper masks
-#define FAULTS_MASK 0x001FF // Covers all faults
+#define FAULTS_MASK 0x001FF      // Covers all faults
+#define CHECK_REGEN_MASK 0x019FF // Covers TRIP_HLIM, TRIP_CHARGE_OT, and all faults
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */

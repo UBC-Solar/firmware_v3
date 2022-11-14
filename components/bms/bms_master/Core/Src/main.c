@@ -159,7 +159,8 @@ int main(void)
     // preform CAN communication if CAN send interval has elapsed
     if (current_tick - last_measurement_tick >= CAN_TX_INTERVAL)
     {
-      // TODO: CAN communication here (always happens, no matter whether we're normal or fault)
+      // TODO: preform CAN communication
+      // CAN comms always happen (whether or not in fault state)
     }
 
     // blink LED on master board
@@ -478,30 +479,31 @@ void packUpdateAndControl(BTM_PackData_t *pack)
   static uint8_t initial_soc_measurement_flag = 1;
   unsigned int HLIM_status = 0;
 
-
   current_tick = HAL_getTick();
 
   // Recieve ECU CAN message
   CAN_RecieveMessages(&hcan, rxMessages);
-  for (int i = 0; i<(NUM_RX_FIFOS * MAX_MESSAGES_PER_FIFO); i++)
+  for (int i = 0; i < (NUM_RX_FIFOS * MAX_MESSAGES_PER_FIFO); i++)
   {
     rx_msg_p = &rxMessages[i];
-    
-    // operate on message if it's ID matches the ID of the relevant message from the ECU 
-    if(rx_msg_p->rx_header.StdId == ECU_CURRENT_MESSAGE_ID){ // does comparing this way work?
+
+    // operate on message if it's the current status message from the ECU
+    if (rx_msg_p->rx_header.StdId == ECU_CURRENT_MESSAGE_ID)
+    { // does comparing this way work?
       DOC_COC_active = rx_msg_p.data[0];
-      pack_current = rx_msg_p.data[1]; // double check whether we need to rescale one rx'd (depends on how ECU packages up this value)
-      break; // remove if we want to rx more than just this message
+      pack_current = rx_msg_p.data[1]; // TODO: double check whether we need to rescale one rx'd (depends on how ECU packages up this value)
+      break;                           // remove if we want to rx more than just this message
     }
-  
   }
 
   if (DOC_COC_active)
   {
-    pack->status |= FLT_DOC_COC_MASK;
+    pack->status |= FLT_DOC_COC_MASK; // set FLT_DOC_COC bit
   }
 
-  // get measurements
+  // TODO: isolation sensor check (if it's BMS's responsibilty)
+
+  // get pack measurements
   if (BTM_readBatt(pack).error != BTM_OK || BTM_TEMP_measureState(pack).error != BTM_OK)
   {
     pack->status |= FLT_COMM_MASK;
@@ -518,35 +520,44 @@ void packUpdateAndControl(BTM_PackData_t *pack)
     SOC_allModulesEst(pack, pack_current, current_tick);
   }
 
-  // write status code
+  // write pack status code
   ANA_analyzePack(pack);
 
-  // if fault, drive FLT, COM, HLIM (maybe), LLIM (maybe), OT GPIOs, turn off balancing, drive fans 100%
+  // if any fault active, drive FLT, COM, OT GPIOs, turn off balancing, drive fans 100%
   if (pack->status & FAULTS_MASK)
   {
     CONT_FLT_switch((pack->status & FAULTS_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
     CONT_COM_switch((pack->status & FLT_COMM_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
     CONT_OT_switch((pack->status & FLT_OT_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
-    // TODO: drive HLIM, LLIM, update pack status code (maybe)
     stopBalancing(pack);
     CONT_BAL_switch((pack->status & TRIP_BAL_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
     CONT_FAN_PWM_set(FAN_FULL);
   }
-  else // no fault, balance, drive control signals, drive fans based on temp
+  else // no fault, balance, drive control signals and fans
   {
-    BTM_BAL_settings(pack); // write bal settings, send bal commands
+    BTM_BAL_settings(pack);       // write bal settings, send bal commands
     ANA_writePackBalStatus(pack); // update pack balancing status
     CONT_BAL_switch((pack->status & TRIP_BAL_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
 
-    // OR together HLIM and CHARGE_OT status bits, HLIM active if either are active
+    // HLIM active if TRIP_HLIM or TRIP_CHARGE_OT are active
     HLIM_status = (pack->status & TRIP_HLIM_MASK) | (pack->status & TRIP_CHARGE_OT_MASK);
     CONT_HLIM_switch(HLIM_status ? CONT_ACTIVE : CONT_INACTIVE);
     CONT_LLIM_switch((pack->status & TRIP_LLIM_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
 
-    max_temp = ANA_findHighestModuleTemp(pack);
-    fan_PWM = CONT_fanPwmFromTemp(max_temp);
+    // set fans
+    if (pack->status & TRIP_CHARGE_OT_MASK) // if TRIP_CHARGE_OT active, drive fans 100%
+    {
+      fan_PWM = FAN_FULL;
+    }
+    else // otherwise, fans set proportional to temperature
+    {
+      max_temp = ANA_findHighestModuleTemp(pack);
+      fan_PWM = CONT_fanPwmFromTemp(max_temp);
+    }
     CONT_FAN_PWM_set(fan_PWM);
   }
+
+  return;
 }
 
 /**
@@ -571,7 +582,8 @@ void startupChecks(BTM_PackData_t *pack)
   {
     pack->status |= FLT_COMM_MASK;
   }
-  if (reg_group_match_failed){
+  if (reg_group_match_failed)
+  {
     pack->status |= FLT_TEST_MASK;
   }
 }
@@ -610,8 +622,8 @@ void stopBalancing(BTM_PackData_t *pack)
     }
   }
 
-  BTM_BAL_setDischarge(pack);     // writes balancing commands for all modules
-  pack->status &= ~TRIP_BAL_MASK; // clear bal pack status
+  BTM_BAL_setDischarge(pack);   // writes balancing commands for all modules
+  ANA_writePackBalStatus(pack); // (if works, should be) equivalent to pack->status &= ~TRIP_BAL_MASK
 }
 
 /**
