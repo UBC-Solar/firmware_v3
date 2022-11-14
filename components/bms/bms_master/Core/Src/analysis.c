@@ -87,7 +87,7 @@ void ANA_writePackBalStatus(BTM_PackData_t *pack)
         for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
         {
             module_p = &(pack->stack[ic_num].module[module_num]);
-            if (module_p->status == DISCHARGE_ON)
+            if (module_p->bal_status == DISCHARGE_ON)
             {
                 module_p->status |= TRIP_BAL_MASK; // set module's TRIP_BAL bit
                 module_balancing = 1;
