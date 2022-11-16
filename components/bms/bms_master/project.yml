@@ -4,7 +4,7 @@
   :use_test_preprocessor: TRUE
   :use_auxiliary_dependencies: TRUE
   :build_root: build
-#  :release_build: TRUE
+  #  :release_build: TRUE
   :test_file_prefix: test_
   :which_ceedling: ../../../tools/ceedling
   :ceedling_version: 0.31.1
@@ -58,11 +58,11 @@
     - :ignore
     - :callback
   :treat_as:
-    uint8:    HEX8
-    uint16:   HEX16
-    uint32:   UINT32
-    int8:     INT8
-    bool:     UINT8
+    uint8: HEX8
+    uint16: HEX16
+    uint32: UINT32
+    int8: INT8
+    bool: UINT8
 :includes: []
 
 # Add -gcov to the plugins list to make sure of the gcov plugin
@@ -88,7 +88,7 @@
   :placement: :end
   :flag: "-l${1}"
   :path_flag: "-L ${1}"
-  :system: []    # for example, you might list 'm' to grab the math library
+  :system: [] # for example, you might list 'm' to grab the math library
   :test: []
   :release: []
 
@@ -99,6 +99,7 @@
     - stdout_pretty_tests_report
     - module_generator
     - raw_output_report
+    - xml_tests_report # produces file report.xml in /artifacts/tests
 
 :module_generator:
   :project_root: ./
