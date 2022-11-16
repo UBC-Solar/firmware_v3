@@ -288,7 +288,7 @@ struct BTM_module
     float temperature;
     float soc;
     int status;
-    BTM_module_bal_status_t bal_status;
+    BTM_module_bal_status_t bal_status; // TODO: fix includes (see Bhavita's branch)
 };
 
 struct BTM_stack
@@ -305,9 +305,6 @@ typedef struct
 {
     unsigned int pack_voltage; // same format as module voltage attribute
     struct BTM_stack stack[BTM_NUM_DEVICES];
-
-    // PLACEHOLDER VARIABLES, TO ALLOW COMPILATION WITHOUT ERRORS.
-    // NOT NECESSARILY THE FINAL LOCATION OF THESE VARIABLES.
     uint32_t status;         // intended to be the summary of fault/warning/trip flags
     uint8_t PH_SOC_LOCATION; // intended to be the summary of state of charge of entire pack
 

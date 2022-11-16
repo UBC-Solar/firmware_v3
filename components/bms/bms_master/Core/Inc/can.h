@@ -15,6 +15,7 @@
 #include "stm32f1xx_hal.h"
 #include "ltc6813_btm.h"
 #include "analysis.h"
+#include "soc.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -23,12 +24,13 @@
 /* CONFIGURABLE PARAMETERS */
 
 #define MAX_CAN_DATAFRAME_BYTES 8
-#define NUM_CAN_MESSAGES 4
+#define NUM_CAN_MESSAGES_TRANSMIT 4
 #define INITIAL_MESSAGE_INDEX 0x622
 #define ECU_CURRENT_MESSAGE_ID 0x450
 #define NUM_RX_FIFOS 2
 #define MAX_MESSAGES_PER_FIFO 3
-#define TOTAL_MODULES_ENABLED 32
+#define CAN_MAX_TEMP 127  // deg C
+#define CAN_MIN_TEMP -127 // deg C
 
 /*============================================================================*/
 /* ENUMERATIONS */
@@ -39,8 +41,8 @@ typedef enum
 {
     INDEX_622 = 0,
     INDEX_623,
-    INDEX_626,
-    INDEX_627
+    INDEX_624,
+    INDEX_625
 } CAN_Message_Indicies_t;
 
 typedef enum
@@ -76,12 +78,11 @@ typedef struct
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
-void CAN_Init(CAN_HandleTypeDef *hcan, CAN_Rx_Message_t txMessageArray[NUM_CAN_MESSAGES]);
-void CAN_CompileMessage622(CAN_Tx_Message_t message622, BTM_PackData_t *pack);
-void CAN_CompileMessage623(CAN_Tx_Message_t message623, BTM_PackData_t *pack);
-void CAN_CompileMessage624(CAN_Tx_Message_t message624, BTM_PackData_t *pack);
-void CAN_CompileMessage625(CAN_Tx_Message_t message625, BTM_PackData_t *pack);
-void CAN_CompileMessage627(CAN_Tx_Message_t message627, BTM_PackData_t *pack);
+void CAN_Init(CAN_HandleTypeDef *hcan, CAN_Rx_Message_t txMessageArray[NUM_CAN_MESSAGES_TRANSMIT]);
+void CAN_CompileMessage622(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], BTM_PackData_t *pack);
+void CAN_CompileMessage623(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], BTM_PackData_t *pack);
+void CAN_CompileMessage624(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], BTM_PackData_t *pack);
+void CAN_CompileMessage625(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], BTM_PackData_t *pack);
 void CAN_RecieveMessages(CAN_HandleTypeDef *hcan, CAN_Rx_Message_t rxMessages[NUM_RX_FIFOS * MAX_MESSAGES_PER_FIFO]);
 
 #endif // CANBUS_FUNCTION_H_
