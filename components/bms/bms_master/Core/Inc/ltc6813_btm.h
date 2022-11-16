@@ -111,6 +111,12 @@ typedef enum
 
 typedef enum
 {
+    DISCHARGE_OFF = 0,
+    DISCHARGE_ON = 1
+} BTM_module_bal_status_t;
+
+typedef enum
+{
     CS_LOW = 0,
     CS_HIGH = 1
 } CS_state_t;
@@ -288,7 +294,7 @@ struct BTM_module
     float temperature;
     float soc;
     int status;
-    BTM_module_bal_status_t bal_status; // TODO: fix includes (see Bhavita's branch)
+    BTM_module_bal_status_t bal_status;
 };
 
 struct BTM_stack
