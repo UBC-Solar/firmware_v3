@@ -38,6 +38,18 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
+/** Helps write float values into the CAN message data array.
+ * 	Instead of converting 32-bit floating point values into 4 byte arrays manually,
+ * 	the union automatically takes care of that conversion. This conversion is necessary
+ * 	since you cannot write float values directly into the CAN message data field. The float
+ * 	value must first be converted to an array of 4 bytes (uint8_t).
+ *
+ */
+typedef union FloatBytes {
+	float float_value;			/**< Float value member of the union. */
+	uint8_t bytes[4];			/**< Array of 4 bytes member of union. */
+} FloatBytes;
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

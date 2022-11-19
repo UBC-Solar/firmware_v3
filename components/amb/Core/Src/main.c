@@ -32,6 +32,8 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
+
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -42,6 +44,7 @@
  *
  *
  */
+#define DATA_LENGTH 8
 
 
 /* USER CODE END PD */
@@ -57,6 +60,28 @@
 uint16_t adc_data[ADC_BUF_SIZE]; // array to hold the temperature readings, and voltage and current readings
 uint8_t conv_flag = 0; // flag to indicate when to convert the raw data from ADC to temperature
 uint8_t idx = 0; // index for converting values in array
+
+CAN_TxHeaderTypeDef txHeaderVoltage = {
+		.StdId = 0x701,
+		.ExtId = 0x0000,
+		.IDE = CAN_ID_STD,
+		.RTR = CAN_RTR_DATA,
+		.DLC = DATA_LENGTH};
+
+CAN_TxHeaderTypeDef txHeaderCurrent = {
+		.StdId = 0x702,
+		.ExtId = 0x0000,
+		.IDE = CAN_ID_STD,
+		.RTR = CAN_RTR_DATA,
+		.DLC = DATA_LENGTH};
+
+CAN_TxHeaderTypeDef txHeaderTemp = {
+		.StdId = 0x703,
+		.ExtId = 0x0000,
+		.IDE = CAN_ID_STD,
+		.RTR = CAN_RTR_DATA,
+		.DLC = DATA_LENGTH};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,7 +94,7 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 
 uint32_t ADC_VALUES[ADC_CHANNELS] = {0};	// unprocessed ADC Values
-double CONVERTED_VALUES[ADC_CHANNELS] = {0};	// processed values
+union FloatBytes CONVERTED_VALUES[ADC_CHANNELS] = {0};	// processed values
 
 void Convert_Values(uint8_t index) {
 	/* Convert value with appropriate relationship given the index */
@@ -79,20 +104,20 @@ void Convert_Values(uint8_t index) {
 			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
 			/* TODO: Figure out actual Voltage Equations */
 			/* V = 3.3 * ADC_VAL / 2^12 */
-			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 81.822) / 40.441;	// slightly overcompensates
+			CONVERTED_VALUES[index].float_value = (ADC_VALUES[index] + 81.822) / 40.441;	// slightly overcompensates
 			break;
 		case VSENSE2:
 			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
-			CONVERTED_VALUES[index] = (ADC_VALUES[index] + 82.621) / 40.271;	// slightly undercompensates
+			CONVERTED_VALUES[index].float_value = (ADC_VALUES[index] + 82.621) / 40.271;	// slightly undercompensates
 			break;
 
 		case ISENSE1:
 			/* ISENSE [V] = 0.11 * I [A] + 1.65 */
-			CONVERTED_VALUES[index] = (ADC_VALUES[index] - 1.65) / 0.11;
+			CONVERTED_VALUES[index].float_value = (ADC_VALUES[index] - 1.65) / 0.11;
 			break;
 		case ISENSE2:
 			/* ISENSE [V] = 0.11 * I [A] + 1.65 */
-			CONVERTED_VALUES[index] = (ADC_VALUES[index] - 1.65) / 0.11;
+			CONVERTED_VALUES[index].float_value = (ADC_VALUES[index] - 1.65) / 0.11;
 			break;
 		case TEMP_1:
 			/* TODO */
@@ -156,6 +181,7 @@ int main(void)
   MX_TIM1_Init();
   MX_CAN_Init();
   /* USER CODE BEGIN 2 */
+  HAL_CAN_Start(&hcan);
 
   HAL_ADC_Start(&hadc1);
 
@@ -259,6 +285,42 @@ int main(void)
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
 	  ADC_VALUES[TEMP_8] = HAL_ADC_GetValue(&hadc1);
 
+
+	  uint8_t voltage_data[DATA_LENGTH] = {
+			  CONVERTED_VALUES[VSENSE1].bytes[0],
+			  CONVERTED_VALUES[VSENSE1].bytes[1],
+		      CONVERTED_VALUES[VSENSE1].bytes[2],
+			  CONVERTED_VALUES[VSENSE1].bytes[3],
+			  CONVERTED_VALUES[VSENSE2].bytes[0],
+			  CONVERTED_VALUES[VSENSE2].bytes[1],
+			  CONVERTED_VALUES[VSENSE2].bytes[2],
+			  CONVERTED_VALUES[VSENSE2].bytes[3]};
+
+	  uint8_t current_data[DATA_LENGTH] = {
+			  CONVERTED_VALUES[ISENSE1].bytes[0],
+	  		  CONVERTED_VALUES[ISENSE1].bytes[1],
+	  		  CONVERTED_VALUES[ISENSE1].bytes[2],
+	  	      CONVERTED_VALUES[ISENSE1].bytes[3],
+	  		  CONVERTED_VALUES[ISENSE2].bytes[0],
+	  		  CONVERTED_VALUES[ISENSE2].bytes[1],
+	  		  CONVERTED_VALUES[ISENSE2].bytes[2],
+	  		  CONVERTED_VALUES[ISENSE2].bytes[3]};
+
+	  uint8_t temp_data[DATA_LENGTH] = {
+			  (uint8_t)CONVERTED_VALUES[TEMP_1].float_value,
+			  (uint8_t)CONVERTED_VALUES[TEMP_2].float_value,
+			  (uint8_t)CONVERTED_VALUES[TEMP_3].float_value,
+			  (uint8_t)CONVERTED_VALUES[TEMP_4].float_value,
+			  (uint8_t)CONVERTED_VALUES[TEMP_5].float_value,
+			  (uint8_t)CONVERTED_VALUES[TEMP_6].float_value,
+			  (uint8_t)CONVERTED_VALUES[TEMP_7].float_value,
+			  (uint8_t)CONVERTED_VALUES[TEMP_8].float_value};
+
+
+
+	  HAL_CAN_AddTxMessage(&hcan, &txHeaderVoltage, voltage_data, NULL);
+	  HAL_CAN_AddTxMessage(&hcan, &txHeaderCurrent, current_data, NULL);
+	  HAL_CAN_AddTxMessage(&hcan, &txHeaderTemp, temp_data, NULL);
 
 	  HAL_Delay (1000);
 
