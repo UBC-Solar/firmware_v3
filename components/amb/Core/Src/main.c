@@ -26,6 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <math.h>
 
 /* USER CODE END Includes */
 
@@ -104,11 +105,11 @@ void Convert_Values(uint8_t index) {
 			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
 			/* TODO: Figure out actual Voltage Equations */
 			/* V = 3.3 * ADC_VAL / 2^12 */
-			CONVERTED_VALUES[index].float_value = (ADC_VALUES[index] + 81.822) / 40.441;	// slightly overcompensates
+			CONVERTED_VALUES[index].float_value = 3.3 * ADC_VALUES[index] / pow(2, 12) * 1000;	// slightly overcompensates
 			break;
 		case VSENSE2:
 			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
-			CONVERTED_VALUES[index].float_value = (ADC_VALUES[index] + 82.621) / 40.271;	// slightly undercompensates
+			CONVERTED_VALUES[index].float_value = 3.3 * ADC_VALUES[index] / pow(2, 12) * 1000;	// slightly undercompensates
 			break;
 
 		case ISENSE1:
