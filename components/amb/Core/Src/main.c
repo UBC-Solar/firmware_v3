@@ -103,7 +103,6 @@ void Convert_Values(uint8_t index) {
 	switch(index) {
 		case VSENSE1:
 			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
-			/* TODO: Figure out actual Voltage Equations */
 			/* V = 3.3 * ADC_VAL / 2^12 */
 			CONVERTED_VALUES[index].float_value = 3.3 * ADC_VALUES[index] / pow(2, 12) * 1000;	// slightly overcompensates
 			break;
@@ -222,7 +221,7 @@ int main(void)
 	  /* Read ADC, process, then output to CANbus */
 
 	  /* TODO: Output to CANbus */
-	  /* TODO: Characterization for Current and Temperature */
+	  /* TODO: Characterization for Temperature */
 
 	  /* VSENSE1 */
 	  ADC_Select((uint8_t) VSENSE1);
