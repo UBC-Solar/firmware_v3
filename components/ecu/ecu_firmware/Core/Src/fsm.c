@@ -438,7 +438,8 @@ void ECU_monitor () {
 
     // send CAN message with current values to BMS
     if (timer_check(MESSAGE_INTERVAL)) {   
-        CAN_send_current(ADC3_netCurrentOut(ADC3_getArrayCurrent(), ADC3_getMotorCurrent()));
+        int doc_coc = !HAL_GPIO_ReadPin(OC_LATCH_SET_GPIO_Port, OC_LATCH_SET_Pin);
+        CAN_send_current(ADC3_netCurrentOut(ADC3_getArrayCurrent(), ADC3_getMotorCurrent()), doc_coc);
     }    
     
     // check supplemental battery voltage
