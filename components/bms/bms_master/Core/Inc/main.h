@@ -80,6 +80,7 @@ void Error_Handler(void);
 #define SPI_LTC_CS_GPIO_Port GPIOB
 #define LED_OUT_Pin GPIO_PIN_6
 #define LED_OUT_GPIO_Port GPIOC
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
@@ -89,5 +90,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
