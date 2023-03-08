@@ -173,3 +173,23 @@ float ANA_findHighestModuleTemp(BTM_PackData_t * pack) {
 
     return max_temperature;
 }
+
+int FLT_DOC_COC(int ADCvoltage){
+    int status = 0;
+    int currenthigh = 300;
+    int currentlow = -300;
+
+    float currentcalc1 = 100*(ADCvoltage - 2.5)/0.625;
+    float currentcalc2 = 100*(2.5 - ADCvoltage)/0.625;
+
+    if(currentcalc1 >= currenthigh || currentcalc1 <= currentlow){
+        status |= FLT_DOC_COC;
+    }
+
+    if(currentcalc2 >= currenthigh || currentcalc2 <= currentlow){
+        status |= FLT_DOC_COC;
+    }
+
+    return status;
+
+}
