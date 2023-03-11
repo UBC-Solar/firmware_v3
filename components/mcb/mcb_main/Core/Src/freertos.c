@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 
 /**
- * @file 	freertos.c
- * @brief 	Contains definitions for FreeRTOS tasks.
- * @author	Mihir Nimgade <mihir.nim@outlook.com>
+ * @file    freertos.c
+ * @brief   Contains definitions for FreeRTOS tasks.
+ * @author  Mihir Nimgade <mihir.nim@outlook.com>
  */
 
 /* USER CODE END Header */
@@ -32,20 +32,26 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define ENCODER_QUEUE_MSG_CNT   		5           /**< Maximum number of messages allowed in encoder queue. */
-#define ENCODER_QUEUE_MSG_SIZE  		2           /**< Size of each message in encoder queue (two bytes or `uint16_t`). */
+#define ENCODER_QUEUE_MSG_CNT           5               /**< Maximum number of messages allowed in encoder queue. */
+#define ENCODER_QUEUE_MSG_SIZE          2               /**< Size of each message in encoder queue (two bytes or `uint16_t`). */
 
-#define DEFAULT_CRUISE_SPEED    		10          /**< Speed value that is used when cruise control is first turned on. */
+#define DEFAULT_CRUISE_SPEED            10              /**< Speed value that is used when cruise control is first turned on. */
 
-#define BATTERY_REGEN_THRESHOLD 		90          /**< Maximum battery percentage at which regenerative braking is allowed to
-                                                         take place. */
+#define BATTERY_REGEN_THRESHOLD         90              /**< Maximum battery percentage at which regenerative braking is allowed to take place. */
 
-#define MAX_MOTOR_TEMPERATURE			60			/**< Maximum motor temperature in celsius. */
+#define EVENT_FLAG_UPDATE_DELAY         25              /**< Delay between each time the MCB decides next drive state (in ms).*/
+#define ENCODER_READ_DELAY              50              /**< Delay between each time encoder is read (in ms).*/
+#define READ_BATTERY_SOC_DELAY          5000            /**< Delay between each time the battery SOC is read from CAN (in ms).*/
+#define MOTOR_OVERHEAT_DELAY            300000          /**< Delay between each time the motor temperature is read fro CAN (in ms).*/
 
-#define EVENT_FLAG_UPDATE_DELAY 		25			/**< Delay between each time the MCB decides next drive state (in ms).*/
-#define ENCODER_READ_DELAY      		50			/**< Delay between each time encoder is read (in ms).*/
-#define READ_BATTERY_SOC_DELAY  		5000		/**< Delay between each time the battery SOC is read from CAN (in ms).*/
-#define MOTOR_OVERHEAT_DELAY			300000			/**< Delay between each time the motor temperature is read fro CAN (in ms).*/
+#define PEDAL_MAX                       0x64            /* TODO: calibrate this */
+#define PEDAL_MIN                       0x00            /* TODO: calibrate this */
+
+#define MOTOR_OVERTEMP_THRESHOLD        150             /**< Maximum allowed motor temperature in celsius. */
+#define MOTOR_OVERTEMP_CLR_THRESHOLD    100             /**< Temperature at which MCB will leave the MOTOR_OVERHEAT state */
+
+#define TRUE                            1
+#define FALSE                           0
 
 /* USER CODE END PD */
 
@@ -57,68 +63,61 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 
-osThreadId_t readEncoderTaskHandle;				    /**< Thread handle for readEncoderTask(). */
+osThreadId_t readEncoderTaskHandle;                 /**< Thread handle for readEncoderTask(). */
 
-osThreadId_t updateEventFlagsTaskHandle;		    /**< Thread handle for updateEventFlagsTask(). */
+osThreadId_t updateEventFlagsTaskHandle;            /**< Thread handle for updateEventFlagsTask(). */
 
-osThreadId_t sendMotorCommandTaskHandle;		    /**< Thread handle for sendMotorCommandTask(). */
-osThreadId_t sendRegenCommandTaskHandle;		    /**< Thread handle for sendRegenCommandTask(). */
-osThreadId_t sendCruiseCommandTaskHandle;		    /**< Thread handle for sendCruiseCommandTask(). */
-osThreadId_t sendIdleCommandTaskHandle;			    /**< Thread handle for sendIdleCommandTask(). */
+osThreadId_t sendMotorCommandTaskHandle;            /**< Thread handle for sendMotorCommandTask(). */
+osThreadId_t sendRegenCommandTaskHandle;            /**< Thread handle for sendRegenCommandTask(). */
+osThreadId_t sendCruiseCommandTaskHandle;           /**< Thread handle for sendCruiseCommandTask(). */
+osThreadId_t sendIdleCommandTaskHandle;             /**< Thread handle for sendIdleCommandTask(). */
 
-osThreadId_t sendNextScreenMessageTaskHandle;	    /**< Thread handle for sendNextScreenMessageTask(). */
+osThreadId_t sendNextScreenMessageTaskHandle;       /**< Thread handle for sendNextScreenMessageTask(). */
 
-osThreadId_t receiveBatteryMessageTaskHandle;	    /**< Thread handle for receiveBatteryMessageTask(). */
+osThreadId_t receiveBatteryMessageTaskHandle;       /**< Thread handle for receiveBatteryMessageTask(). */
 
 osThreadId_t sendMotorOverheatTaskHandle;
 
-osMessageQueueId_t encoderQueueHandle;			    /**< Queue handle for the encoder queue. When new encoder values are read
-                                                         from the hardware timer by readEncoderTask(), they are placed inside this queue.
-                                                         The values in the queue are read by sendMotorCommandTask().*/
+osMessageQueueId_t encoderQueueHandle;              /**< Queue handle for the encoder queue. When new encoder values are read
+                                                      from the hardware timer by readEncoderTask(), they are placed inside this queue.
+                                                      The values in the queue are read by sendMotorCommandTask().*/
 
-osEventFlagsId_t commandEventFlagsHandle;		    /**< Event flags handle for the command event flags object. When the MCB
-                                                         changes state, this change is signalled to other RTOS tasks using this event
-                                                         flag object. The updateEventFlags() task deals with this RTOS object. */
+osEventFlagsId_t commandEventFlagsHandle;           /**< Event flags handle for the command event flags object. When the MCB
+                                                      changes state, this change is signalled to other RTOS tasks using this event
+                                                      flag object. The updateEventFlags() task deals with this RTOS object. */
 
-osSemaphoreId_t nextScreenSemaphoreHandle;		    /**< Sempahore handle for the next-screen command. This semaphore is released
-                                                         when the NEXT_SCREEN button is pressed. The sendNextScreenMessageTask() task
-                                                         acquires this semaphore. */
+osSemaphoreId_t nextScreenSemaphoreHandle;          /**< Sempahore handle for the next-screen command. This semaphore is released
+                                                      when the NEXT_SCREEN button is pressed. The sendNextScreenMessageTask() task
+                                                      acquires this semaphore. */
 
 /**
- *	Enumerates the possible states the MCB can be in.
+ *  Enumerates the possible states the MCB can be in.
  */
 enum DriveState {
-	INVALID = (uint32_t) 0x0000,		    /**< Indicates an error state. The MCB should not ever be in this state. */
+    INVALID = (uint32_t) 0x0000,                /**< Indicates an error state. The MCB should not ever be in this state. */
 
-    IDLE = (uint32_t) 0x0001,			    /**< Indicates an idle state. The MCB will enter this state when the car is stationary */
+    IDLE = (uint32_t) 0x0001,                   /**< Indicates an idle state. The MCB will enter this state when the car is stationary */
 
-    NORMAL_READY = (uint32_t) 0x0002,	    /**< Indicates a normal state. The MCB will enter this state when neither cruise control is
-                                              on nor regenerative braking. In this state, the pedal encoder directly determines the
-                                              motor current and therefore the throttle provided by the motor. */
+    NORMAL_READY = (uint32_t) 0x0002,           /**< Indicates a normal state. The MCB will enter this state when neither cruise control is
+                                                  on nor regenerative braking. In this state, the pedal encoder directly determines the
+                                                  motor current and therefore the throttle provided by the motor. */
 
-    REGEN_READY = (uint32_t) 0x0004,	    /**< Indicates that regenerative braking is active. The MCB will enter this state when
-                                              REGEN_EN is enabled and the regen value is more than zero. This state takes priority
-                                              over NORMAL_READY, CRUISE_READY, and IDLE.*/
+    REGEN_READY = (uint32_t) 0x0004,            /**< Indicates that regenerative braking is active. The MCB will enter this state when
+                                                  REGEN_EN is enabled and the regen value is more than zero. This state takes priority
+                                                  over NORMAL_READY, CRUISE_READY, and IDLE.*/
 
-	CRUISE_READY = (uint32_t) 0x0008,		/**< Indicates that cruise control is active. The MCB will enter this state when CRUISE_EN
-											 is enabled and the cruise value is more than zero. Pressing the pedal down or pressing
-											 the brake will exit the cruise control state. */
+    CRUISE_READY = (uint32_t) 0x0008,           /**< Indicates that cruise control is active. The MCB will enter this state when CRUISE_EN
+                                                  is enabled and the cruise value is more than zero. Pressing the pedal down or pressing
+                                                  the brake will exit the cruise control state. */
 
-	MOTOR_OVERHEAT = (uint32_t) 0x0010  	/**< Indicates that when the motor is over the maximum temperature. The value is set in the
-	 	 	 	 	 	 	 	 	 	 	 sendMotorOverheatTask which checks the incoming motor temperature received over CAN. */
+    MOTOR_OVERHEAT = (uint32_t) 0x0010          /**< Indicates that when the motor is over the maximum temperature. The value is set in the
+                                                  sendMotorOverheatTask which checks the incoming motor temperature received over CAN. */
 
-} state;									/**< Stores the current MCB state. */
+} state;                                        /**< Stores the current MCB state. */
 
-volatile uint16_t encoder_reading = 0x0000;
+volatile uint16_t encoder_reading = 0x0000;     /**< Stores the encoder reading. */
 
 /* USER CODE END Variables */
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -146,12 +145,14 @@ void StartDefaultTask(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
-  * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
-  */
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
 void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+    /* USER CODE BEGIN Init */
+
+    // <---- task allocations ---->
 
     encoderQueueHandle = osMessageQueueNew(ENCODER_QUEUE_MSG_CNT, ENCODER_QUEUE_MSG_SIZE, &encoderQueue_attributes);
 
@@ -167,60 +168,15 @@ void MX_FREERTOS_Init(void) {
 
     receiveBatteryMessageTaskHandle = osThreadNew(receiveBatteryMessageTask, NULL, &receiveBatteryMessageTask_attributes);
 
-	sendMotorOverheatTaskHandle = osThreadNew(sendMotorOverheatTask, NULL, &sendMotorOverheatTask_attributes);
+    sendMotorOverheatTaskHandle = osThreadNew(sendMotorOverheatTask, NULL, &sendMotorOverheatTask_attributes);
 
-	commandEventFlagsHandle = osEventFlagsNew(NULL);
+    commandEventFlagsHandle = osEventFlagsNew(NULL);
 
     nextScreenSemaphoreHandle = osSemaphoreNew(1, 0, NULL);
 
-  /* USER CODE END Init */
+    // TODO: check that none of the above allocations return NULL
 
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
-
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
-
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
-
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
-
-  /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
-
-  /* USER CODE BEGIN RTOS_EVENTS */
-  /* add events, ... */
-  /* USER CODE END RTOS_EVENTS */
-
-}
-
-/* USER CODE BEGIN Header_StartDefaultTask */
-/**
-  * @brief  Function implementing the defaultTask thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
-{
-  /* USER CODE BEGIN StartDefaultTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartDefaultTask */
+    /* USER CODE END Init */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -234,8 +190,7 @@ void StartDefaultTask(void *argument)
 __NO_RETURN void readEncoderTask(void *argument) {
     static uint16_t old_encoder_reading = 0x0000;
 
-
-    // TODO: replace with HAL library
+    // TODO: replace with ADC read since potentiometer is being used
     EncoderInit();
 
     while (1) {
@@ -266,7 +221,7 @@ __NO_RETURN void sendMotorCommandTask(void *argument) {
     osStatus_t queue_status;
 
     while (1) {
-        // blocks thread waiting for encoder value to be added to queue
+        // check if there's anything in the encoder queue (try-semantics)
         queue_status = osMessageQueueGet(encoderQueueHandle, &encoder_value, NULL, 0U);
 
         if (queue_status == osOK) {
@@ -380,10 +335,10 @@ __NO_RETURN void sendIdleCommandTask (void *argument) {
 }
 
 /**
- * @brief  	Sends CAN message that indicates intention to switch to next page on the driver LCD.
- * 			This message is picked up by the DID (driver information display) board.
- * @param  	argument: Not used
- * @retval 	None
+ * @brief   Sends CAN message that indicates intention to switch to next page on the driver LCD.
+ *          This message is picked up by the DID (driver information display) board.
+ * @param   argument: Not used
+ * @retval  None
  */
 __NO_RETURN void sendNextScreenMessageTask (void *argument) {
     uint8_t data_send[CAN_CONTROL_DATA_LENGTH];
@@ -400,114 +355,113 @@ __NO_RETURN void sendNextScreenMessageTask (void *argument) {
 }
 
 /**
- * @brief  	Decides what state the main control board is in and therefore which thread will send a motor
- * 			controller CAN message.
- * @param  	argument: Not used
- * @retval 	None
+ * @brief   Decides what state the main control board is in and therefore which thread will send a motor
+ *          controller CAN message.
+ * @param   argument: Not used
+ * @retval  None
  */
 __NO_RETURN void updateEventFlagsTask(void *argument) {
-	while (1) {
-		// order of priorities beginning with most important: motor over heating, regen braking, encoder motor command, cruise control
-		if (event_flags.motor_overheat) {
-			state = MOTOR_OVERHEAT;
-		}
-		else if (event_flags.regen_enable && regen_value > 0 && battery_soc < BATTERY_REGEN_THRESHOLD) {
-			state = REGEN_READY;
-		}
-		else if (!event_flags.encoder_value_is_zero && !event_flags.cruise_status) {
-			state = NORMAL_READY;
-		}
-		else if (event_flags.cruise_status && cruise_value > 0 && !event_flags.brake_in) {
-			state = CRUISE_READY;
-		}
-		else {
-			state = IDLE;
-		}
+    while (1) {
+        // order of priorities beginning with most important: motor over heating, regen braking, encoder motor command, cruise control
+        if (event_flags.motor_overheat) {
+            state = MOTOR_OVERHEAT;
+        }
+        else if (event_flags.regen_enable && regen_value > 0 && battery_soc < BATTERY_REGEN_THRESHOLD) {
+            state = REGEN_READY;
+        }
+        else if (!event_flags.encoder_value_is_zero && !event_flags.cruise_status) {
+            state = NORMAL_READY;
+        }
+        else if (event_flags.cruise_status && cruise_value > 0 && !event_flags.brake_in) {
+            state = CRUISE_READY;
+        }
+        else {
+            state = IDLE;
+        }
 
-		// signals the MCB state to other threads
-		osEventFlagsSet(commandEventFlagsHandle, state);
+        // signals the MCB state to other threads
+        osEventFlagsSet(commandEventFlagsHandle, state);
 
-		osDelay(EVENT_FLAG_UPDATE_DELAY);
-	}
+        osDelay(EVENT_FLAG_UPDATE_DELAY);
+    }
 }
 
 /**
- * @brief  	Reads battery state-of-charge (SOC) from CAN bus (message ID 0x626). Reading the battery SOC is important
- * 			since it helps to decide whether regenerative braking can be applied or not. If the battery SOC is above the
- * 			BATTERY_REGEN_THRESHOLD, it is unsafe to activate regenerative braking since doing so might overcharge the
- * 			battery.
+ * @brief   Reads battery state-of-charge (SOC) from CAN bus (message ID 0x626). Reading the battery SOC is important
+ *          since it helps to decide whether regenerative braking can be applied or not. If the battery SOC is above the
+ *          BATTERY_REGEN_THRESHOLD, it is unsafe to activate regenerative braking since doing so might overcharge the
+ *          battery.
  *
- * @param  	argument: Not used
- * @retval 	None
+ * @param   argument: Not used
+ * @retval  None
  */
 __NO_RETURN void receiveBatteryMessageTask (void *argument) {
-	uint8_t battery_msg_data[8];
+    uint8_t battery_msg_data[8];
 
-	while (1) {
-		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0)) {
-			// there are multiple CAN IDs being passed through the filter, check if the message is the SOC
-			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, battery_msg_data);
-			if (can_rx_header.StdId == 0x626) {
+    while (1) {
+        if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0)) {
+            // there are multiple CAN IDs being passed through the filter, check if the message is the SOC
+            HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, battery_msg_data);
+            if (can_rx_header.StdId == 0x626) {
 
-				// if the battery SOC is out of range, assume it is at 100% as a safety measure
-				if (battery_msg_data[0] < 0 || battery_msg_data[0] > 100) {
-					// TODO: somehow indicate to the outside world that this has happened
-					battery_soc = 100;
-				} else {
-					battery_soc = battery_msg_data[0];
-				}
+                // if the battery SOC is out of range, assume it is at 100% as a safety measure
+                if (battery_msg_data[0] < 0 || battery_msg_data[0] > 100) {
+                    // TODO: somehow indicate to the outside world that this has happened
+                    battery_soc = 100;
+                } else {
+                    battery_soc = battery_msg_data[0];
+                }
 
-			}
-		}
+            }
+        }
 
-		osDelay(READ_BATTERY_SOC_DELAY);
-	}
+        osDelay(READ_BATTERY_SOC_DELAY);
+    }
 }
 
 /**
- * @brief  	Reads motor temperature from CAN bus (message ID 0x50B). Since the the Tritium BMS does not have over-temperature
- * 			shutdown, the motor will need to stop sending commands when it reaches a temperature of MAX_MOTOR_TEMPERATURE.
+ * @brief   Reads motor temperature from CAN bus (message ID 0x50B). Since the the Tritium BMS does not have over-temperature
+ *          shutdown, the motor will need to stop sending commands when it reaches a temperature of MAX_MOTOR_TEMPERATURE.
  *
- * @param  	argument: Not used
- * @retval 	None
+ * @param   argument: Not used
+ * @retval  None
  */
 __NO_RETURN void sendMotorOverheatTask (void *argument) {
-	uint8_t motor_temperature_data[CAN_DATA_LENGTH]; // the motor temperature is bytes [3:0] TODO: this is an assumption
+    uint8_t motor_temperature_data[CAN_DATA_LENGTH]; // the motor temperature is bytes [3:0] TODO: this is an assumption
 
-	while (1) {
-		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0)) {
-			// there are multiple CAN IDs being passed through the filter, check if the message is the motor temperature
-			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, motor_temperature_data);
-			if (can_rx_header.StdId == 0x50B) {
+    while (1) {
+        if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0)) {
+            // there are multiple CAN IDs being passed through the filter, check if the message is the motor temperature
+            HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, motor_temperature_data);
+            if (can_rx_header.StdId == 0x50B) {
 
-				// assign the values from the CAN message into the
-				// use the union to convert the 4 bytes to a 32-bit float
-				for (int i = 0; i < (uint8_t)CAN_DATA_LENGTH / 2; i++)
-				{
-					/*
-					 * transfer the incoming bytes LIFO 	TODO: test IEEE 754 conversion on hardware
-					 * for example, 0xAABBCCDD
-					 * 		received[0] = 0xDD -> copied[3] = 0xDD
-					 * 		received[1] = 0xCC -> copied[2] - 0xCC
-					 * 		received[2] = 0xBB -> copied[1] = 0xBB
-					 * 		received[3] = 0xAA -> copied[0] - 0xAA
-					 */
-					motor_temperature.bytes[i] = motor_temperature_data[CAN_HALF_DATA_LENGTH - 1 - i];
-				}
+                // assign the values from the CAN message into the
+                // use the union to convert the 4 bytes to a 32-bit float
+                for (int i = 0; i < (uint8_t)CAN_DATA_LENGTH / 2; i++)
+                {
+                    /*
+                     * transfer the incoming bytes LIFO   TODO: test IEEE 754 conversion on hardware
+                     * for example, 0xAABBCCDD
+                     *        received[0] = 0xDD -> copied[3] = 0xDD
+                     *        received[1] = 0xCC -> copied[2] - 0xCC
+                     *        received[2] = 0xBB -> copied[1] = 0xBB
+                     *        received[3] = 0xAA -> copied[0] - 0xAA
+                     */
+                    motor_temperature.bytes[i] = motor_temperature_data[CAN_HALF_DATA_LENGTH - 1 - i];
+                }
 
-				// if the motor temperature is over heating, stop sending commands
-				if (motor_temperature.float_value >= MAX_MOTOR_TEMPERATURE) {
-					// change the state so that sendMotorCommandTask will not run
-					event_flags.motor_overheat = 0x01;
-				} else {
-					// change the state so that sendMotorCommandTask will not run
-					event_flags.motor_overheat = 0x00;
-				}
-
-			}
-		}
-		osDelay(MOTOR_OVERHEAT_DELAY);
-	}
+                // if the motor is overheating, stop sending commands
+                if (motor_temperature.float_value >= MOTOR_OVERTEMP_THRESHOLD) {
+                    // change the state so that sendMotorCommandTask will not run
+                    event_flags.motor_overheat = TRUE;
+                } 
+                else if (motor_temperature.float_value <= MOTOR_OVERTEMP_CLR_THRESHOLD) {
+                    event_flags.motor_overheat = FALSE;
+                }
+            }
+        }
+        osDelay(MOTOR_OVERHEAT_DELAY);
+    }
 }
 
 /* USER CODE END Application */
