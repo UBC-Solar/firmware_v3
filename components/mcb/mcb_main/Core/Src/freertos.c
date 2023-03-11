@@ -199,8 +199,14 @@ __NO_RETURN void readEncoderTask(void *argument) {
         // update the event flags struct
         event_flags.encoder_value_is_zero = (encoder_reading == 0);
 
-        if (encoder_reading != old_encoder_reading) {
-            osMessageQueuePut(encoderQueueHandle, &encoder_reading, 0U, 0U);
+        osMessageQueuePut(encoderQueueHandle, &encoder_reading, 0U, 0U);
+
+        if (encoder_reading > old_encoder_reading) {
+            event_flags.encoder_increasing = TRUE;
+            // disable cruise control when the pedal is pushed down
+            event_flags.cruise_status = DISABLE;
+        } else {
+            event_flags.encoder_increasing = FALSE;
         }
 
         old_encoder_reading = encoder_reading;
