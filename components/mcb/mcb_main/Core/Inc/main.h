@@ -77,6 +77,9 @@ typedef struct InputFlags {
   volatile uint8_t motor_overheat;			/**< Flag that indicates if the motor is above its maximum temperature. A value of 0x01 means that
    	   	   	   	   	   	   	   	   	   	   	   	 the motor is over heating while 0x00 means that the motor condition is acceptable. */
 
+  volatile uint8_t encoder_increasing;      /**< Flag that indicates if encoder value is increasing or not. A value of 1 means the encoder value is
+  												 increasing and a value of 0 means the encoder is not increasing. */
+
 } InputFlags;
 
 extern union FloatBytes current;			/**< Stores the current value to send to motor controller over CAN */
