@@ -299,7 +299,7 @@ __NO_RETURN void sendCruiseCommandTask (void *argument) {
         osEventFlagsWait(commandEventFlagsHandle, CRUISE_READY, osFlagsWaitAll, osWaitForever);
 
         // current set to maximum for a cruise control message
-        current.float_value = 100.0;
+        current.float_value = 1.0;
 
         // set velocity to cruise value
         velocity.float_value = (float) cruise_value;
