@@ -1,0 +1,6 @@
+main.c:67:6:HAL_CAN_RxFIFO0MsgPendingCallback	16	static
+main.c:83:5:main	8	static
+main.c:171:6:SystemClock_Config	72	static
+main.c:207:13:MX_CAN_Init	48	static
+main.c:261:13:MX_GPIO_Init	16	static
+main.c:280:6:Error_Handler	4	static,ignoring_inline_asm
