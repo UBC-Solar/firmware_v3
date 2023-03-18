@@ -61,28 +61,31 @@ static void MX_I2C1_Init(void);
 /* USER CODE BEGIN 0 */
 CAN_TxHeaderTypeDef TxHeader; //struct with outgoing message information (type and length, etc.)
 CAN_RxHeaderTypeDef RxHeader; //struct with incoming message information
-uint32_t TxMailbox;
-CAN_FilterTypeDef fltr;
+uint32_t TxMailbox[3]; //4 transmit mailboxes
+//CAN_FilterTypeDef fltr;
 
 uint8_t TxData[8] = {'H','E','L','L','O','\0','\0','\0'}; //buffer for transmit message
 uint8_t RxData[8]; //buffer for receive message
 
-CAN_msg_t* msg0; //where all the info and data for the message will be put
+CAN_msg_t msg0; //where all the info and data for the message will be put
+
+uint8_t count = 69;
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //recieve data in this function
 {
-	assert_param(HAL_CAN_DeactivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING) == HAL_OK);
+	//assert_param(HAL_CAN_DeactivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING) == HAL_OK);
 	if(HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
 	{
 		Error_Handler();
 	}
 
-	msg0->id = RxHeader.StdId;	//Standard ID
-	msg0->len = RxHeader.DLC;	//Length
+	msg0.id = RxHeader.StdId;	//Standard ID
+	msg0.len = RxHeader.DLC;	//Length
 
-	for(int i=0; i<msg0->len; i++)
+
+	for(int i=0; i < msg0.len; i++)
 	{
-		msg0->data[i] = RxData[i]; //moves data from buffer into the msg0 struct (the data element)
+		msg0.data[i] = RxData[i]; //moves data from buffer into the msg0 struct (the data element)
 	}
 
 	//TODO Add function to send the data to the DAC (and parse data)
@@ -108,8 +111,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  HAL_CAN_Start(&hcan); //starts CAN
-  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING); //FIFO0 message pending interrupt (interrupt callback func will be called when this interrupt is triggered)
+
 
 
   /* USER CODE END Init */
@@ -126,20 +128,53 @@ int main(void)
   MX_CAN_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  CAN_Set_Filters(&fltr); 			//sets up the filters used for this project (only filtering for 0x401)
-  HAL_CAN_ConfigFilter(&hcan, &fltr);
-  CAN_Tx(&hcan, &TxHeader, &TxMailbox, TxData, 8);
+  HAL_CAN_Start(&hcan); //starts CAN
+  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING); //FIFO0 message pending interrupt (interrupt callback func will be called when this interrupt is triggered)
+
+  TxHeader.DLC = 1;
+    TxHeader.ExtId = 0;
+    TxHeader.IDE = CAN_ID_STD;
+    TxHeader.RTR = CAN_RTR_DATA; //added this line
+    TxHeader.StdId = 0x111; //changed from 0x103 to 0x111
+    TxHeader.TransmitGlobalTime = DISABLE;
+
+    TxData[0] = 0x01; //added 4 bytes of data instead of one
+    TxData[1] = 0x02;
+    TxData[2] = 0x03;
+    //TxData[3] = 0x04;
+
+  if (HAL_CAN_AddTxMessage(&hcan, &TxHeader, &TxData[0], &TxMailbox[0]) != HAL_OK)
+    {
+  	count = 0;
+  	Error_Handler();
+    }
+    if (HAL_CAN_AddTxMessage(&hcan, &TxHeader, &TxData[1], &TxMailbox[1]) != HAL_OK)
+    {
+  	  count = 1;
+  	  Error_Handler();
+    }
+    if (HAL_CAN_AddTxMessage(&hcan, &TxHeader, &TxData[2], &TxMailbox[2]) != HAL_OK)
+    {
+  	  count = 2;
+  	  Error_Handler();
+    }
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  //CAN_Tx(&hcan, &TxHeader, &TxMailbox, TxData, 8);						/////sends a message with ID 0x401 (temporary) /////
-	  static volatile int a = 5;
+	  TxData[0] = 0x09;
+	  	  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+	  	  HAL_Delay(500);
+
+	  	  /*
+	  	  static volatile int a = 5;
 	  		a++;
 	  		if (a == 100)
 	  			a = 0;
+	  		*/
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -206,7 +241,7 @@ static void MX_CAN_Init(void)
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
   hcan.Init.AutoWakeUp = DISABLE;
-  hcan.Init.AutoRetransmission = ENABLE;
+  hcan.Init.AutoRetransmission = DISABLE;
   hcan.Init.ReceiveFifoLocked = DISABLE;
   hcan.Init.TransmitFifoPriority = DISABLE;
   if (HAL_CAN_Init(&hcan) != HAL_OK)
@@ -214,7 +249,20 @@ static void MX_CAN_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN_Init 2 */
+   CAN_FilterTypeDef canfilterconfig;
 
+   canfilterconfig.FilterActivation = CAN_FILTER_ENABLE; //ENABLE
+   canfilterconfig.FilterBank = 10; //0x0000
+   canfilterconfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+   canfilterconfig.FilterIdHigh = 0x111<<5; //changed from 0x0000
+   canfilterconfig.FilterIdLow = 0x0000;
+   canfilterconfig.FilterMaskIdHigh = 0x1<<13; //changed from 0
+   canfilterconfig.FilterMaskIdLow = 0x0000;
+   canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;
+   canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
+   canfilterconfig.SlaveStartFilterBank = 13; // changed from 0
+
+   HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);
   /* USER CODE END CAN_Init 2 */
 
 }

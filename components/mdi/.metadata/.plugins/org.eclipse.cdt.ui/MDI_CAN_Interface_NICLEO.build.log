@@ -1,0 +1,10 @@
+16:54:36 **** Incremental Build of configuration Debug for project MDI_CAN_Interface_NICLEO ****
+make -j8 all 
+arm-none-eabi-size   MDI_CAN_Interface_NICLEO.elf 
+   text	   data	    bss	    dec	    hex	filename
+   9500	     32	   1776	  11308	   2c2c	MDI_CAN_Interface_NICLEO.elf
+Finished building: default.size.stdout
+ 
+
+16:54:36 Build Finished. 0 errors, 0 warnings. (took 236ms)
+
