@@ -9,17 +9,17 @@ CDefines=USE_HAL_DRIVER;STM32F103xE;USE_HAL_DRIVER;USE_HAL_DRIVER;
 [PreviousGenFiles]
 AdvancedFolderStructure=true
 HeaderFileListSize=3
-HeaderFiles#0=C:/Users/benja/STM32CubeIDE/workspace_1.5.1/TestingCAN_Loopback/Core/Inc/stm32f1xx_it.h
-HeaderFiles#1=C:/Users/benja/STM32CubeIDE/workspace_1.5.1/TestingCAN_Loopback/Core/Inc/stm32f1xx_hal_conf.h
-HeaderFiles#2=C:/Users/benja/STM32CubeIDE/workspace_1.5.1/TestingCAN_Loopback/Core/Inc/main.h
+HeaderFiles#0=C:/Users/benja/Documents/Solar_Firmware_v3-github/components/mdi/TestingCAN_Loopback/Core/Inc/stm32f1xx_it.h
+HeaderFiles#1=C:/Users/benja/Documents/Solar_Firmware_v3-github/components/mdi/TestingCAN_Loopback/Core/Inc/stm32f1xx_hal_conf.h
+HeaderFiles#2=C:/Users/benja/Documents/Solar_Firmware_v3-github/components/mdi/TestingCAN_Loopback/Core/Inc/main.h
 HeaderFolderListSize=1
-HeaderPath#0=C:/Users/benja/STM32CubeIDE/workspace_1.5.1/TestingCAN_Loopback/Core/Inc
+HeaderPath#0=C:/Users/benja/Documents/Solar_Firmware_v3-github/components/mdi/TestingCAN_Loopback/Core/Inc
 HeaderFiles=;
 SourceFileListSize=3
-SourceFiles#0=C:/Users/benja/STM32CubeIDE/workspace_1.5.1/TestingCAN_Loopback/Core/Src/stm32f1xx_it.c
-SourceFiles#1=C:/Users/benja/STM32CubeIDE/workspace_1.5.1/TestingCAN_Loopback/Core/Src/stm32f1xx_hal_msp.c
-SourceFiles#2=C:/Users/benja/STM32CubeIDE/workspace_1.5.1/TestingCAN_Loopback/Core/Src/main.c
+SourceFiles#0=C:/Users/benja/Documents/Solar_Firmware_v3-github/components/mdi/TestingCAN_Loopback/Core/Src/stm32f1xx_it.c
+SourceFiles#1=C:/Users/benja/Documents/Solar_Firmware_v3-github/components/mdi/TestingCAN_Loopback/Core/Src/stm32f1xx_hal_msp.c
+SourceFiles#2=C:/Users/benja/Documents/Solar_Firmware_v3-github/components/mdi/TestingCAN_Loopback/Core/Src/main.c
 SourceFolderListSize=1
-SourcePath#0=C:/Users/benja/STM32CubeIDE/workspace_1.5.1/TestingCAN_Loopback/Core/Src
+SourcePath#0=C:/Users/benja/Documents/Solar_Firmware_v3-github/components/mdi/TestingCAN_Loopback/Core/Src
 SourceFiles=;
 

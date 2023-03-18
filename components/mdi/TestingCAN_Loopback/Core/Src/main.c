@@ -64,7 +64,8 @@ uint32_t TxMailbox[3]; //added [4]
 
 uint8_t count = 99;
    //HAL_CAN_RxFIFO0MsgPendingCallback
-void HAL_CAN_RxFIFO0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+//void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+  void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
   count++; //added this line
@@ -153,8 +154,9 @@ if (HAL_CAN_AddTxMessage(&hcan, &TxHeader, &TxData[0], &TxMailbox[0]) != HAL_OK)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  //TxData[0] = 0xff;
-	  //HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
+	  TxData[0] = 0x09;
+	  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+	  HAL_Delay(500);
 	  //for(int i=0;i<99;i++);
 	  //int done =1;
     /* USER CODE END WHILE */
@@ -216,7 +218,7 @@ static void MX_CAN_Init(void)
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
   hcan.Init.Prescaler = 16;
-  hcan.Init.Mode = CAN_MODE_NORMAL;
+  hcan.Init.Mode = CAN_MODE_LOOPBACK;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
   hcan.Init.TimeSeg2 = CAN_BS2_4TQ;

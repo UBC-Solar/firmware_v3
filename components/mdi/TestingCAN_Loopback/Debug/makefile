@@ -54,8 +54,8 @@ all: main-build
 main-build: TestingCAN_Loopback.elf secondary-outputs
 
 # Tool invocations
-TestingCAN_Loopback.elf: $(OBJS) $(USER_OBJS) C:\Users\benja\STM32CubeIDE\workspace_1.5.1\TestingCAN_Loopback\STM32F103RCTX_FLASH.ld
-	arm-none-eabi-gcc -o "TestingCAN_Loopback.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\benja\STM32CubeIDE\workspace_1.5.1\TestingCAN_Loopback\STM32F103RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="TestingCAN_Loopback.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+TestingCAN_Loopback.elf: $(OBJS) $(USER_OBJS) C:\Users\benja\Documents\Solar_Firmware_v3-github\components\mdi\TestingCAN_Loopback\STM32F103RCTX_FLASH.ld
+	arm-none-eabi-gcc -o "TestingCAN_Loopback.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\benja\Documents\Solar_Firmware_v3-github\components\mdi\TestingCAN_Loopback\STM32F103RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="TestingCAN_Loopback.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
