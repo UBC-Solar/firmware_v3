@@ -20,9 +20,15 @@
 
 //#include "stm32f1xx_hal_can.h"
 #include "stm32f1xx_hal.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <cstdint>
 
 #ifndef CAN_H
 #define CAN_H
+#define MAX 4294967295
+#define MAX_MESSAGE_LENGTH 31
+#define BUFFER_SIZE 8 
 
 typedef struct
 {
@@ -79,4 +85,11 @@ void CAN_Tx(CAN_HandleTypeDef* hcan, CAN_TxHeaderTypeDef* TxHeader, uint32_t* Tx
  extern CAN_msg_t CAN_rx_msg;  // Holds receiving CAN messages
  extern CAN_msg_t CAN_tx_msg;  // Holds transmitted CAN messagess
 */
+
+//Parse the received message struct 
+extern uint32_t parse(uint8_t one, uint8_t two ,uint8_t three ,uint8_t four); 
+
+//Returns the decoded data from the message 
+extern void CAN_process(CAN_msg_t *msg1); 
+
 #endif

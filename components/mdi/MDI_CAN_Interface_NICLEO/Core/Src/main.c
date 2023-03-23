@@ -45,7 +45,7 @@ CAN_HandleTypeDef hcan;
 I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
-
+static const uint8_t DAC_ADDR = 0b0001100 << 1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -59,6 +59,7 @@ static void MX_I2C1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
 CAN_TxHeaderTypeDef TxHeader; //struct with outgoing message information (type and length, etc.)
 CAN_RxHeaderTypeDef RxHeader; //struct with incoming message information
 uint32_t TxMailbox[3]; //4 transmit mailboxes
@@ -71,26 +72,7 @@ CAN_msg_t msg0; //where all the info and data for the message will be put
 
 uint8_t count = 69;
 
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //recieve data in this function
-{
-	//assert_param(HAL_CAN_DeactivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING) == HAL_OK);
-	if(HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
-	{
-		Error_Handler();
-	}
-
-	msg0.id = RxHeader.StdId;	//Standard ID
-	msg0.len = RxHeader.DLC;	//Length
-
-
-	for(int i=0; i < msg0.len; i++)
-	{
-		msg0.data[i] = RxData[i]; //moves data from buffer into the msg0 struct (the data element)
-	}
-
-	//TODO Add function to send the data to the DAC (and parse data)
-
-}
+uint8_t send_I2C_flag = 0; 
 
 
 /* USER CODE END 0 */
@@ -102,6 +84,10 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //recieve data i
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+
+  HAL_StatusTypeDef ret;
+  uint16_t i = 0; 
+  uint16_t DAC_msg_buffer[BUFFER_SIZE];
 
   /* USER CODE END 1 */
 
@@ -166,19 +152,21 @@ int main(void)
   while (1)
   {
 	  TxData[0] = 0x09;
-	  	  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
-	  	  HAL_Delay(500);
+	  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+	  HAL_Delay(500);
+    
+    if(send_I2C_flag){
+      
+      for (i = 0 ; i < msg0.len ; i++)
+	    DAC_msg_buffer[i] = msg0.data[i] << 2 ; //First two bits of the DAC are 0 so messages have to be shifted by two 
 
-	  	  /*
-	  	  static volatile int a = 5;
-	  		a++;
-	  		if (a == 100)
-	  			a = 0;
-	  		*/
+      HAL_I2C_Master_Transmit(&hi2c1, DAC_ADDR, DAC_msg_buffer, msg0.len, HAL_MAX_DELAY);
+
+	    send_I2C_flag = 0; 
+    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
   /* USER CODE END 3 */
 }
 
@@ -316,7 +304,26 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //recieve data in this function
+{
+	//assert_param(HAL_CAN_DeactivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING) == HAL_OK);
+	if(HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
+	{
+		Error_Handler();
+	}
 
+	msg0.id = RxHeader.StdId;	//Standard ID
+	msg0.len = RxHeader.DLC;	//Length
+
+
+	for(int i=0; i < msg0.len; i++)
+	{
+		msg0.data[i] = RxData[i]; //moves data from buffer into the msg0 struct (the data element)
+	}
+
+	send_I2C_flag = 1; 
+
+}
 /* USER CODE END 4 */
 
 /**

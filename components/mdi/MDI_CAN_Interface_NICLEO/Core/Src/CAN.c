@@ -5,6 +5,11 @@
 #include "stm32f1xx_hal_can.h"
 #include "stm32f1xx_hal.h"
 #include "stm32f1xx.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <cstdint>
+
+
 
 
 /**
@@ -163,4 +168,29 @@ void CAN_Tx(CAN_HandleTypeDef* hcan, CAN_TxHeaderTypeDef* TxHeader, uint32_t* Tx
 	while(HAL_CAN_IsTxMessagePending(hcan, *TxMailbox)); //waits until messsage is no longer pending
 
 
+}
+
+uint32_t parse(uint8_t one, uint8_t two ,uint8_t three ,uint8_t four){
+    uint32_t result;
+    result = (one << 24) | (two << 16)  | (three << 8) | four;
+    //puts the 4 8 bit arrays correlated with the current part of the message in to one 32 bit integer
+    return result;
+}
+​
+void CAN_process(CAN_msg_t *msg1){
+    
+    
+    //variable declarations
+    uint32_t result;
+    double current;
+    
+    //the parsing of the 4 arrays
+    //arrows are for the pointer input instead of the dot operator
+    result = parse(msg1->data[4], msg1->data[5], msg1->data[6], msg1->data[7]);
+    
+    //giving a percentage of the recieved signal out of the maximum possible current
+    current = (float) result / MAX;
+​
+    //mostly just for testing, but can export to wherever or do whatever we need to 
+    //printf("%f", current);
 }
