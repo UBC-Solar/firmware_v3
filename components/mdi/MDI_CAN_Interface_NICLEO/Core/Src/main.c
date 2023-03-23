@@ -74,6 +74,15 @@ uint8_t count = 69;
 
 uint8_t send_I2C_flag = 0; 
 
+uint16_t Vmax = 0x02FF; // Max output of DAC
+uint16_t Vhalf = 0x01FF; // Half max voltage
+uint16_t Vquarter = 0x00FF; //quarter max volt
+uint16_t Vmin = 0x0000;
+uint8_t case_count = 0; 
+
+
+
+
 
 /* USER CODE END 0 */
 
@@ -87,7 +96,7 @@ int main(void)
 
   HAL_StatusTypeDef ret;
   uint16_t i = 0; 
-  uint16_t DAC_msg_buffer[BUFFER_SIZE];
+  uint8_t DAC_msg_buffer[BUFFER_SIZE];
 
   /* USER CODE END 1 */
 
@@ -117,7 +126,7 @@ int main(void)
   HAL_CAN_Start(&hcan); //starts CAN
   HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING); //FIFO0 message pending interrupt (interrupt callback func will be called when this interrupt is triggered)
 
-  TxHeader.DLC = 1;
+  TxHeader.DLC = 2;
     TxHeader.ExtId = 0;
     TxHeader.IDE = CAN_ID_STD;
     TxHeader.RTR = CAN_RTR_DATA; //added this line
@@ -149,25 +158,58 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
   while (1)
   {
-	  TxData[0] = 0x09;
+    switch (case_count){ 
+
+        case 0:
+        TxData[0] =  (uint8_t) Vmax;
+        TxData[1] =  (uint8_t) (Vmax >> 8);
+        break; 
+
+        case 1:
+        TxData[0] =  (uint8_t) Vhalf;
+        TxData[1] =  (uint8_t) (Vhalf >> 8);
+        break; 
+
+        case 2:
+        TxData[0] =  (uint8_t) Vquarter;
+        TxData[1] =  (uint8_t) (Vquarter >> 8);
+        break; 
+
+        case 3:
+        TxData[0] =  0;  
+        TxData[1] =  0;  
+        break; 
+
+    }
+    
 	  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
-	  HAL_Delay(500);
+	  HAL_Delay(2000);
     
     if(send_I2C_flag){
       
-      for (i = 0 ; i < msg0.len ; i++)
-	    DAC_msg_buffer[i] = msg0.data[i] << 2 ; //First two bits of the DAC are 0 so messages have to be shifted by two 
+      //for (i = 0 ; i < BUFFER_SIZE ; i++)
+	    //DAC_msg_buffer[i] = msg0.data[i] << 2 ; //First two bits of the DAC are 0 so messages have to be shifted by two
 
-      HAL_I2C_Master_Transmit(&hi2c1, DAC_ADDR, DAC_msg_buffer, msg0.len, HAL_MAX_DELAY);
+    	DAC_msg_buffer[0] = msg0.data[0] << 2;
+    	DAC_msg_buffer[1] = msg0.data[1] << 2; 
+
+      HAL_I2C_Master_Transmit(&hi2c1, DAC_ADDR, DAC_msg_buffer, BUFFER_SIZE, HAL_MAX_DELAY);
 
 	    send_I2C_flag = 0; 
     }
+    case_count++; 
+
+    if(case_count == 3)
+      case_count = 0; 
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
+}
 }
 
 /**
@@ -311,6 +353,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //recieve data i
 	{
 		Error_Handler();
 	}
+
 
 	msg0.id = RxHeader.StdId;	//Standard ID
 	msg0.len = RxHeader.DLC;	//Length

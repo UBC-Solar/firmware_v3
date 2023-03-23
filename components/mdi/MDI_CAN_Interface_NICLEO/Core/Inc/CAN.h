@@ -22,13 +22,13 @@
 #include "stm32f1xx_hal.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <cstdint>
+//#include <cstdint>
 
 #ifndef CAN_H
 #define CAN_H
 #define MAX 4294967295
 #define MAX_MESSAGE_LENGTH 31
-#define BUFFER_SIZE 8 
+#define BUFFER_SIZE 2
 
 typedef struct
 {

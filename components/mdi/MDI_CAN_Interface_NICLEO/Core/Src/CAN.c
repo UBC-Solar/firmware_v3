@@ -7,7 +7,7 @@
 #include "stm32f1xx.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <cstdint>
+//#include <cstdint>
 
 
 
@@ -176,7 +176,7 @@ uint32_t parse(uint8_t one, uint8_t two ,uint8_t three ,uint8_t four){
     //puts the 4 8 bit arrays correlated with the current part of the message in to one 32 bit integer
     return result;
 }
-​
+
 void CAN_process(CAN_msg_t *msg1){
     
     
@@ -190,7 +190,7 @@ void CAN_process(CAN_msg_t *msg1){
     
     //giving a percentage of the recieved signal out of the maximum possible current
     current = (float) result / MAX;
-​
+
     //mostly just for testing, but can export to wherever or do whatever we need to 
     //printf("%f", current);
 }
