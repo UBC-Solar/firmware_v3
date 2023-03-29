@@ -247,114 +247,13 @@ void StartDefaultTask(void *argument)
 /* USER CODE END Header_checkThrottleADC */
 void checkThrottleADC(void *argument)
 {
-  /* USER CODE BEGIN StartCheckThrottleADC */
-  uint16_t ADCRaw;
-  uint8_t data[CAN_DATA_LENGTH];
-  FloatBytes cruise_velocity;
-
+  /* USER CODE BEGIN checkThrottleADC */
   /* Infinite loop */
   for(;;)
   {
-	//State Machine
-    switch(state)
-    {
-    	case NORMAL_READY:
-    		//Gets raw throttle value from ADC
-    		HAL_ADC_Start(&hadc1);
-    		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-    		ADCRaw = HAL_ADC_GetValue(&hadc1);
-
-    		//Checks for reverse
-    		if (event_flags.reverse_enable)
-    			velocity.float_value = -100.0;
-    		else
-    			velocity.float_value = 100.0;
-
-    		//Sets current float values, includes deadzone
-    		current.float_value = (ADCRaw - THROTTLE_DEADZONE >= 0 ? ((float)(ADCRaw - THROTTLE_DEADZONE))/THROTTLE_MAX : 0.0);
-
-    		//Writing data into data_send array
-    		for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++)
-    		{
-    			data[i] = velocity.bytes[i];
-    			data[i + 4] = current.bytes[i];
-    		}
-
-    		//Sends CAN message to motor controller
-    		HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data, &can_mailbox);
-
-    		//Reads velocity
-    		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
-    		{
-    		    HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, data);
-    			if (can_rx_header.StdId == 0x626)
-    			{
-    				for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++)
-    				{
-    					data[i+4] = cruise_velocity.bytes[i];
-    				}
-    			}
-    		}
-
-    	break;
-
-    	//REGEN state
-    	case REGEN_READY:
-    		//Gets raw throttle value from ADC
-    		HAL_ADC_Start(&hadc1);
-    		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-    		ADCRaw = HAL_ADC_GetValue(&hadc1);
-
-    		//Checks if foot is off pedal
-    		if(ADCRaw > THROTTLE_DEADZONE)
-    			break;
-
-    		//TODO Get regen padel ADC value and convert it.
-    		//HAL_ADC_Start(&hadc1);
-    		//HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-    		//ADCRaw = HAL_ADC_GetValue(&hadc1);
-
-    		//Writing data into data array
-    		for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++)
-    		{
-    			data[i] = 0;
-    			data[i + 4] = current.bytes[i];
-    		}
-
-    		//Sends CAN message to motor controller
-    		HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data, &can_mailbox);
-    	break;
-
-    	//CRUISE state
-    	case CRUISE_READY:
-    		//Sends last read value for cruise
-    		//Writing data into data_send array
-
-    		current.float_value = 1;
-    		for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++)
-    		{
-    			data[i] = cruise_velocity.bytes[i];
-    		    data[i + 4] = current.bytes[i];
-    		}
-
-    		HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data, &can_mailbox);
-    		//TODO Impliment ability to increase speed while in cruise, similar to a real car
-    	break;
-
-    	//Default state
-    	default:
-    		for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++)
-    		{
-    			data[i] = 0;
-    		    data[i + 4] = 0;
-    		}
-
-    		//Sends CAN message to motor controller
-    		HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data, &can_mailbox);
-    }
-
-	//Delay
-    osDelay(THROTTLE_POLL_RATE);
+    osDelay(1);
+  }
+  /* USER CODE END checkThrottleADC */
 }
 
 /* Private application code --------------------------------------------------*/
