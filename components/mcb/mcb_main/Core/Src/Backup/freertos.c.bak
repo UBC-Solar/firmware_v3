@@ -13,12 +13,14 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
+#include "adc.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
 #include "attributes.h"
 #include "can.h"
+#include "tim.h"
 #include "encoder.h"
 
 /* USER CODE END Includes */
@@ -45,6 +47,8 @@
 #define ENCODER_READ_DELAY      		50			/**< Delay between each time encoder is read (in ms).*/
 #define READ_BATTERY_SOC_DELAY  		5000		/**< Delay between each time the battery SOC is read from CAN (in ms).*/
 #define MOTOR_OVERHEAT_DELAY			300000			/**< Delay between each time the motor temperature is read fro CAN (in ms).*/
+#define THROTTLE_DEADZONE				250
+
 
 /* USER CODE END PD */
 
@@ -118,6 +122,13 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for checkThrottleAD */
+osThreadId_t checkThrottleADHandle;
+const osThreadAttr_t checkThrottleAD_attributes = {
+  .name = "checkThrottleAD",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -141,6 +152,7 @@ void sendMotorOverheatTask (void *argument);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
+void StartCheckThrottleADC(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -194,6 +206,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
+  /* creation of checkThrottleAD */
+  checkThrottleADHandle = osThreadNew(StartCheckThrottleADC, NULL, &checkThrottleAD_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -217,9 +232,54 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(10);
   }
   /* USER CODE END StartDefaultTask */
+}
+
+/* USER CODE BEGIN Header_StartCheckThrottleADC */
+/**
+* @brief Function implementing the checkThrottleAD thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartCheckThrottleADC */
+void StartCheckThrottleADC(void *argument)
+{
+  /* USER CODE BEGIN StartCheckThrottleADC */
+  uint16_t ADCRaw;
+  uint8_t data_send[CAN_DATA_LENGTH];
+  /* Infinite loop */
+  for(;;)
+  {
+	//Gets ADC
+    HAL_ADC_Start(&hadc1);
+	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+  	ADCRaw = HAL_ADC_GetValue(&hadc1);
+
+  	//Checks for reverse
+	if (event_flags.reverse_enable)
+	  velocity.float_value = -100.0;
+	else
+	  velocity.float_value = 100.0;
+
+
+	//Sets current float values, includes deadzone
+	current.float_value = (ADCRaw - THROTTLE_DEADZONE >= 0 ? (float)(ADCRaw - THROTTLE_DEADZONE) : 0.0);
+
+	//Writing data into data_send
+	for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++)
+	{
+	  data_send[i] = velocity.bytes[i];
+	  data_send[i + 4] = current.bytes[i];
+	}
+
+	//Sends CAN message to motor controller
+	HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
+
+    osDelay(10);
+  }
+  /* USER CODE END StartCheckThrottleADC */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -238,7 +298,7 @@ __NO_RETURN void readEncoderTask(void *argument) {
     EncoderInit();
 
     while (1) {
-        encoder_reading = __HAL_TIM_GET_COUNTER(&htim3);
+        encoder_reading = __HAL_TIM_GET_COUNTER(&htim1);
 
         // update the event flags struct
         event_flags.encoder_value_is_zero = (encoder_reading == 0);
@@ -511,4 +571,3 @@ __NO_RETURN void sendMotorOverheatTask (void *argument) {
 
 /* USER CODE END Application */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

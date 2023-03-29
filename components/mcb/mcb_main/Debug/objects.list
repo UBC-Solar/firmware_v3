@@ -1,7 +1,6 @@
 "./Core/Src/adc.o"
 "./Core/Src/attributes.o"
 "./Core/Src/can.o"
-"./Core/Src/dma.o"
 "./Core/Src/encoder.o"
 "./Core/Src/freertos.o"
 "./Core/Src/gpio.o"

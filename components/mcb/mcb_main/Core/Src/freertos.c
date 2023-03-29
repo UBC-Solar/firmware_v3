@@ -47,6 +47,10 @@
 #define READ_BATTERY_SOC_DELAY  		5000		/**< Delay between each time the battery SOC is read from CAN (in ms).*/
 #define MOTOR_OVERHEAT_DELAY			300000			/**< Delay between each time the motor temperature is read fro CAN (in ms).*/
 
+#define THROTTLE_DEADZONE				250			//Deadzone value (in raw adc value)
+#define THROTTLE_MAX					4300.0		//Max throttle value (in raw adc value)
+#define THROTTLE_POLL_PERIOD			10 			//How often throttle is read and sent to CAN (in ms)
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -119,6 +123,13 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for throttleADC */
+osThreadId_t throttleADCHandle;
+const osThreadAttr_t throttleADC_attributes = {
+  .name = "throttleADC",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -142,6 +153,7 @@ void sendMotorOverheatTask (void *argument);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
+void checkThrottleADC(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -195,6 +207,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
+  /* creation of throttleADC */
+  throttleADCHandle = osThreadNew(checkThrottleADC, NULL, &throttleADC_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -218,9 +233,128 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(10);
   }
   /* USER CODE END StartDefaultTask */
+}
+
+/* USER CODE BEGIN Header_checkThrottleADC */
+/**
+* @brief Function implementing the throttleADC thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_checkThrottleADC */
+void checkThrottleADC(void *argument)
+{
+  /* USER CODE BEGIN StartCheckThrottleADC */
+  uint16_t ADCRaw;
+  uint8_t data[CAN_DATA_LENGTH];
+  FloatBytes cruise_velocity;
+
+  /* Infinite loop */
+  for(;;)
+  {
+	//State Machine
+    switch(state)
+    {
+    	case NORMAL_READY:
+    		//Gets raw throttle value from ADC
+    		HAL_ADC_Start(&hadc1);
+    		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+    		ADCRaw = HAL_ADC_GetValue(&hadc1);
+
+    		//Checks for reverse
+    		if (event_flags.reverse_enable)
+    			velocity.float_value = -100.0;
+    		else
+    			velocity.float_value = 100.0;
+
+    		//Sets current float values, includes deadzone
+    		current.float_value = (ADCRaw - THROTTLE_DEADZONE >= 0 ? ((float)(ADCRaw - THROTTLE_DEADZONE))/THROTTLE_MAX : 0.0);
+
+    		//Writing data into data_send array
+    		for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++)
+    		{
+    			data[i] = velocity.bytes[i];
+    			data[i + 4] = current.bytes[i];
+    		}
+
+    		//Sends CAN message to motor controller
+    		HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data, &can_mailbox);
+
+    		//Reads velocity
+    		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
+    		{
+    		    HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, data);
+    			if (can_rx_header.StdId == 0x626)
+    			{
+    				for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++)
+    				{
+    					data[i+4] = cruise_velocity.bytes[i];
+    				}
+    			}
+    		}
+
+    	break;
+
+    	//REGEN state
+    	case REGEN_READY:
+    		//Gets raw throttle value from ADC
+    		HAL_ADC_Start(&hadc1);
+    		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+    		ADCRaw = HAL_ADC_GetValue(&hadc1);
+
+    		//Checks if foot is off pedal
+    		if(ADCRaw > THROTTLE_DEADZONE)
+    			break;
+
+    		//TODO Get regen padel ADC value and convert it.
+    		//HAL_ADC_Start(&hadc1);
+    		//HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+    		//ADCRaw = HAL_ADC_GetValue(&hadc1);
+
+    		//Writing data into data array
+    		for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++)
+    		{
+    			data[i] = 0;
+    			data[i + 4] = current.bytes[i];
+    		}
+
+    		//Sends CAN message to motor controller
+    		HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data, &can_mailbox);
+    	break;
+
+    	//CRUISE state
+    	case CRUISE_READY:
+    		//Sends last read value for cruise
+    		//Writing data into data_send array
+
+    		current.float_value = 1;
+    		for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++)
+    		{
+    			data[i] = cruise_velocity.bytes[i];
+    		    data[i + 4] = current.bytes[i];
+    		}
+
+    		HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data, &can_mailbox);
+    		//TODO Impliment ability to increase speed while in cruise, similar to a real car
+    	break;
+
+    	//Default state
+    	default:
+    		for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++)
+    		{
+    			data[i] = 0;
+    		    data[i + 4] = 0;
+    		}
+
+    		//Sends CAN message to motor controller
+    		HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data, &can_mailbox);
+    }
+
+	//Delay
+    osDelay(THROTTLE_POLL_RATE);
 }
 
 /* Private application code --------------------------------------------------*/
@@ -512,4 +646,3 @@ __NO_RETURN void sendMotorOverheatTask (void *argument) {
 
 /* USER CODE END Application */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

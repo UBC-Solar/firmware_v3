@@ -52,7 +52,6 @@ extern uint16_t encoder_reading;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern DMA_HandleTypeDef hdma_adc1;
 extern TIM_HandleTypeDef htim8;
 
 /* USER CODE BEGIN EV */
@@ -168,7 +167,7 @@ void EXTI1_IRQHandler(void)
     event_flags.regen_enable = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
 
   /* USER CODE END EXTI1_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
+  HAL_GPIO_EXTI_IRQHandler(REGEN_EN_Pin);
   /* USER CODE BEGIN EXTI1_IRQn 1 */
 
   /* USER CODE END EXTI1_IRQn 1 */
@@ -190,7 +189,7 @@ void EXTI2_IRQHandler(void)
 
 
   /* USER CODE END EXTI2_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
+  HAL_GPIO_EXTI_IRQHandler(BRK_IN_Pin);
   /* USER CODE BEGIN EXTI2_IRQn 1 */
 
   /* USER CODE END EXTI2_IRQn 1 */
@@ -208,7 +207,7 @@ void EXTI3_IRQHandler(void)
     event_flags.reverse_enable = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin);
 
   /* USER CODE END EXTI3_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
+  HAL_GPIO_EXTI_IRQHandler(RVRS_EN_Pin);
   /* USER CODE BEGIN EXTI3_IRQn 1 */
 
   /* USER CODE END EXTI3_IRQn 1 */
@@ -226,24 +225,10 @@ void EXTI4_IRQHandler(void)
     osSemaphoreRelease(nextScreenSemaphoreHandle);
 
   /* USER CODE END EXTI4_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
+  HAL_GPIO_EXTI_IRQHandler(NEXT_SCREEN_Pin);
   /* USER CODE BEGIN EXTI4_IRQn 1 */
 
   /* USER CODE END EXTI4_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA1 channel1 global interrupt.
-  */
-void DMA1_Channel1_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
-
-  /* USER CODE END DMA1_Channel1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_adc1);
-  /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
-
-  /* USER CODE END DMA1_Channel1_IRQn 1 */
 }
 
 /**
@@ -293,9 +278,9 @@ void EXTI9_5_IRQHandler(void)
     }
 
   /* USER CODE END EXTI9_5_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
+  HAL_GPIO_EXTI_IRQHandler(CRUISE_DIS_Pin);
+  HAL_GPIO_EXTI_IRQHandler(CRUISE_UP_Pin);
+  HAL_GPIO_EXTI_IRQHandler(CRUISE_DOWN_Pin);
   /* USER CODE BEGIN EXTI9_5_IRQn 1 */
 
   /* USER CODE END EXTI9_5_IRQn 1 */
@@ -309,7 +294,6 @@ void TIM8_UP_IRQHandler(void)
   /* USER CODE BEGIN TIM8_UP_IRQn 0 */
 
   /* USER CODE END TIM8_UP_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim8);
   /* USER CODE BEGIN TIM8_UP_IRQn 1 */
 
   /* USER CODE END TIM8_UP_IRQn 1 */
@@ -318,4 +302,3 @@ void TIM8_UP_IRQHandler(void)
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
