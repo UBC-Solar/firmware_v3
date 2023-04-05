@@ -30,11 +30,25 @@
 #define MAX_MESSAGE_LENGTH 31
 #define BUFFER_SIZE 2
 
+#define REVERSE_TRUE 1 
+#define REVERSE_FALSE 0 
+
+#define REGEN_TRUE 1 
+#define REGEN_FALSE 0 
+
+#define DIGITAL_OUT_POWER_PIN 
+#define DIGITAL_DIRECTION_PIN
+#define I2C_SCL_PIN 
+#define I2C_SDA_PIN 
+
 typedef struct
 {
 	uint16_t id;
-	uint8_t  data[8];
-	uint8_t  len;
+	uint32_t  velocity;
+	uint32_t acceleration; 
+	bool direction; 
+	bool power_or_eco; 
+	bool regen; 
 } CAN_msg_t;
 
 /**
@@ -86,8 +100,14 @@ void CAN_Tx(CAN_HandleTypeDef* hcan, CAN_TxHeaderTypeDef* TxHeader, uint32_t* Tx
  extern CAN_msg_t CAN_tx_msg;  // Holds transmitted CAN messagess
 */
 
+//converts 32bit info from pedal to 10bit acceleration to be sent to DAC
+extern uint16_t parsed_voltage Parse_Acc(uint32_t pedal_data);
+
 //Parse the received message struct 
 extern uint32_t parse(uint8_t one, uint8_t two ,uint8_t three ,uint8_t four); 
+
+//sends 10 bit parsed voltage to DAC
+extern void Send_Voltage(uint16_t parsed_voltage);
 
 //Returns the decoded data from the message 
 extern void CAN_process(CAN_msg_t *msg1); 

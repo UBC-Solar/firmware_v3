@@ -1,7 +1,10 @@
-20:35:17 **** Incremental Build of configuration Debug for project MDI_CAN_Interface_NICLEO ****
+20:37:19 **** Incremental Build of configuration Debug for project MDI_CAN_Interface_NICLEO ****
 make -j8 all 
 arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DSTM32F103xE -DUSE_HAL_DRIVER -DDEBUG -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/main.o"
 ../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:99:11: warning: unused variable 'DAC_msg_buffer' [-Wunused-variable]
+   uint8_t DAC_msg_buffer[BUFFER_SIZE];
+           ^~~~~~~~~~~~~~
 ../Core/Src/main.c:98:12: warning: unused variable 'i' [-Wunused-variable]
    uint16_t i = 0;
             ^
@@ -15,24 +18,44 @@ arm-none-eabi-objdump -h -S  MDI_CAN_Interface_NICLEO.elf  > "MDI_CAN_Interface_
 arm-none-eabi-objcopy  -O binary  MDI_CAN_Interface_NICLEO.elf  "MDI_CAN_Interface_NICLEO.bin"
 arm-none-eabi-size   MDI_CAN_Interface_NICLEO.elf 
    text	   data	    bss	    dec	    hex	filename
-  11288	     36	   1780	  13104	   3330	MDI_CAN_Interface_NICLEO.elf
+  11344	     36	   1780	  13160	   3368	MDI_CAN_Interface_NICLEO.elf
 Finished building: default.size.stdout
  
 Finished building: MDI_CAN_Interface_NICLEO.bin
  
 Finished building: MDI_CAN_Interface_NICLEO.list
  
-20:35:21 **** Incremental Build of configuration Debug for project MDI_CAN_Interface_NICLEO ****
+20:37:52 **** Incremental Build of configuration Debug for project MDI_CAN_Interface_NICLEO ****
 make -j8 all 
 arm-none-eabi-size   MDI_CAN_Interface_NICLEO.elf 
    text	   data	    bss	    dec	    hex	filename
-  11288	     36	   1780	  13104	   3330	MDI_CAN_Interface_NICLEO.elf
+  11344	     36	   1780	  13160	   3368	MDI_CAN_Interface_NICLEO.elf
 Finished building: default.size.stdout
  
-20:38:15 **** Incremental Build of configuration Debug for project MDI_CAN_Interface_NICLEO ****
+20:38:44 **** Incremental Build of configuration Debug for project MDI_CAN_Interface_NICLEO ****
 make -j8 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DSTM32F103xE -DUSE_HAL_DRIVER -DDEBUG -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:99:11: warning: unused variable 'DAC_msg_buffer' [-Wunused-variable]
+   uint8_t DAC_msg_buffer[BUFFER_SIZE];
+           ^~~~~~~~~~~~~~
+../Core/Src/main.c:98:12: warning: unused variable 'i' [-Wunused-variable]
+   uint16_t i = 0;
+            ^
+../Core/Src/main.c:97:21: warning: unused variable 'ret' [-Wunused-variable]
+   HAL_StatusTypeDef ret;
+                     ^~~
+arm-none-eabi-gcc -o "MDI_CAN_Interface_NICLEO.elf" @"objects.list"   -mcpu=cortex-m3 -T"C:\Users\benja\Documents\Solar_Firmware_v3-github\components\mdi\MDI_CAN_Interface_NICLEO\STM32F103RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MDI_CAN_Interface_NICLEO.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: MDI_CAN_Interface_NICLEO.elf
+ 
+arm-none-eabi-objdump -h -S  MDI_CAN_Interface_NICLEO.elf  > "MDI_CAN_Interface_NICLEO.list"
+arm-none-eabi-objcopy  -O binary  MDI_CAN_Interface_NICLEO.elf  "MDI_CAN_Interface_NICLEO.bin"
 arm-none-eabi-size   MDI_CAN_Interface_NICLEO.elf 
    text	   data	    bss	    dec	    hex	filename
-  11288	     36	   1780	  13104	   3330	MDI_CAN_Interface_NICLEO.elf
+  11344	     36	   1780	  13160	   3368	MDI_CAN_Interface_NICLEO.elf
 Finished building: default.size.stdout
+ 
+Finished building: MDI_CAN_Interface_NICLEO.bin
+ 
+Finished building: MDI_CAN_Interface_NICLEO.list
  

@@ -161,7 +161,7 @@ int main(void)
 
   while (1)
   {
-    switch (case_count){ 
+    switch (case_count){ //testing
 
         case 0:
         TxData[0] =  (uint8_t) Vmax;
@@ -184,19 +184,29 @@ int main(void)
         break; 
 
     }
+    TxData[0] = 0xFF;
+    TxData[1] = 0x03;
+    //0000 0011 1111 1111
+    //0000 1100
     
-	  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+    uint32_t pedal_data = 0xFFFF;
+
+
+ 	  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
 	  HAL_Delay(2000);
     
     if(send_I2C_flag){
       
       //for (i = 0 ; i < BUFFER_SIZE ; i++)
 	    //DAC_msg_buffer[i] = msg0.data[i] << 2 ; //First two bits of the DAC are 0 so messages have to be shifted by two
-
-    	DAC_msg_buffer[0] = msg0.data[0] << 2;
-    	DAC_msg_buffer[1] = msg0.data[1] << 2; 
-
-      HAL_I2C_Master_Transmit(&hi2c1, DAC_ADDR, DAC_msg_buffer, BUFFER_SIZE, HAL_MAX_DELAY);
+    	//union
+    	//DAC_msg_buffer[0] = msg0.data[1]; //0b00001111; //msb is lsb
+    	//DAC_msg_buffer[1] = msg0.data[0]; //0b11111100;
+      
+      //parse all data
+      
+    	Send_Voltage(parsed_voltage);
+      //HAL_I2C_Master_Transmit(&hi2c1, DAC_ADDR, DAC_msg_buffer, BUFFER_SIZE, HAL_MAX_DELAY);
 
 	    send_I2C_flag = 0; 
     }
@@ -209,7 +219,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
-}
 }
 
 /**
@@ -284,7 +293,7 @@ static void MX_CAN_Init(void)
    canfilterconfig.FilterActivation = CAN_FILTER_ENABLE; //ENABLE
    canfilterconfig.FilterBank = 10; //0x0000
    canfilterconfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-   canfilterconfig.FilterIdHigh = 0x111<<5; //changed from 0x0000
+   canfilterconfig.FilterIdHigh = 0x401<<5; //changed from 0x0000
    canfilterconfig.FilterIdLow = 0x0000;
    canfilterconfig.FilterMaskIdHigh = 0x1<<13; //changed from 0
    canfilterconfig.FilterMaskIdLow = 0x0000;
@@ -338,10 +347,21 @@ static void MX_I2C1_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, Direction_Pin|Pwr_Eco_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : Direction_Pin Pwr_Eco_Pin */
+  GPIO_InitStruct.Pin = Direction_Pin|Pwr_Eco_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
 
@@ -367,6 +387,27 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //recieve data i
 	send_I2C_flag = 1; 
 
 }
+
+
+}
+
+/**
+ * @brief Sends a desired voltage to the DAC, by transmitting the correct I2C message.
+ * @param uint16_t parsed_voltage should be a number between 0 and 1023. This value will be scaled to a corresponding voltage
+ * by the DAC, where 0 is 0V and 1023 is Vmax.
+ * @retval None
+ */
+void Send_Voltage(uint16_t parsed_voltage)
+    {
+		uint8_t DAC_msg_buffer[2];
+		uint16_t dac_data;
+		if(parsed_voltage > 1023) parsed_voltage = 1023;
+    	dac_data = parsed_voltage << 2;
+    	DAC_msg_buffer[0] = dac_data >> 8;
+    	DAC_msg_buffer[1] = dac_data;
+    	HAL_I2C_Master_Transmit(&hi2c1, DAC_ADDR, DAC_msg_buffer, BUFFER_SIZE, HAL_MAX_DELAY);
+    }
+
 /* USER CODE END 4 */
 
 /**
