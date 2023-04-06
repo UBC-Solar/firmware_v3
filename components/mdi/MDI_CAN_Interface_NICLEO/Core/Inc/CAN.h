@@ -22,6 +22,7 @@
 #include "stm32f1xx_hal.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 //#include <cstdint>
 
 #ifndef CAN_H
@@ -36,19 +37,12 @@
 #define REGEN_TRUE 1 
 #define REGEN_FALSE 0 
 
-//PINS MACROS
-#define DIGITAL_OUT_POWER_PIN PB_10
-#define DIGITAL_DIRECTION_PIN PB_11
+#define ECO_ON 1
+#define POWER_ON 0
 
-#define I2C_SDA_PIN PB_7
-#define I2C_SCL_PIN PB_6
-
-
-#define CAN_TX PA_12
-#define CAN_RX PA_11 
 
 //Limit voltage out into the motor 
-#define MAX_VOLTAGE_OUTPUT 4.8 
+#define MAX_VOLTAGE_OUT ((1024 - 1) / 5) * 4.7 
 
 
 typedef struct
@@ -97,7 +91,7 @@ void CAN_Set_Filters(CAN_FilterTypeDef* fltr);
  * @param len is the length of the array (unsigned int)
  * @note the array must be between 1 and 8 bytes long
  */
-void CAN_Tx(CAN_HandleTypeDef* hcan, CAN_TxHeaderTypeDef* TxHeader, uint32_t* TxMailbox, uint8_t* msg, unsigned int len);
+//void CAN_Tx(CAN_HandleTypeDef* hcan, CAN_TxHeaderTypeDef* TxHeader, uint32_t* TxMailbox, uint8_t* msg, unsigned int len);
 /**
  * Returns whether there are CAN messages available.
  *
@@ -111,19 +105,16 @@ void CAN_Tx(CAN_HandleTypeDef* hcan, CAN_TxHeaderTypeDef* TxHeader, uint32_t* Tx
 */
 
 //converts 32bit info from pedal to 10bit acceleration to be sent to DAC
-extern uint16_t parsed_voltage Parse_Acc(uint32_t pedal_data);
-
-//Parse the received message struct 
-extern uint32_t parse(uint8_t one, uint8_t two ,uint8_t three ,uint8_t four); 
+extern uint16_t Parse_Acc(uint32_t pedal_data);
 
 //sends 10 bit parsed voltage to DAC
-extern void Send_Voltage(uint16_t parsed_voltage);
+extern void Send_Voltage(uint16_t parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef *hi2c1);
 
 //Returns the decoded data from the message 
 extern void CAN_process(CAN_msg_t *msg1); 
 
 extern void decode_CAN_velocity_message(uint8_t RxData[], CAN_msg_t CAN_msg); 
 
-extern float Parse_ACC(uint32_t pedal_data); 
+extern uint16_t Parse_ACC(uint32_t pedal_data); 
 
 #endif

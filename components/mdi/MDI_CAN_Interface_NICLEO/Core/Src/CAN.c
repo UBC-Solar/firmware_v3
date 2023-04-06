@@ -1,6 +1,7 @@
 /**
  * Function implementations for enabling and using CAN messaging.
  */
+#include "main.h"
 #include "CAN.h"
 #include "stm32f1xx_hal_can.h"
 #include "stm32f1xx_hal.h"
@@ -15,15 +16,16 @@
  * @retval parsed_voltage is the 10 bits to be sent to the DAC
  * 
 */
-float Parse_ACC(uint32_t pedal_data){
+uint16_t Parse_ACC(uint32_t pedal_data){
     const uint32_t MAX_32BIT_NUM = UINT32_MAX;
     const uint16_t MAX_10BIT_NUM = 0x3FF;
-    float output_data; 
+	
+    uint16_t output; 
 
-    output = (double pedal_data / MAX_32BIT_NUM * MAX_10BIT_NUM);
+    output = ((double) pedal_data / (double) (MAX_32BIT_NUM * MAX_10BIT_NUM));
 
-    if (output > MAX_OUT_VOLTAGE) //cap the output voltage to our voltage limit 
-        return output = MAX_VOLTAGE_OUT
+    if (output > MAX_VOLTAGE_OUT) //cap the output voltage to our voltage limit 
+        return output = MAX_VOLTAGE_OUT;
     else 
         return output; 
 }
@@ -34,7 +36,7 @@ float Parse_ACC(uint32_t pedal_data){
  * by the DAC, where 0 is 0V and 1023 is Vmax.
  * @retval None
  */
-void Send_Voltage(float parsed_voltage)
+void Send_Voltage(uint16_t parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef *hi2c1)
     {
 		uint8_t DAC_msg_buffer[2];
 		uint16_t dac_data;
@@ -42,7 +44,7 @@ void Send_Voltage(float parsed_voltage)
     	dac_data = parsed_voltage << 2;
     	DAC_msg_buffer[0] = dac_data >> 8;
     	DAC_msg_buffer[1] = dac_data;
-    	HAL_I2C_Master_Transmit(&hi2c1, DAC_ADDR, DAC_msg_buffer, BUFFER_SIZE, HAL_MAX_DELAY);
+    	HAL_I2C_Master_Transmit(hi2c1, DAC_ADDR, DAC_msg_buffer, BUFFER_SIZE, HAL_MAX_DELAY);
     }
 
 
@@ -56,18 +58,20 @@ void Send_Voltage(float parsed_voltage)
 
 	CAN_msg.velocity = (RxData[3] << 3) | (RxData[2] << 2) | (RxData[1] << 1) | (RxData[0] << 0); 
 
-	CAN_msg.accelaration = (RxData[7] << 3) | (RxData[6] << 2) | (RxData[5] << 1) | (RxData[4] << 0);
+	CAN_msg.acceleration = (RxData[7] << 3) | (RxData[6] << 2) | (RxData[5] << 1) | (RxData[4] << 0);
 	
-	if (CAN_msg.velocity == 0) //enter regen operation mode 
+	if (CAN_msg.velocity == 0){ //enter regen operation mode 
 		CAN_msg.regen = REGEN_TRUE; 
 		CAN_msg.direction = REVERSE_TRUE;
-	else if(CAN_msg.velocity < 0) //enter reverse opereation mode 
+	} 
+	else if(CAN_msg.velocity < 0){ //enter reverse opereation mode 
 		CAN_msg.direction = REVERSE_TRUE;
-		CAN_msg.regen = REGEN_FALSE;  
-	else //Forward operation mode
+		CAN_msg.regen = REGEN_FALSE; 
+	}  
+	else { //Forward operation mode
 		CAN_msg.direction = REVERSE_FALSE; 
 		CAN_msg.regen = REGEN_FALSE; 
-	
+	}
 	return; 
 
 
