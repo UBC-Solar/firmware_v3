@@ -36,10 +36,20 @@
 #define REGEN_TRUE 1 
 #define REGEN_FALSE 0 
 
-#define DIGITAL_OUT_POWER_PIN 
-#define DIGITAL_DIRECTION_PIN
-#define I2C_SCL_PIN 
-#define I2C_SDA_PIN 
+//PINS MACROS
+#define DIGITAL_OUT_POWER_PIN PB_10
+#define DIGITAL_DIRECTION_PIN PB_11
+
+#define I2C_SDA_PIN PB_7
+#define I2C_SCL_PIN PB_6
+
+
+#define CAN_TX PA_12
+#define CAN_RX PA_11 
+
+//Limit voltage out into the motor 
+#define MAX_VOLTAGE_OUTPUT 4.8 
+
 
 typedef struct
 {
@@ -111,5 +121,9 @@ extern void Send_Voltage(uint16_t parsed_voltage);
 
 //Returns the decoded data from the message 
 extern void CAN_process(CAN_msg_t *msg1); 
+
+extern void decode_CAN_velocity_message(uint8_t RxData[], CAN_msg_t CAN_msg); 
+
+extern float Parse_ACC(uint32_t pedal_data); 
 
 #endif

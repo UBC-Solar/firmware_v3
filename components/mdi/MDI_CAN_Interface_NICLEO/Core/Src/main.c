@@ -72,13 +72,17 @@ CAN_msg_t msg0; //where all the info and data for the message will be put
 
 uint8_t count = 69;
 
-uint8_t send_I2C_flag = 0; 
+bool send_I2C_flag = 0; 
+bool Parsed_Data_Flag = 0; 
+
 
 uint16_t Vmax = 0x02FF; // Max output of DAC
 uint16_t Vhalf = 0x01FF; // Half max voltage
 uint16_t Vquarter = 0x00FF; //quarter max volt
 uint16_t Vmin = 0x0000;
 uint8_t case_count = 0; 
+
+float parsed_voltage; 
 
 
 
@@ -194,22 +198,21 @@ int main(void)
 
  	  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
 	  HAL_Delay(2000);
-    
-    if(send_I2C_flag){
+
+    if(Parse_Data_Flag == TRUE ){
+
+      decode_CAN_velocity_message(msg_0); 
+
+      Parse_Data_Flag = 0; 
+      send_I2C_flag = 1; 
+    }
+    else if(send_I2C_flag && !Parse_Data_Flag ){
       
-      //for (i = 0 ; i < BUFFER_SIZE ; i++)
-	    //DAC_msg_buffer[i] = msg0.data[i] << 2 ; //First two bits of the DAC are 0 so messages have to be shifted by two
-    	//union
-    	//DAC_msg_buffer[0] = msg0.data[1]; //0b00001111; //msb is lsb
-    	//DAC_msg_buffer[1] = msg0.data[0]; //0b11111100;
-      
-      //parse all data
-      
-    	Send_Voltage(parsed_voltage);
-      //HAL_I2C_Master_Transmit(&hi2c1, DAC_ADDR, DAC_msg_buffer, BUFFER_SIZE, HAL_MAX_DELAY);
+    	Send_Voltage(parsed_voltage); 
 
 	    send_I2C_flag = 0; 
     }
+
     case_count++; 
 
     if(case_count == 3)
@@ -374,40 +377,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //recieve data i
 		Error_Handler();
 	}
 
-
-	msg0.id = RxHeader.StdId;	//Standard ID
-	msg0.len = RxHeader.DLC;	//Length
-
-
-	for(int i=0; i < msg0.len; i++)
-	{
-		msg0.data[i] = RxData[i]; //moves data from buffer into the msg0 struct (the data element)
-	}
-
-	send_I2C_flag = 1; 
+	Parse_Data_Flag = 1; 
 
 }
-
-
-}
-
-/**
- * @brief Sends a desired voltage to the DAC, by transmitting the correct I2C message.
- * @param uint16_t parsed_voltage should be a number between 0 and 1023. This value will be scaled to a corresponding voltage
- * by the DAC, where 0 is 0V and 1023 is Vmax.
- * @retval None
- */
-void Send_Voltage(uint16_t parsed_voltage)
-    {
-		uint8_t DAC_msg_buffer[2];
-		uint16_t dac_data;
-		if(parsed_voltage > 1023) parsed_voltage = 1023;
-    	dac_data = parsed_voltage << 2;
-    	DAC_msg_buffer[0] = dac_data >> 8;
-    	DAC_msg_buffer[1] = dac_data;
-    	HAL_I2C_Master_Transmit(&hi2c1, DAC_ADDR, DAC_msg_buffer, BUFFER_SIZE, HAL_MAX_DELAY);
-    }
-
 /* USER CODE END 4 */
 
 /**

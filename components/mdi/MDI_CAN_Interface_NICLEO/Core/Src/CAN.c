@@ -15,43 +15,42 @@
  * @retval parsed_voltage is the 10 bits to be sent to the DAC
  * 
 */
-uint16_t parsed_voltage Parse_Acc(uint32_t pedal_data){
+float Parse_ACC(uint32_t pedal_data){
     const uint32_t MAX_32BIT_NUM = UINT32_MAX;
     const uint16_t MAX_10BIT_NUM = 0x3FF;
-    return (uint16_t)((double)pedal_data / MAX_32BIT_NUM * MAX_10BIT_NUM); //cast to double to do floating point math instead of integer math
+    float output_data; 
+
+    output = (double pedal_data / MAX_32BIT_NUM * MAX_10BIT_NUM);
+
+    if (output > MAX_OUT_VOLTAGE) //cap the output voltage to our voltage limit 
+        return output = MAX_VOLTAGE_OUT
+    else 
+        return output; 
 }
 
+/**
+ * @brief Sends a desired voltage to the DAC, by transmitting the correct I2C message.
+ * @param uint16_t parsed_voltage should be a number between 0 and 1023. This value will be scaled to a corresponding voltage
+ * by the DAC, where 0 is 0V and 1023 is Vmax.
+ * @retval None
+ */
+void Send_Voltage(float parsed_voltage)
+    {
+		uint8_t DAC_msg_buffer[2];
+		uint16_t dac_data;
+		if(parsed_voltage > 1023) parsed_voltage = 1023;
+    	dac_data = parsed_voltage << 2;
+    	DAC_msg_buffer[0] = dac_data >> 8;
+    	DAC_msg_buffer[1] = dac_data;
+    	HAL_I2C_Master_Transmit(&hi2c1, DAC_ADDR, DAC_msg_buffer, BUFFER_SIZE, HAL_MAX_DELAY);
+    }
 
-uint32_t parse(uint8_t one, uint8_t two ,uint8_t three ,uint8_t four){
-    uint32_t result;
-    result = (one << 24) | (two << 16)  | (three << 8) | four;
-    //puts the 4 8 bit arrays correlated with the current part of the message in to one 32 bit integer
-    return result;
-}
-
-void CAN_process(CAN_msg_t *msg1){
-    
-    
-    //variable declarations
-    uint32_t result;
-    double current;
-    
-    //the parsing of the 4 arrays
-    //arrows are for the pointer input instead of the dot operator
-    result = parse(msg1->data[4], msg1->data[5], msg1->data[6], msg1->data[7]);
-    
-    //giving a percentage of the recieved signal out of the maximum possible current
-    current = (float) result / MAX;
-
-    //mostly just for testing, but can export to wherever or do whatever we need to 
-    //printf("%f", current);
-}
 
 /**
  * @brief Takes the CAN message and decodes the data to know in which mode of operation the motor controller should be in and seperates it into the acceleration 
  * and velocity components 
  * @param 64 Bit CAN message coming from the Speeed Control Node (ID 0x401), CAN_velocity_msg_struct 
- * @retval Modifies CAN_msg struct with the approaties modes of operation abd the values for ac
+ * @retval Modifies CAN_msg struct with the appropriate modes of operation and the values for velocity and accelation
  */
  void decode_CAN_velocity_message(uint8_t RxData[], CAN_msg_t CAN_msg){
 
