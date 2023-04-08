@@ -20,11 +20,11 @@ uint16_t Parse_ACC(uint32_t pedal_data){
 
     uint16_t output; 
 
-    output = ((float)pedal_data/UINT32_MAX)*(float)UINT10_MAX;
+    output = (uint32_t) ((float)pedal_data/UINT32_MAX)*UINT10_MAX;
 
-    if (output > MAX_VOLTAGE_OUT) //cap the output voltage to our voltage limit
-        return output = MAX_VOLTAGE_OUT;
-    else
+    //if (output > MAX_VOLTAGE_OUT) //cap the output voltage to our voltage limit
+    //    return output = MAX_VOLTAGE_OUT;
+    //else
         return output; 
 }
 
@@ -75,28 +75,6 @@ void Send_Voltage(uint16_t parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef *
 
  } //end of decode_CAN_velocity_msg 
  
-/**
- * @brief Sends Test message for debugging
- * @param velocity
- * @param acceleration
- * @retval none
- */
-void send_test_message(uint8_t* TxData, int32_t velocity, uint32_t acceleration){
-    
-    TxData[0] = velocity >> 0 ; 
-    TxData[1] = velocity >> 8 ; 
-    TxData[2] = velocity >> 16; 
-    TxData[3] = velocity >> 24; 
-    
-    TxData[4] = acceleration >> 0 ; 
-    TxData[5] = acceleration >> 8 ; 
-    TxData[6] = acceleration >> 16; 
-    TxData[7] = acceleration >> 24;
-	
- 	
-	HAL_Delay(20);
-	  
-} //end of send_test_mesage 
 
 
  

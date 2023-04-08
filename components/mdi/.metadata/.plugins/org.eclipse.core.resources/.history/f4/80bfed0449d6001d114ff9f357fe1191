@@ -20,7 +20,7 @@ uint16_t Parse_ACC(uint32_t pedal_data){
 
     uint16_t output; 
 
-    output = ((float)pedal_data/UINT32_MAX)*(float)UINT10_MAX;
+    output = (uint32_t) ((float)pedal_data/UINT32_MAX)*UINT10_MAX;
 
     if (output > MAX_VOLTAGE_OUT) //cap the output voltage to our voltage limit
         return output = MAX_VOLTAGE_OUT;

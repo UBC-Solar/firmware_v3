@@ -76,9 +76,6 @@ bool Parse_Data_Flag = 0;
 
 uint16_t parsed_voltage = 0; 
 
-int32_t velocity; //FOR TESTING
-uint32_t acceleration; //FOR TESTING 
-
 
 /* USER CODE END 0 */
 
@@ -131,25 +128,30 @@ int main(void)
 
   while (1)
   {
-     msg0.power_or_eco = POWER_ON; //this would come from switch
-
-    //////////////////TEST MESSAGE GENERATION//////////////////////
+    ////SEND TEST MESSAGE FOR DEBUG //// 
+    TxData[0] = 0x64; //Velocity 100 m/s 
+    TxData[1] = 0x0;
+    TxData[2] = 0x0;
+    TxData[3] = 0x0;
     
-     velocity = -100; acceleration = 0x7FFFFFFF;
-     send_test_message(TxData, velocity, acceleration); 
-     HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
-
-    ///////////////////////////////////////////////////////////////
+    TxData[4] = 0xFF;
+    TxData[5] = 0xFF;
+    TxData[6] = 0xFF;
+    TxData[7] = 0xFF;
+ 	  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+	  HAL_Delay(20);
+    msg0.power_or_eco = ECO_ON; //this would come from switch
+    //////////////////////////////////////
 
     if(Parse_Data_Flag == 1 ){
 
-      decode_CAN_velocity_message(RxData, &msg0); 
+      decode_CAN_velocity_message(RxData, msg0); 
 
       Parse_Data_Flag = 0; 
       send_data_flag = 1; 
     }
     
-    if( (send_data_flag == 1 ) && (Parse_Data_Flag == 0) ){
+    if( (send_data_flag == 1 )&& (Parse_Data_Flag == 0) ){
 
 
       parsed_voltage = Parse_ACC(msg0.acceleration);
@@ -248,7 +250,7 @@ static void MX_CAN_Init(void)
    canfilterconfig.FilterActivation = CAN_FILTER_ENABLE; //ENABLE
    canfilterconfig.FilterBank = 10; //0x0000
    canfilterconfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-   canfilterconfig.FilterIdHigh = 0x401<<5; //changed from 0x0000
+   canfilterconfig.FilterHigh = 0x401<<5; //changed from 0x0000
    canfilterconfig.FilterIdLow = 0x0000;
    canfilterconfig.FilterMaskIdHigh = 0x1<<13; //changed from 0
    canfilterconfig.FilterMaskIdLow = 0x0000;
@@ -257,12 +259,8 @@ static void MX_CAN_Init(void)
    canfilterconfig.SlaveStartFilterBank = 13; // changed from 0
 
    HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);
-   
-   //RxHeader.DLC = 8;
-   //RxHeader.ExtId = 0;
-   //RxHeader.FilterMatchIndex = 0; //CHECK WHAT THIS NEEDS TO BE
-   //RxHeader.
 
+   
   /* USER CODE END CAN_Init 2 */
 
 }

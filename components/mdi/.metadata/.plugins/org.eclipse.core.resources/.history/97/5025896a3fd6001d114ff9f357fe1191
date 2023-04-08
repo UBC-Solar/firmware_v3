@@ -40,11 +40,9 @@
 #define ECO_ON 1
 #define POWER_ON 0
 
-#define UINT10_MAX 0x3FF
-
 
 //Limit voltage out into the motor 
-#define MAX_VOLTAGE_OUT (((1024.0 - 1.0) / 5.0) * 4.7)
+#define MAX_VOLTAGE_OUT ((1024 - 1) / 5) * 4.7 
 
 
 typedef struct
@@ -118,7 +116,5 @@ extern void CAN_process(CAN_msg_t *msg1);
 extern void decode_CAN_velocity_message(uint8_t RxData[], CAN_msg_t* CAN_msg); 
 
 extern uint16_t Parse_ACC(uint32_t pedal_data); 
-
-extern void send_test_message(uint8_t* TxData, int32_t velocity, uint32_t acceleration); 
 
 #endif
