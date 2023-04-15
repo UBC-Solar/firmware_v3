@@ -115,6 +115,7 @@ extern void Send_Voltage(uint16_t parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTy
 //Returns the decoded data from the message 
 extern void CAN_process(CAN_msg_t *msg1); 
 
+//Decodes the CAN msg to know in which mode of operation the motor controller should be in and seperates it into the acceleration 
 extern void decode_CAN_velocity_message(uint8_t RxData[], CAN_msg_t* CAN_msg); 
 
 extern uint16_t Parse_ACC(uint32_t pedal_data); 

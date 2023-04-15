@@ -76,9 +76,10 @@ void Send_Voltage(uint16_t parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef *
  } //end of decode_CAN_velocity_msg 
  
 /**
- * @brief Sends Test message for debugging
- * @param velocity
- * @param acceleration
+ * @brief Sends Test message for debugging. Should mimic the message that we would recieve in car
+ * @param TxData: pointer to the data that we want to transmit
+ * @param velocity: 32bit velocity 
+ * @param acceleration:  32bit acceleration
  * @retval none
  */
 void send_test_message(uint8_t* TxData, int32_t velocity, uint32_t acceleration){

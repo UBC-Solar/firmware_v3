@@ -79,6 +79,12 @@ uint16_t parsed_voltage = 0;
 int32_t velocity; //FOR TESTING
 uint32_t acceleration; //FOR TESTING 
 
+//for timing purposes
+uint64_t t_start;
+uint64_t t_end;
+uint64_t t_elapsed[256];
+uint8_t count_t = 0;
+
 
 /* USER CODE END 0 */
 
@@ -131,6 +137,8 @@ int main(void)
 
   while (1)
   {
+    
+    
      msg0.power_or_eco = POWER_ON; //this would come from switch
 
     //////////////////TEST MESSAGE GENERATION//////////////////////
@@ -140,7 +148,7 @@ int main(void)
      HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
 
     ///////////////////////////////////////////////////////////////
-
+    t_start = HAL_GetTick();
     if(Parse_Data_Flag == 1 ){
 
       decode_CAN_velocity_message(RxData, &msg0); 
@@ -166,9 +174,16 @@ int main(void)
       else 
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_RESET);
       //send regen
+      //TODO: Implement Regen
       
 	    send_data_flag = 0; 
+
     }
+    t_end = HAL_GetTick();
+    t_elapsed[count_t] = t_end - t_start;
+    count_t++;
+    if(count_t == 0); //set bkpoint here for testing
+
   }
     /* USER CODE END WHILE */
 
@@ -228,7 +243,8 @@ static void MX_CAN_Init(void)
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
   hcan.Init.Prescaler = 16;
-  hcan.Init.Mode = CAN_MODE_LOOPBACK;
+  hcan.Init.Mode = CAN_MODE_LOOPBACK;   //Loopback for testing, Normal for actual
+  //Time settings need to be adjusted for the can bus frequency and clock frequency
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
   hcan.Init.TimeSeg2 = CAN_BS2_4TQ;
@@ -243,25 +259,22 @@ static void MX_CAN_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN_Init 2 */
-   CAN_FilterTypeDef canfilterconfig;
 
-   canfilterconfig.FilterActivation = CAN_FILTER_ENABLE; //ENABLE
-   canfilterconfig.FilterBank = 10; //0x0000
-   canfilterconfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-   canfilterconfig.FilterIdHigh = 0x401<<5; //changed from 0x0000
+  //Code for setting up filters
+   CAN_FilterTypeDef canfilterconfig; //struct that contains all the info for filters
+
+   canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;  //ENABLE
+   canfilterconfig.FilterBank = 10;                       //Current filter bank to use
+   canfilterconfig.FilterFIFOAssignment = CAN_RX_FIFO0;   //Using Fifo0 interrupt
+   canfilterconfig.FilterIdHigh = 0x401<<5;               //Assuming we are only filtering for 0x401 message
    canfilterconfig.FilterIdLow = 0x0000;
-   canfilterconfig.FilterMaskIdHigh = 0x1<<13; //changed from 0
+   canfilterconfig.FilterMaskIdHigh = 0; //changed from 0x1<<13
    canfilterconfig.FilterMaskIdLow = 0x0000;
-   canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;
-   canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
-   canfilterconfig.SlaveStartFilterBank = 13; // changed from 0
+   canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;    //Masking mode
+   canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;   
+   canfilterconfig.SlaveStartFilterBank = 13; // tells where to start giving the slave filters
 
-   HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);
-   
-   //RxHeader.DLC = 8;
-   //RxHeader.ExtId = 0;
-   //RxHeader.FilterMatchIndex = 0; //CHECK WHAT THIS NEEDS TO BE
-   //RxHeader.
+   HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);         //sets up the filter according the info in canfilterconfig
 
   /* USER CODE END CAN_Init 2 */
 
@@ -334,14 +347,17 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+//Interrupt where code will go when it recieves a CAN message.
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //recieve data in this function
 {
-	//assert_param(HAL_CAN_DeactivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING) == HAL_OK);
+  //gets the CAN message with info in RxHeader and data in RxData
 	if(HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
 	{
 		Error_Handler();
 	}
 
+  //sets a flag to let the main loop know a message has been recieved 
 	Parse_Data_Flag = 1; 
 
 }
