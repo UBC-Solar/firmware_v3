@@ -64,8 +64,8 @@ all: main-build
 main-build: telemetry.elf secondary-outputs
 
 # Tool invocations
-telemetry.elf telemetry.map: $(OBJS) $(USER_OBJS) C:\Users\matt\Desktop\TEL_MOVE\firmware_v3\components\tel_bluepill\STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "telemetry.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\matt\Desktop\TEL_MOVE\firmware_v3\components\tel_bluepill\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="telemetry.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+telemetry.elf telemetry.map: $(OBJS) $(USER_OBJS) C:\Users\Claris\STM32CubeIDE\workspace_1.5.1\solar-thread\firmware_v3\components\tel_bluepill\STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "telemetry.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\Claris\STM32CubeIDE\workspace_1.5.1\solar-thread\firmware_v3\components\tel_bluepill\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="telemetry.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

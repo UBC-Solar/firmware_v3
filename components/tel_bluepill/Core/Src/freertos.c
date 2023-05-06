@@ -29,6 +29,10 @@
 #include "can.h"
 #include "usart.h"
 
+#include "imu.h"
+#include <stdio.h>
+#include "i2c.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,6 +47,8 @@
 
 #define CAN_MESSAGE_QUEUE_SIZE 10
 
+#define IMU_QUEUE_SIZE 10
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -52,6 +58,10 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+union FloatBytes {
+    float float_value;
+    uint8_t bytes[4];
+} FloatBytes;
 
 const osThreadAttr_t readCANTask_attributes = {
   .name = "readCANTask",
@@ -81,12 +91,33 @@ const osMessageQueueAttr_t canMessageQueue_attributes = {
   .name = "canMessageQueue"
 };
 
+const osMessageQueueAttr_t imuMessageQueue_attributes = {
+  .name = "imuMessageQueue"
+};
+
+/* Definitions for readimu */
+osThreadId_t readimuHandle;
+const osThreadAttr_t readimu_attributes = {
+  .name = "readimu",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
+/* Definitions for transmitdata */
+osThreadId_t transmitIMUHandle;
+const osThreadAttr_t transmitIMU_attributes = {
+  .name = "transmitIMU",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
 osThreadId_t readCANTaskHandle;
 osThreadId_t kernelLEDTaskHandle;
 osThreadId_t transmitMessageTaskHandle;
 osThreadId_t changeRadioSettingsTaskHandle;
 
 osMessageQueueId_t canMessageQueueHandle;
+osMessageQueueId_t imuMessageQueueHandle;
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -108,6 +139,11 @@ void changeRadioSettingsTask(void *argument);
 void sendByte(char c);
 void sendChar(char c);
 
+void StartReadIMU(void *argument);
+void StartTransmitIMU(void *argument);
+
+void addtoIMUQueue(char* type, char* dimension, union FloatBytes data);
+
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -121,6 +157,9 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
+
+  // Initialize IMU
+  initIMU();
 
   /* USER CODE END Init */
 
@@ -139,19 +178,22 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_QUEUES */
 
   canMessageQueueHandle = osMessageQueueNew(CAN_MESSAGE_QUEUE_SIZE, sizeof(CAN_msg_t), &canMessageQueue_attributes);
-
+  imuMessageQueueHandle = osMessageQueueNew(IMU_QUEUE_SIZE, sizeof(IMU_msg_t), &imuMessageQueue_attributes);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  // defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
 
   // kernelLEDTaskHandle = osThreadNew(kernelLEDTask, NULL, &kernelLEDTask_attributes);
   
-  readCANTaskHandle = osThreadNew(readCANTask, NULL, &readCANTask_attributes);
-  transmitMessageTaskHandle = osThreadNew(transmitMessageTask, NULL, &transmitMessageTask_attributes);
+//  readCANTaskHandle = osThreadNew(readCANTask, NULL, &readCANTask_attributes);
+//  transmitMessageTaskHandle = osThreadNew(transmitMessageTask, NULL, &transmitMessageTask_attributes);
+
+  readimuHandle = osThreadNew(StartReadIMU, NULL, &readimu_attributes);
+  transmitIMUHandle = osThreadNew(StartTransmitIMU, NULL, &transmitIMU_attributes);
 
   // changeRadioSettingsTaskHandle = osThreadNew(changeRadioSettingsTask, NULL, &changeRadioSettingsTask_attributes);
 
@@ -319,7 +361,7 @@ __NO_RETURN void changeRadioSettingsTask(void *argument) {
 
 void sendChar(char c)
 {
-	HAL_StatusTypeDef uart_tx_status;
+  HAL_StatusTypeDef uart_tx_status;
 
   //Convert to ASCII
   uint8_t c_H = "0123456789ABCDEF"[(c >> 4) & 0xFUL];
@@ -327,6 +369,88 @@ void sendChar(char c)
 
   uart_tx_status = HAL_UART_Transmit(&huart3, &c_H, 1, 1000);
   uart_tx_status = HAL_UART_Transmit(&huart3, &c_L, 1, 1000);
+}
+
+__NO_RETURN void StartReadIMU(void *argument)
+{
+  union FloatBytes gy_x, gy_y, gy_z, ax_x, ax_y, ax_z;
+  /* Infinite loop */
+  while(1)
+  {
+    gy_x.float_value = gyro(GYRO_X);
+    gy_y.float_value = gyro(GYRO_Y);
+    gy_z.float_value = gyro(GYRO_Z);
+    ax_x.float_value = accel(ACCEL_X);
+    ax_y.float_value = accel(ACCEL_Y);
+    ax_z.float_value = accel(ACCEL_Z);
+
+    // IMU DATA
+    addtoIMUQueue("G", "X", gy_x);
+    addtoIMUQueue("G", "Y", gy_y);
+    addtoIMUQueue("G", "Z", gy_z);
+    addtoIMUQueue("A", "X", ax_x);
+    addtoIMUQueue("A", "Y", ax_y);
+    addtoIMUQueue("A", "Z", ax_z);
+
+    osDelay(1000);
+  }
+
+  // In case we accidentally exit from task loop
+  osThreadTerminate(NULL);
+
+}
+
+void addtoIMUQueue(char* type, char* dimension, union FloatBytes data){
+    IMU_msg_t imu_message;
+
+    imu_message.imu_type = type[0];
+    imu_message.dimension = dimension[0];
+    for (int i = 0; i < 4; i++) {
+        imu_message.data[i] = data.bytes[i];
+    }
+
+    osMessageQueuePut(imuMessageQueueHandle, &imu_message, 0U, 0U);
+}
+
+__NO_RETURN void StartTransmitIMU(void *argument){
+  osStatus_t imu_queue_status;
+  IMU_msg_t imu_message;
+
+  while(1)
+  {
+    // Check if there are messages in the queue
+    if (osMessageQueueGetCount(imuMessageQueueHandle) == 0) {
+        continue;
+    }
+
+    imu_queue_status = osMessageQueueGet(imuMessageQueueHandle, &imu_message, NULL, osWaitForever);
+
+    if (imu_queue_status != osOK){
+      osThreadYield();
+    }
+    uint8_t imu_buffer[9] = {0};
+
+    // IMU ID
+    imu_buffer[0] = '@';
+
+    // IMU Data from queue
+    imu_buffer[1] = imu_message.imu_type;
+    imu_buffer[2] = imu_message.dimension;
+    for (int i = 0; i < 4; i++) {
+        imu_buffer[i + 3] = imu_message.data[i];
+    }
+
+    // NEW LINE
+    imu_buffer[7] = '\n';
+
+    // CARRIAGE RETURN
+    imu_buffer[8] = '\r';
+
+    HAL_UART_Transmit(&huart3, imu_buffer, sizeof(imu_buffer), 1000);
+  }
+
+  // In case we accidentally exit from task loop
+  osThreadTerminate(NULL);
 }
 
 /* USER CODE END Application */
