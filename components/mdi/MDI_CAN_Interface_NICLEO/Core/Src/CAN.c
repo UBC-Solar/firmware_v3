@@ -19,13 +19,14 @@
 uint16_t Parse_ACC(uint32_t pedal_data){
 
     uint16_t output; 
+	uint16_t MAX_OUT = 0.90 * (float) UINT10_MAX;
 
-    output = ((float)pedal_data/UINT32_MAX)*(float)UINT10_MAX;
-
-    if (output > MAX_VOLTAGE_OUT) //cap the output voltage to our voltage limit
-        return output = MAX_VOLTAGE_OUT;
-    else
-        return output; 
+    output = ((float)pedal_data / (float) UINT32_MAX ) * (float)UINT10_MAX;
+	
+    if (output >  MAX_OUT) //cap the output voltage to our voltage limit
+        output =  MAX_OUT;
+    
+    return output; 
 }
 
 /**
@@ -45,7 +46,30 @@ void Send_Voltage(uint16_t parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef *
     	HAL_I2C_Master_Transmit(hi2c1, DAC_ADDR, DAC_msg_buffer, BUFFER_SIZE, HAL_MAX_DELAY);
     }
 
+//TODO: THIS FUNCTION
+/**
+ * @brief Takes the 0-1.0 number that represents the desired regen amount and sends it as a 10bit number to a second DAC
+ * @param regen is 0-1.0ew float 
+ * @param DAC_REGEN_ADDR is the address for DAC
+ * @param *hi2c1 is the handle for the I2C
+ * @retval none
+ */
+void Send_Regen(float regen, uint8_t DAC_REGEN_ADDR, I2C_HandleTypeDef *hi2c1){
+	//need to convert to 10bit and then send over a second DAC
+	//do everything in this function
+	uint8_t DAC_msg_buffer[2];
+	uint16_t dac_data;
+	
+	if(regen > 1.0) regen = 1.0;
 
+	dac_data = regen * (float)UINT10_MAX; //converts to 10bit
+	
+    	
+	dac_data =  dac_data << 2;
+    DAC_msg_buffer[0] = dac_data >> 8;
+    DAC_msg_buffer[1] = dac_data; 
+    HAL_I2C_Master_Transmit(hi2c1, DAC_REGEN_ADDR, DAC_msg_buffer, BUFFER_SIZE, HAL_MAX_DELAY);
+}
 /**
  * @brief Takes the CAN message and decodes the data to know in which mode of operation the motor controller should be in and seperates it into the acceleration 
  * and velocity components 
@@ -60,7 +84,7 @@ void Send_Voltage(uint16_t parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef *
 	
 	if (CAN_msg->velocity == 0){ //enter regen operation mode 
 		CAN_msg->regen = REGEN_TRUE; 
-		CAN_msg->direction = REVERSE_TRUE;
+		CAN_msg->direction = REVERSE_FALSE; //is this forward or reverse?
 	} 
 	else if(CAN_msg->velocity < 0){ //enter reverse opereation mode 
 		CAN_msg->direction = REVERSE_TRUE;
@@ -97,7 +121,5 @@ void send_test_message(uint8_t* TxData, int32_t velocity, uint32_t acceleration)
  	
 	HAL_Delay(20);
 	  
-} //end of send_test_mesage 
+} //end of send_test_message 
 
-
- 

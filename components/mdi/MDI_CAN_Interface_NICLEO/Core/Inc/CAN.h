@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <math.h>
 //#include <cstdint>
 
 #ifndef CAN_H
@@ -44,7 +45,7 @@
 
 
 //Limit voltage out into the motor 
-#define MAX_VOLTAGE_OUT (((1024.0 - 1.0) / 5.0) * 4.7)
+#define MAX_VOLTAGE_OUT 0x3C1
 
 
 typedef struct
@@ -119,6 +120,8 @@ extern void CAN_process(CAN_msg_t *msg1);
 extern void decode_CAN_velocity_message(uint8_t RxData[], CAN_msg_t* CAN_msg); 
 
 extern uint16_t Parse_ACC(uint32_t pedal_data); 
+
+extern void Send_Regen(float regen, uint8_t DAC_REGEN_ADDR, I2C_HandleTypeDef *hi2c1);
 
 extern void send_test_message(uint8_t* TxData, int32_t velocity, uint32_t acceleration); 
 

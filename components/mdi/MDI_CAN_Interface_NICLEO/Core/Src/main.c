@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "math.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -46,6 +47,7 @@ I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
 static const uint8_t DAC_ADDR = 0b0001100 << 1;
+static const uint8_t DAC_REGEN_ADDR = 0b00000000 << 1; 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -84,6 +86,7 @@ uint64_t t_start;
 uint64_t t_end;
 uint64_t t_elapsed[256];
 uint8_t count_t = 0;
+float count = 0; 
 
 
 /* USER CODE END 0 */
@@ -140,15 +143,35 @@ int main(void)
     
     
      msg0.power_or_eco = POWER_ON; //this would come from switch
+     
+     
+
+        
+      t_end = HAL_GetTick();
+
+      count_t++; 
+
+      
+
+      if(count_t == 3) {
+        count = count + 0.1;
+        count_t = 0; 
+      } 
+
+     if(count > 99999.0)
+      count = 0; 
 
     //////////////////TEST MESSAGE GENERATION//////////////////////
-    
-     velocity = -100; acceleration = 0x7FFFFFFF;
+     
+     
+     velocity = -100; 
+     acceleration = 0xFFFFFFFF;
+     acceleration = acceleration/2.0*sin(count)  + acceleration/2.0 ; 
      send_test_message(TxData, velocity, acceleration); 
      HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
 
     ///////////////////////////////////////////////////////////////
-    t_start = HAL_GetTick();
+    
     if(Parse_Data_Flag == 1 ){
 
       decode_CAN_velocity_message(RxData, &msg0); 
@@ -159,10 +182,14 @@ int main(void)
     
     if( (send_data_flag == 1 ) && (Parse_Data_Flag == 0) ){
 
+      
 
-      parsed_voltage = Parse_ACC(msg0.acceleration);
-    	Send_Voltage(parsed_voltage, DAC_ADDR, &hi2c1); 
-
+      if(msg0.regen == REGEN_TRUE)
+        Send_Regen(msg0.acceleration, DAC_REGEN_ADDR, &hi2c1); 
+      else{
+        parsed_voltage = Parse_ACC(msg0.acceleration);
+    	  Send_Voltage(parsed_voltage, DAC_ADDR, &hi2c1); 
+      }
       //send direction
       if(msg0.direction == REVERSE_FALSE)
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET); 
@@ -173,17 +200,12 @@ int main(void)
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET); 
       else 
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_RESET);
-      //send regen
-      //TODO: Implement Regen
       
 	    send_data_flag = 0; 
+      
 
     }
-    t_end = HAL_GetTick();
-    t_elapsed[count_t] = t_end - t_start;
-    count_t++;
-    if(count_t == 0); //set bkpoint here for testing
-
+  
   }
     /* USER CODE END WHILE */
 
