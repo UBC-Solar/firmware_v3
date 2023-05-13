@@ -111,5 +111,7 @@
     :compile:
       :*:
         - -Werror # treat all warnings as errors
+        - -Wall
         - -Wno-incompatible-pointer-types # Disable warning produced by * to [] mismatch
+        - -Wno-int-to-pointer-cast
 ...

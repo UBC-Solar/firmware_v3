@@ -276,6 +276,7 @@ struct BTM_module {
     BTM_module_enable_t enable;
     uint16_t voltage; // stored in the same format it is received from the LTC6813 in
     float temperature;
+    float soc;
     int status;
 };
 
