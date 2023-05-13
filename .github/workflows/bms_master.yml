@@ -40,6 +40,8 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.1'
+      - name: Set up Ceedling
+        run: gem install --no-document ceedling # Needed for ceedling dependencies
       - name: Run Ceedling Unit Tests
         run: ../../../tools/ceedling/bin/ceedling test:all
         working-directory: components/bms/bms_master
