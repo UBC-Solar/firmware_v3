@@ -52,7 +52,6 @@ CAN_HandleTypeDef hcan;
 TIM_HandleTypeDef htim8;
 
 /* USER CODE BEGIN PV */
-volatile uint16_t adc3_buf[ADC3_BUF_LENGTH] = {0};
 
 /* USER CODE END PV */
 
@@ -71,6 +70,29 @@ static void MX_TIM8_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+// Conversion half complete DMA interrupt callback for ADC3
+void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
+{
+  ADC3_ConversionCompleteCallback(ADC_BUFFER_HALF_FIRST);
+}
+
+// Conversion full complete DMA interrupt callback for ADC3
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+  ADC3_ConversionCompleteCallback(ADC_BUFFER_HALF_SECOND);
+}
+
+/**
+  * @brief  ADC error callback in non blocking mode
+  *        (ADC conversion with interruption or transfer by DMA)
+  * @param  hadc: ADC handle
+  * @retval None
+  */
+void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
+{
+  ADC3_ErrorCallback();
+}
 
 /* USER CODE END 0 */
 
@@ -110,8 +132,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   CAN_hcan = &hcan;
   HAL_CAN_Start (&hcan);
-  HAL_ADC_Start_DMA(&hadc3, (uint32_t *) adc3_buf, ADC3_BUF_LENGTH);
-  HAL_TIM_Base_Start(&htim8);
+  ADC3_Init(&hadc3, &htim8);
   FSM_init();
   /* USER CODE END 2 */
 
@@ -270,7 +291,7 @@ static void MX_ADC3_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN ADC3_Init 2 */
-  ADC3_setFaultStatus(0); //ADC3 not in process yet
+
   /* USER CODE END ADC3_Init 2 */
 
 }
@@ -439,86 +460,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-// Conversion half complete DMA interrupt callback for ADC3
-void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
-{
-  if (!ADC3_getBusyStatus()) //make sure DMA processing stops when processing ADC3 readings
-  {
-    ADC3_setBusyStatus(1); //indicates DMA right now is in process
-    static float result[ADC3_NUM_ANALOG_CHANNELS] = {0.0}; //stores supplemental battery voltage, motor and array currents
-
-    // Average 1st half of the buffer
-    ADC3_processRawReadings(0, adc3_buf, result);
-
-    // convert averaged raw readings into corresponding voltage and current values
-    ADC3_setSuppBattVoltage(result[0]);
-    ADC3_setMotorCurrent(result[1]);
-    ADC3_setArrayCurrent(result[2]);
-
-    ADC3_setBusyStatus(0); //indicates now the DMA is not in process
-  }
-
-  else
-  {
-    ADC3_setFaultStatus(1); //fault status when previous DMA processing is not finished beforehand
-    HAL_TIM_Base_Stop(&htim8); //stop TIM8: the trigger timer for ADC3
-  }
-}
-
-// Conversion full complete DMA interrupt callback for ADC3
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
-{
-  if (!ADC3_getBusyStatus()) //make sure DMA processing stops when processing ADC3 readings
-  {
-    ADC3_setBusyStatus(1); //indicates DMA right now is in process
-    static float result[ADC3_NUM_ANALOG_CHANNELS] = {0.0}; //stores supplemental battery voltage, motor and array currents
-
-    // Average 2nd half of the buffer
-    ADC3_processRawReadings(1, adc3_buf, result);
-  
-    // convert averaged raw readings into corresponding voltage and current values
-    ADC3_setSuppBattVoltage(result[0]);
-    ADC3_setMotorCurrent(result[1]);
-    ADC3_setArrayCurrent(result[2]);
-
-    ADC3_setBusyStatus(0); //indicates now the DMA is not in process
-  }
-  
-  else
-  {
-    ADC3_setFaultStatus(1); //fault status when previous DMA processing is not finished beforehand
-    HAL_TIM_Base_Stop(&htim8); //stop TIM8: the trigger timer for ADC3
-  }
-}
-
 /* USER CODE END 4 */
-
-/**
-  * @brief  ADC error callback in non blocking mode
-  *        (ADC conversion with interruption or transfer by DMA)
-  * @param  hadc: ADC handle
-  * @retval None
-  */
-void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
-{
-  //stop and reset DMA when there is an error
-  //reference: http://www.disca.upv.es/aperles/arm_cortex_m3/llibre/st/STM32F439xx_User_Manual/stm32f4xx__hal__adc_8c_source.html#l01675
-  if (hadc->State == HAL_ADC_STATE_ERROR_DMA)
-  {
-    //stop and reset DMA
-    //reference: http://www.disca.upv.es/aperles/arm_cortex_m3/llibre/st/STM32F439xx_User_Manual/group__adc__exported__functions__group2.html#gadea1a55c5199d5cb4cfc1fdcd32be1b2
-    HAL_TIM_Base_Stop(&htim8); //stop TIM8: the trigger timer for ADC3   
-    HAL_ADC_Stop_DMA(&hadc);
-    HAL_ADC_Start_DMA(&hadc, (uint32_t *) adc3_buf, ADC3_BUF_LENGTH);
-    HAL_TIM_Base_Start(&htim8);
-  }
-  else
-  {
-    /* In case of ADC error, call main error handler */
-    Error_Handler();
-  }
-}
-
 
 /**
   * @brief  This function is executed in case of error occurrence.

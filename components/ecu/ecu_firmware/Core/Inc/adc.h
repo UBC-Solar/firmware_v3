@@ -10,39 +10,34 @@
 #ifndef __ADC_H
 #define __ADC_H
 
+#include "main.h"
 
 /*============================================================================*/
 /* CONFIGURATION */
 
 #define ADC3_NUM_ANALOG_CHANNELS 3
 #define ADC3_BUF_LENGTH_PER_CHANNEL 200
-#define ADC3_BUF_LENGTH (ADC3_BUF_LENGTH_PER_CHANNEL * ADC3_NUM_ANALOG_CHANNELS)
-
-#define ADC_MAX_VOLT_READING 3.3
-#define ADC_RESOLUTION 4095
 
 /*============================================================================*/
-/* PUBLIC VARIABLES */
+/* PUBLIC DEFINITIONS */
+
+typedef enum {
+    ADC_BUFFER_HALF_FIRST,
+    ADC_BUFFER_HALF_SECOND
+} ADC_BufferHalf_t;
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
+void ADC3_Init(ADC_HandleTypeDef* adc_handle, TIM_HandleTypeDef *trigger_timer_handle);
 int ADC3_getSuppBattVoltage(); //unsigned int?
-void ADC3_setSuppBattVoltage(float supp_voltage);
-
 int ADC3_getMotorCurrent();
-void ADC3_setMotorCurrent(float motor_current);
-
 int ADC3_getArrayCurrent();
-void ADC3_setArrayCurrent(float array_current);
-
 int ADC3_netCurrentOut(int motor_current, int array_current);
-void ADC3_processRawReadings(int half, volatile int adc3_buf[], float result[]);
-
 int ADC3_getBusyStatus();
-void ADC3_setFaultStatus(int flag_value);
+int ADC3_getFaultStatus();
 
-int ADC3_getFaultStatus(); 
-void ADC3_setFaultStatus(int flag_value);
+void ADC3_ConversionCompleteCallback(ADC_BufferHalf_t bufferHalf);
+void ADC3_ErrorCallback(void);
 
 #endif /* __ADC_H */
