@@ -158,7 +158,7 @@ void BTM_BAL_setDischarge(
     }
 
     BTM_writeRegisterGroup(CMD_WRCFGA, cfgra_to_write);
-    BTM_writeRegisterGroup(CMD_WRCFGA, cfgrb_to_write);
+    BTM_writeRegisterGroup(CMD_WRCFGB, cfgrb_to_write);
 
     return;
 }

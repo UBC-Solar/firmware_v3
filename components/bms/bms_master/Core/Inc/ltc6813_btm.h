@@ -179,7 +179,7 @@ typedef enum {
     CMD_CLRSCTRL= 0x0018,       // Clear S Control Register Group
 
     // Start Cell Voltage ADC Conversion and Poll Status
-    CMD_ADCV    = 0x0260 | (MD << 7) | (DCP << 4), // CH set to 0 = all cells
+    CMD_ADCV     = 0x0260 | (MD << 7) | (DCP << 4), // CH set to 0 = all cells
 	CMD_ADCV_CH1 = 0x0260 | (MD << 7) | (DCP << 4) | CH_1,
 	CMD_ADCV_CH2 = 0x0260 | (MD << 7) | (DCP << 4) | CH_2,
 	CMD_ADCV_CH3 = 0x0260 | (MD << 7) | (DCP << 4) | CH_3,
@@ -188,8 +188,8 @@ typedef enum {
 	CMD_ADCV_CH6 = 0x0260 | (MD << 7) | (DCP << 4) | CH_6,
 
     // Start Open Wire ADC Conversion and Poll Status
-    CMD_ADOW_PUP    = 0x0228 | (MD << 7) | (PUP << 6) | (DCP << 4), // CH set to 0
-	CMD_ADOW_PDOWN    = 0x0228 | (MD << 7) | (PDOWN << 6) | (DCP << 4), // CH set to 0
+    CMD_ADOW_PUP    = 0x0228 | (MD << 7) | (PUP << 6)   | (DCP << 4), // CH set to 0
+	CMD_ADOW_PDOWN  = 0x0228 | (MD << 7) | (PDOWN << 6) | (DCP << 4), // CH set to 0
 
     // Start Self Test Cell Voltage Conversion and Poll Status
     //CMD_CVST    = 0x0207 | (MD << 7) | (ST << 5),
@@ -319,19 +319,19 @@ typedef struct {
 // BTM_SPI_handle - must set this variable to the HAL SPI handle corresponding
 // to the SPI peripheral to which the LTC devices are connected
 #ifndef TEST
-SPI_HandleTypeDef * BTM_SPI_handle;
+SPI_HandleTypeDef *BTM_SPI_handle;
 #endif
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
-uint16_t BTM_calculatePec15(uint8_t* data, int len);
-void BTM_init(BTM_PackData_t * pack);
+uint16_t BTM_calculatePec15(uint8_t *data, int len);
+void BTM_init(BTM_PackData_t *pack);
 void BTM_wakeup(void);
 void BTM_sendCmd(BTM_command_t command);
 BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command);
 void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][BTM_REG_GROUP_SIZE]);
 BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_REG_GROUP_SIZE]);
-BTM_Status_t BTM_readBatt(BTM_PackData_t * packData);
+BTM_Status_t BTM_readBatt(BTM_PackData_t *packData);
 float BTM_regValToVoltage(unsigned int raw_reading);
 void BTM_writeCS(CS_state_t new_state);
 

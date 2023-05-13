@@ -17,6 +17,7 @@
 #include "btm_bal_settings.h"
 #include "analysis.h"
 #include "selftest.h"
+#include "soc.h"
 
 /*============================================================================*/
 /* ENUMERATIONS */

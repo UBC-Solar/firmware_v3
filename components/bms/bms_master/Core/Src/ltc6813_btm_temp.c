@@ -13,9 +13,15 @@
 #include "stm32f1xx_hal.h"
 #include <math.h>
 
-#define GPIO_5_TOGGLE 0b10000000 // For bitwise operations with CFGRA byte 0
+#define GPIO_5_TOGGLE 0x80 // For bitwise operations with CFGRA byte 0
 #define MUX_CHANNELS 2
 #define NUM_GPIOS 8
+
+// Imperically, need at least ~500us according to bench test
+// (that's with just 2 thermistor inputs in use, may need more with full set)
+// If this is longer than 4ms this routine may stop working since the
+// LTC6813 isoSPI port might go to sleep
+#define DELAY_TIME_MUX_SWITCH_TO_MEASURE_MS 1
 
 // Private function prototypes:
 BTM_Status_t readThermistorVoltage(
@@ -72,16 +78,16 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
     for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++) {
         for(int reg_num = 0; reg_num < BTM_REG_GROUP_SIZE; reg_num++) {
             cfgra_to_write[ic_num][reg_num] =  pack->stack[ic_num].cfgra[reg_num];
-            if (reg_num == 0)
-            {
-                cfgra_to_write[ic_num][reg_num] &= ~GPIO_5_TOGGLE; // GPIO 5 = 0
-                // update the stored configuration register
-                pack->stack[ic_num].cfgra[reg_num] = cfgra_to_write[ic_num][reg_num];
-            }
         }
+        cfgra_to_write[ic_num][0] &= ~GPIO_5_TOGGLE; // GPIO 5 = 0
+        // update the stored configuration register
+        pack->stack[ic_num].cfgra[0] = cfgra_to_write[ic_num][0];
     }
 
     BTM_writeRegisterGroup(CMD_WRCFGA, cfgra_to_write);
+
+    // Delay slightly to allow thermistor input voltages to settle after mux switch
+    HAL_Delay(DELAY_TIME_MUX_SWITCH_TO_MEASURE_MS);
 
     // perform readings for channel 0
     status = readThermistorVoltage
@@ -118,6 +124,9 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
     }
 
     BTM_writeRegisterGroup(CMD_WRCFGA, cfgra_to_write);
+
+    // Delay slightly to allow thermistor input voltages to settle after mux switch
+    HAL_Delay(DELAY_TIME_MUX_SWITCH_TO_MEASURE_MS);
 
     status = readThermistorVoltage
     (

@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include "debug_io.h"
 #include "fsm.h"
 #include "ltc6813_btm.h"
 #include "control.h"
@@ -112,6 +113,7 @@ int main(void)
   MX_TIM3_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  DebugIO_Init(&huart1);
 
   // Give the BMS functionality access to hardware resources
   BTM_SPI_handle = &hspi2;
@@ -132,7 +134,7 @@ int main(void)
 
     // blink LED on master board
     current_blink_tick = HAL_GetTick();
-    if (last_blink_tick - current_blink_tick >= LED_BLINK_INTERVAL)
+    if (current_blink_tick - last_blink_tick >= LED_BLINK_INTERVAL)
     {
         HAL_GPIO_TogglePin(LED_OUT_GPIO_Port, LED_OUT_Pin);
         last_blink_tick = current_blink_tick;
@@ -426,20 +428,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-// Configure where printf() and putchar() output goes
-int __io_putchar(int ch)
-{
-    // Un-comment either (or both) function call to route debugging output
-
-    // Output on Serial Wire Output (SWO)
-    ITM_SendChar(ch);
-
-    // Output on UART
-    //HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
-
-    return (ch);
-}
 
 /* USER CODE END 4 */
 
