@@ -7,7 +7,6 @@ on:
     paths:
       - 'components/bms/bms_master/**'
       - '.github/workflows/bms_master.yml'
-
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -29,7 +28,8 @@ jobs:
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
       - name: Build PlatformIO Project
-        run: cd components/bms/bms_master; pio run
+        run: pio run
+        working-directory: components/bms/bms_master
 
   unittest:
     runs-on: ubuntu-latest
@@ -40,7 +40,6 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.1'
-      - name: Set up Ceedling
-        run: gem install --no-doc ceedling
       - name: Run Ceedling Unit Tests
-        run: cd components/bms/bms_master; ceedling test:all
+        run: ../../../tools/ceedling/bin/ceedling test:all
+        working-directory: components/bms/bms_master

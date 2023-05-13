@@ -7,7 +7,6 @@ on:
     paths:
       - 'components/ecu/ecu_firmware/**'
       - '.github/workflows/ecu_firmware.yml'
-
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -29,4 +28,5 @@ jobs:
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
       - name: Build PlatformIO Project
-        run: cd components/ecu/ecu_firmware; pio run
+        run: pio run
+        working-directory: components/ecu/ecu_firmware
