@@ -24,7 +24,7 @@
 
 // Lookup table for PEC (Packet Error Code) CRC calculation
 // See note at end of file for details of its origin
-const uint16_t pec15Table[256] =
+static const uint16_t pec15Table[256] =
 {
     0x0000, 0xC599, 0xCEAB, 0x0B32, 0xD8CF, 0x1D56, 0x1664, 0xD3FD, 0xF407,
     0x319E, 0x3AAC, 0xFF35, 0x2CC8, 0xE951, 0xE263, 0x27FA, 0xAD97, 0x680E,
@@ -58,8 +58,8 @@ const uint16_t pec15Table[256] =
 };
 
 // Private function prototypes
-void calculateStackVolts(BTM_PackData_t* pack, int stack_num);
-void calculatePackVolts(BTM_PackData_t* pack);
+void calculateStackVolts(BTM_PackData_t *pack, int stack_num);
+void calculatePackVolts(BTM_PackData_t *pack);
 BTM_Status_t processHALStatus(HAL_StatusTypeDef status_HAL, unsigned int device_num);
 
 
@@ -95,8 +95,9 @@ void BTM_wakeup()
     // Using HAL_Delay() for this is not particularly ideal, since the
     // minimum delay is 1ms and the delays required are 300us and
     // 10us -ish (shorter than 1 ms)
-    // TODO: test with daisy chain of 3 LTC6813's to verify this timing works
     // If it doesn't, add another faster timer for more precise delays
+	BTM_writeCS(CS_HIGH);
+	HAL_Delay(1); // wait 1ms
 	for (int i = 0; i < BTM_NUM_DEVICES; i++)
 	{
 		BTM_writeCS(CS_LOW);
@@ -115,7 +116,7 @@ void BTM_wakeup()
  * otherwise these settings will be overwritten.
  * @param pack A pointer to the PackData structure in use
  */
-void BTM_init(BTM_PackData_t * pack)
+void BTM_init(BTM_PackData_t *pack)
 {
     uint8_t cfgra_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
     uint8_t cfgrb_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
@@ -125,19 +126,19 @@ void BTM_init(BTM_PackData_t * pack)
     {
         0xF8 | (REFON << 2) | ADCOPT, // GPIO 1-5 pull-downs off, REFON, ADCOPT
         (VUV & 0xFF), // VUV[7:0]
+		((uint8_t) (VOV << 4)) | (((uint8_t) (VUV >> 8)) & 0x0F), // VOV[4:0] | VUV[11:8]
+        (VOV >> 4), // VOV[11:4]
+		0x00, // Discharge off for cells 1 through 8
+        0x00, // Discharge off for cells 9 through 12, Discharge timer disabled
+    };
+	uint8_t config_val_b[BTM_REG_GROUP_SIZE] =
+    {
+        0x0F, // Discharge off for cells 13 through 16, GPIO 6-9 = 1
+        0x00, // FDRF = 0, PS = 0, Discharge off for cells 17 and 18
         0x00,
         0x00,
         0x00,
         0x00
-    };
-	uint8_t config_val_b[BTM_REG_GROUP_SIZE] =
-    {
-        0x0F, // Discharge off for cells 13 through 16 GPIO 6-9 = 1
-        0x00, // FDRF = 0, PS = 0, Discharge off for cells 17 and 18, GPIO 9 Pull-down off
-        ((uint8_t) (VOV << 4)) | (((uint8_t) (VUV >> 8)) & 0x0F), // VOV[4:0] | VUV[11:8]
-        (VOV >> 4), // VOV[11:4]
-        0x00, // Discharge off for cells 1 through 8
-        0x00  // Discharge off for cells 9 through 12, Discharge timer disabled
     };
     // Initialize given PackData structure
     pack->pack_voltage = 0;
@@ -163,6 +164,7 @@ void BTM_init(BTM_PackData_t * pack)
 
     }
 
+	HAL_Delay(2250); // Let the LTC6813s' watchdog time out (max 2.2sec) to start IC config from a clean slate
     BTM_wakeup(); // Wake up all LTC6813's in the chain
     BTM_writeRegisterGroup(CMD_WRCFGA, cfgra_to_write); // Write to Config. Reg. Group A
     BTM_writeRegisterGroup(CMD_WRCFGB, cfgrb_to_write); // Write to Config. Reg. Group B
@@ -305,7 +307,7 @@ void BTM_writeRegisterGroup(
  * @param command 	A read command to specify which register group to read.
  * 					Read commands start with "RD"
  * @param rx_data 	Pointer to a 2-dimensional array of size
- *					BTM_NUM_DEVICES x 6 to copy received data to
+ *					BTM_NUM_DEVICES x BTM_REG_GROUP_SIZE to copy received data to
  * @return 	Returns BTM_OK if the received PEC is valid, or BTM_ERROR_PEC if
  			a full set of valid data could not be obtained after
 			BTM_MAX_READ_ATTEMPTS tries
@@ -385,7 +387,7 @@ BTM_Status_t BTM_readRegisterGroup(
  *          BTM_ERROR_PEC if any PEC doesn't match, or BTM_ERROR_TIMEOUT
  *	        if a timeout occurs while polling.
  */
-BTM_Status_t BTM_readBatt(BTM_PackData_t * packData)
+BTM_Status_t BTM_readBatt(BTM_PackData_t *packData)
 {
 	// 6x 6-byte sets (each from a different register group of the LTC6813)
 	uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
@@ -471,7 +473,7 @@ void BTM_writeCS(CS_state_t new_state)
  * @param[in/out] pack Battery pack data structure to perform sum for
  * @param[in] stack_num Index of the stack to calculate the total voltage of
  */
-void calculateStackVolts(BTM_PackData_t* pack, int stack_num)
+void calculateStackVolts(BTM_PackData_t *pack, int stack_num)
 {
     unsigned int sum = 0;
 
@@ -490,7 +492,7 @@ void calculateStackVolts(BTM_PackData_t* pack, int stack_num)
  *  prior to calling this function
  * @param[in/out] pack Battery pack data structure to perform sums on
  */
-void calculatePackVolts(BTM_PackData_t* pack)
+void calculatePackVolts(BTM_PackData_t *pack)
 {
     unsigned int sum = 0;
     for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)

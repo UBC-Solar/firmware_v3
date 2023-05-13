@@ -20,6 +20,7 @@
 #define PRINTF_DEBUG
 
 #include "fsm.h"
+
 #ifdef PRINTF_DEBUG
 #include "stdio.h"
 #endif
@@ -465,37 +466,32 @@ void printMeasurements(BTM_PackData_t * pack)
 {
     for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
     {
-        printf("BOARD #%d\n", ic_num);
-        // TODO: Append more modules once project is configured for LTC6813
-        printf("C0\t\tC1\t\tC2\t\tC3\t\tC4\t\tC5\t\tC6\t\tC7\t\tC8\t\tC9\t\tC10\t\tC11\n");
+        printf("BOARD #%d\r\n", ic_num + 1);
+        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+        {
+            printf("C%d\t", module_num + 1);
+        }
+        printf("\r\n");
 
         for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) {
             if (pack->stack[ic_num].module[module_num].enable) {
                 printf("%.4f\t", BTM_regValToVoltage(
                         pack->stack[ic_num].module[module_num].voltage));
             } else {
-                printf("x\t\t"); // Don't print the voltage for inactive modules
+                printf("x\t"); // Don't print the voltage for inactive modules
             }
         }
-        putchar('\n');
+        printf("\r\n");
 
         for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) {
             if (pack->stack[ic_num].module[module_num].enable) {
                 printf("%.3f\t", pack->stack[ic_num].module[module_num].temperature);
             } else {
-                printf("x\t\t"); // Don't print the voltage for inactive modules
+                printf("x\t"); // Don't print the voltage for inactive modules
             }
         }
-        putchar('\n');
-
-        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) {
-            if (pack->stack[ic_num].module[module_num].enable) {
-                printf("%.4f\t", pack->stack[ic_num].module[module_num].soc);
-            } else {
-                printf("x\t\t"); // Don't print the SOC for inactive modules
-            }
-        }
-        putchar('\n');
+        printf("\r\n");
     }
+    printf("\r\n");
 }
 #endif
