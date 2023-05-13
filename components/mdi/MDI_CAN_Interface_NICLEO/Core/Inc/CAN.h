@@ -1,30 +1,13 @@
 /**
  * This is the header file for the CAN driver.
- * 
- * The CAN controller configured will have no ID filters, and the
- * bit rate is set to 400KBS. 
  *
- * Polling will be required by the user, since the functions executed when CAN 
- * messages are received are too complex and long, and will not be suitable to
- * be placed in a interrupt handler (the alternative is to have the interrupt 
- * set a valid bit and poll that bit in the main loop. Unfortunately, clearing
- * the interrupt mask means setting the pending number of CAN messages to 0, 
- * which means, depending on the rate of messages being received, some messages
- * will be dropped.)
- *
- * Note: Please define the following fields in the main file 
- * (or any file that will include this header file):
- * - CAN_msg_t CAN_rx_msg
- * - CAN_msg_t CAN_tx_msg
  */
 
-//#include "stm32f1xx_hal_can.h"
 #include "stm32f1xx_hal.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
-//#include <cstdint>
 
 #ifndef CAN_H
 #define CAN_H

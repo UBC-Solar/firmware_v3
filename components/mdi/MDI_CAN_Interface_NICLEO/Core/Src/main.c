@@ -47,7 +47,7 @@ I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
 static const uint8_t DAC_ADDR = 0b0001100 << 1;
-static const uint8_t DAC_REGEN_ADDR = 0b00000000 << 1; 
+static const uint8_t DAC_REGEN_ADDR = 0b0001101 << 1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -80,13 +80,11 @@ uint16_t parsed_voltage = 0;
 
 int32_t velocity; //FOR TESTING
 uint32_t acceleration; //FOR TESTING 
-
-//for timing purposes
-uint64_t t_start;
-uint64_t t_end;
-uint64_t t_elapsed[256];
-uint8_t count_t = 0;
-float count = 0; 
+uint64_t t_start; //FOR TESTING
+uint64_t t_end; //FOR TESTING
+uint64_t t_elapsed[256]; //FOR TESTING
+uint8_t count_t = 0; //FOR TESTING
+float count = 0; //FOR TESTING
 
 
 /* USER CODE END 0 */
@@ -129,8 +127,8 @@ int main(void)
   TxHeader.DLC = 8;
   TxHeader.ExtId = 0;
   TxHeader.IDE = CAN_ID_STD;
-  TxHeader.RTR = CAN_RTR_DATA; //added this line
-  TxHeader.StdId = 0x401; //changed from 0x103 to 0x111
+  TxHeader.RTR = CAN_RTR_DATA; 
+  TxHeader.StdId = 0x401; 
   TxHeader.TransmitGlobalTime = DISABLE;
 
   /* USER CODE END 2 */
@@ -141,17 +139,12 @@ int main(void)
   while (1)
   {
     
-    
-     msg0.power_or_eco = POWER_ON; //this would come from switch
+    //////////////////TEST MESSAGE GENERATION//////////////////////
+      msg0.power_or_eco = POWER_ON; //this would come from switch
      
-     
-
-        
       t_end = HAL_GetTick();
 
       count_t++; 
-
-      
 
       if(count_t == 3) {
         count = count + 0.1;
@@ -161,18 +154,15 @@ int main(void)
      if(count > 99999.0)
       count = 0; 
 
-    //////////////////TEST MESSAGE GENERATION//////////////////////
-     
-     
      velocity = -100; 
      acceleration = 0xFFFFFFFF;
      acceleration = acceleration/2.0*sin(count)  + acceleration/2.0 ; 
      send_test_message(TxData, velocity, acceleration); 
-     HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
 
-    ///////////////////////////////////////////////////////////////
+     HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+    //////////////////////////////////////////////////////////////////
     
-    if(Parse_Data_Flag == 1 ){
+    if(Parse_Data_Flag == 1 ){ //Parse_Data_Flag set in interrupt
 
       decode_CAN_velocity_message(RxData, &msg0); 
 
@@ -181,8 +171,6 @@ int main(void)
     }
     
     if( (send_data_flag == 1 ) && (Parse_Data_Flag == 0) ){
-
-      
 
       if(msg0.regen == REGEN_TRUE)
         Send_Regen(msg0.acceleration, DAC_REGEN_ADDR, &hi2c1); 
@@ -200,7 +188,7 @@ int main(void)
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET); 
       else 
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_RESET);
-      
+
 	    send_data_flag = 0; 
       
 
