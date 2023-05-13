@@ -1,16 +1,20 @@
 /**
  * @file soc.c
- * @brief This file contains functions for calculating the state of charge for UBC Solar's
- *        V3 solar car, Brightside using interpolation and coloumb counting
+ * @brief Functions for calculating the state of charge for UBC Solar's
+ * V3 solar car, Brightside using interpolation and coloumb counting
  * 
  * 
  * @date 2021/11/09
  * @author Edward Ma, Forbes Choy 
  */
 
-
 #include "soc.h"
 #include <math.h>
+
+#ifdef TEST
+#include <stdio.h> // for debugging
+#endif // TEST
+
 /*============================================================================*/
 
 // Testable private functions

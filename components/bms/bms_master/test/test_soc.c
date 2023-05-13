@@ -1,7 +1,13 @@
 #ifdef TEST
 
+// Standard unit test include
 #include "unity.h"
+
+// Code module under test
 #include "soc.h"
+
+// Mocked code modules
+#include "mock_stm32f1xx_hal.h"
 #include "mock_ltc6813_btm.h"
 
 
