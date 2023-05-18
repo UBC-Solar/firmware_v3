@@ -1,0 +1,11 @@
+.pio
+.vscode
+
+# CubeMX extras
+.mxproject
+Drivers/
+Makefile
+startup_stm32f103xe.s
+STM32F103RCTx_FLASH.ld
+
+*.code-workspace
