@@ -232,8 +232,7 @@ extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
         tickValue = HAL_GetTick(),
         tickDelta,
         tickSubDelta;
-    HAL_StatusTypeDef
-        status = HAL_OK;
+    HAL_StatusTypeDef status = HAL_OK;
 
     //gets the absolute difference between tickValue and lastInterval
     //avoids counter reset edge-case

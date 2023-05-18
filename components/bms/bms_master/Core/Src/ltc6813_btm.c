@@ -19,6 +19,7 @@
  */
 
 #include "ltc6813_btm.h"
+#include "pack.h"
 
 #define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
 
@@ -541,3 +542,14 @@ void init_PEC15_Table() {
     }
 }
 */
+
+BTM_Status_t translate_btm_readbatt(PackData_t * pack)
+{
+	BTM_PackData_t rawPack;
+	BTM_Status_t status = BTM_readBatt(&rawPack); 
+	for(int index = 0; index < PACK_NUM_BATTERY_MODULES; index++){
+		pack->module[index] = rawPack.stack[module_mapping[index].stackNum].module[module_mapping[index].cellNum]; 
+	}
+
+	return status;
+}

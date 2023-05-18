@@ -236,8 +236,7 @@ Design Notes:
 */
 extern HAL_StatusTypeDef CANstate(Brightside_CAN_MessageSeries * pSeries)
 {
-    uint32_t
-        tickValue = HAL_GetTick(),
+    uint32_t tickValue = HAL_GetTick();
         tickDelta,
         tickSubDelta;
     HAL_StatusTypeDef

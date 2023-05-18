@@ -12,6 +12,8 @@
 #include "ltc6813_btm_temp.h"
 #include "stm32f1xx_hal.h"
 #include <math.h>
+#include "pack.h"
+
 
 #define GPIO_5_TOGGLE 0x80 // For bitwise operations with CFGRA byte 0
 #define MUX_CHANNELS 2
@@ -37,7 +39,7 @@ BTM_Status_t readThermistorVoltage(
 );
 
 void volts2temp(uint16_t ADC[], uint16_t REF2[], float temp_celsius[]);
-
+BTM_Status_t translate_btm_temp(PackData_t * pack);
 
 /*
 Function name: BTM_TEMP_measureState
@@ -296,4 +298,18 @@ void volts2temp(uint16_t ADC[], uint16_t REF2[], float temp_celsius[])
             / (beta + (room_temp * logf(R_therm / R_room_temp)));
         temp_celsius[board] = temp_kelvin - 273.15;
     }
+
+}
+
+
+// TODO: explain the function    
+BTM_Status_t translate_btm_temp(PackData_t * pack)
+{
+    BTM_PackData_t rawPack;
+    BTM_Status_t status = BTM_TEMP_measureState(&rawPack); 
+    for(int index = 0; index < PACK_NUM_BATTERY_MODULES; index++){
+        pack->module[index] = rawPack.stack[module_mapping[index].stackNum].module[module_mapping[index].cellNum]; 
+    }
+
+    return status;
 }

@@ -15,5 +15,6 @@
 /* FUNCTION PROTOTYPES */
 
 BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack);
+BTM_Status_t translate_btm_temp(PackData_t * pack);
 
 #endif /* INC_LTC6813_BTM_TEMP_H_ */

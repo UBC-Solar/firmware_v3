@@ -9,6 +9,9 @@
 #ifndef INC_FSM_H_
 #define INC_FSM_H_
 
+#define FOO 7
+
+
 #include "stm32f1xx_hal.h"
 #include "ltc6813_btm.h"
 #include "control.h"
