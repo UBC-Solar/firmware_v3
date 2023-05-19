@@ -137,17 +137,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 
   while (1)
-<<<<<<< HEAD
   { 
      msg0.power_or_eco = POWER_ON; //this would come from switch
-=======
-  {
-    
-    //////////////////TEST MESSAGE GENERATION//////////////////////
-      msg0.power_or_eco = POWER_ON; //this would come from switch
-     
-      t_end = HAL_GetTick();
->>>>>>> 7fa033c85ceeedcc05df95d783fe1edc14a916df
 
       count_t++; 
 
@@ -159,11 +150,7 @@ int main(void)
      if(count > 99999.0)
       count = 0; 
 
-<<<<<<< HEAD
     //////////////////TEST MESSAGE GENERATION//////////////////////
-     
-=======
->>>>>>> 7fa033c85ceeedcc05df95d783fe1edc14a916df
      velocity = -100; 
      acceleration = 0xFFFFFFFF;
      acceleration = acceleration/2.0*sin(count)  + acceleration/2.0 ; 
