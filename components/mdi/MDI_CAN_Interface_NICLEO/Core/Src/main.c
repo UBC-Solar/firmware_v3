@@ -47,7 +47,7 @@ I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
 static const uint8_t DAC_ADDR = 0b0001100 << 1;
-static const uint8_t DAC_REGEN_ADDR = 0b00000000 << 1; 
+static const uint8_t DAC_REGEN_ADDR = 0b0001101 << 1; 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -139,19 +139,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 
   while (1)
-  {
-    
-    
+  { 
      msg0.power_or_eco = POWER_ON; //this would come from switch
-     
-     
-
-        
-      t_end = HAL_GetTick();
 
       count_t++; 
-
-      
 
       if(count_t == 3) {
         count = count + 0.1;
@@ -162,7 +153,6 @@ int main(void)
       count = 0; 
 
     //////////////////TEST MESSAGE GENERATION//////////////////////
-     
      
      velocity = -100; 
      acceleration = 0xFFFFFFFF;
@@ -181,8 +171,6 @@ int main(void)
     }
     
     if( (send_data_flag == 1 ) && (Parse_Data_Flag == 0) ){
-
-      
 
       if(msg0.regen == REGEN_TRUE)
         Send_Regen(msg0.acceleration, DAC_REGEN_ADDR, &hi2c1); 
@@ -203,7 +191,6 @@ int main(void)
       
 	    send_data_flag = 0; 
       
-
     }
   
   }

@@ -1,5 +1,5 @@
 /**
- * Function implementations for enabling and using CAN messaging.
+ * Functions used in the main file of the MDI firmware
  */
 #include "main.h"
 #include "CAN.h"
@@ -11,7 +11,7 @@
 
 
 /**
- * @brief Takes data from pedal (last 32 bits of message) and converts to 10 bit value
+ * @brief Takes data from pedal (last 32 bits of message) and converts to 10 bit value. 
  * @param pedal_data: bits 32-63 of 0x401 message data element 
  * @retval parsed_voltage is the 10 bits to be sent to the DAC
  * 
@@ -32,7 +32,9 @@ uint16_t Parse_ACC(uint32_t pedal_data){
 /**
  * @brief Sends a desired voltage to the DAC, by transmitting the correct I2C message.
  * @param uint16_t parsed_voltage should be a number between 0 and 1023. This value will be scaled to a corresponding voltage
- * by the DAC, where 0 is 0V and 1023 is Vmax.
+ * by the DAC, where 0 is 0V and 1023 is Vmax. This value is a relative porcentage value that comes from the parsed_voltage function. 
+ * @param DAC_ADDR: this is the I2C bit address of the DAC we want to send the I2C signal to
+ * @param *hi2c1 is the HAL handle for I2C
  * @retval None
  */
 void Send_Voltage(uint16_t parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef *hi2c1)
@@ -46,23 +48,21 @@ void Send_Voltage(uint16_t parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef *
     	HAL_I2C_Master_Transmit(hi2c1, DAC_ADDR, DAC_msg_buffer, BUFFER_SIZE, HAL_MAX_DELAY);
     }
 
-//TODO: THIS FUNCTION
 /**
- * @brief Takes the 0-1.0 number that represents the desired regen amount and sends it as a 10bit number to a second DAC
- * @param regen is 0-1.0ew float 
- * @param DAC_REGEN_ADDR is the address for DAC
+ * @brief Takes the 0-1.0 number that represents the desired regen amount as a porcentage and sends it as a 10bit number to a DAC.
+ * @param regen: is float between 0 and 1.0 represeting a porcentage  
+ * @param DAC_REGEN_ADDR: this is the I2C bit address of the DAC we want to send the I2C signal to (in this case the DAC for the regen signal)
  * @param *hi2c1 is the handle for the I2C
- * @retval none
+ * @retval None
  */
 void Send_Regen(float regen, uint8_t DAC_REGEN_ADDR, I2C_HandleTypeDef *hi2c1){
-	//need to convert to 10bit and then send over a second DAC
-	//do everything in this function
+
 	uint8_t DAC_msg_buffer[2];
 	uint16_t dac_data;
 	
 	if(regen > 1.0) regen = 1.0;
 
-	dac_data = regen * (float)UINT10_MAX; //converts to 10bit
+	dac_data = regen * (float)UINT10_MAX; //converts to 10bit 
 	
     	
 	dac_data =  dac_data << 2;
@@ -71,9 +71,10 @@ void Send_Regen(float regen, uint8_t DAC_REGEN_ADDR, I2C_HandleTypeDef *hi2c1){
     HAL_I2C_Master_Transmit(hi2c1, DAC_REGEN_ADDR, DAC_msg_buffer, BUFFER_SIZE, HAL_MAX_DELAY);
 }
 /**
- * @brief Takes the CAN message and decodes the data to know in which mode of operation the motor controller should be in and seperates it into the acceleration 
- * and velocity components 
- * @param 64 Bit CAN message coming from the Speeed Control Node (ID 0x401), CAN_velocity_msg_struct 
+ * @brief Takes the CAN message and decodes the data to know in which mode of operation the motor controller should be in and seperates the message data into
+ *  into the acceleration and velocity components 
+ * @param RxData: array of 8 bit wide elements that containes the CAN message sent by the SCN. 
+ * @param *CAN_msg: struct that holds the velocity, acceleration and current state of operation of the motor controller 
  * @retval Modifies CAN_msg struct with the appropriate modes of operation and the values for velocity and accelation
  */
  void decode_CAN_velocity_message(uint8_t RxData[], CAN_msg_t* CAN_msg){

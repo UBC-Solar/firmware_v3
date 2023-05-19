@@ -1,6 +1,0 @@
-connections/org.eclipse.remote.serial.core.connectionType/Mike/serial.baudRate=6
-connections/org.eclipse.remote.serial.core.connectionType/Mike/serial.byteSize=3
-connections/org.eclipse.remote.serial.core.connectionType/Mike/serial.parity=0
-connections/org.eclipse.remote.serial.core.connectionType/Mike/serial.portName=COM3
-connections/org.eclipse.remote.serial.core.connectionType/Mike/serial.stopBits=0
-eclipse.preferences.version=1
