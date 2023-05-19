@@ -47,11 +47,7 @@ I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
 static const uint8_t DAC_ADDR = 0b0001100 << 1;
-<<<<<<< HEAD
-static const uint8_t DAC_REGEN_ADDR = 0b0001101 << 1; 
-=======
 static const uint8_t DAC_REGEN_ADDR = 0b0001101 << 1;
->>>>>>> 7fa033c85ceeedcc05df95d783fe1edc14a916df
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
