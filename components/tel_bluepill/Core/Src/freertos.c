@@ -119,6 +119,7 @@ osThreadId_t changeRadioSettingsTaskHandle;
 osMessageQueueId_t canMessageQueueHandle;
 osMessageQueueId_t imuMessageQueueHandle;
 
+
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -165,6 +166,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
+
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -183,14 +185,14 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+//  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
 
   // kernelLEDTaskHandle = osThreadNew(kernelLEDTask, NULL, &kernelLEDTask_attributes);
   
-//  readCANTaskHandle = osThreadNew(readCANTask, NULL, &readCANTask_attributes);
-//  transmitMessageTaskHandle = osThreadNew(transmitMessageTask, NULL, &transmitMessageTask_attributes);
+  readCANTaskHandle = osThreadNew(readCANTask, NULL, &readCANTask_attributes);
+  transmitMessageTaskHandle = osThreadNew(transmitMessageTask, NULL, &transmitMessageTask_attributes);
 
   readimuHandle = osThreadNew(StartReadIMU, NULL, &readimu_attributes);
   transmitIMUHandle = osThreadNew(StartTransmitIMU, NULL, &transmitIMU_attributes);
@@ -255,6 +257,8 @@ __NO_RETURN void readCANTask(void *argument) {
 
       // package into CAN_msg_t
       current_can_message.header = can_rx_header;
+
+
       for (uint8_t i=0; i<8; i++) {
         current_can_message.data[i] = current_can_data[i];
       }
@@ -276,42 +280,44 @@ __NO_RETURN void transmitMessageTask(void *argument) {
     // retrieve CAN message from queue
     queue_status = osMessageQueueGet(canMessageQueueHandle, &can_message, NULL, osWaitForever);
 
-    if (queue_status != osOK) {
-        osThreadYield();
+    if (queue_status != osOK){
+      osThreadYield();
     }
 
-    uint8_t c[1] = "D";
+    uint8_t can_buffer[21] = {0};
 
     // TIMESTAMP: 8 ASCII characters
     for (uint8_t i=0; i<8; i++) {
       // send 'D' as placeholder
-      HAL_UART_Transmit(&huart3, c, sizeof(c), 1000);
+        can_buffer[i] = 'D';
     }
 
     // CAN ID: 4 ASCII characters
     uint8_t id_h = 0xFFUL & (can_message.header.StdId >> 8);
     uint8_t id_l = 0xFFUL & (can_message.header.StdId);
 
-    sendChar(id_h);
-    sendChar(id_l);
+    can_buffer[8] = id_h;
+    can_buffer[9] = id_l;
+
 
     // CAN DATA: 16 ASCII characters
     for (uint8_t i=0; i<8; i++) {
       // can_stream[2+i] = 0xFFUL & (can_message.data[i]);
-      sendChar(can_message.data[i]);
+        can_buffer[i + 10]= can_message.data[i];
     }
 
     // CAN DATA LENGTH: 1 ASCII character
     uint8_t length = "0123456789ABCDEF"[ can_message.header.DLC & 0xFUL];
-    HAL_UART_Transmit(&huart3, &length, 1, 1000);
+    can_buffer[18] = length;
 
     // NEW LINE: 1 ASCII character
-    uint8_t newline[1] = "\n";
-    HAL_UART_Transmit(&huart3, newline, sizeof(newline), 1000);
+    can_buffer[19] = '\n';
 
     // CARRIAGE RETURN: 1 ASCII character
-    uint8_t carriage[1] = "\r";
-    HAL_UART_Transmit(&huart3, carriage, sizeof(carriage), 1000);
+    can_buffer[20] = '\r';
+
+    HAL_UART_Transmit(&huart3, can_buffer, sizeof(can_buffer), 1000);
+
   }
 }
 
@@ -371,8 +377,7 @@ void sendChar(char c)
   uart_tx_status = HAL_UART_Transmit(&huart3, &c_L, 1, 1000);
 }
 
-__NO_RETURN void StartReadIMU(void *argument)
-{
+__NO_RETURN void StartReadIMU(void *argument){
   union FloatBytes gy_x, gy_y, gy_z, ax_x, ax_y, ax_z;
   /* Infinite loop */
   while(1)
@@ -420,7 +425,7 @@ __NO_RETURN void StartTransmitIMU(void *argument){
   {
     // Check if there are messages in the queue
     if (osMessageQueueGetCount(imuMessageQueueHandle) == 0) {
-        continue;
+        osThreadYield();
     }
 
     imu_queue_status = osMessageQueueGet(imuMessageQueueHandle, &imu_message, NULL, osWaitForever);
