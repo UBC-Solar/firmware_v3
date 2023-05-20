@@ -1,12 +1,3 @@
 # Files and folders to be left untracked, ignored and left out by git
 
-# Compiled binaries, etc.
-/Debug/
-/Release/
-# Debug and Run Configuration
-*.launch
 /.metadata/
-# Auto-Generated Ceedling Data
-/build/
-# CubeMx Generated Project File
-.mxproject

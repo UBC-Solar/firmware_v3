@@ -2,7 +2,7 @@
  * Functions used in the main file of the MDI firmware
  */
 #include "main.h"
-#include "CAN.h"
+#include "can.h"
 #include "stm32f1xx_hal_can.h"
 #include "stm32f1xx_hal.h"
 #include "stm32f1xx.h"
