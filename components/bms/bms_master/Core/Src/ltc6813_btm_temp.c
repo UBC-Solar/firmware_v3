@@ -302,13 +302,20 @@ void volts2temp(uint16_t ADC[], uint16_t REF2[], float temp_celsius[])
 }
 
 
-// TODO: explain the function    
+/**
+ * @brief  A "translate" function to translate the temperature data from the driver pack struct to the general pack struct. 
+ * 
+ * @param[in] pack general pack struct.
+ * @return  Returns BTM_OK if all the received PECs are correct,
+ *          BTM_ERROR_PEC if any PEC doesn't match, or BTM_ERROR_TIMEOUT
+ *	        if a timeout occurs while polling.
+ */   
 BTM_Status_t translate_btm_temp(PackData_t * pack)
 {
     BTM_PackData_t rawPack;
     BTM_Status_t status = BTM_TEMP_measureState(&rawPack); 
     for(int index = 0; index < PACK_NUM_BATTERY_MODULES; index++){
-        pack->module[index] = rawPack.stack[module_mapping[index].stackNum].module[module_mapping[index].cellNum]; 
+        pack->module[index].temperature = rawPack.stack[module_mapping[index].stackNum].module[module_mapping[index].cellNum].temperature; 
     }
 
     return status;
