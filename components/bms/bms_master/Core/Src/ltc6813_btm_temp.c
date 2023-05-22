@@ -308,7 +308,6 @@ void volts2temp(uint16_t ADC[], uint16_t REF2[], float temp_celsius[])
  * @return  Returns BTM_OK if all the received PECs are correct,
  *          BTM_ERROR_PEC if any PEC doesn't match, or BTM_ERROR_TIMEOUT
  *	        if a timeout occurs while polling.
- * TODO: Rename this function
  */   
 BTM_Status_t translate_btm_temp(PackData_t * pack)
 {
