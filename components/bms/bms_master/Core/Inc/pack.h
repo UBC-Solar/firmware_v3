@@ -36,7 +36,7 @@ struct Pack_module {
 };
 
 typedef struct {
-    struct BTM_module module [PACK_NUM_BATTERY_MODULES];
+    struct Pack_module module [PACK_NUM_BATTERY_MODULES];
     
     //PLACEHOLDER VARIABLES, TO ALLOW COMPILATION WITHOUT ERRORS.
     //NOT NECESSARILY THE FINAL LOCATION OF THESE VARIABLES.
