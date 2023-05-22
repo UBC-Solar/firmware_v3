@@ -60,8 +60,8 @@ all: main-build
 main-build: mdi_can_interface.elf secondary-outputs
 
 # Tool invocations
-mdi_can_interface.elf mdi_can_interface.map: $(OBJS) $(USER_OBJS) /Users/Andrew/code/firmware_v3/components/mdi/mdi_can_interface/STM32F103RCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "mdi_can_interface.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/Users/Andrew/code/firmware_v3/components/mdi/mdi_can_interface/STM32F103RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="mdi_can_interface.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+mdi_can_interface.elf mdi_can_interface.map: $(OBJS) $(USER_OBJS) ../STM32F103RCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "mdi_can_interface.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"../STM32F103RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="mdi_can_interface.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
