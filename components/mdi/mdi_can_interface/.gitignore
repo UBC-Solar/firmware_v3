@@ -1,8 +1,6 @@
 
 # Files and folders to be left untracked, ignored and left out by git
 
-# Compiled binaries, etc.
-/Debug/
 /Release/
 # Debug and Run Configuration
 *.launch
@@ -11,3 +9,22 @@
 /build/
 # CubeMx Generated Project File
 .mxproject
+
+# Compilation Artifacts
+# Prerequisites
+*.d
+# Object files
+*.o
+# Debug info
+*.su
+# Complexity Check
+*.cyclo
+# Binaries
+*.elf
+*.hex
+*.bin
+# Linker output
+*.map
+# Disassembly
+*.list
+!Debug/objects.list

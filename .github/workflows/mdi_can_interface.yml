@@ -1,0 +1,26 @@
+name: Mitsuba Drive Inverter (MDI) CI
+
+on:
+  push:
+    paths:
+      - 'components/mdi/mdi_can_interface/**'
+      - '.github/workflows/mdi_can_interface.yml'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install Toolchain (arm-none-eabi)
+      run: |
+        sudo apt-get update
+        sudo apt-get install gcc-arm-none-eabi
+
+    - name: Build Debug Target
+      working-directory: components/mdi/mdi_can_interface/Debug
+      run: make -j$(nproc) all
