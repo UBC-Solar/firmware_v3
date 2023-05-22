@@ -45,7 +45,8 @@
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32F1xx/Include"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
 								</option>
-								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.warnings.treataserror.2002269930" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.warnings.treataserror" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.warnings.treataserror.2002269930" name="Treat warnings as errors (-Werror)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.warnings.treataserror" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.cyclomaticcomplexity.1376470789" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.cyclomaticcomplexity" useByScannerDiscovery="false" value="false" valueType="boolean"/>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.172032330" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
 							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.1951714691" name="MCU G++ Compiler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler">

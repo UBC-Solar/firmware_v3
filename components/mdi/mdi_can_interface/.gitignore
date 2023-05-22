@@ -17,8 +17,6 @@
 *.o
 # Debug info
 *.su
-# Complexity Check
-*.cyclo
 # Binaries
 *.elf
 *.hex
