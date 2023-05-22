@@ -280,7 +280,7 @@ struct BTM_module {
     float temperature;
     float soc;
     int status;
-};
+} ;
 
 struct BTM_stack {
     uint8_t cfgra[BTM_REG_GROUP_SIZE]; // Configuration Register Group A setting
