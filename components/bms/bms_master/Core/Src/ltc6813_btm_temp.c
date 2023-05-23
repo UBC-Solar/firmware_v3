@@ -39,7 +39,6 @@ BTM_Status_t readThermistorVoltage(
 );
 
 void volts2temp(uint16_t ADC[], uint16_t REF2[], float temp_celsius[]);
-
 /*
 Function name: BTM_TEMP_measureState
 Purpose: Algorithm for reading thermistors across multiple muxes
