@@ -41,6 +41,8 @@
 #include "stdint.h"
 #endif
 
+#include "pack.h"
+
 /*============================================================================*/
 /* ENUMERATIONS */
 
@@ -334,5 +336,6 @@ BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_
 BTM_Status_t BTM_readBatt(BTM_PackData_t *packData);
 float BTM_regValToVoltage(unsigned int raw_reading);
 void BTM_writeCS(CS_state_t new_state);
+BTM_Status_t translate_btm_readbatt(PackData_t * pack);   // TODO: change the name of the function
 
 #endif /* INC_LTC6813_BTM_H_ */

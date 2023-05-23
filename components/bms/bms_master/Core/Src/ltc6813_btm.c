@@ -15,10 +15,12 @@
  *  @date 2020/08/18
  *  @author Andrew Hanlon (a2k-hanlon)
  *	@author Laila Khan (lailakhankhan)
+ *  @author Tigran Hakobyan (Tik-Hakobyan)
  *
  */
 
 #include "ltc6813_btm.h"
+#include "pack.h"
 
 #define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
 
@@ -541,3 +543,22 @@ void init_PEC15_Table() {
     }
 }
 */
+
+/**
+ * @brief  A "translate" function to translate the voltage data from the driver pack struct to the general pack struct. 
+ * 
+ * @param[in] pack general pack struct.
+ * @return  Returns BTM_OK if all the received PECs are correct,
+ *          BTM_ERROR_PEC if any PEC doesn't match, or BTM_ERROR_TIMEOUT
+ *	        if a timeout occurs while polling.
+ */  
+BTM_Status_t translate_btm_readbatt(PackData_t * pack)
+{
+	BTM_PackData_t rawPack;
+	BTM_Status_t status = BTM_readBatt(&rawPack); 
+	for(int index = 0; index < PACK_NUM_BATTERY_MODULES; index++){
+		pack->module[index].voltage = rawPack.stack[module_mapping[index].stackNum].module[module_mapping[index].cellNum].voltage; 
+	}
+
+	return status;
+}
