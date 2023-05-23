@@ -1168,4 +1168,3 @@ uint8_t celciusAverage(BTM_PackData_t * pPACKDATA){
     //Looks really clean
     //retreving voltage of module 12 of stack 3 (note the off-by-one array index)
     //uint16_t PH_ModuleVOLTAGE = PACKDATApointer -> stack[2].module[11].voltage;
-    
