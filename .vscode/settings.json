@@ -1,6 +1,0 @@
-{
-  "files.associations": {
-    "ltc6813_btm.h": "c",
-    "stm32f1xx_hal.h": "c"
-  }
-}
