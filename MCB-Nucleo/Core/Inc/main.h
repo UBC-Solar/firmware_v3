@@ -84,6 +84,8 @@ void Error_Handler(void);
 #define BTN_CRUISE_DOWN_Pin GPIO_PIN_15
 #define BTN_CRUISE_DOWN_GPIO_Port GPIOB
 #define BTN_CRUISE_DOWN_EXTI_IRQn EXTI15_10_IRQn
+#define BTN_NEXT_PAGE_Pin GPIO_PIN_6
+#define BTN_NEXT_PAGE_GPIO_Port GPIOC
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14

@@ -31,12 +31,19 @@
 #define BATTERY_SOC_THRESHHOLD 90
 
 
-
+// Typedefs
+/*
+ *  Union used for send floats as array for 4 bytes in CAN messages
+ */
 typedef union FloatBytes {
-	float float_value;			/**< Float value member of the union. */
-	uint8_t bytes[4];			/**< Array of 4 bytes member of union. */
+	float float_value;
+	uint8_t bytes[4];
 } FloatBytes;
 
+
+/*
+ *  Input flags used to decide what state to be in
+ */
 typedef struct InputFlags {
   volatile uint8_t regen_pressed;
   volatile uint8_t throttle_pressed;
@@ -50,6 +57,10 @@ typedef struct InputFlags {
   volatile uint8_t charge_under_threshold;
 } InputFlags;
 
+/*
+ * Used to store the value of the drive state
+ * Possibly replace with bools instead of uint32_t?
+*/
 enum DriveState {
 	INVALID = (uint32_t) 0x0000, // Same behavior as IDLE
     IDLE = (uint32_t) 0x0001,
@@ -59,30 +70,11 @@ enum DriveState {
 	MOTOR_OVERHEAT = (uint32_t) 0x0010, // Not implimented
 	PARK = (uint32_t) 0x0012,
 	REVERSE = (uint32_t) 0x0014
-} state;
+};
 
-
-void SendCANMotorCommand(float current, float velocity)
-{
-	union FloatBytes c;
-	union FloatBytes v;
-
-	c.float_value = current;
-	v.float_value = velocity;
-
-	uint8_t data_send[CAN_DATA_LENGTH];
-	for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++)
-	{
-		data_send[i] = v.bytes[i];
-	    data_send[4 + i] = c.bytes[i];
-	}
-	HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
-}
-
-float NormalizeValue(float value)
-{
-	return (value - ADC_DEADZONE >= 0 ? ((float)(value - ADC_DEADZONE))/(ADC_MAX - ADC_DEADZONE) : 0.0);
-}
+// Function definitions
+void SendCANMotorCommand(float current, float velocity);
+float NormalizeValue(float value);
 
 
 #endif /* INC_MCB_H_ */

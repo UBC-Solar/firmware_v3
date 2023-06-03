@@ -23,8 +23,8 @@
 /* USER CODE BEGIN 0 */
 
 /**
- * 	CAN message header for a drive command. This command header is used in normal, regen, and
- * 	cruise control mode to send appropriate drive command to the motor controller.
+ * 	CAN message header for a drive command. This command header is to
+ * 	send an appropriate drive command to the motor controller.
  */
 CAN_TxHeaderTypeDef drive_command_header = {
     .StdId = DRIVER_CONTROLS_BASE_ADDRESS + 1,
@@ -33,10 +33,20 @@ CAN_TxHeaderTypeDef drive_command_header = {
     .RTR = CAN_RTR_DATA,
     .DLC = CAN_DATA_LENGTH};
 
+/**
+ * 	CAN message header for DID next page command.
+ */
+
+CAN_TxHeaderTypeDef DID_next_page = {
+    .StdId = DRIVER_CONTROLS_BASE_ADDRESS,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
+
 uint32_t can_mailbox;
 
-CAN_RxHeaderTypeDef can_rx_header;    /**< Stores the header information for CAN messages read from
-													     the RX (receive) buffer */
+CAN_RxHeaderTypeDef can_rx_header;    /**< Stores the header information for CAN messages read from the RX (receive) buffer */
 
 /* USER CODE END 0 */
 

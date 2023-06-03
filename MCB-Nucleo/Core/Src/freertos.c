@@ -16,12 +16,6 @@
   ******************************************************************************
   */
 
-// TODO Add gpio inputs (park, reverse, mech_brake) to event_flags?
-// - Adding park reverse and mech_brake to event_flags will in theory lower performance but greatly improve code readablity
-// TODO Confirm velocity readings will be signed.
-// TODO Confirm gpio input pins can use interrupts
-// TODO Next page button
-
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -40,21 +34,14 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
-
-
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
-
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -62,15 +49,18 @@
 uint16_t ADC_throttle_val;
 uint16_t ADC_regen_val;
 
-union FloatBytes velocity_of_car; // Current velocity of the car will be stored here.
+
 
 struct InputFlags event_flags; // Event flags for deciding what state to be in.
-
-float cruise_velocity;
-
+enum DriveState state;
+float cruise_velocity; // Velocity for cruise control
+float velocity_of_car; // Current velocity of the car will be stored here.
 uint8_t battery_soc; // Stores the charge of the battery, updated in a task.
 
-float current; // These are global so I can view their value in the Live Expressions tab, will move to task later.
+/*
+ *  These are global so I can view their value in the Live Expressions tab, will move to task later.
+ */
+float current;
 float velocity;
 
 /* USER CODE END Variables */
@@ -146,7 +136,6 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -257,14 +246,13 @@ void startUpdateFlags(void *argument)
   /* Infinite loop */
   for(;;)
   {
-
 	  event_flags.mech_brake_pressed = HAL_GPIO_ReadPin(MECH_BRAKE_GPIO_Port, MECH_BRAKE_Pin);
 
 	  event_flags.park_enabled = HAL_GPIO_ReadPin(SWITCH_PARK_GPIO_Port, SWITCH_PARK_Pin);
 
 	  event_flags.reverse_enabled = HAL_GPIO_ReadPin(SWITCH_REVERSE_GPIO_Port, SWITCH_REVERSE_Pin);
 
-	  event_flags.velocity_under_threshold = (velocity_of_car.float_value < MIN_REVERSE_VELOCITY);
+	  event_flags.velocity_under_threshold = (velocity_of_car < MIN_REVERSE_VELOCITY);
 
 	  event_flags.charge_under_threshold = battery_soc < BATTERY_SOC_THRESHHOLD;
 
@@ -299,7 +287,6 @@ void startMotorStateMachine(void *argument)
     }
     else if(state == DRIVE)
     {
-
     	velocity = 100.0;
     	current = NormalizeValue(ADC_throttle_val);
     }
@@ -336,6 +323,7 @@ void startGetCANVelocity(void *argument)
 {
   /* USER CODE BEGIN startGetCANVelocity */
 	uint8_t CAN_message[8];
+	FloatBytes velocity;
 	/* Infinite loop */
 	for(;;)
 	{
@@ -347,8 +335,9 @@ void startGetCANVelocity(void *argument)
 			{
 				for(int i= 0; i < 4; i++)
 				{
-					velocity_of_car.bytes[i] = CAN_message[i+4]; // Vechicle Velocity is stored in bits 32-63.
+					velocity.bytes[i] = CAN_message[i+4]; // Vechicle Velocity is stored in bits 32-63.
 				}
+				velocity_of_car = velocity.float_value;
 			}
 		}
 		osDelay(GET_CAN_VELOCITY_DELAY);
@@ -402,7 +391,7 @@ void StartUpdateState(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	  if (event_flags.park_enabled && (state == IDLE || state == PARK || state == REVERSE))
+	  if (event_flags.park_enabled && (state == IDLE || state == PARK))
 		  state = PARK;
 	  else if (event_flags.mech_brake_pressed)
 		  state = IDLE;
@@ -410,7 +399,7 @@ void StartUpdateState(void *argument)
 	  	  state = REGEN;
 	  else if (event_flags.cruise_enabled)
 	      state = CRUISE;
-	  else if (event_flags.reverse_enabled && event_flags.velocity_under_threshold)
+	  else if (event_flags.reverse_enabled && event_flags.velocity_under_threshold && state != PARK)
 		  state = REVERSE;
 	  else if (event_flags.throttle_pressed)
 	      state = DRIVE;
@@ -432,7 +421,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		if(state == DRIVE || state == CRUISE)
 		{
 			event_flags.cruise_enabled = !event_flags.cruise_enabled;
-			cruise_velocity = velocity_of_car.float_value;
+			cruise_velocity = velocity_of_car;
 		}
 	}
 	else if(GPIO_Pin == BTN_CRUISE_UP_Pin)
@@ -455,6 +444,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 		SendCANMotorCommand(0, 0);
 		event_flags.cruise_enabled = FALSE;
+	}
+	else if (GPIO_Pin == BTN_NEXT_PAGE_Pin)
+	{
+		SendCANDIDNextPage();
 	}
 }
 /* USER CODE END Application */
