@@ -173,6 +173,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     assert_param(status == HAL_OK);
 
     // osThreadFlagsClear(canReadMessagesTaskHandle);
+    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
     osThreadFlagsSet(readCANTaskHandle, CAN_READY);
 }
 
