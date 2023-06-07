@@ -2,10 +2,17 @@
  * MCB.c
  *
  *  Created on: Jun. 1, 2023
- *      Author: kcgro
+ *      Author: Kyle Groulx
  */
 
-#include "MCB.h"
+#include <mcb.h>
+
+struct InputFlags event_flags; // Event flags for deciding what state to be in.
+enum DriveState state;
+float cruise_velocity; // Velocity for cruise control
+float velocity_of_car; // Current velocity of the car will be stored here.
+
+
 
 /*
  *   Takes current value and velocity float value and sends in via CAN as an array of bytes.
@@ -30,7 +37,7 @@ void SendCANMotorCommand(float current, float velocity)
 /*
  *  Function used for normalizing(0-1) and accounting for deadzone of ADC inputs.
  */
-float NormalizeValue(float value)
+float NormalizeADCValue(float value)
 {
 	return (value - ADC_DEADZONE >= 0 ? ((float)(value - ADC_DEADZONE))/(ADC_MAX - ADC_DEADZONE) : 0.0);
 }
@@ -43,7 +50,6 @@ void SendCANDIDNextPage()
 	//Todo Check BOM for this CAN message
 	uint8_t data_send[CAN_DATA_LENGTH];
 	HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
-	return;
 }
 
 

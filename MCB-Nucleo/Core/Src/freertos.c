@@ -29,7 +29,7 @@
 #include "usart.h"
 #include "adc.h"
 #include "can.h"
-#include "MCB.h"
+#include "mcb.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,13 +48,6 @@
 /* USER CODE BEGIN Variables */
 uint16_t ADC_throttle_val;
 uint16_t ADC_regen_val;
-
-
-
-struct InputFlags event_flags; // Event flags for deciding what state to be in.
-enum DriveState state;
-float cruise_velocity; // Velocity for cruise control
-float velocity_of_car; // Current velocity of the car will be stored here.
 uint8_t battery_soc; // Stores the charge of the battery, updated in a task.
 
 /*
@@ -71,6 +64,27 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for UpdateFlags */
+osThreadId_t UpdateFlagsHandle;
+const osThreadAttr_t UpdateFlags_attributes = {
+  .name = "UpdateFlags",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for UpdateState */
+osThreadId_t UpdateStateHandle;
+const osThreadAttr_t UpdateState_attributes = {
+  .name = "UpdateState",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for SendMotorCommand */
+osThreadId_t SendMotorCommandHandle;
+const osThreadAttr_t SendMotorCommand_attributes = {
+  .name = "SendMotorCommand",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 /* Definitions for GetADCValues */
 osThreadId_t GetADCValuesHandle;
 const osThreadAttr_t GetADCValues_attributes = {
@@ -78,38 +92,17 @@ const osThreadAttr_t GetADCValues_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for updateFlags */
-osThreadId_t updateFlagsHandle;
-const osThreadAttr_t updateFlags_attributes = {
-  .name = "updateFlags",
+/* Definitions for GetBatterySOC */
+osThreadId_t GetBatterySOCHandle;
+const osThreadAttr_t GetBatterySOC_attributes = {
+  .name = "GetBatterySOC",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for motorStateMachi */
-osThreadId_t motorStateMachiHandle;
-const osThreadAttr_t motorStateMachi_attributes = {
-  .name = "motorStateMachi",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for getCANVelocity */
-osThreadId_t getCANVelocityHandle;
-const osThreadAttr_t getCANVelocity_attributes = {
-  .name = "getCANVelocity",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for getCANBatterySO */
-osThreadId_t getCANBatterySOHandle;
-const osThreadAttr_t getCANBatterySO_attributes = {
-  .name = "getCANBatterySO",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for updateState */
-osThreadId_t updateStateHandle;
-const osThreadAttr_t updateState_attributes = {
-  .name = "updateState",
+/* Definitions for GetVelocity */
+osThreadId_t GetVelocityHandle;
+const osThreadAttr_t GetVelocity_attributes = {
+  .name = "GetVelocity",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
@@ -120,12 +113,12 @@ const osThreadAttr_t updateState_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
+void updateFlags(void *argument);
+void updateState(void *argument);
+void sendMotorCommand(void *argument);
 void getADCValues(void *argument);
-void startUpdateFlags(void *argument);
-void startMotorStateMachine(void *argument);
-void startGetCANVelocity(void *argument);
-void StartSetCANBatterySO(void *argument);
-void StartUpdateState(void *argument);
+void getBatterySOC(void *argument);
+void getVelocity(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -158,23 +151,23 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
+  /* creation of UpdateFlags */
+  UpdateFlagsHandle = osThreadNew(updateFlags, NULL, &UpdateFlags_attributes);
+
+  /* creation of UpdateState */
+  UpdateStateHandle = osThreadNew(updateState, NULL, &UpdateState_attributes);
+
+  /* creation of SendMotorCommand */
+  SendMotorCommandHandle = osThreadNew(sendMotorCommand, NULL, &SendMotorCommand_attributes);
+
   /* creation of GetADCValues */
   GetADCValuesHandle = osThreadNew(getADCValues, NULL, &GetADCValues_attributes);
 
-  /* creation of updateFlags */
-  updateFlagsHandle = osThreadNew(startUpdateFlags, NULL, &updateFlags_attributes);
+  /* creation of GetBatterySOC */
+  GetBatterySOCHandle = osThreadNew(getBatterySOC, NULL, &GetBatterySOC_attributes);
 
-  /* creation of motorStateMachi */
-  motorStateMachiHandle = osThreadNew(startMotorStateMachine, NULL, &motorStateMachi_attributes);
-
-  /* creation of getCANVelocity */
-  getCANVelocityHandle = osThreadNew(startGetCANVelocity, NULL, &getCANVelocity_attributes);
-
-  /* creation of getCANBatterySO */
-  getCANBatterySOHandle = osThreadNew(StartSetCANBatterySO, NULL, &getCANBatterySO_attributes);
-
-  /* creation of updateState */
-  updateStateHandle = osThreadNew(StartUpdateState, NULL, &updateState_attributes);
+  /* creation of GetVelocity */
+  GetVelocityHandle = osThreadNew(getVelocity, NULL, &GetVelocity_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -183,12 +176,11 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
   /* USER CODE END RTOS_EVENTS */
-
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
 /**
-  * @brief  Function implementing the defaultTask thread.
+  * @brief  Task for debugging
   * @param  argument: Not used
   * @retval None
   */
@@ -205,9 +197,119 @@ void StartDefaultTask(void *argument)
   /* USER CODE END StartDefaultTask */
 }
 
+/* USER CODE BEGIN Header_updateFlags */
+/**
+* @brief Task for updating certain event flags based on GPIO inputs or variables in other tasks.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_updateFlags */
+void updateFlags(void *argument)
+{
+	/* USER CODE BEGIN updateFlags */
+	/* Infinite loop */
+	for(;;)
+	{
+		event_flags.mech_brake_pressed = HAL_GPIO_ReadPin(MECH_BRAKE_GPIO_Port, MECH_BRAKE_Pin);
+		event_flags.park_enabled = HAL_GPIO_ReadPin(SWITCH_PARK_GPIO_Port, SWITCH_PARK_Pin);
+		event_flags.reverse_enabled = HAL_GPIO_ReadPin(SWITCH_REVERSE_GPIO_Port, SWITCH_REVERSE_Pin);
+		event_flags.velocity_under_threshold = (velocity_of_car < MIN_REVERSE_VELOCITY);
+		event_flags.charge_under_threshold = (battery_soc < BATTERY_SOC_THRESHOLD);
+		osDelay(UPDATE_FLAGS_DELAY);
+	}
+	/* USER CODE END updateFlags */
+}
+
+/* USER CODE BEGIN Header_updateState */
+/**
+* @brief Task for setting the state based on the given event_flags.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_updateState */
+void updateState(void *argument)
+{
+  /* USER CODE BEGIN updateState */
+  /* Infinite loop */
+	for(;;)
+	  {
+		  /*
+		   *  Conditional statement is intentially organized in a hierarchical structure.
+		   *  If there are two valid states based on the given event_flags, the higher one will take priority.
+		   *  Ex: If throttle and regen are both pressed, the state will be in regen because it has the higher priority.
+		   */
+		  if (event_flags.park_enabled && (state == IDLE || state == PARK))
+			  state = PARK;
+		  else if (event_flags.mech_brake_pressed)
+			  state = IDLE;
+		  else if (event_flags.regen_pressed && event_flags.charge_under_threshold)
+		  	  state = REGEN;
+		  else if (event_flags.cruise_enabled)
+		      state = CRUISE;
+		  else if (event_flags.reverse_enabled && event_flags.velocity_under_threshold && state != PARK)
+			  state = REVERSE;
+		  else if (event_flags.throttle_pressed)
+		      state = DRIVE;
+		  else
+		  	  state = IDLE;
+
+		  osDelay(UPDATE_STATE_DELAY);
+	  }
+  /* USER CODE END updateState */
+}
+
+/* USER CODE BEGIN Header_sendMotorCommand */
+/**
+* @brief Task for sending Motor commands via CAN based on the current state
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_sendMotorCommand */
+void sendMotorCommand(void *argument)
+{
+	/* USER CODE BEGIN sendMotorCommand */
+	/* Infinite loop */
+	for(;;)
+	{
+		if(state == PARK)
+		{
+			velocity = 0.0;
+			current = 1.0;
+		}
+		else if(state == REGEN)
+	    {
+	    	velocity = 0.0;
+	    	current = NormalizeADCValue(ADC_regen_val);
+	    }
+	    else if(state == DRIVE)
+	    {
+	    	velocity = 100.0;
+	    	current = NormalizeADCValue(ADC_throttle_val);
+	    }
+	    else if(state == REVERSE)
+	    {
+	    	velocity = -100.0;
+	    	current = NormalizeADCValue(ADC_throttle_val);
+	    }
+	    else if (state == CRUISE)
+	    {
+	    	velocity = cruise_velocity;
+	    	current = 1.0;
+	    }
+	    else
+	    {
+	    	velocity = 0.0;
+	    	current = 0.0;
+	    }
+		SendCANMotorCommand(velocity, current);
+	    osDelay(SEND_MOTOR_COMMAND_DELAY);
+	}
+	/* USER CODE END sendMotorCommand */
+}
+
 /* USER CODE BEGIN Header_getADCValues */
 /**
-* @brief Function implementing the GetADCValues thread.
+* @brief Gets the throttle and regen ADC values and updates relevent event flags
 * @param argument: Not used
 * @retval None
 */
@@ -228,133 +330,21 @@ void getADCValues(void *argument)
 	if(ADC_regen_val > ADC_DEADZONE)
 		event_flags.cruise_enabled = FALSE;
 
-    osDelay(ADC_POLL_DELAY);
+    osDelay(GET_ADC_VALUES_DELAY);
   }
   /* USER CODE END getADCValues */
 }
 
-/* USER CODE BEGIN Header_startUpdateFlags */
+/* USER CODE BEGIN Header_getBatterySOC */
 /**
-* @brief Function implementing the updateFlags thread.
+* @brief Gets battery state of charge from incoming CAN messages.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_startUpdateFlags */
-void startUpdateFlags(void *argument)
+/* USER CODE END Header_getBatterySOC */
+void getBatterySOC(void *argument)
 {
-  /* USER CODE BEGIN startUpdateFlags */
-  /* Infinite loop */
-  for(;;)
-  {
-	  event_flags.mech_brake_pressed = HAL_GPIO_ReadPin(MECH_BRAKE_GPIO_Port, MECH_BRAKE_Pin);
-
-	  event_flags.park_enabled = HAL_GPIO_ReadPin(SWITCH_PARK_GPIO_Port, SWITCH_PARK_Pin);
-
-	  event_flags.reverse_enabled = HAL_GPIO_ReadPin(SWITCH_REVERSE_GPIO_Port, SWITCH_REVERSE_Pin);
-
-	  event_flags.velocity_under_threshold = (velocity_of_car < MIN_REVERSE_VELOCITY);
-
-	  event_flags.charge_under_threshold = battery_soc < BATTERY_SOC_THRESHHOLD;
-
-	  osDelay(EVENT_FLAG_UPDATE_DELAY);
-  }
-  /* USER CODE END startUpdateFlags */
-}
-
-/* USER CODE BEGIN Header_startMotorStateMachine */
-/**
-* @brief Function implementing the motorStateMachi thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_startMotorStateMachine */
-void startMotorStateMachine(void *argument)
-{
-  /* USER CODE BEGIN startMotorStateMachine */
-
-  /* Infinite loop */
-  for(;;)
-  {
-	if(state == PARK)
-	{
-		velocity = 0.0;
-		current = 0.0;
-	}
-	else if(state == REGEN)
-    {
-    	velocity = 0.0;
-    	current = NormalizeValue(ADC_regen_val);
-    }
-    else if(state == DRIVE)
-    {
-    	velocity = 100.0;
-    	current = NormalizeValue(ADC_throttle_val);
-    }
-    else if(state == REVERSE)
-    {
-    	velocity = -100.0;
-    	current = NormalizeValue(ADC_throttle_val);
-    }
-    else if (state == CRUISE)
-    {
-    	velocity = cruise_velocity;
-    	current = 1.0;
-    }
-    else
-    {
-    	velocity = 0.0;
-    	current = 0.0;
-    }
-
-	SendCANMotorCommand(velocity, current);
-    osDelay(DELAY_MOTOR_STATE_MACHINE);
-  }
-  /* USER CODE END startMotorStateMachine */
-}
-
-/* USER CODE BEGIN Header_startGetCANVelocity */
-/**
-* @brief Function implementing the getCANVelocity thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_startGetCANVelocity */
-void startGetCANVelocity(void *argument)
-{
-  /* USER CODE BEGIN startGetCANVelocity */
-	uint8_t CAN_message[8];
-	FloatBytes velocity;
-	/* Infinite loop */
-	for(;;)
-	{
-		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
-		{
-			// there are multiple CAN IDs being passed through the filter, check if the message is the SOC
-			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, CAN_message);
-			if (can_rx_header.StdId == 0x503)
-			{
-				for(int i= 0; i < 4; i++)
-				{
-					velocity.bytes[i] = CAN_message[i+4]; // Vechicle Velocity is stored in bits 32-63.
-				}
-				velocity_of_car = velocity.float_value;
-			}
-		}
-		osDelay(GET_CAN_VELOCITY_DELAY);
-	}
-  /* USER CODE END startGetCANVelocity */
-}
-
-/* USER CODE BEGIN Header_StartSetCANBatterySO */
-/**
-* @brief Function implementing the getCANBatterySO thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartSetCANBatterySO */
-void StartSetCANBatterySO(void *argument)
-{
-  /* USER CODE BEGIN StartSetCANBatterySO */
+	/* USER CODE BEGIN getBatterySOC */
 	uint8_t battery_msg_data[8];
 	/* Infinite loop */
 	for(;;)
@@ -366,89 +356,53 @@ void StartSetCANBatterySO(void *argument)
 			if (can_rx_header.StdId == 0x626)
 			{
 				// if the battery SOC is out of range, assume it is at 100% as a safety measure
-				if (battery_msg_data[0] < 0 || battery_msg_data[0] > 100)
-					battery_soc = 100;
+				if (battery_msg_data[0] < BATTERY_SOC_EMPTY || battery_msg_data[0] > BATTERY_SOC_FULL)
+					battery_soc = BATTERY_SOC_FULL;
 				else
 					battery_soc = battery_msg_data[0];
 			}
 
-	  		osDelay(READ_BATTERY_SOC_DELAY);
+	  		osDelay(GET_BATTERY_SOC_DELAY);
 		}
 	}
-  /* USER CODE END StartSetCANBatterySO */
+	/* USER CODE END getBatterySOC */
 }
 
-/* USER CODE BEGIN Header_StartUpdateState */
+/* USER CODE BEGIN Header_getVelocity */
 /**
-* @brief Function implementing the updateState thread.
+* @brief Gets the velocity of the car from incoming CAN messages
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartUpdateState */
-void StartUpdateState(void *argument)
+/* USER CODE END Header_getVelocity */
+void getVelocity(void *argument)
 {
-  /* USER CODE BEGIN StartUpdateState */
-  /* Infinite loop */
-  for(;;)
-  {
-	  if (event_flags.park_enabled && (state == IDLE || state == PARK))
-		  state = PARK;
-	  else if (event_flags.mech_brake_pressed)
-		  state = IDLE;
-	  else if (event_flags.regen_pressed && event_flags.charge_under_threshold)
-	  	  state = REGEN;
-	  else if (event_flags.cruise_enabled)
-	      state = CRUISE;
-	  else if (event_flags.reverse_enabled && event_flags.velocity_under_threshold && state != PARK)
-		  state = REVERSE;
-	  else if (event_flags.throttle_pressed)
-	      state = DRIVE;
-	  else
-	  	  state = IDLE;
-
-	  osDelay(EVENT_FLAG_UPDATE_DELAY);
-  }
-  /* USER CODE END StartUpdateState */
+	/* USER CODE BEGIN getVelocity */
+	uint8_t CAN_message[8];
+	FloatBytes velocity;
+	/* Infinite loop */
+	for(;;)
+	{
+		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
+		{
+			// there are multiple CAN IDs being passed through the filter, check if the message is the SOC
+			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, CAN_message);
+			if (can_rx_header.StdId == 0x503)
+			{
+				for(int i = 0; i < (sizeof(float)/sizeof(uint8_t)); i++)
+				{
+					velocity.bytes[i] = CAN_message[i+4]; // Vechicle Velocity is stored in bits 32-63.
+				}
+				velocity_of_car = velocity.float_value;
+			}
+		}
+		osDelay(GET_VELOCITY_DELAY);
+	}
+	/* USER CODE END getVelocity */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-	if(GPIO_Pin == BTN_CRUISE_TOGGLE_Pin)
-	{
 
-		if(state == DRIVE || state == CRUISE)
-		{
-			event_flags.cruise_enabled = !event_flags.cruise_enabled;
-			cruise_velocity = velocity_of_car;
-		}
-	}
-	else if(GPIO_Pin == BTN_CRUISE_UP_Pin)
-	{
-		if(state == CRUISE)
-			if(cruise_velocity + CRUISE_INCREMENT_VAL < CRUISE_MAX)
-				cruise_velocity += CRUISE_INCREMENT_VAL;
-			else
-				cruise_velocity = CRUISE_MAX;
-	}
-	else if(GPIO_Pin == BTN_CRUISE_DOWN_Pin)
-	{
-		if(state == CRUISE)
-			if(cruise_velocity - CRUISE_INCREMENT_VAL > CRUISE_MIN)
-				cruise_velocity -= CRUISE_INCREMENT_VAL;
-			else
-				cruise_velocity = CRUISE_MIN;
-	}
-	else if (GPIO_Pin == MECH_BRAKE_Pin)
-	{
-		SendCANMotorCommand(0, 0);
-		event_flags.cruise_enabled = FALSE;
-	}
-	else if (GPIO_Pin == BTN_NEXT_PAGE_Pin)
-	{
-		SendCANDIDNextPage();
-	}
-}
 /* USER CODE END Application */
 

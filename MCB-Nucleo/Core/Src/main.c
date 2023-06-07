@@ -50,12 +50,6 @@
 
 /* USER CODE BEGIN PV */
 
-
-osEventFlagsId_t commandEventFlagsHandle;		    /**< Event flags handle for the command event flags object. When the MCB
-                                                         changes state, this change is signalled to other RTOS tasks using this event
-                                                         flag object. The updateEventFlags() task deals with this RTOS object. */
-
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/

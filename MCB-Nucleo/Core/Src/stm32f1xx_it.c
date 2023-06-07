@@ -22,6 +22,7 @@
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "mcb.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -205,5 +206,44 @@ void EXTI15_10_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if(GPIO_Pin == BTN_CRUISE_TOGGLE_Pin)
+	{
+		if(state == DRIVE || state == CRUISE)
+		{
+			event_flags.cruise_enabled = !event_flags.cruise_enabled;
+			cruise_velocity = velocity_of_car;
+		}
+	}
+	else if(GPIO_Pin == BTN_CRUISE_UP_Pin)
+	{
+		if(state == CRUISE)
+		{
+			if(cruise_velocity + CRUISE_INCREMENT_VAL < CRUISE_MAX)
+				cruise_velocity += CRUISE_INCREMENT_VAL;
+			else
+				cruise_velocity = CRUISE_MAX;
+		}
+	}
+	else if(GPIO_Pin == BTN_CRUISE_DOWN_Pin)
+	{
+		if(state == CRUISE)
+		{
+			if(cruise_velocity - CRUISE_INCREMENT_VAL > CRUISE_MIN)
+				cruise_velocity -= CRUISE_INCREMENT_VAL;
+			else
+				cruise_velocity = CRUISE_MIN;
+		}
+	}
+	else if (GPIO_Pin == MECH_BRAKE_Pin)
+	{
+		SendCANMotorCommand(0, 0);
+		event_flags.cruise_enabled = FALSE;
+	}
+	else if (GPIO_Pin == BTN_NEXT_PAGE_Pin)
+	{
+		SendCANDIDNextPage();
+	}
+}
 /* USER CODE END 1 */
