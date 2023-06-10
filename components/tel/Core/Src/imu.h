@@ -1,4 +1,4 @@
-#include "i2c.h"\
+#include "i2c.h"
 #include "usart.h"
 
 enum GyroType {
@@ -24,7 +24,7 @@ float gyro(enum GyroType type);
 float accel(enum AccelType type);
 void transmitData(uint8_t* data, uint16_t size);
 
-#define DEVICE_ADDRESS ((0x6A)<<1) // could be 6B or 6A idk
+#define DEVICE_ADDRESS ((0x6A)<<1)
 
 
 #define UART_TIMEOUT 1000
@@ -77,9 +77,10 @@ float accel(enum AccelType type)
 	return (float) accel;
 }
 
-
-void
-initIMU(void) // set up stuff for gyro/accel modes
+/*
+	Set up for gyro/accel modes
+*/
+void initIMU(void)
 {
 	uint8_t data;
 
