@@ -37,7 +37,7 @@ void SendCANMotorCommand(float current, float velocity)
 /*
  *  Function used for normalizing(0-1) and accounting for deadzone of ADC inputs.
  */
-float NormalizeADCValue(float value)
+float NormalizeADCValue(uint16_t value)
 {
 	return (value - ADC_DEADZONE >= 0 ? ((float)(value - ADC_DEADZONE))/(ADC_MAX - ADC_DEADZONE) : 0.0);
 }

@@ -213,6 +213,7 @@ void updateFlags(void *argument)
 		event_flags.mech_brake_pressed = HAL_GPIO_ReadPin(MECH_BRAKE_GPIO_Port, MECH_BRAKE_Pin);
 		event_flags.park_enabled = HAL_GPIO_ReadPin(SWITCH_PARK_GPIO_Port, SWITCH_PARK_Pin);
 		event_flags.reverse_enabled = HAL_GPIO_ReadPin(SWITCH_REVERSE_GPIO_Port, SWITCH_REVERSE_Pin);
+		
 		event_flags.velocity_under_threshold = (velocity_of_car < MIN_REVERSE_VELOCITY);
 		event_flags.charge_under_threshold = (battery_soc < BATTERY_SOC_THRESHOLD);
 		osDelay(UPDATE_FLAGS_DELAY);
@@ -244,6 +245,8 @@ void updateState(void *argument)
 			  state = IDLE;
 		  else if (event_flags.regen_pressed && event_flags.charge_under_threshold)
 		  	  state = REGEN;
+		  else if (event_flags.cruise_enabled && cruise_accelerate_enabled)
+		  	  state = CRUISE_ACCELERATE;
 		  else if (event_flags.cruise_enabled)
 		      state = CRUISE;
 		  else if (event_flags.reverse_enabled && event_flags.velocity_under_threshold && state != PARK)
@@ -296,6 +299,11 @@ void sendMotorCommand(void *argument)
 	    	velocity = cruise_velocity;
 	    	current = 1.0;
 	    }
+		else if (state == CRUISE_ACCELERATE)
+		{
+			velocity = 100.0;
+			current = NormalizeADCValue(ADC_throttle_val);
+		}
 	    else
 	    {
 	    	velocity = 0.0;
@@ -320,9 +328,10 @@ void getADCValues(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	// Get ADC value for throttle and sets event flag
+	// Get ADC value for throttle and sets event flags
 	ADC_throttle_val = ReadADC(&hadc1);
 	event_flags.throttle_pressed = ADC_throttle_val > ADC_DEADZONE;
+	event_flags.cruise_accelerate_enabled = NormalizeADCValue(ADC_throttle_val) > CRUISE_CURRENT;
 
 	// Gets ADC value for regen and sets event flags
 	ADC_regen_val = ReadADC(&hadc2);
