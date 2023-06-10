@@ -10,6 +10,9 @@ Each custom device on the car for which the team has written firmware has its ow
 - ECU (Electronic Control Unit) for the battery "control board" - the section of the battery with all of the high-voltage switching circuitry
   - `ecu-firmware` - firmware for the microcontroller on the ECU that manages all of the switching components in the battery
 
+- MCB (Main Control Board)
+    - /mcb/mcb_main - all application code for the main control board
+
 When adding a firmware project for another device on the car to this repository, start by creating a folder in the `/components/` directory named using the 3-letter identifier for the device (eg. `bms`, `ecu`, `mcb`), if one does not already exist. Then, place the firmware project for the device in the corresponding 3-letter ID folder.
 
 In addition to the firmware for hardware on the car in `/components/`, any tools that have been developed for working with this hardware can be found in the `/tools/` folder. The following tools can be found in this repository:
