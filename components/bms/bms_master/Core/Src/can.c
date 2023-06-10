@@ -1,17 +1,30 @@
 /**
- *  @file can.c
- *  @brief Functions for sending and recieving messages over the Masterboard's CAN bus
+ * @file can.c
+ * @brief Functions for sending and receiving messages over the Master board's CAN bus
+ * 
+ * Multi-byte values are generally sent in big-endian byte order (network order) = most significant byte first
  *
- *  @date October 1, 2022
- *  @author Edward Ma, Jung Yi Cau, Mischa Johal
+ * @date October 1, 2022
+ * @author Edward Ma, Jung Yi Cau, Mischa Johal
  */
 
 #include "can.h"
+#include "main.h"
+#include <float.h>
+
+/*============================================================================*/
+/* DEFINITIONS */
+
+#define MESSAGE_623_MODULE_VOLTAGE_MAX_VALUE 5U
+#define MESSAGE_623_PACK_VOLTAGE_MAX_VALUE 140U
+
+#define MESSAGE_623_MODULE_VOLTAGE_SCALE_FACTOR (0xFFU / (MESSAGE_623_MODULE_VOLTAGE_MAX_VALUE))
+#define MESSAGE_623_PACK_VOLTAGE_SCALE_FACTOR (0xFFFFU / (MESSAGE_623_PACK_VOLTAGE_MAX_VALUE))
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
 
-void CAN_InitTxMessages(CAN_Tx_Messages_t txMessages[NUM_CAN_MESSAGES_TRANSMIT]);
+void CAN_InitTxMessages(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT]);
 void CAN_Init_0x450_Filter(CAN_HandleTypeDef *hcan);
 
 /*============================================================================*/
@@ -37,15 +50,13 @@ void CAN_Init(CAN_HandleTypeDef *hcan, CAN_Tx_Message_t txMessages[NUM_CAN_MESSA
  * @param txMessages array of messages to transmit
  * @param pack pack data structure that data will be read from
  */
-void CAN_CompileMessage622(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], BTM_PackData_t *pack)
+void CAN_CompileMessage622(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], Pack_t *pack)
 {
-    uint32_t status = pack->status;
+    uint32_t status = pack->status.raw;
     CAN_Tx_Message_t *message622_p = &(txMessages[INDEX_622]);
     message622_p->data[0] = (uint8_t)status;         // bits 0-7
     message622_p->data[1] = (uint8_t)(status >> 8);  // 8-15
     message622_p->data[2] = (uint8_t)(status >> 16); // 16, 17 (garbage beyond this)
-
-    return;
 }
 
 /**
@@ -54,78 +65,71 @@ void CAN_CompileMessage622(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT
  * @param txMessages array of messages to transmit
  * @param pack pack data structure that data will be read from
  */
-void CAN_CompileMessage623(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], BTM_PackData_t *pack)
+void CAN_CompileMessage623(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], Pack_t *pack)
 {
-    uint16_t total_pack_voltage = pack->pack_voltage;
-    uint16_t min_module_voltage = 65535;
+    uint16_t min_module_voltage = 0xFFFFU;
     uint16_t max_module_voltage = 0;
-    uint16_t local_module_voltage;
+    uint16_t module_voltage;
     // locations of min and max voltage
     uint8_t min_module = 0;
     uint8_t max_module = 0;
-    uint8_t min_stack = 0;
-    uint8_t max_stack = 0;
-    uint8_t rescaled_factor = 51; // (uint8_t bit size in decimal: 255)/(Max physical voltage per module: 5)
+
+    uint16_t total_pack_voltage = (uint16_t) ((Pack_GetPackVoltage(pack) * MESSAGE_623_PACK_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
+
     CAN_Tx_Message_t *message623_p = &(txMessages[INDEX_623]);
 
-    for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+    for (uint8_t module_num = 0; module_num < PACK_NUM_BATTERY_MODULES; module_num++)
     {
-        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+        module_voltage = pack->module[module_num].voltage;
+        // check and store minimum voltage
+        if (module_voltage < min_module_voltage)
         {
-            if (pack->stack[ic_num].module[module_num].enable)
-            {
-                local_module_voltage = (pack->stack[ic_num].module[module_num].voltage);
-                // check and store minimum voltage
-                if (local_module_voltage < min_module_voltage)
-                {
-                    min_module_voltage = local_module_voltage; // store minimum voltage
-                    min_stack = ic_num;                        // store stack with minimum voltage
-                    min_module = module_num;                   // store module with minimum voltage
-                }
-                // check and store maximum voltage
-                if (local_module_voltage > max_module_voltage)
-                {
-                    max_module_voltage = local_module_voltage;
-                    max_module = module_num;
-                    max_stack = ic_num;
-                }
-            }
+            min_module_voltage = module_voltage;    // store minimum voltage
+            min_module = module_num;                // store module with minimum voltage
+        }
+        // check and store maximum voltage
+        if (module_voltage > max_module_voltage)
+        {
+            max_module_voltage = module_voltage;
+            max_module = module_num;
         }
     }
 
-    uint32_t min_volt_rescaled = (uint8_t)(min_module_voltage * rescaled_factor / 10000); // rescale max voltage of fit 8 bits of data
-    uint32_t max_volt_rescaled = (uint8_t)(max_module_voltage * rescaled_factor / 10000); // 10000: conversion from 10^4mV to V
-
-    message623_p->data[0] = (uint8_t)total_pack_voltage;        // casting 16 bit integer into 8 bit integer gets rid of upper 8 bits, leaves lower 8 bits
-    message623_p->data[1] = (uint8_t)(total_pack_voltage >> 8); // casting shifted 16 bit integer into 8 bit integer get rids of upper 8 bits, leaves lower 8 bits
-
-    // TODO: need to deal with correct module indices (LUT)
+    // Rescale voltages to fit 8 bits of data
+    uint8_t min_volt_rescaled = (uint8_t) ((min_module_voltage * MESSAGE_623_MODULE_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
+    uint8_t max_volt_rescaled = (uint8_t) ((max_module_voltage * MESSAGE_623_MODULE_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
 
     // Store in message 623 data array
+    message623_p->data[0] = (uint8_t) (total_pack_voltage >> 8); // casting shifted 16 bit integer into 8 bit integer get rids of upper 8 bits, leaves lower 8 bits
+    message623_p->data[1] = (uint8_t) total_pack_voltage;        // casting 16 bit integer into 8 bit integer gets rid of upper 8 bits, leaves lower 8 bits
     message623_p->data[2] = min_volt_rescaled;
-    message623_p->data[3] = min_module * (min_stack + 1); // add one because of indexing from zero
+    message623_p->data[3] = min_module; // add one because of indexing from zero
     message623_p->data[4] = max_volt_rescaled;
-    message623_p->data[5] = max_module * (max_stack + 1);
+    message623_p->data[5] = max_module;
 }
 
 /**
  * @brief Get data for message 624, populate appropriate message in message array.
  *
- * @param message623 array of messages to transmit
+ * @param txMessages array of messages to transmit
  * @param pack pack data structure that data will be read from
  */
-void CAN_CompileMessage624(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], BTM_PackData_t *pack)
+void CAN_CompileMessage624(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], Pack_t *pack)
 {
     CAN_Tx_Message_t *message624_p = &(txMessages[INDEX_624]);
-    uint8_t dod = getDOD(pack);
-    uint8_t capacity = getCapacity(pack);
-    uint8_t soc = pack->PH_SOC_LOCATION;
 
-    message624_p->data[0] = soc;
-    message624_p->data[1] = dod;
-    message624_p->data[2] = capacity;
+    float soc = Pack_GetPackStateOfCharge(pack);
+    float capacity = SOC_getCapacity(soc);
+    float dod = SOC_getDOD(capacity);
 
-    return;
+    uint16_t capacity_encoded = (uint16_t) capacity;
+    uint16_t dod_encoded = (uint16_t) dod;
+
+    message624_p->data[0] = (uint8_t) soc;
+    message624_p->data[1] = (uint8_t) (dod_encoded >> 8);
+    message624_p->data[2] = (uint8_t) dod_encoded;
+    message624_p->data[3] = (uint8_t) (capacity_encoded >> 8);
+    message624_p->data[4] = (uint8_t) capacity_encoded;
 }
 
 /**
@@ -134,68 +138,49 @@ void CAN_CompileMessage624(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT
  * @param message623 message structure that will be populated
  * @param pack pack data structure that data will be read from
  */
-void CAN_CompileMessage625(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], BTM_PackData_t *pack)
+void CAN_CompileMessage625(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], Pack_t *pack)
 {
     // Temperature measured in degrees celcius
-    double avg_pack_temp = 0;
-    double min_module_temp = 200;
-    double max_module_temp = -200;
-    double sum = 0;
-    uint8_t count_modules_enabled = 1;
-    double local_module_temp;
-    uint8_t avg_pack_temp_twos_complement;
-    uint8_t min_module_temp_twos_complement;
-    uint8_t max_module_temp_twos_complement;
-    // locations of min and max temperature
+    float sum = 0.0;
+    float average_pack_temperature;
+    float min_module_temperature = FLT_MIN;
+    float max_module_temperature = FLT_MAX;
+    float module_temperature;
+    // indices of modules with min and max temperatures
     uint8_t min_module = 0;
     uint8_t max_module = 0;
-    uint8_t min_stack = 0;
-    uint8_t max_stack = 0;
+
     CAN_Tx_Message_t *message625_p = &(txMessages[INDEX_625]);
 
-    for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+    for (int module_num = 0; module_num < PACK_NUM_BATTERY_MODULES; module_num++)
     {
-        for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
+        module_temperature = (pack->module[module_num].temperature);
+
+        sum += module_temperature; // Get sum of temperature
+
+        // check and store minimum temperature
+        if (module_temperature < min_module_temperature)
         {
-            if (pack->stack[ic_num].module[module_num].enable)
-            {
-                local_module_temp = (pack->stack[ic_num].module[module_num].temperature);
-
-                sum += local_module_temp; // Get sum of temperature
-
-                // check and store minimum temperature
-                if (local_module_temp < min_module_temp)
-                {
-                    min_module_temp = local_module_temp; // store minimum temperature
-                    min_stack = ic_num;                  // store stack with minimum temperature
-                    min_module = module_num;             // store module with minimum temperature
-                }
-                // check and store maximum temperature
-                if (local_module_temp > max_module_temp)
-                {
-                    max_module_temp = local_module_temp;
-                    max_module = module_num;
-                    max_stack = ic_num;
-                }
-                count_modules_enabled++;
-            }
+            min_module_temperature = module_temperature;   // store minimum temperature
+            min_module = module_num;                // store index of module with minimum temperature
+        }
+        // check and store maximum temperature
+        if (module_temperature > max_module_temperature)
+        {
+            max_module_temperature = module_temperature;
+            max_module = module_num;
         }
     }
 
-    avg_pack_temp = sum / count_modules_enabled;
-
-    // Convert temperatures to 8-bit twos complement
-    avg_pack_temp_twos_complement = twosComplementTemp(avg_pack_temp);
-    min_module_temp_twos_complement = twosComplementTemp(min_module_temp);
-    max_module_temp_twos_complement = twosComplementTemp(max_module_temp);
+    average_pack_temperature = sum / PACK_NUM_BATTERY_MODULES;
 
     // Populate data array
-    // TODO: need to deal with stack and module indices (LUT)
-    message625_p->data[0] = twosComplementTemp;
-    message625_p->data[1] = min_module_temp_twos_complement;
-    message625_p->data[2] = min_module * (min_stack + 1);
-    message625_p->data[3] = max_module_temp_twos_complement;
-    message625_p->data[4] = max_module * (max_stack + 1);
+    // Cast signed values to a signed integer format first in order to preserve value while converting number format
+    message625_p->data[0] = (int8_t) average_pack_temperature;
+    message625_p->data[1] = (int8_t) min_module_temperature;
+    message625_p->data[2] = min_module;
+    message625_p->data[3] = (int8_t) max_module_temperature;
+    message625_p->data[4] = max_module;
 }
 
 /**
@@ -218,7 +203,7 @@ void CAN_RecieveMessages(CAN_HandleTypeDef *hcan, CAN_Rx_Message_t rxMessages[NU
         {
             rx_msg_p = &rxMessages[rx_msg_index];
             rx_msg_p->fifo = fifo_num;                                                               // indicates which fifo message was recieved in
-            if (HAL_CAN_GetRxMessage(hcan, fifo_num, rx_msg_p->rx_header, rx_msg_p->data) != HAL_OK) // retrieve message
+            if (HAL_CAN_GetRxMessage(hcan, fifo_num, &(rx_msg_p->rx_header), rx_msg_p->data) != HAL_OK) // retrieve message
             {
                 Error_Handler();
             }
@@ -244,7 +229,7 @@ void CAN_RecieveMessages(CAN_HandleTypeDef *hcan, CAN_Rx_Message_t rxMessages[NU
  * @param txMessageArrray Array of relevant message information
  * Should be declared only once, before this function is called
  */
-void CAN_InitTxMessages(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT]);
+void CAN_InitTxMessages(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT])
 {
     for (int i = 0; i < NUM_CAN_MESSAGES_TRANSMIT; i++)
     {
@@ -291,46 +276,13 @@ void CAN_Init_0x450_Filter(CAN_HandleTypeDef *hcan)
     filter_config.FilterFIFOAssignment = CAN_FILTER_FIFO0;         // rx'd message will be placed into this FIFO
     filter_config.FilterMode = CAN_FILTERMODE_IDLIST;              // identifier list mode
     filter_config.FilterScale = CAN_FILTERSCALE_32BIT;             // don't need double layer of filters, not using EXTID, 32bit fine (if rx'ing many messages with diff ID's, could use double layer of filters)
-    filter_config.FilterMaskIdHigh = ECU_CURRENT_MSG_ID_MASK << 5; // ID upper 16 bits (not using mask), bit shift per bit order (see large comment above)
+    filter_config.FilterMaskIdHigh = ECU_CURRENT_MESSAGE_ID << 5; // ID upper 16 bits (not using mask), bit shift per bit order (see large comment above)
     filter_config.FilterMaskIdLow = 0;                             // ID lower 16 bits (not using mask)
-    filter_config.FilterIdHigh = ECU_CURRENT_MSG_ID_MASK << 5;     // filter ID upper 16 bits (list mode, mask = ID)
+    filter_config.FilterIdHigh = ECU_CURRENT_MESSAGE_ID << 5;     // filter ID upper 16 bits (list mode, mask = ID)
     filter_config.FilterIdLow = 0;                                 // filter ID lower 16 bits
 
     if (HAL_CAN_ConfigFilter(hcan, &filter_config) != HAL_OK) // configure filter registers
     {
         Error_Handler();
     }
-}
-
-/**
- * @brief Helper function to convert a temperature from a double to an eight-bit twos complement representation
- *
- * @param temp temperature to convert, signed degrees celcius
- * @note Algorithm for twos compliment is to invert all the bits, then add 1
- */
-uint8_t twosComplementTemp(double temp)
-{
-    uint8_t converted_temp;
-
-    if (temp > CAN_MAX_TEMP) // upper temp bound
-    {
-        converted_temp = CAN_MAX_TEMP;
-    }
-    else if (temp < CAN_MIN_TEMP) // lower temp bound
-    {
-        converted_temp = ~(CAN_MIN_TEMP) + 1; // twos complement
-    }
-    else
-    {
-        if (temp >= 0)
-        {
-            converted_temp = (uint8_t)fabs(temp);
-        }
-        else // temp < 0
-        {
-            converted_temp = ~((uint8_t)fabs(temp)) + 1; // twos complement
-        }
-    }
-
-    return converted_temp;
 }

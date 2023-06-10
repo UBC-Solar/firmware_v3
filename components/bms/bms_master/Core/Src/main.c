@@ -22,6 +22,18 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ltc6813_btm.h"
+#include "ltc6813_btm_temp.h"
+#include "ltc6813_btm_bal.h"
+#include "analysis.h"
+#include "balancing.h"
+#include "can.h"
+#include "control.h"
+#include "soc.h"
+// #include "selftest.h"
+#include "pack.h"
+#include "debug_io.h"
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,6 +44,8 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define LED_BLINK_INTERVAL 500 // milliseconds
+#define MEASUREMENT_INTERVAL 1000 // milliseconds
+#define CAN_TX_INTERVAL 1000 // milliseconds
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -50,7 +64,7 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 
-BTM_PackData_t pack;
+Pack_t pack;
 
 /* USER CODE END PV */
 
@@ -62,12 +76,12 @@ static void MX_SPI2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
-uint8_t doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
-                          uint8_t reg_group2[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE]);
-void packUpdateAndControl(BTM_PackData_t *pack);
-void startupChecks(BTM_PackData_t *pack);
-void analyzePack(BTM_PackData_t *pack);
-void stopBalancing(BTM_PackData_t *pack);
+bool doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
+                       uint8_t reg_group2[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE]);
+void packUpdateAndControl(Pack_t *pack);
+void startupChecks(Pack_t *pack);
+void analyzePack(Pack_t *pack);
+void stopBalancing(Pack_t *pack);
 
 /* USER CODE END PFP */
 
@@ -83,17 +97,11 @@ void stopBalancing(BTM_PackData_t *pack);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
-  uint8_t test_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {{0x55, 0x6E, 0x69, 0x42, 0x43, 0x20}, {0x53, 0x6f, 0x6c, 0x61, 0x72, 0x21}};
-  uint8_t test_data_rx[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
-  BTM_Status_t comm_status = {BTM_OK, 0};
-  uint8_t startup_flag = 1; // indicates the BMS has been powered on, need to init relevant parameters
-  uint8_t reg_group_match_failed = 0;
-  unsigned int current_blink_tick = 0;
-  unsigned int last_blink_tick = 0;
-  unsigned int last_measurement_tick = HAL_GetTick();
-  unsigned int last_CAN_tick = HAL_GetTick();
-  unsigned int current_tick;
+  uint32_t current_blink_tick = 0;
+  uint32_t last_blink_tick = 0;
+  uint32_t last_measurement_tick = 0;
+  uint32_t last_CAN_tick = 0;
+  uint32_t current_tick;
 
   /* USER CODE END 1 */
 
@@ -122,8 +130,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   DebugIO_Init(&huart1);
 
-  // Give the BMS functionality access to hardware resources
-  BTM_SPI_handle = &hspi2;
   CONT_timer_handle = &htim3;
   // TODO: CAN handle
 
@@ -131,9 +137,11 @@ int main(void)
   current_blink_tick = HAL_GetTick();
 
   // Initialize hardware and pack struct
-  CONT_init();     // control signals
-  BTM_init(&pack); // initialize the LTC6813 and system data
-  // TODO: CAN initilization
+  CONT_init(); // control signals
+  BTM_init(&hspi2); // initialize the LTC6813s and driver state
+  // TODO: CAN initialization
+
+  startupChecks(&pack);
 
   /* USER CODE END 2 */
 
@@ -141,26 +149,21 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-    current_tick = HAL_getTick();
-
-    // on startup, preform system checks
-    if (startup_flag)
-    {
-      startupChecks(&pack);
-    }
+    current_tick = HAL_GetTick();
 
     // update pack values and control signals if pack update interval has elapsed
     if (current_tick - last_measurement_tick >= MEASUREMENT_INTERVAL)
     {
       packUpdateAndControl(&pack);
+      last_measurement_tick = current_tick;
     }
 
     // preform CAN communication if CAN send interval has elapsed
-    if (current_tick - last_measurement_tick >= CAN_TX_INTERVAL)
+    if (current_tick - last_CAN_tick >= CAN_TX_INTERVAL)
     {
       // TODO: preform CAN communication
       // CAN comms always happen (whether or not in fault state)
+      last_CAN_tick = current_tick;
     }
 
     // blink LED on master board
@@ -459,30 +462,29 @@ static void MX_GPIO_Init(void)
 /* PRIVATE FUNCTIONS */
 
 /**
- * @brief
+ * @brief TODO:
  *
  *
  */
-
-void packUpdateAndControl(BTM_PackData_t *pack)
+void packUpdateAndControl(Pack_t *pack)
 {
-  // Temp
-  unsigned int fan_PWM = 0;
+  // Temperature
+  uint32_t fan_PWM = 0;
   float max_temp = 0;
   // ECU CAN Message
   CAN_Rx_Message_t rxMessages[NUM_RX_FIFOS * MAX_MESSAGES_PER_FIFO];
-  int32_t pack_current;
+  int32_t pack_current = 0;
   uint8_t DOC_COC_active = 0;
   CAN_Rx_Message_t *rx_msg_p;
   // Other
-  unsigned int current_tick;
+  uint32_t current_tick;
   static uint8_t initial_soc_measurement_flag = 1;
-  unsigned int HLIM_status = 0;
+  bool HLIM_status = false;
 
-  current_tick = HAL_getTick();
+  current_tick = HAL_GetTick();
 
   // Recieve ECU CAN message
-  CAN_RecieveMessages(&hcan, rxMessages);
+  CAN_RecieveMessages(&hcan, rxMessages); // FIXME: convert to interrupt-based instead
   for (int i = 0; i < (NUM_RX_FIFOS * MAX_MESSAGES_PER_FIFO); i++)
   {
     rx_msg_p = &rxMessages[i];
@@ -490,23 +492,23 @@ void packUpdateAndControl(BTM_PackData_t *pack)
     // operate on message if it's the current status message from the ECU
     if (rx_msg_p->rx_header.StdId == ECU_CURRENT_MESSAGE_ID)
     { // does comparing this way work?
-      DOC_COC_active = rx_msg_p.data[0];
-      pack_current = rx_msg_p.data[1]; // TODO: double check whether we need to rescale one rx'd (depends on how ECU packages up this value)
+      DOC_COC_active = rx_msg_p->data[0];
+      pack_current = rx_msg_p->data[1]; // TODO: double check whether we need to rescale one rx'd (depends on how ECU packages up this value)
       break;                           // remove if we want to rx more than just this message
     }
   }
 
   if (DOC_COC_active)
   {
-    pack->status |= FLT_DOC_COC_MASK; // set FLT_DOC_COC bit
+    pack->status.bits.fault_over_current = true; // set FLT_DOC_COC bit
   }
 
   // TODO: isolation sensor check (if it's BMS's responsibilty)
 
   // get pack measurements
-  if (BTM_readBatt(pack).error != BTM_OK || BTM_TEMP_measureState(pack).error != BTM_OK)
+  if (BTM_getVoltages(pack).error != BTM_OK || BTM_TEMP_getTemperatures(pack).error != BTM_OK)
   {
-    pack->status |= FLT_COMM_MASK;
+    pack->status.bits.fault_communications = true;
   }
 
   // SOC estimation
@@ -524,28 +526,27 @@ void packUpdateAndControl(BTM_PackData_t *pack)
   ANA_analyzePack(pack);
 
   // if any fault active, drive FLT, COM, OT GPIOs, turn off balancing, drive fans 100%
-  if (pack->status & FAULTS_MASK)
+  if (PACK_ANY_FAULTS_SET(&(pack->status)))
   {
-    CONT_FLT_switch((pack->status & FAULTS_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_COM_switch((pack->status & FLT_COMM_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_OT_switch((pack->status & FLT_OT_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
+    CONT_FLT_switch(PACK_ANY_FAULTS_SET(&(pack->status)) ? CONT_ACTIVE : CONT_INACTIVE);
+    CONT_COM_switch(pack->status.bits.fault_communications ? CONT_ACTIVE : CONT_INACTIVE);
+    CONT_OT_switch(pack->status.bits.fault_over_temperature ? CONT_ACTIVE : CONT_INACTIVE);
     stopBalancing(pack);
-    CONT_BAL_switch((pack->status & TRIP_BAL_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
+    CONT_BAL_switch(pack->status.bits.balancing_active ? CONT_ACTIVE : CONT_INACTIVE);
     CONT_FAN_PWM_set(FAN_FULL);
   }
-  else // no fault, balance, drive control signals and fans
+  else // no fault; balance modules, drive control signals and fans
   {
-    BTM_BAL_settings(pack);       // write bal settings, send bal commands
-    ANA_writePackBalStatus(pack); // update pack balancing status
-    CONT_BAL_switch((pack->status & TRIP_BAL_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
+    BAL_updateBalancing(pack); // write bal settings, send bal commands
+    CONT_BAL_switch(pack->status.bits.balancing_active ? CONT_ACTIVE : CONT_INACTIVE);
 
     // HLIM active if TRIP_HLIM or TRIP_CHARGE_OT are active
-    HLIM_status = (pack->status & TRIP_HLIM_MASK) | (pack->status & TRIP_CHARGE_OT_MASK);
+    HLIM_status = pack->status.bits.hlim || pack->status.bits.charge_over_temperature_limit;
     CONT_HLIM_switch(HLIM_status ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_LLIM_switch((pack->status & TRIP_LLIM_MASK) ? CONT_ACTIVE : CONT_INACTIVE);
+    CONT_LLIM_switch((pack->status.bits.llim) ? CONT_ACTIVE : CONT_INACTIVE);
 
     // set fans
-    if (pack->status & TRIP_CHARGE_OT_MASK) // if TRIP_CHARGE_OT active, drive fans 100%
+    if (pack->status.bits.charge_over_temperature_limit) // if TRIP_CHARGE_OT active, drive fans 100%
     {
       fan_PWM = FAN_FULL;
     }
@@ -564,82 +565,55 @@ void packUpdateAndControl(BTM_PackData_t *pack)
  * @brief Preforms initial system checks
  * Writes COMM bit in status code if checks fail
  */
-
-void startupChecks(BTM_PackData_t *pack)
+void startupChecks(Pack_t *pack)
 {
   uint8_t test_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {{0x55, 0x6E, 0x69, 0x42, 0x43, 0x20}, {0x53, 0x6f, 0x6c, 0x61, 0x72, 0x21}};
   uint8_t test_data_rx[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
   BTM_Status_t comm_status = {BTM_OK, 0};
-  uint8_t reg_group_match_failed = 0;
+  bool reg_group_match;
 
   BTM_writeRegisterGroup(CMD_WRCOMM, test_data);
   comm_status = BTM_readRegisterGroup(CMD_RDCOMM, test_data_rx);
-  reg_group_match_failed = doesRegGroupMatch(test_data, test_data_rx);
+  reg_group_match = doesRegGroupMatch(test_data, test_data_rx);
 
   // checks for comms error
   // note: a lack of comms is different than the self-tests failing
   if (comm_status.error != BTM_OK)
   {
-    pack->status |= FLT_COMM_MASK;
+    pack->status.bits.fault_communications = true;
   }
-  if (reg_group_match_failed)
+  if (!reg_group_match)
   {
-    pack->status |= FLT_TEST_MASK;
+    pack->status.bits.fault_self_test = true;
   }
 }
 
 /**
  * @brief Helper function for initial system checks
- * Returns 0 for full match, 1 otherwise
+ * Returns true for full match, false otherwise
  */
-
-uint8_t doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
-                          uint8_t reg_group2[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
+bool doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
+                       uint8_t reg_group2[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
 {
   for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
   {
     for (int i = 0; i < BTM_REG_GROUP_SIZE; i++)
     {
       if (reg_group1[ic_num][i] != reg_group2[ic_num][i])
-        return 1;
+        return false;
     }
   }
-  return 0;
+  return true;
 }
 
 /**
  * @brief Helper function to stop balancing for all modules
  *
  */
-
-void stopBalancing(BTM_PackData_t *pack)
+void stopBalancing(Pack_t *pack)
 {
-  for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
-  {
-    for (int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
-    {
-      pack->stack[ic_num].module[module_num].bal_status = DISCHARGE_OFF;
-    }
-  }
-
-  BTM_BAL_setDischarge(pack);   // writes balancing commands for all modules
-  ANA_writePackBalStatus(pack); // (if works, should be) equivalent to pack->status &= ~TRIP_BAL_MASK
-}
-
-/**
- * @brief Configure where printf() and putchar() output goes
- */
-int __io_putchar(int ch)
-{
-  // Un-comment either (or both) function call to route debugging output
-
-  // Output on Serial Wire Output (SWO)
-  ITM_SendChar(ch);
-
-  // Output on UART
-  // HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
-
-  return (ch);
+  bool discharge_setting[PACK_NUM_BATTERY_MODULES] = {false};
+  BTM_BAL_setDischarge(pack, discharge_setting);   // writes balancing commands for all modules
 }
 
 /* USER CODE END 4 */

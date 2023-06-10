@@ -19,12 +19,11 @@ BTM_Status_t ST_checkLTCtemp(void);
 BTM_Status_t ST_checkOpenWire(void);
 BTM_Status_t ST_checkOverlapVoltage(void);
 BTM_Status_t ST_checkVREF2(void);
-BTM_Status_t ST_verifyDischarge(BTM_PackData_t* pack);
+BTM_Status_t ST_verifyDischarge(Pack_t *pack);
 
 // Testable private functions
 #ifdef TEST
 STATIC_TESTABLE void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
-STATIC_TESTABLE void shiftDchStatus(BTM_module_bal_status_t module_dch[BTM_NUM_MODULES]);
 #endif // TEST
 
 /*============================================================================*/

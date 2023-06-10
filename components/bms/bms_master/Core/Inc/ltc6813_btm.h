@@ -1,46 +1,38 @@
 /**
- * 	@file ltc6813_btm.h
+ *  @file ltc6813_btm.h
  *  @brief Header file for driver for the LTC6813-1 battery monitor IC.
  *
  *  All functions and many symbolic constants associated with this driver are
- *  prefixed with "BTM"
+ *  prefixed with "BTM" which is short for "Battery Monitoring"
  *
- *	STEPS TO SET UP THIS DRIVER:
- *	1.	Ensure that BTM_NUM_DEVICES is set correctly for the hardware setup
- *	2. 	Make sure BTM_CS_GPIO_PORT and BTM_CS_GPIO_PIN correspond to the correct
- *		port and pin for the "Chip Select" (CS) SPI output
- *	3.	After initializing the STM32's SPI peripheral in the application code,
- *		set the BTM_SPI_handle pointer to the HAL SPI handle
- *		eg. BTM_SPI_handle = &hspi1;
- *
- *  NOTE: "Cell" and "Module," as they appear in this code, should be treated
- *  as synonymous. The inconsistency in the use of the 2 terms is due to
- *  conflicting nomenclature of the team's battery pack architecture and the
- *  LTC6813 documentation.
+ *  STEPS TO SET UP THIS DRIVER:
+ *  1.   Ensure that BTM_NUM_DEVICES is set correctly for the hardware setup
+ *  2.   After initializing the STM32's SPI peripheral in the application code,
+ *	    pass the BTM_SPI_handle pointer to BTM_Init()
+ 
+ *  NOTE: "Cell" and "Module," as they appear in this code, have slightly
+ *  different connotations. "Module" refers to a physical set of parallel
+ *  battery cells present in the battery pack. "Cell" or "cell input"
+ *  refers to a measurement input pair (and balancing control pin) present on
+ *  an LTC6813 IC. The distinction is made since not all measurement inputs of
+ *  the IC may actually be in use in the hardware design.
+ * 
+ *  The mapping of physical modules to LTC6813 cell inputs is given by pack.h
  *
  *  NOTE: The "Self Test" (ST) diagnostic functions and associated values have
  *  been commented out since the command variations have not yet been implemented
  *  Just to be clear, in some cases "ST" refers to "start" not "self test"
  *
- *  This file was originally modified from ltc6811_btm.c
-
  *  @date 2020/08/18
  *  @author Andrew Hanlon (a2k-hanlon)
- *	@author Laila Khan (lailakhankhan)
- *
+ *  @author Laila Khan (lailakhankhan)
  */
 
 #ifndef INC_LTC6813_BTM_H_
 #define INC_LTC6813_BTM_H_
 
-#ifndef TEST
 #include "stm32f1xx_hal.h"
-#endif
-
-#ifdef TEST
-#include "stdint.h"
-#endif
-
+#include <stdint.h>
 #include "pack.h"
 
 /*============================================================================*/
@@ -98,16 +90,11 @@ enum BTM_CHST_e {
     CHST_VD  = 0x4  // Digital Power Supply
 };
 
-typedef enum {
-    MODULE_DISABLED = 0,
-    MODULE_ENABLED  = 1
-} BTM_module_enable_t;
-
-typedef enum
-{
-    DISCHARGE_OFF = 0,
-    DISCHARGE_ON = 1
-} BTM_module_bal_status_t;
+// Pull-Up/Pull-Down Current for Open Wire Conversions
+enum BTM_PUP_e {
+    PUP_PULLDOWN = 0x0,
+    PUP_PULLUP   = 0x1
+};
 
 typedef enum {
     CS_LOW  = 0,
@@ -122,8 +109,6 @@ typedef enum {
 #define BTM_TIMEOUT_VAL 30U // ms - safety timeout threshold for BTM functions
 #define BTM_MAX_READ_ATTEMPTS 3U // maximum number of times to try to perform a
                                  // read operation from the LTC6813's
-#define BTM_CS_GPIO_PORT GPIOB
-#define BTM_CS_GPIO_PIN GPIO_PIN_12
 
 /* Configuration Register Group Parameters */
 
@@ -150,10 +135,6 @@ typedef enum {
 #define MD MD_7KHZ_3KHZ // Normal mode
 // Self Test Mode Selection
 // #define ST 1 // TODO: Add enumeration if ST commands are needed
-/* Pull-Up/Pull-Down Current for Open Wire Conversions */
-#define PUP 1 // 1 = Pull up
-#define PDOWN 0 // 0 = Pull down
-
 
 /*============================================================================*/
 /* COMMAND DEFINITIONS */
@@ -187,7 +168,7 @@ typedef enum {
     CMD_CLRSCTRL= 0x0018,       // Clear S Control Register Group
 
     // Start Cell Voltage ADC Conversion and Poll Status
-    CMD_ADCV     = 0x0260 | (MD << 7) | (DCP << 4), // CH set to 0 = all cells
+    CMD_ADCV     = 0x0260 | (MD << 7) | (DCP << 4) | CH_ALL,
     CMD_ADCV_CH1 = 0x0260 | (MD << 7) | (DCP << 4) | CH_1,
     CMD_ADCV_CH2 = 0x0260 | (MD << 7) | (DCP << 4) | CH_2,
     CMD_ADCV_CH3 = 0x0260 | (MD << 7) | (DCP << 4) | CH_3,
@@ -196,8 +177,8 @@ typedef enum {
     CMD_ADCV_CH6 = 0x0260 | (MD << 7) | (DCP << 4) | CH_6,
 
     // Start Open Wire ADC Conversion and Poll Status
-    CMD_ADOW_PUP    = 0x0228 | (MD << 7) | (PUP << 6)   | (DCP << 4), // CH set to 0
-    CMD_ADOW_PDOWN  = 0x0228 | (MD << 7) | (PDOWN << 6) | (DCP << 4), // CH set to 0
+    CMD_ADOW_PUP    = 0x0228 | (MD << 7) | (PUP_PULLUP << 6)   | (DCP << 4), // CH set to 0
+    CMD_ADOW_PDOWN  = 0x0228 | (MD << 7) | (PUP_PULLDOWN << 6) | (DCP << 4), // CH set to 0
 
     // Start Self Test Cell Voltage Conversion and Poll Status
     //CMD_CVST    = 0x0207 | (MD << 7) | (ST << 5),
@@ -262,49 +243,21 @@ typedef enum {
 /* PUBLIC CONSTANTS */
 // Do not change
 
-#define BTM_NUM_MODULES 18
+#define BTM_NUM_CELL_INPUTS_PER_DEVICE 18
 #define BTM_REG_GROUP_SIZE 6 // All of the LTC6813 register groups consist of 6 bytes
 #define NUM_CELL_VOLT_REGS 6
 #define READINGS_PER_REG 3
 
 /*============================================================================*/
-/* STRUCTURES FOR GATHERED DATA */
+/* STRUCTURES */
 
-/*
- * NOTE: the BTM_module entity would be considered a "cell" by the LTC6813
- * datasheet's naming conventions. Here it's called a module due to the fact
- * that we arrange physical battery cells in parallel to create modules.
- * (the cells in a module are in parallel - they're all at the same voltage
- * and their voltage is measured at the module, not cell level).
- */
-struct BTM_module {
-    // To ignore particular modules in the string (for checking functions),
-    // the enable parameter has been included. A zero means
-    // the module will be ignored when checking for faults, etc.
-    BTM_module_enable_t enable;
-    uint16_t voltage; // stored in the same format it is received from the LTC6813 in
-    float temperature;
-    float soc;
-    int status;
-    BTM_module_bal_status_t bal_status;
-};
-
-struct BTM_stack {
-    uint8_t cfgra[BTM_REG_GROUP_SIZE]; // Configuration Register Group A setting
-    uint8_t cfgrb[BTM_REG_GROUP_SIZE]; // Configuration Register Group B setting
-    unsigned int stack_voltage; // same format as module voltage attribute
-    struct BTM_module module[BTM_NUM_MODULES];
-    // TODO: balancing settings, other stack-level (IC-level) parameters
-    // Don't forget to add any new parameters to BTM_init()
+struct BTM_RawDeviceVoltages_s {
+    uint16_t voltage[BTM_NUM_CELL_INPUTS_PER_DEVICE];
 };
 
 typedef struct {
-    unsigned int pack_voltage; // same format as module voltage attribute
-    struct BTM_stack stack[BTM_NUM_DEVICES];
-    uint32_t status;         // intended to be the summary of fault/warning/trip flags
-    uint8_t PH_SOC_LOCATION; // intended to be the summary of state of charge of entire pack
-
-} BTM_PackData_t;
+    struct BTM_RawDeviceVoltages_s device[BTM_NUM_DEVICES];
+} BTM_RawVoltages_t;
 
 // Status type for error reporting
 typedef struct {
@@ -319,27 +272,28 @@ typedef struct {
 #define BTM_STATUS_DEVICE_NA 0  // "device number not applicable" value
                                 // for device_num attribute of BTM_Status_t
 
+typedef struct {
+    SPI_HandleTypeDef *SPI_handle;
+
+    uint8_t cfgra[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE]; // Record of Configuration Register Group A for each device
+    uint8_t cfgrb[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE]; // Record of Configuration Register Group B for each device
+} BTM_Data_t;
+
 /*============================================================================*/
 /* PUBLIC VARIABLES */
 
-// BTM_SPI_handle - must set this variable to the HAL SPI handle corresponding
-// to the SPI peripheral to which the LTC devices are connected
-#ifndef TEST
-SPI_HandleTypeDef *BTM_SPI_handle;
-#endif
+// BTM_data is for use by LTC6813 driver files ONLY
+extern BTM_Data_t BTM_data;
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
-uint16_t BTM_calculatePec15(uint8_t *data, int len);
-void BTM_init(BTM_PackData_t *pack);
-void BTM_wakeup(void);
+void BTM_init(SPI_HandleTypeDef *SPI_handle);
 void BTM_sendCmd(BTM_command_t command);
 BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command);
-void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[][BTM_REG_GROUP_SIZE]);
-BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[][BTM_REG_GROUP_SIZE]);
-BTM_Status_t BTM_readBatt(BTM_PackData_t *packData);
-float BTM_regValToVoltage(unsigned int raw_reading);
-void BTM_writeCS(CS_state_t new_state);
-BTM_Status_t translate_btm_readbatt(PackData_t * pack);   // TODO: change the name of the function
+void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE]);
+BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE]);
+BTM_Status_t BTM_getVoltagesRaw(BTM_RawVoltages_t *voltageData);
+BTM_Status_t BTM_getVoltages(Pack_t *pack);
+float BTM_regValToVoltage(uint16_t raw_reading);
 
 #endif /* INC_LTC6813_BTM_H_ */

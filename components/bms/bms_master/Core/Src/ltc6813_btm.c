@@ -10,19 +10,24 @@
  *  Max baud rate for LTC6813 is 1Mb/s, but run it slower if there
  *  are problems with noise, etc.
  *
- *  This file was originally modified from ltc6811_btm.c
- *
  *  @date 2020/08/18
  *  @author Andrew Hanlon (a2k-hanlon)
  *	@author Laila Khan (lailakhankhan)
  *  @author Tigran Hakobyan (Tik-Hakobyan)
- *
  */
 
 #include "ltc6813_btm.h"
 #include "pack.h"
+#include "main.h"
 
-#define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001
+/*============================================================================*/
+/* DEFINITIONS */
+
+// Get pin assignment from main.h
+#define BTM_CS_GPIO_PORT SPI_LTC_CS_GPIO_Port
+#define BTM_CS_GPIO_PIN SPI_LTC_CS_Pin
+
+#define BTM_VOLTAGE_CONVERSION_FACTOR 0.0001f
 
 // Lookup table for PEC (Packet Error Code) CRC calculation
 // See note at end of file for details of its origin
@@ -59,11 +64,14 @@ static const uint16_t pec15Table[256] =
     0x8BA7, 0x4E3E, 0x450C, 0x8095
 };
 
-// Private function prototypes
-void calculateStackVolts(BTM_PackData_t *pack, int stack_num);
-void calculatePackVolts(BTM_PackData_t *pack);
-BTM_Status_t processHALStatus(HAL_StatusTypeDef status_HAL, unsigned int device_num);
+/*============================================================================*/
+/* GLOBAL VARIABLES */
 
+// This set of data variables is exposed publicly for use by other LTC6813 driver files
+BTM_Data_t BTM_data;
+
+/*============================================================================*/
+/* PRIVATE FUNCTION DEFINITIONS */
 
 /**
  * @brief Calculates the PEC for "len" bytes of data (as a group).
@@ -73,7 +81,7 @@ BTM_Status_t processHALStatus(HAL_StatusTypeDef status_HAL, unsigned int device_
  * @param len The number of bytes of data to calculate the PEC for
  * @return Returns the 2-byte CRC PEC generated
  */
-uint16_t BTM_calculatePec15(uint8_t *data, int len)
+uint16_t calculatePec15(uint8_t *data, uint32_t len)
 {
 	uint16_t remainder, address;
 	remainder = 16; // initial value for PEC computation
@@ -87,6 +95,58 @@ uint16_t BTM_calculatePec15(uint8_t *data, int len)
 }
 
 /**
+ * @brief sends a 2-byte command followed by the 2-byte PEC for that command
+ * over SPI.
+ * @attention The caller must ensure the CS line is pulled low prior to calling
+ * this function.
+ *
+ * @param command The 2-byte command to send
+ */
+void sendCommand(BTM_command_t command)
+{
+	uint16_t pecValue;
+	uint8_t tx_message[4];
+
+	tx_message[0] = (uint8_t) (command >> 8);
+	tx_message[1] = (uint8_t) command;
+	pecValue = calculatePec15(tx_message, 2);
+	tx_message[2] = (uint8_t) (pecValue >> 8);
+	tx_message[3] = (uint8_t) pecValue;
+
+	// size parameter is number of bytes to transmit - here it's 4 8bit frames
+	HAL_SPI_Transmit(BTM_data.SPI_handle, tx_message, 4, BTM_TIMEOUT_VAL);
+}
+
+/**
+ * @brief Toggles the SPI Chip Select (CS) pin
+ *
+ * @param cs_state The state (CS_HIGH or CS_LOW) to write to the CS pin
+ */
+void writeCS(CS_state_t cs_state)
+{
+    HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, cs_state);
+}
+
+// Helper function to translate a HAL error into a BTM error
+BTM_Status_t processHALStatus(HAL_StatusTypeDef status_HAL, unsigned int device_num)
+{
+    BTM_Status_t status_BTM;
+    status_BTM.error = BTM_OK;
+    status_BTM.device_num = BTM_STATUS_DEVICE_NA;
+
+    if (status_HAL != HAL_OK) {
+        status_BTM.error = status_HAL + BTM_HAL_ERROR_OFFSET;
+        status_BTM.device_num = device_num;
+    }
+
+    return status_BTM;
+}
+
+
+/*============================================================================*/
+/* PUBLIC FUNCTION DEFINITIONS */
+
+/**
  * @brief Toggles the CS line to wake up the entire chain of LTC6813's.
  *
  * Wakes up the daisy chain as per method described on pg. 52 of datasheet
@@ -98,31 +158,25 @@ void BTM_wakeup()
     // minimum delay is 1ms and the delays required are 300us and
     // 10us -ish (shorter than 1 ms)
     // If it doesn't, add another faster timer for more precise delays
-	BTM_writeCS(CS_HIGH);
+	writeCS(CS_HIGH);
 	HAL_Delay(1); // wait 1ms
 	for (int i = 0; i < BTM_NUM_DEVICES; i++)
 	{
-		BTM_writeCS(CS_LOW);
+		writeCS(CS_LOW);
 		HAL_Delay(1); // wait 1ms
-		BTM_writeCS(CS_HIGH);
+		writeCS(CS_HIGH);
 		// Then delay at least 10us
 		HAL_Delay(1); // wait 1ms - the minimum with this timer setup
 	}
-	return;
 }
 
 /**
- * @brief Initializes the LTC6813s and the data structures used for monitoring the battery
+ * @brief Initializes the LTC6813s and driver data
  *
- * WARNING: Disable modules via their "enable" attribute only AFTER calling this function,
- * otherwise these settings will be overwritten.
- * @param pack A pointer to the PackData structure in use
+ * @param SPI_handle HAL SPI handle for the SPI peripheral used for communication to battery monitoring hardware
  */
-void BTM_init(BTM_PackData_t *pack)
+void BTM_init(SPI_HandleTypeDef *SPI_handle)
 {
-    uint8_t cfgra_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
-    uint8_t cfgrb_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
-
     // Refer to the LTC6813 datasheet pages 60 and 65 for format and content of config_val_a
     uint8_t config_val_a[BTM_REG_GROUP_SIZE] =
     {
@@ -142,59 +196,35 @@ void BTM_init(BTM_PackData_t *pack)
         0x00,
         0x00
     };
-    // Initialize given PackData structure
-    pack->pack_voltage = 0;
+
+    BTM_data.SPI_handle = SPI_handle;
+
     for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
     {
         for(int reg_num = 0; reg_num < BTM_REG_GROUP_SIZE; reg_num++)
         {
-            pack->stack[ic_num].cfgra[reg_num] = config_val_a[reg_num];
-			cfgra_to_write[ic_num][reg_num] = config_val_a[reg_num]; // prepare tx data
-            pack->stack[ic_num].cfgrb[reg_num] = config_val_b[reg_num];
-            cfgrb_to_write[ic_num][reg_num] = config_val_b[reg_num]; // prepare tx data
+            BTM_data.cfgra[ic_num][reg_num] = config_val_a[reg_num];
+            BTM_data.cfgrb[ic_num][reg_num] = config_val_b[reg_num];
         }
-
-        pack->stack[ic_num].stack_voltage = 0;
-        for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
-        {
-            pack->stack[ic_num].module[module_num].enable = MODULE_ENABLED;
-            pack->stack[ic_num].module[module_num].voltage = 0;
-            pack->stack[ic_num].module[module_num].temperature = 0.0;
-			pack->stack[ic_num].module[module_num].soc = 100.0;
-			pack->stack[ic_num].module[module_num].status = 0; // clean code
-			pack->stack[ic_num].module[module_num].bal_status = DISCHARGE_OFF;
-		}
-	}
+    }
 
 	HAL_Delay(2250); // Let the LTC6813s' watchdog time out (max 2.2sec) to start IC config from a clean slate
     BTM_wakeup(); // Wake up all LTC6813's in the chain
-    BTM_writeRegisterGroup(CMD_WRCFGA, cfgra_to_write); // Write to Config. Reg. Group A
-    BTM_writeRegisterGroup(CMD_WRCFGB, cfgrb_to_write); // Write to Config. Reg. Group B
-    return;
+    BTM_writeRegisterGroup(CMD_WRCFGA, BTM_data.cfgra); // Write to Config. Reg. Group A
+    BTM_writeRegisterGroup(CMD_WRCFGB, BTM_data.cfgrb); // Write to Config. Reg. Group B
 }
 
 /**
  * @brief sends a 2-byte command followed by the 2-byte PEC for that command
  * over SPI.
- * @attention The caller must ensure the CS line is pulled low prior to calling
- * this function.
  *
  * @param command The 2-byte command to send
  */
 void BTM_sendCmd(BTM_command_t command)
 {
-	uint16_t pecValue;
-	uint8_t tx_message[4];
-
-	tx_message[0] = (uint8_t) (command >> 8);
-	tx_message[1] = (uint8_t) command;
-	pecValue = BTM_calculatePec15(tx_message, 2);
-	tx_message[2] = (uint8_t) (pecValue >> 8);
-	tx_message[3] = (uint8_t) pecValue;
-
-	// size parameter is number of bytes to transmit - here it's 4 8bit frames
-	HAL_SPI_Transmit(BTM_SPI_handle, tx_message, 4, BTM_TIMEOUT_VAL);
-	return;
+    writeCS(CS_LOW);
+    sendCommand(command);
+    writeCS(CS_HIGH);
 }
 
 /**
@@ -214,9 +244,9 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 	HAL_StatusTypeDef status_HAL = HAL_OK;
 	BTM_Status_t status_BTM = {BTM_OK, 0};
 
-	BTM_writeCS(CS_LOW);
+	writeCS(CS_LOW);
 
-	BTM_sendCmd(command);
+	sendCommand(command);
 
 	start_tick = HAL_GetTick(); // Start timeout timer
 
@@ -226,17 +256,17 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 	{
 		if (HAL_GetTick() - start_tick > BTM_TIMEOUT_VAL)
 		{
-		    BTM_writeCS(CS_HIGH);
+		    writeCS(CS_HIGH);
 		    status_BTM.error = BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
 			return status_BTM;
 		}
 
 		rx_buffer = 0;
-		status_HAL = HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
+		status_HAL = HAL_SPI_Receive(BTM_data.SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
 		status_BTM = processHALStatus(status_HAL, BTM_STATUS_DEVICE_NA);
 		if (status_BTM.error != BTM_OK) return status_BTM;
 
-	} while (0xff == rx_buffer);
+	} while (rx_buffer == 0xFF);
 
 	// ... then wait for MISO to go high;
 	// this signifies that the LTC6813s are done reading their ADCs.
@@ -244,29 +274,29 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
 	// Must send at least BTM_NUM_DEVICES clock pulses before response is valid
 	// That's why there's an extra read initially - it's slight overkill but that's ok
 	rx_buffer = 0;
-	status_HAL = HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
+	status_HAL = HAL_SPI_Receive(BTM_data.SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
 	status_BTM = processHALStatus(status_HAL, BTM_STATUS_DEVICE_NA);
     if (status_BTM.error != BTM_OK)
-        return status_BTM;
+		return status_BTM;
 
 	do
 	{
 	    if (HAL_GetTick() - start_tick > BTM_TIMEOUT_VAL)
         {
-            BTM_writeCS(CS_HIGH);
+            writeCS(CS_HIGH);
             status_BTM.error = BTM_ERROR_TIMEOUT; // LTC didn't respond before timeout
             return status_BTM;
         }
 
 		rx_buffer = 0;
-		status_HAL = HAL_SPI_Receive(BTM_SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
+		status_HAL = HAL_SPI_Receive(BTM_data.SPI_handle, &rx_buffer, 1, BTM_TIMEOUT_VAL);
 		status_BTM = processHALStatus(status_HAL, BTM_STATUS_DEVICE_NA);
 		if (status_BTM.error != BTM_OK)
             return status_BTM;
 
-	} while (!rx_buffer);
+	} while (rx_buffer == 0);
 
-	BTM_writeCS(CS_HIGH);
+	writeCS(CS_HIGH);
 
 	return status_BTM;
 }
@@ -279,28 +309,27 @@ BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command)
  * @param tx_data 	Pointer to a 2-dimensional array of size
  *					BTM_NUM_DEVICES x BTM_REG_GROUP_SIZE containing the data to write
  */
-void BTM_writeRegisterGroup(
-	BTM_command_t command,
-	uint8_t tx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
+void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
 {
 	uint16_t pecValue = 0;
 	uint8_t tx_message[8];
 
-	BTM_writeCS(CS_LOW);
-	BTM_sendCmd(command);
+	writeCS(CS_LOW);
+	sendCommand(command);
+
 	for (int i = 0; i < BTM_NUM_DEVICES; i++)
 	{
 		for (int j = 0; j < BTM_REG_GROUP_SIZE; j++)
 		{
 			tx_message[j] = tx_data[i][j];
 		}
-		pecValue = BTM_calculatePec15(tx_message, BTM_REG_GROUP_SIZE);
+		pecValue = calculatePec15(tx_message, BTM_REG_GROUP_SIZE);
 		tx_message[6] = (uint8_t) (pecValue >> 8);
 		tx_message[7] = (uint8_t) pecValue;
-		HAL_SPI_Transmit(BTM_SPI_handle, tx_message, 8, BTM_TIMEOUT_VAL);
+		HAL_SPI_Transmit(BTM_data.SPI_handle, tx_message, 8, BTM_TIMEOUT_VAL);
 	}
-	BTM_writeCS(CS_HIGH);
-	return;
+
+	writeCS(CS_HIGH);
 }
 
 /**
@@ -316,9 +345,7 @@ void BTM_writeRegisterGroup(
  *          a full set of valid data could not be obtained after
  *          BTM_MAX_READ_ATTEMPTS tries
  */
-BTM_Status_t BTM_readRegisterGroup(
-    BTM_command_t command,
-    uint8_t rx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
+BTM_Status_t BTM_readRegisterGroup(BTM_command_t command, uint8_t rx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
 {
 	uint16_t pecValue = 0;
 	BTM_Status_t status = {BTM_OK, 0};
@@ -333,8 +360,8 @@ BTM_Status_t BTM_readRegisterGroup(
 	do
 	{
 		// Send command to read register group
-		BTM_writeCS(CS_LOW);
-		BTM_sendCmd(command);
+		writeCS(CS_LOW);
+		sendCommand(command);
 
 		// Read back the data, but stop between device data groups on error
 		// This will indicate to caller which LTC6813 is having problems, if problems are encountered
@@ -345,11 +372,11 @@ BTM_Status_t BTM_readRegisterGroup(
 		while ((ic_num < BTM_NUM_DEVICES) && (status.error == BTM_OK))
 		{
 			// 6 data bytes + 2 PEC bytes = 8 bytes
-		    status_HAL = HAL_SPI_Receive(BTM_SPI_handle, rx_message, 8, BTM_TIMEOUT_VAL);
+		    status_HAL = HAL_SPI_Receive(BTM_data.SPI_handle, rx_message, 8, BTM_TIMEOUT_VAL);
 		    status = processHALStatus(status_HAL, ic_num + 1);
             if (status.error != BTM_OK) return status;
 
-			pecValue = BTM_calculatePec15(rx_message, 8); // 0 if transfer was clean
+			pecValue = calculatePec15(rx_message, 8); // 0 if transfer was clean
 			if (pecValue)
 			{
 				status.error = BTM_ERROR_PEC;
@@ -373,7 +400,7 @@ BTM_Status_t BTM_readRegisterGroup(
 			ic_num++;
 		}
 
-		BTM_writeCS(CS_HIGH);
+		writeCS(CS_HIGH);
 		error_counter++;
 	} while ((status.error != BTM_OK) && (error_counter < BTM_MAX_READ_ATTEMPTS));
 
@@ -381,22 +408,22 @@ BTM_Status_t BTM_readRegisterGroup(
 }
 
 /**
- * @brief Poll ADCs and read registers of LTC6813 for cell voltages
+ * @brief Measure battery voltages using LTC6813s and return voltages across all cell inputs
  *
- * @attention If function returns BTM_OK, packData was updated. If function
- *  returns something else, packData was not updated.
+ * @attention If function returns BTM_OK, valid data is returned. If function
+ *  returns something else, no change is made to the provided voltageData structure
  *
- * @param packData Battery pack data structure to store read voltages into
- * @return 	Returns BTM_OK if all the received PECs are correct,
- *          BTM_ERROR_PEC if any PEC doesn't match, or BTM_ERROR_TIMEOUT
- *	        if a timeout occurs while polling.
+ * @param[out] voltageData Voltage data structure in which to store measured voltages
+ * @returns BTM_OK if all the received PECs are correct,
+ *          BTM_ERROR_PEC if any PEC doesn't match, or
+ *          BTM_ERROR_TIMEOUT if a timeout occurs while polling.
  */
-BTM_Status_t BTM_readBatt(BTM_PackData_t *packData)
+BTM_Status_t BTM_getVoltagesRaw(BTM_RawVoltages_t *voltageData)
 {
 	// 6x 6-byte sets (each from a different register group of the LTC6813)
 	uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
-	uint16_t cell_voltage_raw = 0;
-	int cell_num = 0;
+	uint16_t cell_voltage = 0;
+	uint32_t cell_num = 0;
 	BTM_Status_t status = {BTM_OK, 0};
 
 	status = BTM_sendCmdAndPoll(CMD_ADCV);
@@ -424,7 +451,7 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t *packData)
 	// voltage = 0.0001V * raw value
 	// Each 6-byte Cell Voltage Register Group holds 3 cell voltages
 	// First 2 bytes of Cell Voltage Register Group A is C1V
-	// Last 2 bytes of Cell Voltage Register Group D is C12V
+	// Last 2 bytes of Cell Voltage Register Group F is C18V
 	for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
 	{
 		for (int reg_group = 0; reg_group < NUM_CELL_VOLT_REGS; reg_group++)
@@ -432,18 +459,48 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t *packData)
 			for (int reading_num = 0; reading_num < READINGS_PER_REG; reading_num++)
 			{
 				// Combine the 2 bytes of each cell voltage together
-				cell_voltage_raw =
-					((uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num + 1]) << 8)
-					| (uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num]);
-				// Store in pack data structure
+				cell_voltage =
+					((uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num + 1]) << 8) |
+					((uint16_t) (ADC_data[reg_group][ic_num][2 * reading_num]));
+
+				// Store in data structure
 				cell_num = READINGS_PER_REG * reg_group + reading_num;
-				//voltages[ic_num][cell_num] = cell_voltage_raw;
-				packData->stack[ic_num].module[cell_num].voltage = cell_voltage_raw;
+				voltageData->device[ic_num].voltage[cell_num] = cell_voltage;
 			}
 		}
-		calculateStackVolts(packData, ic_num);
 	}
-	calculatePackVolts(packData);
+
+	return status;
+}
+
+/**
+ * @brief Measure battery voltages using LTC6813s and store results to pack data
+ *
+ * @attention If function returns BTM_OK, valid data is returned. If function
+ *  returns something else, the pack data is not updated.
+ *
+ * @param[out] pack Pack data structure to update with measured voltages
+ * @returns BTM_OK if all the received PECs are correct,
+ *          BTM_ERROR_PEC if any PEC doesn't match, or
+ *          BTM_ERROR_TIMEOUT if a timeout occurs while polling.
+ */
+BTM_Status_t BTM_getVoltages(Pack_t *pack)
+{
+	BTM_RawVoltages_t rawVoltageData;
+    uint32_t device_num;
+    uint32_t cell_num;
+
+	BTM_Status_t status = BTM_getVoltagesRaw(&rawVoltageData);
+
+    if (status.error == BTM_OK)
+    {
+	    for (uint32_t module_num = 0; module_num < PACK_NUM_BATTERY_MODULES; module_num++)
+        {
+            device_num = Pack_module_mapping[module_num].device_num;
+            cell_num = Pack_module_mapping[module_num].cell_num;
+            pack->module[module_num].voltage = rawVoltageData.device[device_num].voltage[cell_num];
+        }
+    }
 
 	return status;
 }
@@ -453,74 +510,14 @@ BTM_Status_t BTM_readBatt(BTM_PackData_t *packData)
  * Each cell voltage is provided as a 16-bit value where
  * voltage = 0.0001V * raw value
  *
- * @param raw_reading The 16-bit reading from an LTC6813
- * @return Returns a properly scaled floating-point version of raw_reading
+ * @param raw_voltage The 16-bit reading from an LTC6813
+ * @returns A properly scaled floating-point version of raw_voltage
  */
-float BTM_regValToVoltage(unsigned int raw_reading)
+float BTM_regValToVoltage(uint16_t raw_voltage)
 {
-	return raw_reading * BTM_VOLTAGE_CONVERSION_FACTOR;
+	return BTM_VOLTAGE_CONVERSION_FACTOR * raw_voltage;
 }
 
-/**
- * @brief Toggles the SPI Chip Select (CS) pin
- *
- * @param new_state The state (CS_HIGH or CS_LOW) to write to the CS pin
- */
-void BTM_writeCS(CS_state_t new_state)
-{
-    HAL_GPIO_WritePin(BTM_CS_GPIO_PORT, BTM_CS_GPIO_PIN, new_state);
-}
-
-/**
- * @brief Adds up all the module voltages in a stack of a pack and writes the stack voltage for each
- *
- * @param[in/out] pack Battery pack data structure to perform sum for
- * @param[in] stack_num Index of the stack to calculate the total voltage of
- */
-void calculateStackVolts(BTM_PackData_t *pack, int stack_num)
-{
-    unsigned int sum = 0;
-
-    for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++)
-    {
-        sum += pack->stack[stack_num].module[module_num].voltage;
-    }
-    pack->stack[stack_num].stack_voltage = sum;
-    return;
-}
-
-/**
- * @brief Adds up all the stack voltages in a pack and writes the pack voltage
- *
- * @attention Each stack in the pack must have a valid stack voltage
- *  prior to calling this function
- * @param[in/out] pack Battery pack data structure to perform sums on
- */
-void calculatePackVolts(BTM_PackData_t *pack)
-{
-    unsigned int sum = 0;
-    for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++)
-    {
-        sum += pack->stack[stack_num].stack_voltage;
-    }
-    pack->pack_voltage = sum;
-    return;
-}
-
-// Helper function to translate a HAL error into a BTM error
-BTM_Status_t processHALStatus(HAL_StatusTypeDef status_HAL, unsigned int device_num)
-{
-    BTM_Status_t status_BTM;
-    status_BTM.error = BTM_OK;
-    status_BTM.device_num = BTM_STATUS_DEVICE_NA;
-
-    if (status_HAL != HAL_OK) {
-        status_BTM.error = status_HAL + BTM_HAL_ERROR_OFFSET;
-        status_BTM.device_num = device_num;
-    }
-
-    return status_BTM;
-}
 
 /*
 The pec15Table lookup table was generated using the following code, modified
@@ -545,22 +542,3 @@ void init_PEC15_Table() {
     }
 }
 */
-
-/**
- * @brief  A "translate" function to translate the voltage data from the driver pack struct to the general pack struct. 
- * 
- * @param[in] pack general pack struct.
- * @return  Returns BTM_OK if all the received PECs are correct,
- *          BTM_ERROR_PEC if any PEC doesn't match, or BTM_ERROR_TIMEOUT
- *	        if a timeout occurs while polling.
- */  
-BTM_Status_t translate_btm_readbatt(PackData_t * pack)
-{
-	BTM_PackData_t rawPack;
-	BTM_Status_t status = BTM_readBatt(&rawPack); 
-	for(int index = 0; index < PACK_NUM_BATTERY_MODULES; index++){
-		pack->module[index].voltage = rawPack.stack[module_mapping[index].stackNum].module[module_mapping[index].cellNum].voltage; 
-	}
-
-	return status;
-}

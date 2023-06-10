@@ -12,6 +12,8 @@
 #define INC_ANALYSIS_H_
 
 #include "ltc6813_btm.h"
+#include "pack.h"
+#include <stdbool.h>
 
 /*============================================================================*/
 /* CONFIGURABLE PARAMETERS */
@@ -31,49 +33,17 @@
 #define TRIP_LLIM_THRESHOLD 27100U    // 2.7100 V
 #define TRIP_CHARGE_OT_THRESHOLD 45.0 // degrees C
 
-// Warns
+// Warnings
 #define WARN_HIGH_V_THRESHOLD 41500U // 4.1500 V
 #define WARN_LOW_V_THRESHOLD 27500U  // 2.7500 V
 #define WARN_LOW_T_THRESHOLD 10.0    // degrees C
 #define WARN_HIGH_T_THRESHOLD 45.0   // degrees C
 
 /*============================================================================*/
-/* PUBLIC CONSTANTS */
-
-// BMS Status Code Bitmasks
-
-// Faults
-#define FLT_COMM_MASK 0x00001
-#define FLT_TEST_MASK 0x00002
-#define FLT_OT_MASK 0x00004
-#define FLT_UV_MASK 0x00008
-#define FLT_OV_MASK 0x00010
-#define FLT_ISOL_MASK 0x00020
-#define FLT_DOC_COC_MASK 0x00040
-#define FLT_SHORT_MASK 0x00080
-#define FLT_TEMP_RANGE_MASK 0x00100
-
-// Trips
-#define TRIP_BAL_MASK 0x00200
-#define TRIP_LLIM_MASK 0x00400
-#define TRIP_HLIM_MASK 0x00800
-#define TRIP_CHARGE_OT_MASK 0x01000
-
-// Warns
-#define WARN_LOW_V_MASK 0x02000
-#define WARN_HIGH_V_MASK 0x04000
-#define WARN_LOW_T_MASK 0x08000
-#define WARN_HIGH_T_MASK 0x10000
-#define WARN_REGEN_OFF_MASK 0x20000
-
-// Helper masks
-#define FAULTS_MASK 0x001FF      // Covers all faults
-#define CHECK_REGEN_MASK 0x019FF // Covers TRIP_HLIM, TRIP_CHARGE_OT, and all faults
-
-/*============================================================================*/
 /* FUNCTION PROTOTYPES */
-void ANA_analyzeModules(BTM_PackData_t *pack);
-void ANA_writePackBalStatus(BTM_PackData_t *pack);
-void ANA_analyzePack(BTM_PackData_t *pack);
+
+void ANA_analyzePack(Pack_t *pack);
+void ANA_writeBalStatus(Pack_Module_t *module, bool discharge_active);
+float ANA_findHighestModuleTemp(Pack_t *pack);
 
 #endif /* INC_ANALYSIS_H_ */

@@ -1,11 +1,11 @@
 /**
  * @file soc.c
- * @brief Functions for calculating the state of charge for UBC Solar's
- * V3 solar car, Brightside using interpolation and coloumb counting
- * 
+ * @brief Functions for calculating battery state of charge for UBC Solar's
+ * V3 solar car, Brightside, using voltage interpolation and coloumb counting
  * 
  * @date 2021/11/09
- * @author Edward Ma, Forbes Choy 
+ * @author Edward Ma
+ * @author Forbes Choy 
  */
 
 #include "soc.h"
@@ -32,9 +32,9 @@ float SOC_last_CAN_current_reading;
 //last recorded elasped time since the start of the FSM (finite state machine)
 int SOC_last_FSM_time;
 
-//Lookup table (LUT) for state of charge initialization
+//Lookup table (LUT) for state of charge estimate initialization from module voltage
 //first row is cell voltage [V] and second row is the corresponding SOC [%]
-//condition: 4A charge/discharge, 25^oC
+//condition: 4A charge/discharge, 25degC
 //derive from the discharge curve in page 3 of this document: https://www.orbtronic.com/content/Datasheet-specs-Sanyo-Panasonic-NCR18650GA-3500mah.pdf
 
 const float cell_voltage_SOC_table[2][41] =
@@ -108,7 +108,7 @@ float SOC_moduleInit(float cell_voltage)
  *
  * @param pack the battery pack data structure
  */
-void SOC_allModulesInit(BTM_PackData_t * pack)
+void SOC_allModulesInit(Pack_t *pack)
 {
   //first set last CAN current reading and FSM time to 0
   SOC_last_CAN_current_reading = 0; 
@@ -117,13 +117,10 @@ void SOC_allModulesInit(BTM_PackData_t * pack)
   //initialize SOC for all modules
   float cell_voltage_reading = 0.0;
 
-  for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++) 
+  for(int module_num = 0; module_num < PACK_NUM_BATTERY_MODULES; module_num++) 
   {
-    for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) 
-    {
-      cell_voltage_reading = pack->stack[stack_num].module[module_num].voltage;
-      pack->stack[stack_num].module[module_num].soc = SOC_moduleInit(cell_voltage_reading);
-    }
+    cell_voltage_reading = pack->module[module_num].voltage;
+    pack->module[module_num].state_of_charge = SOC_moduleInit(cell_voltage_reading);
   }
 }
 
@@ -137,7 +134,6 @@ void SOC_allModulesInit(BTM_PackData_t * pack)
  * @param current_reading current readings of our hall-effect sensors for the battery pack [A]; positive (+) current means the battery pack is charging and negative (-) current means the battery pack is discharging
  * @param total_time_elasped total time elapsed [ms]
  */
-
 float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, int32_t current_reading, uint32_t total_time_elasped)
 {
   //initialize constants
@@ -196,31 +192,17 @@ float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, int32_t current
  * @param current_reading current readings of our hall-effect sensors for the battery pack [A]; positive (+) current means the battery pack is charging and negative (-) current means the battery pack is discharging
  * @param total_time_elasped total time elapsed [ms]
  */
-
-void SOC_allModulesEst(BTM_PackData_t * pack, int32_t current_reading, uint32_t total_time_elasped)
+void SOC_allModulesEst(Pack_t *pack, int32_t current_reading, uint32_t total_time_elasped)
 {
   float cell_voltage_reading = 0.0;
   float last_module_SOC = 0.0;
-  float min_module_SOC = 100.0;
-  float module_wise_SOC = 0.0;
 
-  for(int stack_num = 0; stack_num < BTM_NUM_DEVICES; stack_num++) 
+  for(int module_num = 0; module_num < PACK_NUM_BATTERY_MODULES; module_num++) 
   {
-    for(int module_num = 0; module_num < BTM_NUM_MODULES; module_num++) 
-    {
-      cell_voltage_reading = pack->stack[stack_num].module[module_num].voltage;
-      last_module_SOC = pack->stack[stack_num].module[module_num].soc;
-      module_wise_SOC = SOC_moduleEst(last_module_SOC, cell_voltage_reading, current_reading, total_time_elasped);
-      if(module_wise_SOC < min_module_SOC){
-        min_module_SOC = module_wise_SOC; //find minimum SOC of all modules
-      }
-      
-      pack->stack[stack_num].module[module_num].soc = module_wise_SOC;
-    }
+    cell_voltage_reading = pack->module[module_num].voltage;
+    last_module_SOC = pack->module[module_num].state_of_charge;
+    pack->module[module_num].state_of_charge = SOC_moduleEst(last_module_SOC, cell_voltage_reading, current_reading, total_time_elasped);
   }
-
-  pack->PH_SOC_LOCATION = (uint8_t) min_module_SOC; //pack SOC is the lowest SOC of all modules
-  //note casting
 
   SOC_last_CAN_current_reading = current_reading; //update current globally
   SOC_last_FSM_time = total_time_elasped; //update time globally
@@ -236,7 +218,6 @@ void SOC_allModulesEst(BTM_PackData_t * pack, int32_t current_reading, uint32_t 
  * @param past_current last current readings [A]; positive (+) current means the battery pack is charging and negative (-) current means the battery pack is discharging
  * @param past_time last recorded time [ms]
  */
-
 STATIC_TESTABLE float calculateDeltaDOD(float present_current, float present_time, float past_current, float past_time)
 {
   float delta_DOD = 0.0; //signed value
@@ -253,7 +234,6 @@ STATIC_TESTABLE float calculateDeltaDOD(float present_current, float present_tim
  *
  * @param cell_voltage the cell voltage of a module [V]
  */
-
 STATIC_TESTABLE int indexOfNearestCellVoltage(float cell_voltage)
 {
   int result_index = 0;
@@ -282,21 +262,23 @@ STATIC_TESTABLE int indexOfNearestCellVoltage(float cell_voltage)
 }
 
 /**
- * @brief get the DoD (depth of discharge) of the pack
+ * @brief get the DoD (depth of discharge) corresponding to a certain remaining capacity
  *
- * @param pack battery pack data structure
+ * @param capacity Remaining pack capacity
+ * @returns Depth of discharge in Ah
  */
-
-uint8_t getDOD(BTM_PackData_t * pack){
-  return 100 - (pack->PH_SOC_LOCATION);
+float SOC_getDOD(float capacity)
+{
+  return SOC_MODULE_RATED_CAPACITY - capacity;
 }
 
 /**
- * @brief helper function to get the Capacity (mAh) of pack
+ * @brief Calculate the remaining pack capacity for a given SoC
  *
- * @param pack battery pack data structure
+ * @param soc Pack state of charge percentage
+ * @returns Remaining pack capacity in Ah
  */
-
-uint8_t getCapacity(BTM_PackData_t * pack){
-  return SOC_MODULE_RATED_CAPACITY * (pack->PH_SOC_LOCATION / 100);
+float SOC_getCapacity(float soc)
+{
+  return SOC_MODULE_RATED_CAPACITY * ( soc / 100.0);
 }
