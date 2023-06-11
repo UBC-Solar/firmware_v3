@@ -57,6 +57,7 @@ dkms.conf
 .vscode*
 RemoteSystemsTempFiles*
 .settings/*
+**/Backup/
 
 # Compiled binaries
 *.elf
