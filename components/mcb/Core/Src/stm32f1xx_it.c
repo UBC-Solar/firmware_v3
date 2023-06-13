@@ -56,7 +56,7 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern UART_HandleTypeDef huart2;
+extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim4;
 
 /* USER CODE BEGIN EV */
@@ -162,6 +162,20 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles TIM2 global interrupt.
+  */
+void TIM2_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM2_IRQn 0 */
+
+  /* USER CODE END TIM2_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim2);
+  /* USER CODE BEGIN TIM2_IRQn 1 */
+
+  /* USER CODE END TIM2_IRQn 1 */
+}
+
+/**
   * @brief This function handles TIM4 global interrupt.
   */
 void TIM4_IRQHandler(void)
@@ -175,40 +189,10 @@ void TIM4_IRQHandler(void)
   /* USER CODE END TIM4_IRQn 1 */
 }
 
-/**
-  * @brief This function handles USART2 global interrupt.
-  */
-void USART2_IRQHandler(void)
-{
-  /* USER CODE BEGIN USART2_IRQn 0 */
-
-  /* USER CODE END USART2_IRQn 0 */
-  HAL_UART_IRQHandler(&huart2);
-  /* USER CODE BEGIN USART2_IRQn 1 */
-
-  /* USER CODE END USART2_IRQn 1 */
-}
-
-/**
-  * @brief This function handles EXTI line[15:10] interrupts.
-  */
-void EXTI15_10_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI15_10_IRQn 0 */
-
-  /* USER CODE END EXTI15_10_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(BTN_CRUISE_TOGGLE_Pin);
-  HAL_GPIO_EXTI_IRQHandler(BTN_CRUISE_UP_Pin);
-  HAL_GPIO_EXTI_IRQHandler(BTN_CRUISE_DOWN_Pin);
-  /* USER CODE BEGIN EXTI15_10_IRQn 1 */
-
-  /* USER CODE END EXTI15_10_IRQn 1 */
-}
-
 /* USER CODE BEGIN 1 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	if(GPIO_Pin == BTN_CRUISE_TOGGLE_Pin)
+	if(GPIO_Pin == CRUISE_TOGGLE_Pin)
 	{
 		if(state == DRIVE || state == CRUISE)
 		{
@@ -216,7 +200,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			cruise_velocity = velocity_of_car;
 		}
 	}
-	else if(GPIO_Pin == BTN_CRUISE_UP_Pin)
+	else if(GPIO_Pin == CRUISE_UP_Pin)
 	{
 		if(state == CRUISE)
 		{
@@ -226,7 +210,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 				cruise_velocity = CRUISE_MAX;
 		}
 	}
-	else if(GPIO_Pin == BTN_CRUISE_DOWN_Pin)
+	else if(GPIO_Pin == CRUISE_DWN_Pin)
 	{
 		if(state == CRUISE)
 		{
@@ -236,12 +220,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 				cruise_velocity = CRUISE_MIN;
 		}
 	}
-	else if (GPIO_Pin == MECH_BRAKE_Pin)
+	else if (GPIO_Pin == BRK_IN_Pin)
 	{
 		SendCANMotorCommand(0, 0);
 		input_flags.cruise_enabled = FALSE;
 	}
-	else if (GPIO_Pin == BTN_NEXT_PAGE_Pin)
+	else if (GPIO_Pin == NEXT_SCREEN_Pin)
 	{
 		SendCANDIDNextPage();
 	}

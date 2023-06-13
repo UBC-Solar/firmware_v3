@@ -193,11 +193,11 @@ void StartDefaultTask(void *argument)
 /* USER CODE END Header_updateState */
 void updateState(void *argument)
 {
-	/* USER CODE BEGIN updateState */
+  /* USER CODE BEGIN updateState */
 	/* Infinite loop */
 	for(;;)
 	{
-		UpdateInputFlags(&input_flags); // Updates certain
+		UpdateInputFlags(&input_flags);
 		/*
 		 *  Conditional statement is intentially organized in a hierarchical structure.
 		 *  If there are two valid states based on the given event_flags, the higher one will take priority.
@@ -207,7 +207,7 @@ void updateState(void *argument)
 			state = PARK;
 		else if (input_flags.mech_brake_pressed)
 			state = IDLE;
-		else if (input_flags.regen_pressed && input_flags.charge_under_threshold)
+		else if (input_flags.regen_pressed && input_flags.charge_under_threshold && input_flags.regen_enabled)
 		  	state = REGEN;
 		else if (input_flags.cruise_enabled && input_flags.cruise_accelerate_enabled)
 		  	state = CRUISE_ACCELERATE;
@@ -221,7 +221,7 @@ void updateState(void *argument)
 		  	state = IDLE;
 		osDelay(UPDATE_STATE_DELAY);
 	}
-	/* USER CODE END updateState */
+  /* USER CODE END updateState */
 }
 
 /* USER CODE BEGIN Header_sendMotorCommand */

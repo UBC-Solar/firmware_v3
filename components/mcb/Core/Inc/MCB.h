@@ -9,7 +9,6 @@
 #define INC_MCB_H_
 
 #include "can.h"
-#include "usart.h"
 #include "adc.h"
 #include "can.h"
 #include "stdbool.h"

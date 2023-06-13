@@ -64,8 +64,8 @@ all: main-build
 main-build: Motor-Firmware.elf secondary-outputs
 
 # Tool invocations
-Motor-Firmware.elf Motor-Firmware.map: $(OBJS) $(USER_OBJS) C:\Users\kcgro\Documents\GitHub\firmware_v3\components\mcb\STM32F103RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Motor-Firmware.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\kcgro\Documents\GitHub\firmware_v3\components\mcb\STM32F103RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Motor-Firmware.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Motor-Firmware.elf Motor-Firmware.map: $(OBJS) $(USER_OBJS) C:\Users\kgroulx\Documents\GitHub\firmware_v3\components\mcb\STM32F103RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Motor-Firmware.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\kgroulx\Documents\GitHub\firmware_v3\components\mcb\STM32F103RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Motor-Firmware.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

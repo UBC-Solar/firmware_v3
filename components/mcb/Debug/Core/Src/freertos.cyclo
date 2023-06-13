@@ -1,0 +1,7 @@
+freertos.c:119:6:MX_FREERTOS_Init	1
+freertos.c:175:6:StartDefaultTask	1
+freertos.c:194:6:updateState	14
+freertos.c:234:6:sendMotorCommand	7
+freertos.c:288:6:getADCValues	3
+freertos.c:317:6:getBatterySOC	4
+freertos.c:350:6:getVelocity	4

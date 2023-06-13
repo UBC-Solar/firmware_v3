@@ -57,7 +57,7 @@ void MX_ADC1_Init(void)
 
   /** Configure Regular Channel
   */
-  sConfig.Channel = ADC_CHANNEL_0;
+  sConfig.Channel = ADC_CHANNEL_15;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
@@ -99,7 +99,7 @@ void MX_ADC2_Init(void)
 
   /** Configure Regular Channel
   */
-  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Channel = ADC_CHANNEL_9;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
@@ -124,13 +124,13 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     /* ADC1 clock enable */
     __HAL_RCC_ADC1_CLK_ENABLE();
 
-    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
     /**ADC1 GPIO Configuration
-    PA0-WKUP     ------> ADC1_IN0
+    PC5     ------> ADC1_IN15
     */
-    GPIO_InitStruct.Pin = ADC_Throttle_Pin;
+    GPIO_InitStruct.Pin = REGEN_VAL_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    HAL_GPIO_Init(ADC_Throttle_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(REGEN_VAL_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN ADC1_MspInit 1 */
 
@@ -144,13 +144,13 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     /* ADC2 clock enable */
     __HAL_RCC_ADC2_CLK_ENABLE();
 
-    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
     /**ADC2 GPIO Configuration
-    PA1     ------> ADC2_IN1
+    PB1     ------> ADC2_IN9
     */
-    GPIO_InitStruct.Pin = ADC_Regen_Pin;
+    GPIO_InitStruct.Pin = THROTTLE_VAL_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    HAL_GPIO_Init(ADC_Regen_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(THROTTLE_VAL_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN ADC2_MspInit 1 */
 
@@ -170,9 +170,9 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     __HAL_RCC_ADC1_CLK_DISABLE();
 
     /**ADC1 GPIO Configuration
-    PA0-WKUP     ------> ADC1_IN0
+    PC5     ------> ADC1_IN15
     */
-    HAL_GPIO_DeInit(ADC_Throttle_GPIO_Port, ADC_Throttle_Pin);
+    HAL_GPIO_DeInit(REGEN_VAL_GPIO_Port, REGEN_VAL_Pin);
 
   /* USER CODE BEGIN ADC1_MspDeInit 1 */
 
@@ -187,9 +187,9 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     __HAL_RCC_ADC2_CLK_DISABLE();
 
     /**ADC2 GPIO Configuration
-    PA1     ------> ADC2_IN1
+    PB1     ------> ADC2_IN9
     */
-    HAL_GPIO_DeInit(ADC_Regen_GPIO_Port, ADC_Regen_Pin);
+    HAL_GPIO_DeInit(THROTTLE_VAL_GPIO_Port, THROTTLE_VAL_Pin);
 
   /* USER CODE BEGIN ADC2_MspDeInit 1 */
 
