@@ -1,5 +1,5 @@
 /*
- * MCB.h
+ * mcb.h
  *
  *  Created on: Jun. 1, 2023
  *      Author: Kyle Groulx
