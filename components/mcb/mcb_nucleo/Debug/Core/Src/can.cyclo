@@ -1,3 +1,0 @@
-can.c:56:6:MX_CAN_Init	2
-can.c:88:6:HAL_CAN_MspInit	2
-can.c:121:6:HAL_CAN_MspDeInit	2

@@ -1,4 +1,0 @@
-MCB.c:21:6:SendCANMotorCommand	2
-MCB.c:41:7:NormalizeADCValue	2
-MCB.c:49:6:SendCANDIDNextPage	1
-MCB.c:56:6:UpdateInputFlags	2
