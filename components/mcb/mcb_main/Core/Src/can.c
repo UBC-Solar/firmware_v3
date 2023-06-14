@@ -1,3 +1,4 @@
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file    can.c
@@ -6,25 +7,24 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2022 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2023 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
-
+/* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
 
 /**
- * 	CAN message header for a drive command. This command header is used in normal, regen, and
- * 	cruise control mode to send appropriate drive command to the motor controller.
+ * 	CAN message header for a drive command. This command header is to
+ * 	send an appropriate drive command to the motor controller.
  */
 CAN_TxHeaderTypeDef drive_command_header = {
     .StdId = DRIVER_CONTROLS_BASE_ADDRESS + 1,
@@ -34,24 +34,19 @@ CAN_TxHeaderTypeDef drive_command_header = {
     .DLC = CAN_DATA_LENGTH};
 
 /**
- * 	CAN message header for a next screen command. This command header is used to indicate to the
- * 	driver information display (DID) board that the next screen button has been pressed.
+ * 	CAN message header for DID next page command.
  */
-CAN_TxHeaderTypeDef screen_cruise_control_header = {
-    .StdId = DRIVER_CONTROLS_BASE_ADDRESS + 3,
+
+CAN_TxHeaderTypeDef DID_next_page = {
+    .StdId = DRIVER_CONTROLS_BASE_ADDRESS,
     .ExtId = 0x0000,
     .IDE = CAN_ID_STD,
     .RTR = CAN_RTR_DATA,
-    .DLC = CAN_CONTROL_DATA_LENGTH};
+    .DLC = CAN_DATA_LENGTH};
 
-CAN_RxHeaderTypeDef can_rx_header;                  /**< Stores the header information for CAN messages read from
-													     the RX (receive) buffer */
+uint32_t can_mailbox;
 
-CAN_FilterTypeDef mcb_filter;			            /**< Stores the intialisation information for the hardware CAN
-													     that filters for battery (ID 0x626) messages */
-
-uint32_t can_mailbox;                               /**< Stores the TX (transmit) mailbox that a CAN message has
-													     been placed into.*/
+CAN_RxHeaderTypeDef can_rx_header;    /**< Stores the header information for CAN messages read from the RX (receive) buffer */
 
 /* USER CODE END 0 */
 
@@ -69,14 +64,14 @@ void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
-  hcan.Init.Prescaler = 8;
+  hcan.Init.Prescaler = 16;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_4TQ;
-  hcan.Init.TimeTriggeredMode = ENABLE;
-  hcan.Init.AutoBusOff = ENABLE;
-  hcan.Init.AutoWakeUp = ENABLE;
+  hcan.Init.TimeSeg1 = CAN_BS1_1TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_1TQ;
+  hcan.Init.TimeTriggeredMode = DISABLE;
+  hcan.Init.AutoBusOff = DISABLE;
+  hcan.Init.AutoWakeUp = DISABLE;
   hcan.Init.AutoRetransmission = DISABLE;
   hcan.Init.ReceiveFifoLocked = DISABLE;
   hcan.Init.TransmitFifoPriority = DISABLE;
@@ -151,5 +146,3 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
