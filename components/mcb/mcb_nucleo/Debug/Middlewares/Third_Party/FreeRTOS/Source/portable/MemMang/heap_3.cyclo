@@ -1,0 +1,2 @@
+heap_3.c:58:7:pvPortMalloc	1
+heap_3.c:83:6:vPortFree	2
