@@ -1,2 +1,11 @@
-# Project Files #
-*.project
+# Build Outputs 
+Debug/
+Release/
+
+# Project log 
+.mxproject
+
+# Debug Configuration
+#
+*.cfg
+*.launch
