@@ -39,10 +39,8 @@ jobs:
         mkdir build
         cd build
         mkdir debug
-        mkdir release
         cd ..
         cp components/mcb/mcb_main/Debug/*.* build/debug
-        cp components/mcb/mcb_main/Release/*.* build/release
       
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3
