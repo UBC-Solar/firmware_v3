@@ -19,66 +19,20 @@
 #include "soc.h"
 
 /*============================================================================*/
-/* CONFIGURABLE PARAMETERS */
-
-#define MAX_CAN_DATAFRAME_BYTES 8
-#define NUM_CAN_MESSAGES_TRANSMIT 4
-#define INITIAL_MESSAGE_INDEX 0x622U
-#define ECU_CURRENT_MESSAGE_ID 0x450U
-#define NUM_RX_FIFOS 2
-#define MAX_MESSAGES_PER_FIFO 3
-
-/*============================================================================*/
-/* ENUMERATIONS */
-
-// used in the global array of CAN message structs
-// keeping compatability with the elithion
-typedef enum
-{
-    INDEX_622 = 0,
-    INDEX_623,
-    INDEX_624,
-    INDEX_625
-} CAN_Message_Indicies_t;
-
-typedef enum
-{
-    MSG_NOT_RECIEVED = 0,
-    MSG_RECIEVED = 1
-} CAN_Rx_Msg_Status_t;
-
-typedef enum
-{
-    SEND_DISABLED = 0,
-    SEND_ENABLED = 1
-} CAN_send_status_t;
-/*============================================================================*/
-/* STRUCTURES */
-
-typedef struct
-{
-    CAN_TxHeaderTypeDef tx_header;
-    uint8_t data[MAX_CAN_DATAFRAME_BYTES];
-    uint32_t mailbox;
-    CAN_send_status_t enable_send;
-} CAN_Tx_Message_t;
-
-typedef struct
-{
-    CAN_RxHeaderTypeDef rx_header;
-    uint8_t data[MAX_CAN_DATAFRAME_BYTES];
-    CAN_Rx_Msg_Status_t message_status;
-    uint8_t fifo; // fifo from which message was recieved from (may not be needed)
-} CAN_Rx_Message_t;
-
-/*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
-void CAN_Init(CAN_HandleTypeDef *hcan, CAN_Tx_Message_t txMessageArray[NUM_CAN_MESSAGES_TRANSMIT]);
-void CAN_CompileMessage622(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], Pack_t *pack);
-void CAN_CompileMessage623(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], Pack_t *pack);
-void CAN_CompileMessage624(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], Pack_t *pack);
-void CAN_CompileMessage625(CAN_Tx_Message_t txMessages[NUM_CAN_MESSAGES_TRANSMIT], Pack_t *pack);
-void CAN_RecieveMessages(CAN_HandleTypeDef *hcan, CAN_Rx_Message_t rxMessages[NUM_RX_FIFOS * MAX_MESSAGES_PER_FIFO]);
+void CAN_Init(CAN_HandleTypeDef *hcan);
+
+void CAN_SendMessage622(Pack_t *pack);
+void CAN_SendMessage623(Pack_t *pack);
+void CAN_SendMessage624(Pack_t *pack);
+void CAN_SendMessage625(Pack_t *pack);
+void CAN_SendMessages626(Pack_t *pack);
+void CAN_SendMessages627(Pack_t *pack);
+
+bool CAN_GetMessage0x450Data(int8_t *pack_current, uint8_t *low_voltage_current, bool *overcurrent_status, uint32_t *rx_timestamp);
+
+void CAN_RecievedMessageCallback(void);
+void CAN_TxCompleteCallback(void);
 
 #endif // INC_CAN_H_

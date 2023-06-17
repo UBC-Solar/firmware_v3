@@ -43,9 +43,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define LED_BLINK_INTERVAL 500 // milliseconds
-#define MEASUREMENT_INTERVAL 1000 // milliseconds
-#define CAN_TX_INTERVAL 1000 // milliseconds
+#define LED_BLINK_INTERVAL 125 // milliseconds
+#define UPDATE_INTERVAL 1000 // milliseconds
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -88,6 +87,33 @@ void stopBalancing(Pack_t *pack);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+/*============================================================================*/
+/* CAN INTERRUPT CALLBACKS */
+
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+  UNUSED(hcan);
+  CAN_TxCompleteCallback();
+}
+
+void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+  UNUSED(hcan);
+  CAN_TxCompleteCallback();
+}
+
+void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+  UNUSED(hcan);
+  CAN_TxCompleteCallback();
+}
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  UNUSED(hcan);
+  CAN_RecievedMessageCallback();
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -97,11 +123,9 @@ void stopBalancing(Pack_t *pack);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  uint32_t current_blink_tick = 0;
-  uint32_t last_blink_tick = 0;
-  uint32_t last_measurement_tick = 0;
-  uint32_t last_CAN_tick = 0;
   uint32_t current_tick;
+  uint32_t last_blink_tick = 0;
+  uint32_t last_update_tick = 0;
 
   /* USER CODE END 1 */
 
@@ -131,15 +155,13 @@ int main(void)
   DebugIO_Init(&huart1);
 
   CONT_timer_handle = &htim3;
-  // TODO: CAN handle
 
   HAL_GPIO_WritePin(LED_OUT_GPIO_Port, LED_OUT_Pin, GPIO_PIN_SET); // Turn LED on
-  current_blink_tick = HAL_GetTick();
 
   // Initialize hardware and pack struct
+  CAN_Init(&hcan);
   CONT_init(); // control signals
   BTM_init(&hspi2); // initialize the LTC6813s and driver state
-  // TODO: CAN initialization
 
   startupChecks(&pack);
 
@@ -152,26 +174,17 @@ int main(void)
     current_tick = HAL_GetTick();
 
     // update pack values and control signals if pack update interval has elapsed
-    if (current_tick - last_measurement_tick >= MEASUREMENT_INTERVAL)
+    if (current_tick - last_update_tick >= UPDATE_INTERVAL)
     {
       packUpdateAndControl(&pack);
-      last_measurement_tick = current_tick;
-    }
-
-    // preform CAN communication if CAN send interval has elapsed
-    if (current_tick - last_CAN_tick >= CAN_TX_INTERVAL)
-    {
-      // TODO: preform CAN communication
-      // CAN comms always happen (whether or not in fault state)
-      last_CAN_tick = current_tick;
+      last_update_tick = current_tick;
     }
 
     // blink LED on master board
-    current_blink_tick = HAL_GetTick();
-    if (current_blink_tick - last_blink_tick >= LED_BLINK_INTERVAL)
+    if (current_tick - last_blink_tick >= LED_BLINK_INTERVAL)
     {
       HAL_GPIO_TogglePin(LED_OUT_GPIO_Port, LED_OUT_Pin);
-      last_blink_tick = current_blink_tick;
+      last_blink_tick = current_tick;
     }
 
     /* USER CODE END WHILE */
@@ -477,10 +490,8 @@ void packUpdateAndControl(Pack_t *pack)
   uint32_t fan_PWM = 0;
   float max_temp = 0;
   // ECU CAN Message
-  CAN_Rx_Message_t rxMessages[NUM_RX_FIFOS * MAX_MESSAGES_PER_FIFO];
   int32_t pack_current = 0;
   uint8_t DOC_COC_active = 0;
-  CAN_Rx_Message_t *rx_msg_p;
   // Other
   uint32_t current_tick;
   static uint8_t initial_soc_measurement_flag = 1;
@@ -489,20 +500,7 @@ void packUpdateAndControl(Pack_t *pack)
   current_tick = HAL_GetTick();
 
   // Recieve ECU CAN message
-  CAN_RecieveMessages(&hcan, rxMessages); // FIXME: convert to interrupt-based instead
-  for (int i = 0; i < (NUM_RX_FIFOS * MAX_MESSAGES_PER_FIFO); i++)
-  {
-    rx_msg_p = &rxMessages[i];
-
-    // operate on message if it's the current status message from the ECU
-    if (rx_msg_p->rx_header.StdId == ECU_CURRENT_MESSAGE_ID)
-    { // does comparing this way work?
-      DOC_COC_active = rx_msg_p->data[0];
-      pack_current = rx_msg_p->data[1]; // TODO: double check whether we need to rescale one rx'd (depends on how ECU packages up this value)
-      break;                           // remove if we want to rx more than just this message
-    }
-  }
-
+// FIXME: convert to interrupt-based instead
   if (DOC_COC_active)
   {
     pack->status.bits.fault_over_current = true; // set FLT_DOC_COC bit
