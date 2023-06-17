@@ -1,10 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
- ******************************************************************************
- * @file    stm32f1xx_it.c
- * @brief   Contains interrupt service routine definitions
- ******************************************************************************
- */
+  ******************************************************************************
+  * @file    stm32f1xx_it.c
+  * @brief   Interrupt Service Routines.
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2023 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -12,9 +22,7 @@
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
-#include "cmsis_os.h"
-
+#include "mcb.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -35,10 +43,6 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 
-extern osSemaphoreId_t eventFlagsSemaphoreHandle;
-extern osSemaphoreId_t nextScreenSemaphoreHandle;
-extern uint16_t encoder_reading;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -52,12 +56,10 @@ extern uint16_t encoder_reading;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern DMA_HandleTypeDef hdma_adc1;
-extern TIM_HandleTypeDef htim8;
+extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim4;
 
 /* USER CODE BEGIN EV */
-
-extern osThreadId_t updateEventFlagsTaskHandle;
 
 /* USER CODE END EV */
 
@@ -73,7 +75,9 @@ void NMI_Handler(void)
 
   /* USER CODE END NonMaskableInt_IRQn 0 */
   /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
-
+  while (1)
+  {
+  }
   /* USER CODE END NonMaskableInt_IRQn 1 */
 }
 
@@ -158,164 +162,72 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief This function handles EXTI line1 interrupt.
+  * @brief This function handles TIM2 global interrupt.
   */
-void EXTI1_IRQHandler(void)
+void TIM2_IRQHandler(void)
 {
-  /* USER CODE BEGIN EXTI1_IRQn 0 */
+  /* USER CODE BEGIN TIM2_IRQn 0 */
 
-    // EXTI1 corresponds to the REGEN_EN pin
-    event_flags.regen_enable = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+  /* USER CODE END TIM2_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim2);
+  /* USER CODE BEGIN TIM2_IRQn 1 */
 
-  /* USER CODE END EXTI1_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
-  /* USER CODE BEGIN EXTI1_IRQn 1 */
-
-  /* USER CODE END EXTI1_IRQn 1 */
+  /* USER CODE END TIM2_IRQn 1 */
 }
 
 /**
-  * @brief This function handles EXTI line2 interrupt.
+  * @brief This function handles TIM4 global interrupt.
   */
-void EXTI2_IRQHandler(void)
+void TIM4_IRQHandler(void)
 {
-  /* USER CODE BEGIN EXTI2_IRQn 0 */
+  /* USER CODE BEGIN TIM4_IRQn 0 */
 
-    // EXTI2 corresponds to the BRK_IN pin
+  /* USER CODE END TIM4_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim4);
+  /* USER CODE BEGIN TIM4_IRQn 1 */
 
-    // when brake_in goes high, cruise control should be disengaged
-    event_flags.cruise_status = DISABLE;
-
-    event_flags.brake_in = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
-
-
-  /* USER CODE END EXTI2_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
-  /* USER CODE BEGIN EXTI2_IRQn 1 */
-
-  /* USER CODE END EXTI2_IRQn 1 */
-}
-
-/**
-  * @brief This function handles EXTI line3 interrupt.
-  */
-void EXTI3_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI3_IRQn 0 */
-
-    // EXTI3 corresponds to the RVRS_EN pin
-
-    event_flags.reverse_enable = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin);
-
-  /* USER CODE END EXTI3_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
-  /* USER CODE BEGIN EXTI3_IRQn 1 */
-
-  /* USER CODE END EXTI3_IRQn 1 */
-}
-
-/**
-  * @brief This function handles EXTI line4 interrupt.
-  */
-void EXTI4_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI4_IRQn 0 */
-
-    // EXTI4 corresponds to the NEXT_SCREEN pin
-
-    osSemaphoreRelease(nextScreenSemaphoreHandle);
-
-  /* USER CODE END EXTI4_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
-  /* USER CODE BEGIN EXTI4_IRQn 1 */
-
-  /* USER CODE END EXTI4_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA1 channel1 global interrupt.
-  */
-void DMA1_Channel1_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
-
-  /* USER CODE END DMA1_Channel1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_adc1);
-  /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
-
-  /* USER CODE END DMA1_Channel1_IRQn 1 */
-}
-
-/**
-  * @brief This function handles EXTI line[9:5] interrupts.
-  */
-void EXTI9_5_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI9_5_IRQn 0 */
-
-    // checks if the CRUISE_DIS external interrupt is triggered
-    if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_DIS_Pin))
-    {
-        event_flags.cruise_status = DISABLE;
-    }
-
-    // checks if the CRUISE_UP external interrupt is triggered
-    else if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_UP_Pin))
-    {
-    	if(event_flags.cruise_status == DISABLE) {
-    		cruise_value = encoder_reading;
-    	}
-    	else
-    	{
-			if ((cruise_value + CRUISE_INCREMENT_VALUE) > CRUISE_MAX)
-			{
-				cruise_value = CRUISE_MAX;
-			}
-			else
-			{
-				cruise_value += CRUISE_INCREMENT_VALUE;
-			}
-    	}
-        event_flags.cruise_status = ENABLE;
-    }
-
-    // checks if the CRUISE_DOWN external interrupt is triggered
-    else if (__HAL_GPIO_EXTI_GET_FLAG(CRUISE_DOWN_Pin))
-    {
-        if ((cruise_value - CRUISE_INCREMENT_VALUE) < CRUISE_MIN)
-        {
-            cruise_value = CRUISE_MIN;
-        }
-        else
-        {
-            cruise_value -= CRUISE_INCREMENT_VALUE;
-        }
-    }
-
-  /* USER CODE END EXTI9_5_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
-  /* USER CODE BEGIN EXTI9_5_IRQn 1 */
-
-  /* USER CODE END EXTI9_5_IRQn 1 */
-}
-
-/**
-  * @brief This function handles TIM8 update interrupt.
-  */
-void TIM8_UP_IRQHandler(void)
-{
-  /* USER CODE BEGIN TIM8_UP_IRQn 0 */
-
-  /* USER CODE END TIM8_UP_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim8);
-  /* USER CODE BEGIN TIM8_UP_IRQn 1 */
-
-  /* USER CODE END TIM8_UP_IRQn 1 */
+  /* USER CODE END TIM4_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if(GPIO_Pin == CRUISE_TOGGLE_Pin)
+	{
+		if(state == DRIVE || state == CRUISE)
+		{
+			input_flags.cruise_enabled = !input_flags.cruise_enabled;
+			cruise_velocity = velocity_of_car;
+		}
+	}
+	else if(GPIO_Pin == CRUISE_UP_Pin)
+	{
+		if(state == CRUISE)
+		{
+			if(cruise_velocity + CRUISE_INCREMENT_VAL < CRUISE_MAX)
+				cruise_velocity += CRUISE_INCREMENT_VAL;
+			else
+				cruise_velocity = CRUISE_MAX;
+		}
+	}
+	else if(GPIO_Pin == CRUISE_DWN_Pin)
+	{
+		if(state == CRUISE)
+		{
+			if(cruise_velocity - CRUISE_INCREMENT_VAL > CRUISE_MIN)
+				cruise_velocity -= CRUISE_INCREMENT_VAL;
+			else
+				cruise_velocity = CRUISE_MIN;
+		}
+	}
+	else if (GPIO_Pin == BRK_IN_Pin)
+	{
+		SendCANMotorCommand(0, 0);
+		input_flags.cruise_enabled = FALSE;
+	}
+	else if (GPIO_Pin == NEXT_SCREEN_Pin)
+	{
+		SendCANDIDNextPage();
+	}
+}
 /* USER CODE END 1 */
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

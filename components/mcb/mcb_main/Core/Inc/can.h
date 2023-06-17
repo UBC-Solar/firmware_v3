@@ -1,3 +1,4 @@
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file    can.h
@@ -6,16 +7,16 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2022 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2023 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
+/* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __CAN_H__
 #define __CAN_H__
@@ -34,28 +35,22 @@ extern "C" {
 extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
-
 #define DRIVER_CONTROLS_BASE_ADDRESS 0x400
-#define MOTOR_CTRL_BASE 0x500
-#define BATTERY_BASE 0x620
+#define CAN_DATA_LENGTH 8
 
-#define CAN_DATA_LENGTH 8 			// incoming data is 64 bytes total
-#define CAN_HALF_DATA_LENGTH 4 		// some IDs split the data into 2 values of 32 byte (e.g., 0x50B)
-#define CAN_CONTROL_DATA_LENGTH 2
 
 extern CAN_TxHeaderTypeDef drive_command_header;
-extern CAN_TxHeaderTypeDef screen_cruise_control_header;
-extern CAN_RxHeaderTypeDef can_rx_header;
-extern CAN_FilterTypeDef mcb_filter;
+
+extern CAN_TxHeaderTypeDef DID_next_page;
+
 extern uint32_t can_mailbox;
 
+extern CAN_RxHeaderTypeDef can_rx_header;
 /* USER CODE END Private defines */
 
 void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
-void CAN_Filter_Init(void);
 
 /* USER CODE END Prototypes */
 
@@ -65,4 +60,3 @@ void CAN_Filter_Init(void);
 
 #endif /* __CAN_H__ */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
