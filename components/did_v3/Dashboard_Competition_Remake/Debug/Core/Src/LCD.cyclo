@@ -1,0 +1,17 @@
+LCD.c:12:6:Delay	3
+LCD.c:29:6:MicrosecondDelay	3
+LCD.c:45:6:MoveCursor	1
+LCD.c:71:6:ClearScreen	2
+LCD.c:91:6:SaveCharacterToRAM	2
+LCD.c:107:6:CharacterBitMaps	2
+LCD.c:143:6:OutputString	9
+LCD.c:236:6:OutputPaddedInteger	7
+LCD.c:285:6:SetBar	4
+LCD.c:308:6:DisplayScreen	1
+LCD.c:371:6:UpdateScreenTitles	5
+LCD.c:433:6:UpdateScreenParameter	1
+LCD.c:447:6:WriteByteToDataBus	1
+LCD.c:458:6:TransmitCommand	1
+LCD.c:473:6:TransmitCommandParameter	1
+LCD.c:486:6:InitialiseLCDPins	1
+LCD.c:511:6:ScreenSetup	1
