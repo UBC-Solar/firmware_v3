@@ -93,6 +93,7 @@ void Error_Handler(void);
 #define CS_GPIO_Port GPIOC
 #define RES_Pin GPIO_PIN_12
 #define RES_GPIO_Port GPIOC
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

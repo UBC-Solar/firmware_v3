@@ -19,13 +19,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "can.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "LCD.h"
-#include <time.h>
-
 
 /* USER CODE END Includes */
 
@@ -62,7 +61,7 @@
 #define PAGE_2 2
 #define PAGE_3 3
 
-#define TIMEOUT 10
+#define TIMEOUT_10_SECONDS 10000000 // microseconds
 
 #define GETBIT(var, bit)	(((var) >> (bit)) & 1) // gives bit position
 
@@ -181,6 +180,10 @@ int main(void)
   // Page initialized to Page 0
   uint8_t current_page = 0;
 
+  /* Timer */
+  uint16_t timer_val;
+  TIM_HandleTypeDef htim3;
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -193,6 +196,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
   CanFilterSetup();
@@ -222,26 +226,35 @@ int main(void)
   // Check if this is required!
   InitLEDs();
 
+  // Start timer
+  HAL_TIM_Base_Start(&htim3);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  /* LED toggle on Pin A6 for debugging */
 //		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 1);
 //		HAL_Delay(1000);
 //		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 0);
 //		HAL_Delay(1000);
 
+	// Get current time (microseconds)
+	timer_val = __HAL_TIM_GET_COUNTER(&htim3);
+	// Timeout condition
+	if (timer_val >= TIMEOUT_10_SECONDS) {
+		current_page = PAGE_0; // set page back to PAGE_0 (main page)
+		__HAL_TIM_SET_COUNTER(&htim3, 0); // Reset the timer counter to 0
+	}
+
 	// Check if message is available
 	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0)
-//	if (1)
 	{
 		// Populate CAN header and data variables (CAN_rx_header/data is updated respectively)
 		HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data);
-
 		uint16_t received_CAN_ID = (uint16_t) CAN_rx_header.StdId;
-//		uint16_t received_CAN_ID = 0x622;
 
 		/* Check for CAN message that is incoming to change the page
 		 * This CAN message comes from the MCB
@@ -280,6 +293,7 @@ int main(void)
 			if (current_page == NUM_PAGES) current_page = 0; // Reset to 0 if changing from last page
 			button_pressed = FALSE; // Set back to False
 			ClearScreen();
+			__HAL_TIM_SET_COUNTER(&htim3, 0); // Reset the timer counter to 0
 		}
 
 		if (received_CAN_ID == FAULTS) {
