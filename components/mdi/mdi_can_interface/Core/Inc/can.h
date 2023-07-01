@@ -4,7 +4,8 @@
  */
 
 #ifndef CAN_H
-#define CAN_H //put include guard above #includes based on Andrew input
+#define CAN_H 
+#endif
 
 #include "stm32f1xx_hal.h"
 #include <stdio.h>
@@ -12,7 +13,6 @@
 #include <stdbool.h>
 #include <math.h>
 
-#define MAX_MESSAGE_LENGTH 31
 #define BUFFER_SIZE 2
 
 #define REVERSE_TRUE 1 
@@ -21,6 +21,8 @@
 #define REGEN_TRUE 1 
 #define REGEN_FALSE 0 
 
+//Eco mode would be standard operation and maximum efficiency
+//Power mode would be for passing or when we need a boost up a hill
 #define ECO_ON 1
 #define POWER_ON 0
 
@@ -28,7 +30,7 @@
 
 
 //Limit voltage out into the motor 
-#define MAX_VOLTAGE_OUT 0x3C1 //Add comment indicating what physical value this hex value corresponds to
+#define MAX_VOLTAGE_OUT 0x3C1 //Coresponds to 4.7V (0.938*10'b1_111_111_111)
 
 
 typedef struct
@@ -39,16 +41,10 @@ typedef struct
 	bool direction; 
 	bool power_or_eco; 
 	bool regen; 
-} CAN_msg_t;
+} CAN_message_t;
 
-void CANInit(void);
-void CAN_Set_Filters(CAN_FilterTypeDef* fltr);
 
-uint16_t Parse_Acc(uint32_t pedal_data);
 void Send_Voltage(uint16_t parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef *hi2c1);
-void CAN_process(CAN_msg_t *msg1);  
-void decode_CAN_velocity_message(uint8_t RxData[], CAN_msg_t* CAN_msg); 
-void Send_Regen(float regen, uint8_t DAC_REGEN_ADDR, I2C_HandleTypeDef *hi2c1);
-void send_test_message(uint8_t* TxData, int32_t velocity, uint32_t acceleration); 
+void CAN_Decode_Velocity_Message(uint8_t RxData[], CAN_message_t* CAN_msg); 
 
-#endif
+

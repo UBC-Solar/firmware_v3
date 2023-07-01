@@ -37,7 +37,8 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+#define DAC_ADDR        (0b0001100 << 1)
+#define DAC_REGEN_ADDR  (0b0001101 << 1)
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -46,8 +47,7 @@ CAN_HandleTypeDef hcan;
 I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
-static const uint8_t DAC_ADDR = 0b0001100 << 1;
-static const uint8_t DAC_REGEN_ADDR = 0b0001101 << 1;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -64,7 +64,7 @@ static void MX_I2C1_Init(void);
 
 CAN_TxHeaderTypeDef TxHeader; //struct with outgoing message information (type and length, etc.)
 CAN_RxHeaderTypeDef RxHeader; //struct with incoming message information
-uint32_t TxMailbox[3]; //4 transmit mailboxes
+uint32_t TxMailbox[3]; //3 transmit mailboxes
 //CAN_FilterTypeDef fltr;
 
 uint8_t TxData[8]; //buffer for transmit message
@@ -154,14 +154,14 @@ int main(void)
      velocity = -100; 
      acceleration = 0xFFFFFFFF;
      acceleration = acceleration/2.0*sin(count)  + acceleration/2.0 ; 
-     send_test_message(TxData, velocity, acceleration); 
+     Send_Test_Message(TxData, velocity, acceleration); 
 
      HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
     //////////////////////////////////////////////////////////////////
     
     if(Parse_Data_Flag == 1 ){ //Parse_Data_Flag set in interrupt
 
-      decode_CAN_velocity_message(RxData, &msg0); 
+      CAN_Decode_Velocity_Message(RxData, &msg0); 
 
       Parse_Data_Flag = 0; 
       send_data_flag = 1; 
@@ -172,7 +172,7 @@ int main(void)
       if(msg0.regen == REGEN_TRUE)
         Send_Regen(msg0.acceleration, DAC_REGEN_ADDR, &hi2c1); 
       else{
-        parsed_voltage = Parse_ACC(msg0.acceleration);
+        parsed_voltage = Parse_Acceleration(msg0.acceleration);
     	  Send_Voltage(parsed_voltage, DAC_ADDR, &hi2c1); 
       }
       //send direction
