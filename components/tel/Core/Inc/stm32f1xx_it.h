@@ -54,6 +54,7 @@ void UsageFault_Handler(void);
 void DebugMon_Handler(void);
 void USB_LP_CAN1_RX0_IRQHandler(void);
 void TIM1_UP_IRQHandler(void);
+void USART1_IRQHandler(void);
 void USART3_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 

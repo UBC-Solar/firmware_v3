@@ -284,7 +284,7 @@ __NO_RETURN void transmitMessageTask(void *argument) {
       osThreadYield();
     }
 
-    uint8_t can_buffer[21] = {0};
+    uint8_t can_buffer[22] = {0};
 
     // TIMESTAMP: 8 ASCII characters
     for (uint8_t i=0; i<8; i++) {
@@ -292,31 +292,35 @@ __NO_RETURN void transmitMessageTask(void *argument) {
         can_buffer[i] = 'D';
     }
 
+    // CAN MESSAGE IDENTIFIER
+    can_buffer[8] = '#';
+
     // CAN ID: 4 ASCII characters
     uint8_t id_h = 0xFFUL & (can_message.header.StdId >> 8);
     uint8_t id_l = 0xFFUL & (can_message.header.StdId);
 
-    can_buffer[8] = id_h;
-    can_buffer[9] = id_l;
+    can_buffer[9] = id_h;
+    can_buffer[10] = id_l;
 
 
     // CAN DATA: 16 ASCII characters
     for (uint8_t i=0; i<8; i++) {
       // can_stream[2+i] = 0xFFUL & (can_message.data[i]);
-        can_buffer[i + 10]= can_message.data[i];
+        can_buffer[i + 11]= can_message.data[i];
     }
 
     // CAN DATA LENGTH: 1 ASCII character
     uint8_t length = "0123456789ABCDEF"[ can_message.header.DLC & 0xFUL];
-    can_buffer[18] = length;
+    can_buffer[19] = length;
 
     // NEW LINE: 1 ASCII character
-    can_buffer[19] = '\n';
+    can_buffer[20] = '\n';
 
     // CARRIAGE RETURN: 1 ASCII character
-    can_buffer[20] = '\r';
+    can_buffer[21] = '\r';
 
     HAL_UART_Transmit(&huart3, can_buffer, sizeof(can_buffer), 1000);
+    HAL_UART_Transmit(&huart1, can_buffer, sizeof(can_buffer), 1000);
 
   }
 }
@@ -397,7 +401,7 @@ __NO_RETURN void StartReadIMU(void *argument){
     addtoIMUQueue("A", "Y", ax_y);
     addtoIMUQueue("A", "Z", ax_z);
 
-    osDelay(1000);
+    osDelay(100);
   }
 
   // In case we accidentally exit from task loop
@@ -433,25 +437,32 @@ __NO_RETURN void StartTransmitIMU(void *argument){
     if (imu_queue_status != osOK){
       osThreadYield();
     }
-    uint8_t imu_buffer[9] = {0};
+    uint8_t imu_buffer[17] = {0};
+
+    // TIMESTAMP
+    for (uint8_t i=0; i<8; i++) {
+      // send 'D' as placeholder
+        imu_buffer[i] = 'D';
+    }
 
     // IMU ID
-    imu_buffer[0] = '@';
+    imu_buffer[8] = '@';
 
     // IMU Data from queue
-    imu_buffer[1] = imu_message.imu_type;
-    imu_buffer[2] = imu_message.dimension;
+    imu_buffer[9] = imu_message.imu_type;
+    imu_buffer[10] = imu_message.dimension;
     for (int i = 0; i < 4; i++) {
-        imu_buffer[i + 3] = imu_message.data[i];
+        imu_buffer[i + 11] = imu_message.data[i];
     }
 
     // NEW LINE
-    imu_buffer[7] = '\n';
+    imu_buffer[15] = '\n';
 
     // CARRIAGE RETURN
-    imu_buffer[8] = '\r';
+    imu_buffer[16] = '\r';
 
     HAL_UART_Transmit(&huart3, imu_buffer, sizeof(imu_buffer), 1000);
+    HAL_UART_Transmit(&huart1, imu_buffer, sizeof(imu_buffer), 1000);
   }
 
   // In case we accidentally exit from task loop
