@@ -323,10 +323,10 @@ __NO_RETURN void transmitMessageTask(void *argument) {
     can_buffer[CAN_BUFFER_LEN - 3] = length;
 
     // NEW LINE: 1 ASCII character
-    can_buffer[CAN_BUFFER_LEN - 2] = '\n';
+    can_buffer[CAN_BUFFER_LEN - 2] = '\r';
 
     // CARRIAGE RETURN: 1 ASCII character
-    can_buffer[CAN_BUFFER_LEN - 1] = '\r';
+    can_buffer[CAN_BUFFER_LEN - 1] = '\n';
 
     HAL_UART_Transmit(&huart3, can_buffer, sizeof(can_buffer), 1000);
     HAL_UART_Transmit(&huart1, can_buffer, sizeof(can_buffer), 1000);
@@ -472,10 +472,10 @@ __NO_RETURN void transmitIMUTask(void *argument){
     }
 
     // NEW LINE
-    imu_buffer[IMU_MESSAGE_LEN - 2] = '\n';
+    imu_buffer[IMU_MESSAGE_LEN - 2] = '\r';
 
     // CARRIAGE RETURN
-    imu_buffer[IMU_MESSAGE_LEN - 1] = '\r';
+    imu_buffer[IMU_MESSAGE_LEN - 1] = '\n';
 
     HAL_UART_Transmit(&huart3, imu_buffer, sizeof(imu_buffer), 1000);
     HAL_UART_Transmit(&huart1, imu_buffer, sizeof(imu_buffer), 1000);

@@ -134,4 +134,20 @@ Once transformation is complete, the message would be able to be transmitted to 
 
 ### IMU messages
 
-TODO: finish section
+For the IMU data, we are interested in its value, dimension, and whether it pertains to the instantaneous acceleration or the angular momentum of the car. These values are stored in a struct as shown below:
+
+```c
+typedef struct {
+  uint8_t imu_type;
+  uint8_t dimension;
+  uint8_t data[4];
+} IMU_msg_t;
+```
+
+Similar to the CAN Messages, the IMU message struct must also be converted into a bit stream. An example is shown below:
+
+ ```
+@AX,1122AABBCCDDEEFF,E26A<CR><LF>
+ ```
+
+Once it has been converted, the message can be transmitted over UART to the radio and cellular module.
