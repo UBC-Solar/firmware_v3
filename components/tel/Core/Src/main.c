@@ -54,8 +54,6 @@ CAN_FilterTypeDef CAN_filter1;
 
 CAN_RxHeaderTypeDef can_rx_header;
 
-HAL_StatusTypeDef can_start;
-
 uint8_t current_can_data[8];
 HAL_StatusTypeDef rx_status;
 
@@ -64,6 +62,7 @@ HAL_StatusTypeDef rx_status;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
+void Can_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -108,12 +107,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   // <----- CAN set-up ------>
-  CanFilterSetup();
-  can_start = HAL_CAN_Start(&hcan);
-  assert_param(can_start == HAL_OK);
-
-  HAL_StatusTypeDef can_notification_status = HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
-  assert_param(can_notification_status == HAL_OK);
+  Can_Init();
 
   /* USER CODE END 2 */
 

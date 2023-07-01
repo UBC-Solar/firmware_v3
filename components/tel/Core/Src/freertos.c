@@ -49,6 +49,9 @@
 
 #define IMU_QUEUE_SIZE 10
 
+#define CAN_BUFFER_LEN 22
+#define IMU_MESSAGE_LEN 17
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -140,8 +143,8 @@ void changeRadioSettingsTask(void *argument);
 void sendByte(char c);
 void sendChar(char c);
 
-void StartReadIMU(void *argument);
-void StartTransmitIMU(void *argument);
+void readIMUTask(void *argument);
+void transmitIMUTask(void *argument);
 
 void addtoIMUQueue(char* type, char* dimension, union FloatBytes data);
 
@@ -194,8 +197,8 @@ void MX_FREERTOS_Init(void) {
   readCANTaskHandle = osThreadNew(readCANTask, NULL, &readCANTask_attributes);
   transmitMessageTaskHandle = osThreadNew(transmitMessageTask, NULL, &transmitMessageTask_attributes);
 
-  readimuHandle = osThreadNew(StartReadIMU, NULL, &readimu_attributes);
-  transmitIMUHandle = osThreadNew(StartTransmitIMU, NULL, &transmitIMU_attributes);
+  readimuHandle = osThreadNew(readIMUTask, NULL, &readimu_attributes);
+  transmitIMUHandle = osThreadNew(transmitIMUTask, NULL, &transmitIMU_attributes);
 
   // changeRadioSettingsTaskHandle = osThreadNew(changeRadioSettingsTask, NULL, &changeRadioSettingsTask_attributes);
 
@@ -247,7 +250,7 @@ __NO_RETURN void readCANTask(void *argument) {
   static CAN_msg_t current_can_message;
 
   while (1) {
-    // wait for thread flags to be set
+    // wait for thread flags to be set in the CAN Rx FIFO0 Interrupt Callback
     osThreadFlagsWait(CAN_READY, osFlagsWaitAll, osWaitForever);
 
     if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0) {
@@ -267,11 +270,15 @@ __NO_RETURN void readCANTask(void *argument) {
       osMessageQueuePut(canMessageQueueHandle, &current_can_message, 0U, 0U);
     }
 
+    // Enables Interrupts
     HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
 
   }
 }
 
+/*
+ * Sends the CAN Message over UART
+ */
 __NO_RETURN void transmitMessageTask(void *argument) {
   static CAN_msg_t can_message;
   osStatus_t queue_status;
@@ -284,40 +291,42 @@ __NO_RETURN void transmitMessageTask(void *argument) {
       osThreadYield();
     }
 
-    uint8_t can_buffer[22] = {0};
+    //
+    uint8_t can_buffer[CAN_BUFFER_LEN] = {0};
 
     // TIMESTAMP: 8 ASCII characters
-    for (uint8_t i=0; i<8; i++) {
+    for (uint8_t i=0; i<CAN_BUFFER_LEN - 14; i++) {
       // send 'D' as placeholder
         can_buffer[i] = 'D';
     }
 
     // CAN MESSAGE IDENTIFIER
-    can_buffer[8] = '#';
+    can_buffer[CAN_BUFFER_LEN - 14] = '#';
 
     // CAN ID: 4 ASCII characters
     uint8_t id_h = 0xFFUL & (can_message.header.StdId >> 8);
     uint8_t id_l = 0xFFUL & (can_message.header.StdId);
 
-    can_buffer[9] = id_h;
-    can_buffer[10] = id_l;
+    can_buffer[CAN_BUFFER_LEN - 13] = id_h;
+    can_buffer[CAN_BUFFER_LEN - 12] = id_l;
 
 
     // CAN DATA: 16 ASCII characters
     for (uint8_t i=0; i<8; i++) {
       // can_stream[2+i] = 0xFFUL & (can_message.data[i]);
-        can_buffer[i + 11]= can_message.data[i];
+        can_buffer[i + CAN_BUFFER_LEN - 11]= can_message.data[i];
     }
+
 
     // CAN DATA LENGTH: 1 ASCII character
     uint8_t length = "0123456789ABCDEF"[ can_message.header.DLC & 0xFUL];
-    can_buffer[19] = length;
+    can_buffer[CAN_BUFFER_LEN - 3] = length;
 
     // NEW LINE: 1 ASCII character
-    can_buffer[20] = '\n';
+    can_buffer[CAN_BUFFER_LEN - 2] = '\n';
 
     // CARRIAGE RETURN: 1 ASCII character
-    can_buffer[21] = '\r';
+    can_buffer[CAN_BUFFER_LEN - 1] = '\r';
 
     HAL_UART_Transmit(&huart3, can_buffer, sizeof(can_buffer), 1000);
     HAL_UART_Transmit(&huart1, can_buffer, sizeof(can_buffer), 1000);
@@ -381,7 +390,10 @@ void sendChar(char c)
   uart_tx_status = HAL_UART_Transmit(&huart3, &c_L, 1, 1000);
 }
 
-__NO_RETURN void StartReadIMU(void *argument){
+/*
+ * Reads data from the IMU using I2C and stores it in a queue
+ */
+__NO_RETURN void readIMUTask(void *argument){
   union FloatBytes gy_x, gy_y, gy_z, ax_x, ax_y, ax_z;
   /* Infinite loop */
   while(1)
@@ -393,7 +405,6 @@ __NO_RETURN void StartReadIMU(void *argument){
     ax_y.float_value = accel(ACCEL_Y);
     ax_z.float_value = accel(ACCEL_Z);
 
-    // IMU DATA
     addtoIMUQueue("G", "X", gy_x);
     addtoIMUQueue("G", "Y", gy_y);
     addtoIMUQueue("G", "Z", gy_z);
@@ -404,11 +415,12 @@ __NO_RETURN void StartReadIMU(void *argument){
     osDelay(100);
   }
 
-  // In case we accidentally exit from task loop
-  osThreadTerminate(NULL);
-
 }
 
+
+/*
+ * Stores the data gathered from the IMU into the queue
+ */
 void addtoIMUQueue(char* type, char* dimension, union FloatBytes data){
     IMU_msg_t imu_message;
 
@@ -421,7 +433,10 @@ void addtoIMUQueue(char* type, char* dimension, union FloatBytes data){
     osMessageQueuePut(imuMessageQueueHandle, &imu_message, 0U, 0U);
 }
 
-__NO_RETURN void StartTransmitIMU(void *argument){
+/*
+ * Sends the IMU data over UART
+ */
+__NO_RETURN void transmitIMUTask(void *argument){
   osStatus_t imu_queue_status;
   IMU_msg_t imu_message;
 
@@ -437,36 +452,35 @@ __NO_RETURN void StartTransmitIMU(void *argument){
     if (imu_queue_status != osOK){
       osThreadYield();
     }
-    uint8_t imu_buffer[17] = {0};
+    uint8_t imu_buffer[IMU_MESSAGE_LEN] = {0};
 
     // TIMESTAMP
-    for (uint8_t i=0; i<8; i++) {
+    for (uint8_t i=0; i<IMU_MESSAGE_LEN - 9; i++) {
       // send 'D' as placeholder
         imu_buffer[i] = 'D';
     }
 
     // IMU ID
-    imu_buffer[8] = '@';
+    imu_buffer[IMU_MESSAGE_LEN - 9] = '@';
 
     // IMU Data from queue
-    imu_buffer[9] = imu_message.imu_type;
-    imu_buffer[10] = imu_message.dimension;
+    imu_buffer[IMU_MESSAGE_LEN - 8] = imu_message.imu_type;
+    imu_buffer[IMU_MESSAGE_LEN - 7] = imu_message.dimension;
+
     for (int i = 0; i < 4; i++) {
-        imu_buffer[i + 11] = imu_message.data[i];
+        imu_buffer[i + IMU_MESSAGE_LEN - 6] = imu_message.data[i];
     }
 
     // NEW LINE
-    imu_buffer[15] = '\n';
+    imu_buffer[IMU_MESSAGE_LEN - 2] = '\n';
 
     // CARRIAGE RETURN
-    imu_buffer[16] = '\r';
+    imu_buffer[IMU_MESSAGE_LEN - 1] = '\r';
 
     HAL_UART_Transmit(&huart3, imu_buffer, sizeof(imu_buffer), 1000);
     HAL_UART_Transmit(&huart1, imu_buffer, sizeof(imu_buffer), 1000);
   }
 
-  // In case we accidentally exit from task loop
-  osThreadTerminate(NULL);
 }
 
 /* USER CODE END Application */

@@ -49,6 +49,7 @@ void MX_CAN_Init(void);
 extern osThreadId_t readCANTaskHandle;
 
 void CanFilterSetup(void);
+void Can_Init(void);
 
 typedef struct {
   CAN_RxHeaderTypeDef header;

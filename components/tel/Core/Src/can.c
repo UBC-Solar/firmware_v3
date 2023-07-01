@@ -24,6 +24,8 @@
 
 #include "main.h"
 
+HAL_StatusTypeDef can_start;
+
 /**
  * @brief Initialize CAN node for sending and receiving
  * @param: CAN filter structure
@@ -177,4 +179,16 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     osThreadFlagsSet(readCANTaskHandle, CAN_READY);
 }
 
+/*
+ * CAN set-up: Sets up the filters, Starts CAN with HAL, and Activates notifications for interrupts.
+ */
+void Can_Init(void)
+{
+  CanFilterSetup();
+  can_start = HAL_CAN_Start(&hcan);
+  assert_param(can_start == HAL_OK);
+
+  HAL_StatusTypeDef can_notification_status = HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+  assert_param(can_notification_status == HAL_OK);
+}
 /* USER CODE END 1 */
