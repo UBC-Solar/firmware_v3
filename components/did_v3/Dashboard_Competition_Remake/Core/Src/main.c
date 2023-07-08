@@ -177,21 +177,34 @@ void parse_warnings(void)
 	recent_warnings[3] = high_temperature_warning;
 
 	/* Update Faults */
-	recent_faults[0] = slave_board_comm_fault;
+	recent_faults[0] = slave_board_comm_fault; // bms_comm_flt
 	recent_faults[1] = bms_self_test_fault;
-	recent_faults[2] = overtemp_fault;
-	recent_faults[3] = undervolt_fault;
-	recent_faults[4] = overvolt_fault;
+	recent_faults[2] = overtemp_fault;  // batt_ot
+	recent_faults[3] = undervolt_fault; // batt_uv
+	recent_faults[4] = overvolt_fault; // batt_ov
 	recent_faults[5] = isolation_loss_fault;
-	recent_faults[6] = discharge_or_charge_overcurr_fault;
+	recent_faults[6] = discharge_or_charge_overcurr_fault; // dch_oc
 	recent_faults[7] = volt_out_of_range_fault;
 	recent_faults[8] = temp_out_of_range_fault;
 	recent_faults[9] = pack_balancing_active;
 	recent_faults[10] = LLIM_active;
 	recent_faults[11] = HLIM_active;
-	recent_faults[12] = charge_overtemp_trip;
+	recent_faults[12] = charge_overtemp_trip; // ch_oc
 	recent_faults[13] = request_regen_turn_off;
 	recent_faults[14] = no_ecu_curr_message_received_warn;
+
+	//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, ); // PA0
+	//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, ); // PA1
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, slave_board_comm_fault); // PA4
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, charge_overtemp_trip); // PA6
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, discharge_or_charge_overcurr_fault); // PA7
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, overtemp_fault); // PA8
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, undervolt_fault); // PA9
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, overvolt_fault); // PA10
+	// PA11
+	// PA12
+	// PA15
+	// Don't need to control SUPP_LO, BATT_FLT
 
 }
 
@@ -272,9 +285,10 @@ int main(void)
 
   // Check if this is required!
   InitLEDs();
+  UpdateScreenTitles(PAGE_0);
 
   // Start timer
-  HAL_TIM_Base_Start(&htim3);
+//  HAL_TIM_Base_Start(&htim3);
 
   /* USER CODE END 2 */
 
@@ -282,19 +296,23 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  /* LED toggle on Pin A6 for debugging */
-//		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 1);
-//		HAL_Delay(1000);
-//		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 0);
-//		HAL_Delay(1000);
+
 
 	// Get current time (microseconds)
-	timer_val = __HAL_TIM_GET_COUNTER(&htim3);
+//	timer_val = __HAL_TIM_GET_COUNTER(&htim3);
+
+	/* LED toggle on Pin A6 for debugging */
+//	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 1);
+//	HAL_Delay(1000);
+//	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 0);
+//	HAL_Delay(1000);
 	// Timeout condition
-	if (timer_val >= TIMEOUT_10_SECONDS) {
-		current_page = PAGE_0; // set page back to PAGE_0 (main page)
-		__HAL_TIM_SET_COUNTER(&htim3, 0); // Reset the timer counter to 0
-	}
+//	if (timer_val >= TIMEOUT_10_SECONDS) {
+//		current_page = PAGE_0; // set page back to PAGE_0 (main page)
+//		__HAL_TIM_SET_COUNTER(&htim3, 0); // Reset the timer counter to 0
+//	}
+
+
 
 	// Check if message is available
 	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0)
@@ -340,7 +358,7 @@ int main(void)
 			if (current_page == NUM_PAGES) current_page = 0; // Reset to 0 if changing from last page
 			button_pressed = FALSE; // Set back to False
 			ClearScreen();
-			__HAL_TIM_SET_COUNTER(&htim3, 0); // Reset the timer counter to 0
+//			__HAL_TIM_SET_COUNTER(&htim3, 0); // Reset the timer counter to 0
 		}
 
 		/* FAULTS = 0x622
@@ -351,6 +369,7 @@ int main(void)
 			// Add parse faults function, and output to GPIO
 			parse_warnings();
 			// TODO: GPIO output for fault lights.
+//			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, recent_faults[0]);
 		}
 
 		// Switch by page
