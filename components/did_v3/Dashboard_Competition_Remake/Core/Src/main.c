@@ -93,6 +93,7 @@ union {
 } u;
 
 uint8_t recent_warnings[4]; // [LV Warn, HV Warn, LT Warn, HT Warn]
+uint8_t recent_faults[15]; // See BS Master BOM (0x622 Bits 0-12, 17, 18)
 
 /* USER CODE END PV */
 
@@ -127,25 +128,71 @@ void InitLEDs(void)
 
 }
 
+
 /**
  * Called when warning CAN message received
  * Updates recent_warnings array with latest warnings
  */
 void parse_warnings(void)
 {
-	uint8_t temp_byte = CAN_rx_data[1]; // Contains bits 8-15, 15 14 13 12 11 10 9 8
-	uint8_t low_voltage_warning = GETBIT(temp_byte, 6);
-	uint8_t high_voltage_warning = GETBIT(temp_byte, 7);
-	uint8_t low_temperature_warning = GETBIT(temp_byte, 8);
+	/* Local Variables declarations */
+	uint8_t temp_byte, slave_board_comm_fault, bms_self_test_fault, overtemp_fault,
+			undervolt_fault, overvolt_fault, isolation_loss_fault, discharge_or_charge_overcurr_fault,
+			volt_out_of_range_fault, temp_out_of_range_fault, pack_balancing_active, LLIM_active,
+			HLIM_active, charge_overtemp_trip, request_regen_turn_off, no_ecu_curr_message_received_warn,
+			low_voltage_warning, high_voltage_warning, low_temperature_warning, high_temperature_warning;
 
+	/* Byte 0 readings */
+	temp_byte = CAN_rx_data[0]; // Contains bits 0-7, 7 6 5 4 3 2 1 0
+	slave_board_comm_fault = GETBIT(temp_byte, 0);
+	bms_self_test_fault = GETBIT(temp_byte, 1);
+	overtemp_fault = GETBIT(temp_byte, 2);
+	undervolt_fault = GETBIT(temp_byte, 3);
+	overvolt_fault = GETBIT(temp_byte, 4);
+	isolation_loss_fault = GETBIT(temp_byte, 5);
+	discharge_or_charge_overcurr_fault = GETBIT(temp_byte, 6);
+	volt_out_of_range_fault = GETBIT(temp_byte, 7);
+
+	/* Byte 1 readings */
+	temp_byte = CAN_rx_data[1]; // Contains bits 8-15, 15 14 13 12 11 10 9 8
+	temp_out_of_range_fault = GETBIT(temp_byte, 0);
+	pack_balancing_active = GETBIT(temp_byte, 1);
+	LLIM_active = GETBIT(temp_byte, 2);
+	HLIM_active = GETBIT(temp_byte, 3);
+	charge_overtemp_trip = GETBIT(temp_byte, 4);
+	low_voltage_warning = GETBIT(temp_byte, 5);
+	high_voltage_warning = GETBIT(temp_byte, 6);
+	low_temperature_warning = GETBIT(temp_byte, 7);
+
+	/* Byte 2 readings */
 	temp_byte = CAN_rx_data[2]; // Contains bits 16-23, 23 22 21 20 19 18 17 16
-	uint8_t high_temperature_warning = GETBIT(temp_byte, 0);
+	high_temperature_warning = GETBIT(temp_byte, 0);
+	request_regen_turn_off = GETBIT(temp_byte, 1);
+	no_ecu_curr_message_received_warn = GETBIT(temp_byte, 2);
 
-	/* Update Warnings */
+	/* Update Warnings for Screen */
 	recent_warnings[0] = low_voltage_warning;
 	recent_warnings[1] = high_voltage_warning;
 	recent_warnings[2] = low_temperature_warning;
 	recent_warnings[3] = high_temperature_warning;
+
+	/* Update Faults */
+	recent_faults[0] = slave_board_comm_fault;
+	recent_faults[1] = bms_self_test_fault;
+	recent_faults[2] = overtemp_fault;
+	recent_faults[3] = undervolt_fault;
+	recent_faults[4] = overvolt_fault;
+	recent_faults[5] = isolation_loss_fault;
+	recent_faults[6] = discharge_or_charge_overcurr_fault;
+	recent_faults[7] = volt_out_of_range_fault;
+	recent_faults[8] = temp_out_of_range_fault;
+	recent_faults[9] = pack_balancing_active;
+	recent_faults[10] = LLIM_active;
+	recent_faults[11] = HLIM_active;
+	recent_faults[12] = charge_overtemp_trip;
+	recent_faults[13] = request_regen_turn_off;
+	recent_faults[14] = no_ecu_curr_message_received_warn;
+
 }
 
 /* USER CODE END 0 */
@@ -296,8 +343,14 @@ int main(void)
 			__HAL_TIM_SET_COUNTER(&htim3, 0); // Reset the timer counter to 0
 		}
 
+		/* FAULTS = 0x622
+		 * Parse Warnings and Faults if received CAN message is 0x622
+		 * and set GPIO output for fault lights accordingly
+		 */
 		if (received_CAN_ID == FAULTS) {
 			// Add parse faults function, and output to GPIO
+			parse_warnings();
+			// TODO: GPIO output for fault lights.
 		}
 
 		// Switch by page
@@ -341,7 +394,7 @@ int main(void)
 						break;
 					case FAULTS: ;
 						/* ADD recent Warning on bottom line of page 0 */
-						parse_warnings();
+						// Warnings are already parsed
 						/* Add code to update page 0 bottom line */
 
 					default:
@@ -361,8 +414,8 @@ int main(void)
 						 * Bit 15 = Low Temperature Warning
 						 * Bit 16 = High Temperature Warning
 						 */
-						CAN_rx_data[1] = 64; // to toggle high voltage warning high
-						parse_warnings();
+
+						// Warnings are already parsed
 
 						if (recent_warnings[0]) { // Low Voltage Warning
 							OutputString("     ", LV_WARN_DATA_XPOS, LV_WARN_DATA_YPOS); // Clear

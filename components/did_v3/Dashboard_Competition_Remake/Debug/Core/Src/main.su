@@ -1,5 +1,5 @@
-../Core/Src/main.c:111:6:InitLEDs	4	static
-../Core/Src/main.c:134:6:parse_warnings	16	static
-../Core/Src/main.c:157:5:main	104	static
-../Core/Src/main.c:472:6:SystemClock_Config	72	static
-../Core/Src/main.c:514:6:Error_Handler	4	static,ignoring_inline_asm
+../Core/Src/main.c:112:6:InitLEDs	4	static
+../Core/Src/main.c:136:6:parse_warnings	32	static
+../Core/Src/main.c:204:5:main	104	static
+../Core/Src/main.c:525:6:SystemClock_Config	72	static
+../Core/Src/main.c:567:6:Error_Handler	4	static,ignoring_inline_asm
