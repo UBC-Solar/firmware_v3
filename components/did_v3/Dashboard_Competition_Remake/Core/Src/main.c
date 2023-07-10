@@ -193,18 +193,18 @@ void parse_warnings(void)
 	recent_faults[13] = request_regen_turn_off;
 	recent_faults[14] = no_ecu_curr_message_received_warn;
 
-	//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, ); // PA0
-	//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, ); // PA1
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, low_voltage_warning); // PA0
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, high_voltage_warning); // PA1
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, slave_board_comm_fault); // PA4
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, charge_overtemp_trip); // PA6
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, discharge_or_charge_overcurr_fault); // PA7
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, overtemp_fault); // PA8
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, undervolt_fault); // PA9
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, overvolt_fault); // PA10
-	// PA11
-	// PA12
-	// PA15
-	// Don't need to control SUPP_LO, BATT_FLT
+	// PA11 (MDU)
+	// PA12 (MDU)
+	// PA15 (MDU)
+	// Don't need to control SUPP_LO, BATT_FLT (high_voltage_warning)
 
 }
 
