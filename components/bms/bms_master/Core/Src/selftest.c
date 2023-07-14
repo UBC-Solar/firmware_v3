@@ -8,6 +8,7 @@
 
 #include "selftest.h"
 #include <math.h>
+#include "stdio.h" // TODO: remove
 
 /*============================================================================*/
 /* DEFINITION */
@@ -74,7 +75,7 @@ static BTM_Status_t readAllRegisters(uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NU
 
 // Testable private functions
 #ifndef TEST
-STATIC_TESTABLE void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
+STATIC_TESTABLE void itmpConversion(uint16_t ITMP[BTM_NUM_DEVICES], float temp_celsius[BTM_NUM_DEVICES]);
 #endif // TEST
 
 /*============================================================================*/
@@ -86,7 +87,7 @@ STATIC_TESTABLE void itmpConversion(uint16_t ITMP[], float temp_celsius[]);
  * @return If at least one LTC6813 has a die temperature nearing thermal shutdown
  * 		  threshold, returns an error with the device index of the first overheating IC.
  **/
-BTM_Status_t ST_checkLTCtemp()
+BTM_Status_t ST_checkLTCtemp(void)
 {
     BTM_Status_t status = {BTM_OK, 0};
     uint8_t registerSTATA[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
@@ -105,10 +106,12 @@ BTM_Status_t ST_checkLTCtemp()
     for (int board = 0; board < BTM_NUM_DEVICES; board++)
     {
         // Combine 2 bytes of die temperature reading
-        itmp[board] = (((uint16_t)registerSTATA[board][1]) << 8) | registerSTATA[board][0];
+        itmp[board] = (((uint16_t)registerSTATA[board][3]) << 8) | ((uint16_t) registerSTATA[board][2]);
     }
 
     itmpConversion(itmp, temp_celsius);
+
+    printf("Die temps: %.2f, %.2f\r\n", temp_celsius[0], temp_celsius[1]);
 
     for (int board = 0; board < BTM_NUM_DEVICES; board++)
     {
@@ -130,7 +133,7 @@ BTM_Status_t ST_checkLTCtemp()
  * @return OK if reading is within tolerance range. BTM_ERROR_SELFTEST if ADC1 measurement is outside
  * 		   tolerance range.
  */
-BTM_Status_t ST_checkVREF2()
+BTM_Status_t ST_checkVREF2(void)
 {
     uint8_t registerAUXB[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
     uint16_t cell_voltage_raw = 0;
@@ -154,10 +157,12 @@ BTM_Status_t ST_checkVREF2()
     {
         // Combine the 2 bytes of each cell voltage together
         cell_voltage_raw =
-            ((uint16_t)(registerAUXB[board][5]) << 8) | (uint16_t)(registerAUXB[board][4]);
+            (((uint16_t) registerAUXB[board][5]) << 8) | ((uint16_t) registerAUXB[board][4]);
 
         // Convert to volts and store
         converted_voltage = BTM_regValToVoltage(cell_voltage_raw);
+
+        printf("%.4f\r\n", converted_voltage);
 
         if (converted_voltage < VREF_LOWERBOUND ||
             converted_voltage > VREF_UPPERBOUND)
@@ -178,7 +183,7 @@ BTM_Status_t ST_checkVREF2()
  * @return OK if a voltage of 0 +/- 0.003 V is measured. BTM_ERROR_SELFTEST if the measured
  * 		   cell voltage is outside of this range.
  */
-BTM_Status_t ST_shortedCells()
+BTM_Status_t ST_shortedCells(void)
 {
     // 2x 6-byte sets (each from a different register group of the LTC6813) for each LTC6813
     uint8_t ADC_data[SC_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
@@ -203,8 +208,8 @@ BTM_Status_t ST_shortedCells()
     {
         for (int reg_group = 0; reg_group < SC_REGS; reg_group++)
         {
-            int reading_num = 3; // C12 and C18 are the 3rd voltage value stored
-                                 // in their respective registers.
+            const uint32_t reading_num = 2; // C12 and C18 are the 3rd voltage value stored
+                                            // in their respective registers.
 
             // Combine the 2 bytes of each cell voltage together
             cell_voltage_raw =
@@ -234,7 +239,7 @@ BTM_Status_t ST_shortedCells()
  *
  * @return OK if no open wires detected. Error code as described above if detected.
  **/
-BTM_Status_t ST_checkOpenWire()
+BTM_Status_t ST_checkOpenWire(void)
 {
     // 6x 6-byte sets (each from a different register group of the LTC6813) for each LTC6813
     uint8_t ADC_data[NUM_CELL_VOLT_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
@@ -325,7 +330,7 @@ BTM_Status_t ST_checkOpenWire()
  * @return OK if overlapping measurements are in agreement. Error status if ADCs do not produce the same
  * 		   voltage reading for each cell measured.
  */
-BTM_Status_t ST_checkOverlapVoltage()
+BTM_Status_t ST_checkOverlapVoltage(void)
 {
     // 2x 6-byte sets (each from a different register group of the LTC6813) for each LTC6813
     uint8_t ADC_data[OVERLAP_TEST_REGS][BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
@@ -375,11 +380,6 @@ BTM_Status_t ST_checkOverlapVoltage()
     {
         for (int cell = 0; cell < NUM_TEST_CELLS; cell++)
         {
-
-            // ANDREW: If you want to, you can do away with floats here and stick to integers
-            // because the storage format of the raw data as integers isn't actually
-            // hard to deal with - I can explain if you're curious
-
             float ADC1_voltage = overlapVoltage[board][2 * cell];
             float ADC2_voltage = overlapVoltage[board][2 * cell + 1];
             float delta = fabs(ADC1_voltage - ADC2_voltage);
@@ -489,7 +489,7 @@ BTM_Status_t ST_verifyDischarge(Pack_t *pack)
  *
  * @return void
  **/
-STATIC_TESTABLE void itmpConversion(uint16_t itmp[], float temp_celsius[])
+STATIC_TESTABLE void itmpConversion(uint16_t itmp[BTM_NUM_DEVICES], float temp_celsius[BTM_NUM_DEVICES])
 {
     const float itmp_coefficient = 0.013158;
     const float conversion_const = 276.0;

@@ -8,6 +8,8 @@
 
 #include "analysis.h"
 
+// TODO: add hysteresis to warning and trip thresholds for voltage and temp measurements
+
 /*============================================================================*/
 /* PRIVATE FUNCTION IMPLEMENTATIONS */
 
@@ -26,12 +28,9 @@ void mergeModuleStatusCodes(Pack_t *pack)
         status_result.raw |= pack->module[module_num].status.raw;
     }
 
-    // Force pack-wide faults to persist (faults triggered at the module level persist at that level
+    // Force pack-wide flags to persist (faults triggered at the module level persist at that level
     // an will be captured by the combining of codes above)
-    status_result.bits.fault_communications = pack->status.bits.fault_communications;
-    status_result.bits.fault_self_test = pack->status.bits.fault_self_test;
-    status_result.bits.fault_isolation_loss = pack->status.bits.fault_isolation_loss;
-    status_result.bits.fault_over_current = pack->status.bits.fault_over_current;
+    status_result.raw |= pack->status.raw & PACK_TOP_LEVEL_STATUS_BITS_MASK;
 
     pack->status.raw = status_result.raw;
 }
@@ -46,7 +45,7 @@ void writePackRegenStatus(Pack_t *pack)
     Pack_BatteryStatusCode_t *status = &(pack->status);
 
     if ( // Any faults, CHARGE_OT or HLIM
-        PACK_ANY_FAULTS_SET(status) ||
+        PACK_ANY_FAULTS_SET(*status) ||
         status->bits.charge_over_temperature_limit ||
         status->bits.hlim
     )

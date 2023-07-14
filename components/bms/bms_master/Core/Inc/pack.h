@@ -18,17 +18,28 @@
 #define PACK_NUM_BATTERY_MODULES 32U
 #define PACK_MODULE_VOLTAGE_LSB_PER_V 10000U // Module voltage in units of 10ths of a mV
 
+/*
+Mask includes:
+    fault_communications
+    fault_self_test
+    fault_isolation_loss
+    fault_over_current
+    warning_regen_off
+    warning_no_ecu_message
+*/
+#define PACK_TOP_LEVEL_STATUS_BITS_MASK 0x60063U
+
 #define PACK_ANY_FAULTS_SET(STATUS) (\
-    (STATUS)->bits.fault_communications || \
-    (STATUS)->bits.fault_self_test || \
-    (STATUS)->bits.fault_over_temperature || \
-    (STATUS)->bits.fault_under_voltage || \
-    (STATUS)->bits.fault_over_voltage || \
-    (STATUS)->bits.fault_isolation_loss || \
-    (STATUS)->bits.fault_over_current || \
-    (STATUS)->bits.fault_short || \
-    (STATUS)->bits.fault_temperature_expected_range \
-) // STATUS needs to be of type Pack_BatteryStatusCode_t*
+    (STATUS).bits.fault_communications || \
+    (STATUS).bits.fault_self_test || \
+    (STATUS).bits.fault_over_temperature || \
+    (STATUS).bits.fault_under_voltage || \
+    (STATUS).bits.fault_over_voltage || \
+    (STATUS).bits.fault_isolation_loss || \
+    (STATUS).bits.fault_over_current || \
+    (STATUS).bits.fault_short || \
+    (STATUS).bits.fault_temperature_expected_range \
+) // STATUS needs to be of type Pack_BatteryStatusCode_t
 
 /*============================================================================*/
 /* STRUCTURES */
@@ -55,11 +66,13 @@ typedef union {
         bool warning_low_temperature : 1;           // WARN_LOW_T
         bool warning_high_temperature : 1;          // WARN_HIGH_T
         bool warning_regen_off : 1;                 // WARN_REGEN_OFF
+        bool warning_no_ecu_message : 1;            // WARN_NO_ECU
 
         uint32_t _reserved : 14;
     } bits;
     uint32_t raw;
 } Pack_BatteryStatusCode_t;
+// If adding any "pack-wide" flag bits, be sure to update PACK_TOP_LEVEL_STATUS_BITS_MASK
 
 /*
  * NOTE: the Pack_module entity would be considered a "cell" by the LTC6813

@@ -22,18 +22,13 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "ltc6813_btm.h"
-#include "ltc6813_btm_temp.h"
-#include "ltc6813_btm_bal.h"
-#include "analysis.h"
-#include "balancing.h"
+#include "debug_io.h"
+#include "pack.h"
+#include "bms_main.h"
 #include "can.h"
 #include "control.h"
-#include "soc.h"
-// #include "selftest.h"
-#include "pack.h"
-#include "debug_io.h"
-#include <stdbool.h>
+#include "ltc6813_btm.h"
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,8 +38,12 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define LED_BLINK_INTERVAL 125 // milliseconds
-#define UPDATE_INTERVAL 1000 // milliseconds
+#define LED_BLINK_PATTERN_LENGTH 8U
+#define LED_NORMAL_BLINK_PATTERN 0b01010101U // Each bit is the on/off status for one interval
+#define LED_FAULT_BLINK_PATTERN  0b00000101U
+
+#define LED_BLINK_INTERVAL 500U // milliseconds
+#define UPDATE_INTERVAL 1000U // milliseconds
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -63,7 +62,7 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 
-Pack_t pack;
+static Pack_t pack;
 
 /* USER CODE END PV */
 
@@ -126,6 +125,7 @@ int main(void)
   uint32_t current_tick;
   uint32_t last_blink_tick = 0;
   uint32_t last_update_tick = 0;
+  uint32_t led_cycle = 0;
 
   /* USER CODE END 1 */
 
@@ -143,6 +143,8 @@ int main(void)
 
   /* USER CODE BEGIN SysInit */
 
+  memset((uint8_t *) &pack, 0U, sizeof(pack));
+
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -152,19 +154,15 @@ int main(void)
   MX_TIM3_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  
   DebugIO_Init(&huart1);
-
-  CONT_timer_handle = &htim3;
-
-  HAL_GPIO_WritePin(LED_OUT_GPIO_Port, LED_OUT_Pin, GPIO_PIN_SET); // Turn LED on
 
   // Initialize hardware and pack struct
   CAN_Init(&hcan);
-  CONT_init(); // control signals
+  CONT_init(&htim3, TIM_CHANNEL_3); // control signals
   BTM_init(&hspi2); // initialize the LTC6813s and driver state
 
-  startupChecks(&pack);
-
+  BMS_MAIN_startupChecks(&pack);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -176,14 +174,26 @@ int main(void)
     // update pack values and control signals if pack update interval has elapsed
     if (current_tick - last_update_tick >= UPDATE_INTERVAL)
     {
-      packUpdateAndControl(&pack);
+      BMS_MAIN_updatePackData(&pack);
+      BMS_MAIN_driveOutputs(&pack);
+      BMS_MAIN_sendCanMessages(&pack);
       last_update_tick = current_tick;
     }
 
     // blink LED on master board
     if (current_tick - last_blink_tick >= LED_BLINK_INTERVAL)
     {
-      HAL_GPIO_TogglePin(LED_OUT_GPIO_Port, LED_OUT_Pin);
+      uint32_t led_state = 0;
+      if (PACK_ANY_FAULTS_SET(pack.status))
+      {
+        led_state = (LED_FAULT_BLINK_PATTERN >> led_cycle) & 0x1U;
+      }
+      else
+      {
+        led_state = (LED_NORMAL_BLINK_PATTERN >> led_cycle) & 0x1U;
+      }
+      led_cycle = (led_cycle + 1U) % LED_BLINK_PATTERN_LENGTH;
+      HAL_GPIO_WritePin(LED_OUT_GPIO_Port, LED_OUT_Pin, led_state);
       last_blink_tick = current_tick;
     }
 
@@ -476,147 +486,21 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-/*============================================================================*/
-/* PRIVATE FUNCTIONS */
-
 /**
- * @brief TODO:
- *
- *
+ * Delay approximately 125 milliseconds, the simplest way
  */
-void packUpdateAndControl(Pack_t *pack)
+static void yeOldeDelay(void)
 {
-  // Temperature
-  uint32_t fan_PWM = 0;
-  float max_temp = 0;
-  // ECU CAN Message
-  int32_t pack_current = 0;
-  uint8_t DOC_COC_active = 0;
-  // Other
-  uint32_t current_tick;
-  static uint8_t initial_soc_measurement_flag = 1;
-  bool HLIM_status = false;
-
-  current_tick = HAL_GetTick();
-
-  // Recieve ECU CAN message
-// FIXME: convert to interrupt-based instead
-  if (DOC_COC_active)
+  uint32_t clockFreq = HAL_RCC_GetSysClockFreq();
+  // Scale factor between repetitions and clock frequency is related to
+  // number of clock cycles needed to execute loop - determined imperically
+  uint32_t repetitions = clockFreq / (9U * 8U); // 9 clock cycles per loop, 1s / 125ms = 8
+  for (uint32_t i = 0; i < repetitions; i++)
   {
-    pack->status.bits.fault_over_current = true; // set FLT_DOC_COC bit
+    asm volatile (
+      "NOP\n"
+    );
   }
-
-  // TODO: isolation sensor check (if it's BMS's responsibilty)
-
-  // get pack measurements
-  if (BTM_getVoltages(pack).error != BTM_OK || BTM_TEMP_getTemperatures(pack).error != BTM_OK)
-  {
-    pack->status.bits.fault_communications = true;
-  }
-
-  // SOC estimation
-  if (initial_soc_measurement_flag) // only preform initilization of SOC once (at startup)
-  {
-    SOC_allModulesInit(pack);
-    initial_soc_measurement_flag = 0;
-  }
-  else
-  {
-    SOC_allModulesEst(pack, pack_current, current_tick);
-  }
-
-  // write pack status code
-  ANA_analyzePack(pack);
-
-  // if any fault active, drive FLT, COM, OT GPIOs, turn off balancing, drive fans 100%
-  if (PACK_ANY_FAULTS_SET(&(pack->status)))
-  {
-    CONT_FLT_switch(PACK_ANY_FAULTS_SET(&(pack->status)) ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_COM_switch(pack->status.bits.fault_communications ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_OT_switch(pack->status.bits.fault_over_temperature ? CONT_ACTIVE : CONT_INACTIVE);
-    stopBalancing(pack);
-    CONT_BAL_switch(pack->status.bits.balancing_active ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_FAN_PWM_set(FAN_FULL);
-  }
-  else // no fault; balance modules, drive control signals and fans
-  {
-    BAL_updateBalancing(pack); // write bal settings, send bal commands
-    CONT_BAL_switch(pack->status.bits.balancing_active ? CONT_ACTIVE : CONT_INACTIVE);
-
-    // HLIM active if TRIP_HLIM or TRIP_CHARGE_OT are active
-    HLIM_status = pack->status.bits.hlim || pack->status.bits.charge_over_temperature_limit;
-    CONT_HLIM_switch(HLIM_status ? CONT_ACTIVE : CONT_INACTIVE);
-    CONT_LLIM_switch((pack->status.bits.llim) ? CONT_ACTIVE : CONT_INACTIVE);
-
-    // set fans
-    if (pack->status.bits.charge_over_temperature_limit) // if TRIP_CHARGE_OT active, drive fans 100%
-    {
-      fan_PWM = FAN_FULL;
-    }
-    else // otherwise, fans set proportional to temperature
-    {
-      max_temp = ANA_findHighestModuleTemp(pack);
-      fan_PWM = CONT_fanPwmFromTemp(max_temp);
-    }
-    CONT_FAN_PWM_set(fan_PWM);
-  }
-
-  return;
-}
-
-/**
- * @brief Preforms initial system checks
- * Writes COMM bit in status code if checks fail
- */
-void startupChecks(Pack_t *pack)
-{
-  uint8_t test_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {{0x55, 0x6E, 0x69, 0x42, 0x43, 0x20}, {0x53, 0x6f, 0x6c, 0x61, 0x72, 0x21}};
-  uint8_t test_data_rx[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
-  BTM_Status_t comm_status = {BTM_OK, 0};
-  bool reg_group_match;
-
-  BTM_writeRegisterGroup(CMD_WRCOMM, test_data);
-  comm_status = BTM_readRegisterGroup(CMD_RDCOMM, test_data_rx);
-  reg_group_match = doesRegGroupMatch(test_data, test_data_rx);
-
-  // checks for comms error
-  // note: a lack of comms is different than the self-tests failing
-  if (comm_status.error != BTM_OK)
-  {
-    pack->status.bits.fault_communications = true;
-  }
-  if (!reg_group_match)
-  {
-    pack->status.bits.fault_self_test = true;
-  }
-}
-
-/**
- * @brief Helper function for initial system checks
- * Returns true for full match, false otherwise
- */
-bool doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
-                       uint8_t reg_group2[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
-{
-  for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
-  {
-    for (int i = 0; i < BTM_REG_GROUP_SIZE; i++)
-    {
-      if (reg_group1[ic_num][i] != reg_group2[ic_num][i])
-        return false;
-    }
-  }
-  return true;
-}
-
-/**
- * @brief Helper function to stop balancing for all modules
- *
- */
-void stopBalancing(Pack_t *pack)
-{
-  bool discharge_setting[PACK_NUM_BATTERY_MODULES] = {false};
-  BTM_BAL_setDischarge(pack, discharge_setting);   // writes balancing commands for all modules
 }
 
 /* USER CODE END 4 */
@@ -629,6 +513,13 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  CONT_FLT_switch(true);
+  while (1)
+  {
+    HAL_GPIO_TogglePin(LED_OUT_GPIO_Port, LED_OUT_Pin);
+    yeOldeDelay();
+  }
 
   /* USER CODE END Error_Handler_Debug */
 }

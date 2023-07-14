@@ -16,15 +16,8 @@
 #define INC_CONTROL_H_
 
 #include "main.h" // Included for port and pin definitions,
-                  //  plus HAL library inclusion (stm32f3xx_hal.h)
-
-/*============================================================================*/
-/* ENUMERATIONS */
-
-typedef enum {
-    CONT_INACTIVE = 0,
-    CONT_ACTIVE = 1
-} CONT_signal_state_t;
+#include "stm32f1xx.h"
+#include <stdbool.h>                  
 
 /*============================================================================*/
 /* CONFIGURABLE PARAMETERS */
@@ -56,7 +49,6 @@ typedef enum {
 #define CONT_LLIM_POLARITY 0
 #define CONT_OT_POLARITY 0
 
-#define CONT_TIM_CHANNEL TIM_CHANNEL_3 // must match the peripheral config
 #define PWM_DIVISIONS 360 // This should be equal to the value of the
 // auto-reload register of the timer used for PWM generation + 1
 
@@ -74,30 +66,16 @@ typedef enum {
 #define FAN_RAMP_SLOPE  ((FAN_FULL - MIN_FAN_PWM) / (FAN_FULL_TEMP - FAN_OFF_TEMP))
 
 /*============================================================================*/
-/* PUBLIC VARAIBLES */
-
-TIM_HandleTypeDef * CONT_timer_handle;
-
-// For code outside control.c, consider these READ-ONLY
-CONT_signal_state_t CONT_BAL_state;
-CONT_signal_state_t CONT_COM_state;
-CONT_signal_state_t CONT_FLT_state;
-CONT_signal_state_t CONT_HLIM_state;
-CONT_signal_state_t CONT_LLIM_state;
-CONT_signal_state_t CONT_OT_state;
-unsigned int CONT_FAN_PWM_percent;
-
-/*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
-void CONT_init(void);
+void CONT_init(TIM_HandleTypeDef *timer_handle, uint32_t timer_pwm_channel);
 
-void CONT_BAL_switch(CONT_signal_state_t new_state);
-void CONT_COM_switch(CONT_signal_state_t new_state);
-void CONT_FLT_switch(CONT_signal_state_t new_state);
-void CONT_HLIM_switch(CONT_signal_state_t new_state);
-void CONT_LLIM_switch(CONT_signal_state_t new_state);
-void CONT_OT_switch(CONT_signal_state_t new_state);
+void CONT_BAL_switch(bool new_state);
+void CONT_COM_switch(bool new_state);
+void CONT_FLT_switch(bool new_state);
+void CONT_HLIM_switch(bool new_state);
+void CONT_LLIM_switch(bool new_state);
+void CONT_OT_switch(bool new_state);
 void CONT_FAN_PWM_set(unsigned int pwm_val);
 unsigned int CONT_fanPwmFromTemp(float temp);
 
