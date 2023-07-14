@@ -321,7 +321,9 @@ void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[BTM_NUM_DEVIC
 	{
 		for (int j = 0; j < BTM_REG_GROUP_SIZE; j++)
 		{
-			tx_message[j] = tx_data[i][j];
+			// LTC6813 register group writes' data are ordered with data for the last device in the chain first
+			// This is the opposite of a register group read's device ordering
+			tx_message[j] = tx_data[(BTM_NUM_DEVICES - 1) - i][j];
 		}
 		pecValue = calculatePec15(tx_message, BTM_REG_GROUP_SIZE);
 		tx_message[6] = (uint8_t) (pecValue >> 8);
