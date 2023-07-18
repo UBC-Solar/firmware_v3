@@ -1,32 +1,34 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+ * All rights reserved.</center></h2>
+ *
+ * This software component is licensed by ST under BSD 3-Clause license,
+ * the "License"; You may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at:
+ *                        opensource.org/licenses/BSD-3-Clause
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <stdio.h>
 #include "debug_io.h"
-#include "fsm.h"
-#include "ltc6813_btm.h"
+#include "pack.h"
+#include "bms_main.h"
+#include "can.h"
 #include "control.h"
+#include "ltc6813_btm.h"
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -36,7 +38,12 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define LED_BLINK_INTERVAL 500
+#define LED_BLINK_PATTERN_LENGTH 8U
+#define LED_NORMAL_BLINK_PATTERN 0b01010101U // Each bit is the on/off status for one interval
+#define LED_FAULT_BLINK_PATTERN  0b00000101U
+
+#define LED_BLINK_INTERVAL 500U // milliseconds
+#define UPDATE_INTERVAL 1000U // milliseconds
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -55,6 +62,8 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 
+static Pack_t pack;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -65,11 +74,50 @@ static void MX_SPI2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
+bool doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
+                       uint8_t reg_group2[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE]);
+void packUpdateAndControl(Pack_t *pack);
+void startupChecks(Pack_t *pack);
+void analyzePack(Pack_t *pack);
+void stopBalancing(Pack_t *pack);
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+/*============================================================================*/
+/* CAN INTERRUPT CALLBACKS */
+
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+  UNUSED(hcan);
+  CAN_TxCompleteCallback();
+}
+
+void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+  UNUSED(hcan);
+  CAN_TxCompleteCallback();
+}
+
+void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+  UNUSED(hcan);
+  CAN_TxCompleteCallback();
+}
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  UNUSED(hcan);
+  CAN_RecievedMessageCallback();
+}
+
+void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
+{
+  UNUSED(hcan);
+  CAN_ErrorCallback();
+}
 
 /* USER CODE END 0 */
 
@@ -80,13 +128,11 @@ static void MX_USART1_UART_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
-  // BMS Data structures
-  BTM_PackData_t pack;
-  BTM_BAL_dch_setting_pack_t dch_setting_pack;
-
-  unsigned int current_blink_tick = 0;
-  unsigned int last_blink_tick = 0;
+  uint32_t current_tick;
+  // First update should be right away
+  uint32_t last_blink_tick = -LED_BLINK_INTERVAL;
+  uint32_t last_update_tick = -UPDATE_INTERVAL;
+  uint32_t led_cycle = 0;
 
   /* USER CODE END 1 */
 
@@ -104,6 +150,8 @@ int main(void)
 
   /* USER CODE BEGIN SysInit */
 
+  memset((uint8_t *) &pack, 0U, sizeof(pack));
+
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -113,31 +161,47 @@ int main(void)
   MX_TIM3_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  
   DebugIO_Init(&huart1);
 
-  // Give the BMS functionality access to hardware resources
-  BTM_SPI_handle = &hspi2;
-  CONT_timer_handle = &htim3;
+  // Initialize hardware and pack struct
+  CAN_Init(&hcan);
+  CONT_init(&htim3, TIM_CHANNEL_3); // control signals
+  BTM_init(&hspi2); // initialize the LTC6813s and driver state
 
-  FSM_init();
-
-  HAL_GPIO_WritePin(LED_OUT_GPIO_Port, LED_OUT_Pin, GPIO_PIN_SET); // Turn LED on
-  current_blink_tick = HAL_GetTick();
-
+  BMS_MAIN_startupChecks(&pack);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    FSM_run(&pack, &dch_setting_pack);
+    current_tick = HAL_GetTick();
+
+    // update pack values and control signals if pack update interval has elapsed
+    if (current_tick - last_update_tick >= UPDATE_INTERVAL)
+    {
+      BMS_MAIN_updatePackData(&pack);
+      BMS_MAIN_driveOutputs(&pack);
+      BMS_MAIN_sendCanMessages(&pack);
+      last_update_tick = current_tick;
+    }
 
     // blink LED on master board
-    current_blink_tick = HAL_GetTick();
-    if (current_blink_tick - last_blink_tick >= LED_BLINK_INTERVAL)
+    if (current_tick - last_blink_tick >= LED_BLINK_INTERVAL)
     {
-        HAL_GPIO_TogglePin(LED_OUT_GPIO_Port, LED_OUT_Pin);
-        last_blink_tick = current_blink_tick;
+      uint32_t led_state = 0;
+      if (PACK_ANY_FAULTS_SET(pack.status))
+      {
+        led_state = (LED_FAULT_BLINK_PATTERN >> led_cycle) & 0x1U;
+      }
+      else
+      {
+        led_state = (LED_NORMAL_BLINK_PATTERN >> led_cycle) & 0x1U;
+      }
+      led_cycle = (led_cycle + 1U) % LED_BLINK_PATTERN_LENGTH;
+      HAL_GPIO_WritePin(LED_OUT_GPIO_Port, LED_OUT_Pin, led_state);
+      last_blink_tick = current_tick;
     }
 
     /* USER CODE END WHILE */
@@ -213,11 +277,11 @@ static void MX_CAN_Init(void)
   hcan.Init.TimeSeg1 = CAN_BS1_12TQ;
   hcan.Init.TimeSeg2 = CAN_BS2_3TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
-  hcan.Init.AutoBusOff = DISABLE;
+  hcan.Init.AutoBusOff = ENABLE;
   hcan.Init.AutoWakeUp = DISABLE;
-  hcan.Init.AutoRetransmission = DISABLE;
+  hcan.Init.AutoRetransmission = ENABLE;
   hcan.Init.ReceiveFifoLocked = DISABLE;
-  hcan.Init.TransmitFifoPriority = DISABLE;
+  hcan.Init.TransmitFifoPriority = ENABLE;
   if (HAL_CAN_Init(&hcan) != HAL_OK)
   {
     Error_Handler();
@@ -429,6 +493,23 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+/**
+ * Delay approximately 125 milliseconds, the simplest way
+ */
+static void yeOldeDelay(void)
+{
+  uint32_t clockFreq = HAL_RCC_GetSysClockFreq();
+  // Scale factor between repetitions and clock frequency is related to
+  // number of clock cycles needed to execute loop - determined imperically
+  uint32_t repetitions = clockFreq / (9U * 8U); // 9 clock cycles per loop, 1s / 125ms = 8
+  for (uint32_t i = 0; i < repetitions; i++)
+  {
+    asm volatile (
+      "NOP\n"
+    );
+  }
+}
+
 /* USER CODE END 4 */
 
 /**
@@ -439,6 +520,13 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  CONT_FLT_switch(true);
+  while (1)
+  {
+    HAL_GPIO_TogglePin(LED_OUT_GPIO_Port, LED_OUT_Pin);
+    yeOldeDelay();
+  }
 
   /* USER CODE END Error_Handler_Debug */
 }

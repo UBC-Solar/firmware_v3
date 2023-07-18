@@ -14,7 +14,7 @@
 #include "util.h"
 #include <stdint.h>
 #include "stm32f1xx_hal.h"
-#include "ltc6813_btm.h"
+#include "pack.h"
 
 /*============================================================================*/
 /* PUBLIC DEFINITIONS */
@@ -33,15 +33,15 @@
 
 //functions for initializing the SOC of the modules
 float SOC_moduleInit(float cell_voltage);
-void SOC_allModulesInit(BTM_PackData_t * pack);
+void SOC_allModulesInit(Pack_t *pack);
 
 //functions require calling each time when CAN transmits a new current to update our SOC estimation
 float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, int32_t current_reading, uint32_t total_time_elasped);
-void SOC_allModulesEst(BTM_PackData_t * pack, int32_t current_reading, uint32_t total_time_elasped);
+void SOC_allModulesEst(Pack_t *pack, int32_t current_reading, uint32_t total_time_elasped);
 
-//functions to get data for CAN message 0x626
-uint8_t getDOD(BTM_PackData_t * pack);
-uint8_t getCapacity(BTM_PackData_t * pack);
+// functions for getting SOC-related parameters
+float SOC_getDOD(float capacity);
+float SOC_getCapacity(float soc);
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */

@@ -99,6 +99,7 @@
     - stdout_pretty_tests_report
     - module_generator
     - raw_output_report
+    - xml_tests_report # produces file report.xml in /artifacts/tests
 
 :module_generator:
   :project_root: ./
