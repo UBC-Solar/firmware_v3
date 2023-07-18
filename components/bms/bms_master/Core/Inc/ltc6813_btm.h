@@ -288,6 +288,7 @@ extern BTM_Data_t BTM_data;
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 void BTM_init(SPI_HandleTypeDef *SPI_handle);
+void BTM_wakeup(void);
 void BTM_sendCmd(BTM_command_t command);
 BTM_Status_t BTM_sendCmdAndPoll(BTM_command_t command);
 void BTM_writeRegisterGroup(BTM_command_t command, uint8_t tx_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE]);

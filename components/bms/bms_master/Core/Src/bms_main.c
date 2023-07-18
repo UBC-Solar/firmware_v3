@@ -168,6 +168,7 @@ void BMS_MAIN_updatePackData(Pack_t *pack)
     // TODO: isolation sensor check (if it's BMS's responsibilty)
 
     // get pack measurements
+    BTM_wakeup(); // With 1s update rate, LTC6813 watchdog won't time out but its isoSPI interface does, so need wakeup
     if (BTM_getVoltages(pack).error != BTM_OK)
     {
         pack->status.bits.fault_communications = true;
@@ -220,7 +221,7 @@ void BMS_MAIN_driveOutputs(Pack_t *pack)
     }
     else // no fault; balance modules, drive control signals and fans
     {
-        // TODO: // BAL_updateBalancing(pack); // write bal settings, send bal commands
+        BAL_updateBalancing(pack); // write bal settings, send bal commands
         CONT_BAL_switch(pack->status.bits.balancing_active);
 
         // HLIM active if TRIP_HLIM or TRIP_CHARGE_OT are active

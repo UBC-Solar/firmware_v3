@@ -23,7 +23,7 @@
 // Faults
 #define FLT_OV_THRESHOLD 42100U             // 4.2100 V
 #define FLT_UV_THRESHOLD 27000U             // 2.7000 V
-#define FLT_SHORT_THRESHOLD 05000U          // 0.5000 V
+#define FLT_SHORT_THRESHOLD 5000U           // 0.5000 V
 #define FLT_TEMP_RANGE_LOW_THRESHOLD 0.0    // degrees C
 #define FLT_TEMP_RANGE_HIGH_THRESHOLD 150.0 // degrees C
 #define FLT_OT_THRESHOLD 65.0               // degrees C

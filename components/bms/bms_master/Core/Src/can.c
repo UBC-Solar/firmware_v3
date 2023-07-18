@@ -115,11 +115,12 @@ static void populateCanTxMailbox(void)
 
     CAN_TxMessage_t *next_message = (CAN_TxMessage_t *) &CAN_data.tx_queue[CAN_data.tx_queue_pop_index];
 
-    // Initiate interrupt-driven CAN transfer
+    // Initiate CAN transfer
     if (HAL_OK != HAL_CAN_AddTxMessage(CAN_data.can_handle, &next_message->tx_header, next_message->data, &mailbox))
     {
         Error_Handler();
     }
+    CAN_data.tx_queue_pop_index = (CAN_data.tx_queue_pop_index + 1U) % TX_QUEUE_MAX_NUM_MESSAGES;
 }
 
 /**
@@ -404,6 +405,9 @@ bool CAN_GetMessage0x450Data(int8_t *pack_current, uint8_t *low_voltage_current,
     return new_rx_message;
 }
 
+/*============================================================================*/
+/* PUBLIC CALLBACK FUNCTION IMPLEMENTATIONS */
+
 /**
  * @brief Handle a CAN RX message pending interrupt for the FIFO configured to receive ECU current message
  * 
@@ -437,10 +441,47 @@ void CAN_RecievedMessageCallback(void)
  */
 void CAN_TxCompleteCallback(void)
 {
-    CAN_data.tx_queue_pop_index = (CAN_data.tx_queue_pop_index + 1U) % TX_QUEUE_MAX_NUM_MESSAGES;
     if (CAN_data.tx_queue_pop_index != CAN_data.tx_queue_push_index)
     {
         // Initiate next message transmission if possible
         populateCanTxMailbox();
+    }
+    else
+    {
+        // No more messages in the queue to send
+    }
+}
+
+/**
+ * @brief Handle a CAN TX complete interrupt with error for any of the 3 CAN TX mailboxes
+ * 
+ * This function needs to be called from HAL_CAN_ErrorCallback()
+ * 
+ * @note This function has not been written to handle the CAN error interrupt,
+ * just a TX complete interrupt for TX completion with errors
+ */
+void CAN_ErrorCallback(void)
+{
+    // This callback is needed if automatic retransmission is DISABLED in the CAN peripheral's configuration
+    // If board is disconnected from CAN bus, TX requests will complete with error
+    // due to lack of CAN message acknowledgement from another device.
+    // Continue as if this was a clean transmission completion; note that multiple
+    // TX mailboxes may need an error serviced in one interrupt
+
+    // With automatic retransmission ENABLED, and board is disconnected from CAN bus or no other devices on bus are active),
+    // messages go unacknowledged, do not complete and are repeatedly sent indefinitely.
+    // The CAN_data.tx_queue will overflow and the firmware will fault
+
+    if (CAN_data.can_handle->ErrorCode & (HAL_CAN_ERROR_TX_TERR0))
+    {
+        CAN_TxCompleteCallback();
+    }
+    if (CAN_data.can_handle->ErrorCode & (HAL_CAN_ERROR_TX_TERR1))
+    {
+        CAN_TxCompleteCallback();
+    }
+    if (CAN_data.can_handle->ErrorCode & (HAL_CAN_ERROR_TX_TERR2))
+    {
+        CAN_TxCompleteCallback();
     }
 }

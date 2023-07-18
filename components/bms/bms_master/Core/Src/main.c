@@ -113,6 +113,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   CAN_RecievedMessageCallback();
 }
 
+void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
+{
+  UNUSED(hcan);
+  CAN_ErrorCallback();
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -123,8 +129,9 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
   uint32_t current_tick;
-  uint32_t last_blink_tick = 0;
-  uint32_t last_update_tick = 0;
+  // First update should be right away
+  uint32_t last_blink_tick = -LED_BLINK_INTERVAL;
+  uint32_t last_update_tick = -UPDATE_INTERVAL;
   uint32_t led_cycle = 0;
 
   /* USER CODE END 1 */
@@ -270,7 +277,7 @@ static void MX_CAN_Init(void)
   hcan.Init.TimeSeg1 = CAN_BS1_12TQ;
   hcan.Init.TimeSeg2 = CAN_BS2_3TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
-  hcan.Init.AutoBusOff = DISABLE;
+  hcan.Init.AutoBusOff = ENABLE;
   hcan.Init.AutoWakeUp = DISABLE;
   hcan.Init.AutoRetransmission = ENABLE;
   hcan.Init.ReceiveFifoLocked = DISABLE;

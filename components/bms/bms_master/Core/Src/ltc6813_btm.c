@@ -152,7 +152,7 @@ BTM_Status_t processHALStatus(HAL_StatusTypeDef status_HAL, unsigned int device_
  * Wakes up the daisy chain as per method described on pg. 52 of datasheet
  * (method 2)
  */
-void BTM_wakeup()
+void BTM_wakeup(void)
 {
     // Using HAL_Delay() for this is not particularly ideal, since the
     // minimum delay is 1ms and the delays required are 300us and

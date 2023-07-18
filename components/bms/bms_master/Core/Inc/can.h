@@ -34,5 +34,6 @@ bool CAN_GetMessage0x450Data(int8_t *pack_current, uint8_t *low_voltage_current,
 
 void CAN_RecievedMessageCallback(void);
 void CAN_TxCompleteCallback(void);
+void CAN_ErrorCallback(void);
 
 #endif // INC_CAN_H_
