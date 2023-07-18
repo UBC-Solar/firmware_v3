@@ -8,8 +8,6 @@
 
 #include "analysis.h"
 
-// TODO: add hysteresis to warning and trip thresholds for voltage and temp measurements
-
 /*============================================================================*/
 /* PRIVATE FUNCTION IMPLEMENTATIONS */
 
@@ -79,7 +77,7 @@ void findModuleTempState(Pack_BatteryStatusCode_t *status, float temperature)
     {
         status->bits.charge_over_temperature_limit = true;
     }
-    else
+    else if (temperature < (TRIP_CHARGE_OT_THRESHOLD - TEMPERATURE_THRESHOLD_HYSTERESIS))
     {
         status->bits.charge_over_temperature_limit = false;
     }
@@ -90,7 +88,7 @@ void findModuleTempState(Pack_BatteryStatusCode_t *status, float temperature)
     {
         status->bits.warning_high_temperature = true;
     }
-    else
+    else if (temperature < (WARN_HIGH_T_THRESHOLD - TEMPERATURE_THRESHOLD_HYSTERESIS))
     {
         status->bits.warning_high_temperature = false;
     }
@@ -99,7 +97,7 @@ void findModuleTempState(Pack_BatteryStatusCode_t *status, float temperature)
     {
         status->bits.warning_low_temperature = true;
     }
-    else
+    else if (temperature > (WARN_LOW_T_THRESHOLD + TEMPERATURE_THRESHOLD_HYSTERESIS))
     {
         status->bits.warning_low_temperature = false;
     }
@@ -132,7 +130,7 @@ void findModuleVoltState(Pack_BatteryStatusCode_t *status, uint16_t voltage)
     {
         status->bits.llim = true;
     }
-    else
+    else if (voltage > (TRIP_LLIM_THRESHOLD + VOLTAGE_THRESHOLD_HYSTERESIS))
     {
         status->bits.llim = false;
     }
@@ -141,7 +139,7 @@ void findModuleVoltState(Pack_BatteryStatusCode_t *status, uint16_t voltage)
     {
         status->bits.hlim = true;
     }
-    else
+    else if (voltage < (TRIP_HLIM_THRESHOLD - VOLTAGE_THRESHOLD_HYSTERESIS))
     {
         status->bits.hlim = false;
     }
@@ -152,7 +150,7 @@ void findModuleVoltState(Pack_BatteryStatusCode_t *status, uint16_t voltage)
     {
         status->bits.warning_high_voltage = true;
     }
-    else
+    else if (voltage < (WARN_HIGH_V_THRESHOLD - VOLTAGE_THRESHOLD_HYSTERESIS))
     {
         status->bits.warning_high_voltage = false;
     }
@@ -161,7 +159,7 @@ void findModuleVoltState(Pack_BatteryStatusCode_t *status, uint16_t voltage)
     {
         status->bits.warning_low_voltage = true;
     }
-    else
+    else if (voltage > (WARN_LOW_V_THRESHOLD + VOLTAGE_THRESHOLD_HYSTERESIS))
     {
         status->bits.warning_low_voltage = false;
     }

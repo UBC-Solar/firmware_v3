@@ -39,6 +39,12 @@
 #define WARN_LOW_T_THRESHOLD 10.0    // degrees C
 #define WARN_HIGH_T_THRESHOLD 45.0   // degrees C
 
+// Hysteresis prevents spurious flip-flopping of status bits
+// derived from measurements if a measurement is right around
+// a threshold and not very steady
+#define VOLTAGE_THRESHOLD_HYSTERESIS 100U // 0.01 V
+#define TEMPERATURE_THRESHOLD_HYSTERESIS 2.0 // degrees C
+
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
