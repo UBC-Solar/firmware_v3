@@ -17,7 +17,7 @@
 
 #define UPDATE_FLAGS_DELAY 5		  // updateFlags rtos task delay time in ms
 #define UPDATE_STATE_DELAY 5		  // updateState rtos task delay time in ms
-#define SEND_MOTOR_COMMAND_DELAY 10	  // sendMotorCommand rtos task delay time in ms
+#define SEND_MOTOR_COMMAND_DELAY 100	  // sendMotorCommand rtos task delay time in ms
 #define GET_ADC_VALUES_DELAY 10		  // getADCValues rtos task delay time in ms
 #define GET_BATTERY_SOC_DELAY 5000	  // getBatterySOC rtos task delay time in ms
 #define GET_VELOCITY_DELAY 500		  // getVelocity rtos task delay time in ms

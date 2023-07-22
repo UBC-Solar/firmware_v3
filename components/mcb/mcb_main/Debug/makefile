@@ -64,8 +64,8 @@ all: main-build
 main-build: mcb_main.elf secondary-outputs
 
 # Tool invocations
-mcb_main.elf mcb_main.map: $(OBJS) $(USER_OBJS) ../STM32F103RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "mcb_main.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"../STM32F103RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="mcb_main.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+mcb_main.elf mcb_main.map: $(OBJS) $(USER_OBJS) C:\Users\kcgro\Documents\GitHub\firmware_v3\components\mcb\mcb_main\STM32F103RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "mcb_main.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\kcgro\Documents\GitHub\firmware_v3\components\mcb\mcb_main\STM32F103RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="mcb_main.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

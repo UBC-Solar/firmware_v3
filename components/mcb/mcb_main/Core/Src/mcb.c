@@ -32,6 +32,7 @@ void SendCANMotorCommand(float current, float velocity)
 		data_send[i] = v.bytes[i];
 	    data_send[4 + i] = c.bytes[i];
 	}
+	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 	HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
 }
 
