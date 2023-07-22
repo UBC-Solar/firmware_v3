@@ -321,6 +321,7 @@ void getBatterySOC(void *argument)
 	/* Infinite loop */
 	for(;;)
 	{
+		/*
 		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
 		{
 			// there are multiple CAN IDs being passed through the filter, check if the message is the SOC
@@ -336,6 +337,8 @@ void getBatterySOC(void *argument)
 
 	  		osDelay(GET_BATTERY_SOC_DELAY);
 		}
+		*/
+		osDelay(GET_BATTERY_SOC_DELAY);
 	}
   /* USER CODE END getBatterySOC */
 }
@@ -355,6 +358,7 @@ void getVelocity(void *argument)
 	/* Infinite loop */
 	for(;;)
 	{
+		/*
 		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
 		{
 			// there are multiple CAN IDs being passed through the filter, check if the message is the SOC
@@ -368,7 +372,9 @@ void getVelocity(void *argument)
 				velocity_of_car = velocity.float_value;
 			}
 		}
+		*/
 		osDelay(GET_VELOCITY_DELAY);
+
 	}
   /* USER CODE END getVelocity */
 }
