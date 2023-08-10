@@ -126,6 +126,7 @@ void Error_Handler(void);
 #define COM_BMS_GPIO_Port GPIOB
 #define LLIM_Pin GPIO_PIN_7
 #define LLIM_GPIO_Port GPIOB
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
@@ -135,5 +136,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

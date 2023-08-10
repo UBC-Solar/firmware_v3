@@ -20,7 +20,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "adc.h"
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -57,8 +56,7 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern DMA_HandleTypeDef hdma_adc3;
-extern ADC_HandleTypeDef hadc3;
+
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -192,7 +190,6 @@ void SysTick_Handler(void)
 
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
-
   /* USER CODE BEGIN SysTick_IRQn 1 */
 
   //ADC ISRs are called for every ADC_COUNT
@@ -219,35 +216,6 @@ void SysTick_Handler(void)
 /* please refer to the startup file (startup_stm32f1xx.s).                    */
 /******************************************************************************/
 
-/**
-  * @brief This function handles ADC3 global interrupt.
-  */
-void ADC3_IRQHandler(void)
-{
-  /* USER CODE BEGIN ADC3_IRQn 0 */
-
-  /* USER CODE END ADC3_IRQn 0 */
-  HAL_ADC_IRQHandler(&hadc3);
-  /* USER CODE BEGIN ADC3_IRQn 1 */
-
-  /* USER CODE END ADC3_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA2 channel4 and channel5 global interrupts.
-  */
-void DMA2_Channel4_5_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA2_Channel4_5_IRQn 0 */
-
-  /* USER CODE END DMA2_Channel4_5_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_adc3);
-  /* USER CODE BEGIN DMA2_Channel4_5_IRQn 1 */
-
-  /* USER CODE END DMA2_Channel4_5_IRQn 1 */
-}
-
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
