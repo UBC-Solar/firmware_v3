@@ -138,7 +138,7 @@ int main(void)
   CAN_hcan = &hcan;
   
   HAL_CAN_Start(&hcan);
-  ADC3_Init(&hadc3, &htim8);
+  // ADC3_Init(&hadc3, &htim8);
   FSM_init();
   
   /* USER CODE END 2 */
