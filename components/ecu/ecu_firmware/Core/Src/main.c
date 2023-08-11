@@ -37,6 +37,11 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define LED_BLINK_INTERVAL 500U // milliseconds
+#define LED_NORMAL_BLINK_PATTERN 0b01010101U
+#define LED_BLINK_PATTERN_LENGTH 8U
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -46,10 +51,10 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
-ADC_HandleTypeDef hadc2;
-ADC_HandleTypeDef hadc3;
 
 CAN_HandleTypeDef hcan;
+
+UART_HandleTypeDef huart5;
 
 /* USER CODE BEGIN PV */
 
@@ -59,9 +64,8 @@ CAN_HandleTypeDef hcan;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
-static void MX_ADC2_Init(void);
-static void MX_ADC3_Init(void);
 static void MX_CAN_Init(void);
+static void MX_UART5_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -95,12 +99,16 @@ void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
 /* USER CODE END 0 */
 
 /**
- * @brief  The application entry point.
- * @retval int
- */
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+
+  uint32_t current_tick;
+  uint32_t last_blink_tick = -LED_BLINK_INTERVAL; // want LED to blink immediately
+  uint32_t led_cycle = 0;
 
   /* USER CODE END 1 */
 
@@ -123,27 +131,42 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_ADC1_Init();
-  MX_ADC2_Init();
-  MX_ADC3_Init();
   MX_CAN_Init();
+  MX_UART5_Init();
   /* USER CODE BEGIN 2 */
+
   CAN_hcan = &hcan;
+  
   HAL_CAN_Start(&hcan);
   ADC3_Init(&hadc3, &htim8);
   FSM_init();
+  
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
+    current_tick = HAL_GetTick();
+
+    // blink LED on master board
+    if (current_tick - last_blink_tick >= LED_BLINK_INTERVAL)
+    {
+      uint32_t led_state = (LED_NORMAL_BLINK_PATTERN >> led_cycle) & 0x1U;
+      led_cycle = (led_cycle + 1U) % LED_BLINK_PATTERN_LENGTH;
+
+      HAL_GPIO_WritePin(LED_OUT_GPIO_Port, LED_OUT_Pin, led_state);
+      
+      last_blink_tick = current_tick;
+    }
+
     // FSM_run();
 
     // TESTING TODOs:
+    // complete testing functions
     // timer for ADC sampling
-    // correct pinout for ECU PCB
-    // complete testing function
+    
+    /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   }
@@ -151,9 +174,9 @@ int main(void)
 }
 
 /**
- * @brief System Clock Configuration
- * @retval None
- */
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -161,22 +184,24 @@ void SystemClock_Config(void)
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
-   * in the RCC_OscInitTypeDef structure.
-   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -187,7 +212,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV8;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -195,10 +220,10 @@ void SystemClock_Config(void)
 }
 
 /**
- * @brief ADC1 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief ADC1 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_ADC1_Init(void)
 {
 
@@ -213,7 +238,7 @@ static void MX_ADC1_Init(void)
   /* USER CODE END ADC1_Init 1 */
 
   /** Common config
-   */
+  */
   hadc1.Instance = ADC1;
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
@@ -227,8 +252,8 @@ static void MX_ADC1_Init(void)
   }
 
   /** Configure Regular Channel
-   */
-  sConfig.Channel = ADC_CHANNEL_1;
+  */
+  sConfig.Channel = ADC_CHANNEL_5;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
@@ -238,105 +263,14 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
+
 }
 
 /**
- * @brief ADC2 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_ADC2_Init(void)
-{
-
-  /* USER CODE BEGIN ADC2_Init 0 */
-
-  /* USER CODE END ADC2_Init 0 */
-
-  ADC_ChannelConfTypeDef sConfig = {0};
-
-  /* USER CODE BEGIN ADC2_Init 1 */
-
-  /* USER CODE END ADC2_Init 1 */
-
-  /** Common config
-   */
-  hadc2.Instance = ADC2;
-  hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc2.Init.ContinuousConvMode = DISABLE;
-  hadc2.Init.DiscontinuousConvMode = DISABLE;
-  hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc2.Init.NbrOfConversion = 1;
-  if (HAL_ADC_Init(&hadc2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-   */
-  sConfig.Channel = ADC_CHANNEL_2;
-  sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
-  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN ADC2_Init 2 */
-
-  /* USER CODE END ADC2_Init 2 */
-}
-
-/**
- * @brief ADC3 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_ADC3_Init(void)
-{
-
-  /* USER CODE BEGIN ADC3_Init 0 */
-
-  /* USER CODE END ADC3_Init 0 */
-
-  ADC_ChannelConfTypeDef sConfig = {0};
-
-  /* USER CODE BEGIN ADC3_Init 1 */
-
-  /* USER CODE END ADC3_Init 1 */
-
-  /** Common config
-   */
-  hadc3.Instance = ADC3;
-  hadc3.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc3.Init.ContinuousConvMode = DISABLE;
-  hadc3.Init.DiscontinuousConvMode = DISABLE;
-  hadc3.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadc3.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc3.Init.NbrOfConversion = 1;
-  if (HAL_ADC_Init(&hadc3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-   */
-  sConfig.Channel = ADC_CHANNEL_3;
-  sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
-  if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN ADC3_Init 2 */
-
-  /* USER CODE END ADC3_Init 2 */
-}
-
-/**
- * @brief CAN Initialization Function
- * @param None
- * @retval None
- */
+  * @brief CAN Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_CAN_Init(void)
 {
 
@@ -348,11 +282,11 @@ static void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
-  hcan.Init.Prescaler = 16;
+  hcan.Init.Prescaler = 4;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_12TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_3TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_4TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
   hcan.Init.AutoWakeUp = DISABLE;
@@ -366,66 +300,124 @@ static void MX_CAN_Init(void)
   /* USER CODE BEGIN CAN_Init 2 */
 
   /* USER CODE END CAN_Init 2 */
+
 }
 
 /**
- * @brief GPIO Initialization Function
- * @param None
- * @retval None
- */
+  * @brief UART5 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_UART5_Init(void)
+{
+
+  /* USER CODE BEGIN UART5_Init 0 */
+
+  /* USER CODE END UART5_Init 0 */
+
+  /* USER CODE BEGIN UART5_Init 1 */
+
+  /* USER CODE END UART5_Init 1 */
+  huart5.Instance = UART5;
+  huart5.Init.BaudRate = 115200;
+  huart5.Init.WordLength = UART_WORDLENGTH_8B;
+  huart5.Init.StopBits = UART_STOPBITS_1;
+  huart5.Init.Parity = UART_PARITY_NONE;
+  huart5.Init.Mode = UART_MODE_TX_RX;
+  huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart5.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN UART5_Init 2 */
+
+  /* USER CODE END UART5_Init 2 */
+
+}
+
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
-  /* USER CODE END MX_GPIO_Init_1 */
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, FAN3_CTRL_Pin | MDUFAN_CTRL_Pin | DIST_RST_Pin | LOCKOUT_EN_Pin | SWAP_EN_Pin | SPAR2_CTRL_Pin | SPAR1_STRL_Pin | TELEM_CTRL_Pin | DASH_CTRL_Pin | AMB_CTRL_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, SUPP_LOW_Pin|MDU_FAN_CTRL_Pin|FAN1_CTRL_Pin|FAN2_CTRL_Pin
+                          |DCH_RST_Pin|DCDC__CTRL_Pin|LLIM_CTRL_Pin|PC_CTRL_Pin
+                          |HLIM_BMS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, DCDC_P_CTRL_Pin | DCDC_M_CTRL_Pin | FAN1_CTRL_Pin | FAN2_CTRL_Pin | LLIM_CTRL_Pin | NEG_CTRL_Pin | PC_CTRL_Pin | HLIM_CTRL_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, FAN4_CTRL_Pin|FAN3_CTRL_Pin|LED_OUT_Pin|FLT_OUT_Pin
+                          |HLIM_CTRL_Pin|NEG_CTRL_Pin|SWAP_CTRL_Pin|DCDC__CTRLA11_Pin
+                          |OC_LATCH_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, OC_LATCH_SET_Pin | FLT_OUT_Pin | SUPP_LOW_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, SPAR1_CTRL_Pin|TEL_CTRL_Pin|DID_CTRL_Pin|AMB_CTRL_Pin
+                          |MCB_CTRL_Pin|MDI_CTRL_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : FAN3_CTRL_Pin MDUFAN_CTRL_Pin DIST_RST_Pin LOCKOUT_EN_Pin
-                           SWAP_EN_Pin SPAR2_CTRL_Pin SPAR1_STRL_Pin TELEM_CTRL_Pin
-                           DASH_CTRL_Pin AMB_CTRL_Pin */
-  GPIO_InitStruct.Pin = FAN3_CTRL_Pin | MDUFAN_CTRL_Pin | DIST_RST_Pin | LOCKOUT_EN_Pin | SWAP_EN_Pin | SPAR2_CTRL_Pin | SPAR1_STRL_Pin | TELEM_CTRL_Pin | DASH_CTRL_Pin | AMB_CTRL_Pin;
+  /*Configure GPIO pins : SUPP_LOW_Pin MDU_FAN_CTRL_Pin FAN1_CTRL_Pin FAN2_CTRL_Pin
+                           DCH_RST_Pin DCDC__CTRL_Pin LLIM_CTRL_Pin PC_CTRL_Pin
+                           HLIM_BMS_Pin */
+  GPIO_InitStruct.Pin = SUPP_LOW_Pin|MDU_FAN_CTRL_Pin|FAN1_CTRL_Pin|FAN2_CTRL_Pin
+                          |DCH_RST_Pin|DCDC__CTRL_Pin|LLIM_CTRL_Pin|PC_CTRL_Pin
+                          |HLIM_BMS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : DCDC_P_CTRL_Pin DCDC_M_CTRL_Pin FAN1_CTRL_Pin FAN2_CTRL_Pin
-                           LLIM_CTRL_Pin NEG_CTRL_Pin PC_CTRL_Pin HLIM_CTRL_Pin */
-  GPIO_InitStruct.Pin = DCDC_P_CTRL_Pin | DCDC_M_CTRL_Pin | FAN1_CTRL_Pin | FAN2_CTRL_Pin | LLIM_CTRL_Pin | NEG_CTRL_Pin | PC_CTRL_Pin | HLIM_CTRL_Pin;
+  /*Configure GPIO pins : GPIO_BMS_Pin COM_BMS_Pin */
+  GPIO_InitStruct.Pin = GPIO_BMS_Pin|COM_BMS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : FAN4_CTRL_Pin FAN3_CTRL_Pin LED_OUT_Pin FLT_OUT_Pin
+                           HLIM_CTRL_Pin NEG_CTRL_Pin SWAP_CTRL_Pin DCDC__CTRLA11_Pin
+                           OC_LATCH_Pin */
+  GPIO_InitStruct.Pin = FAN4_CTRL_Pin|FAN3_CTRL_Pin|LED_OUT_Pin|FLT_OUT_Pin
+                          |HLIM_CTRL_Pin|NEG_CTRL_Pin|SWAP_CTRL_Pin|DCDC__CTRLA11_Pin
+                          |OC_LATCH_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : OC_LATCH_SET_Pin FLT_OUT_Pin SUPP_LOW_Pin */
-  GPIO_InitStruct.Pin = OC_LATCH_SET_Pin | FLT_OUT_Pin | SUPP_LOW_Pin;
+  /*Configure GPIO pins : ESTOP_5V_Pin OT_BMS_Pin */
+  GPIO_InitStruct.Pin = ESTOP_5V_Pin|OT_BMS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : SPAR1_CTRL_Pin TEL_CTRL_Pin DID_CTRL_Pin AMB_CTRL_Pin
+                           MCB_CTRL_Pin MDI_CTRL_Pin */
+  GPIO_InitStruct.Pin = SPAR1_CTRL_Pin|TEL_CTRL_Pin|DID_CTRL_Pin|AMB_CTRL_Pin
+                          |MCB_CTRL_Pin|MDI_CTRL_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : GPIO_BMS_Pin OT_OUT_Pin HLIM_Pin ESTOP_5V_IN_Pin
-                           FLT_BMS_Pin BAL_BMS_Pin COM_BMS_Pin LLIM_Pin */
-  GPIO_InitStruct.Pin = GPIO_BMS_Pin | OT_OUT_Pin | HLIM_Pin | ESTOP_5V_IN_Pin | FLT_BMS_Pin | BAL_BMS_Pin | COM_BMS_Pin | LLIM_Pin;
+  /*Configure GPIO pins : LLIM_BMS_Pin FLT_BMS_Pin BAL_BMS_Pin */
+  GPIO_InitStruct.Pin = LLIM_BMS_Pin|FLT_BMS_Pin|BAL_BMS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-  /* USER CODE END MX_GPIO_Init_2 */
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
@@ -433,9 +425,9 @@ static void MX_GPIO_Init(void)
 /* USER CODE END 4 */
 
 /**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -447,14 +439,14 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef USE_FULL_ASSERT
+#ifdef  USE_FULL_ASSERT
 /**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
