@@ -1,7 +1,7 @@
 #ifndef __TEST_H
 #define __TEST_H
 
-#include "stm32f1xx_hal.h"
+#include "main.h"
 
 void TEST_hvContactors();
 void TEST_lvControl();
