@@ -106,8 +106,8 @@ void Error_Handler(void);
 #define MDI_CTRL_GPIO_Port GPIOB
 #define DCH_RST_Pin GPIO_PIN_6
 #define DCH_RST_GPIO_Port GPIOC
-#define DCDC__CTRL_Pin GPIO_PIN_7
-#define DCDC__CTRL_GPIO_Port GPIOC
+#define DCDC_PLUS_CTRL_Pin GPIO_PIN_7
+#define DCDC_PLUS_CTRL_GPIO_Port GPIOC
 #define LLIM_CTRL_Pin GPIO_PIN_8
 #define LLIM_CTRL_GPIO_Port GPIOC
 #define PC_CTRL_Pin GPIO_PIN_9
@@ -118,8 +118,8 @@ void Error_Handler(void);
 #define NEG_CTRL_GPIO_Port GPIOA
 #define SWAP_CTRL_Pin GPIO_PIN_10
 #define SWAP_CTRL_GPIO_Port GPIOA
-#define DCDC__CTRLA11_Pin GPIO_PIN_11
-#define DCDC__CTRLA11_GPIO_Port GPIOA
+#define DCDC_MINUS_CTRL_Pin GPIO_PIN_11
+#define DCDC_MINUS_CTRL_GPIO_Port GPIOA
 #define OC_LATCH_Pin GPIO_PIN_12
 #define OC_LATCH_GPIO_Port GPIOA
 #define OT_BMS_Pin GPIO_PIN_15
