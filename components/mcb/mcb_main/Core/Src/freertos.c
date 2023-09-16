@@ -27,6 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "mcb.h"
+#include "can.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -96,6 +97,13 @@ const osThreadAttr_t GetVelocity_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for GetBatteryTemp */
+osThreadId_t GetBatteryTempHandle;
+const osThreadAttr_t GetBatteryTemp_attributes = {
+  .name = "GetBatteryTemp",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -108,6 +116,7 @@ void sendMotorCommand(void *argument);
 void getADCValues(void *argument);
 void getBatterySOC(void *argument);
 void getVelocity(void *argument);
+void getBatteryTemp(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -155,6 +164,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of GetVelocity */
   GetVelocityHandle = osThreadNew(getVelocity, NULL, &GetVelocity_attributes);
 
+  /* creation of GetBatteryTemp */
+  GetBatteryTempHandle = osThreadNew(getBatteryTemp, NULL, &GetBatteryTemp_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -167,7 +179,7 @@ void MX_FREERTOS_Init(void) {
 
 /* USER CODE BEGIN Header_StartDefaultTask */
 /**
-  * @brief  Task for debugging
+  * @brief  Function implementing the defaultTask thread.
   * @param  argument: Not used
   * @retval None
   */
@@ -178,7 +190,8 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	 HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+	 HAL_GPIO_TogglePin(LED_OUT1_GPIO_Port, LED_OUT1_Pin);
+	 HAL_GPIO_TogglePin(LED_OUT2_GPIO_Port, LED_OUT2_Pin);
      osDelay(500);
   }
   /* USER CODE END StartDefaultTask */
@@ -202,12 +215,13 @@ void updateState(void *argument)
 		 *  Conditional statement is intentially organized in a hierarchical structure.
 		 *  If there are two valid states based on the given event_flags, the higher one will take priority.
 		 *  Ex: If throttle and regen are both pressed, the state will be in regen because it has the higher priority.
+		 *  Since it is higher in the conditional statement.
 		 */
 		if (input_flags.park_enabled && (state == IDLE || state == PARK))
 			state = PARK;
 		else if (input_flags.mech_brake_pressed)
 			state = IDLE;
-		else if (input_flags.regen_pressed && input_flags.charge_under_threshold && input_flags.regen_enabled)
+		else if (input_flags.regen_pressed && input_flags.charge_under_threshold && input_flags.regen_switch_enabled)
 		  	state = REGEN;
 		else if (input_flags.cruise_enabled && input_flags.cruise_accelerate_enabled)
 		  	state = CRUISE_ACCELERATE;
@@ -300,7 +314,7 @@ void getADCValues(void *argument)
 	ADC_regen_val = ReadADC(&hadc2);
 	input_flags.regen_pressed = ADC_regen_val > ADC_DEADZONE;
 	if(ADC_regen_val > ADC_DEADZONE)
-		input_flags.cruise_enabled = FALSE;
+		input_flags.cruise_enabled = false;
 
     osDelay(GET_ADC_VALUES_DELAY);
   }
@@ -321,7 +335,6 @@ void getBatterySOC(void *argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		/*
 		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
 		{
 			// there are multiple CAN IDs being passed through the filter, check if the message is the SOC
@@ -337,7 +350,6 @@ void getBatterySOC(void *argument)
 
 	  		osDelay(GET_BATTERY_SOC_DELAY);
 		}
-		*/
 		osDelay(GET_BATTERY_SOC_DELAY);
 	}
   /* USER CODE END getBatterySOC */
@@ -358,25 +370,57 @@ void getVelocity(void *argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		/*
 		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
 		{
 			// there are multiple CAN IDs being passed through the filter, check if the message is the SOC
 			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, CAN_message);
-			if (can_rx_header.StdId == 0x503)
+			if (can_rx_header.StdId == GET_VELOCITY_HEADER)
 			{
 				for(int i = 0; i < (sizeof(float)/sizeof(uint8_t)); i++)
 				{
-					velocity.bytes[i] = CAN_message[i+4]; // Vechicle Velocity is stored in bits 32-63.
+					velocity.bytes[i] = CAN_message[i+4]; // Vehicle Velocity is stored in bits 32-63.
 				}
 				velocity_of_car = velocity.float_value;
 			}
 		}
-		*/
 		osDelay(GET_VELOCITY_DELAY);
 
 	}
   /* USER CODE END getVelocity */
+}
+
+/* USER CODE BEGIN Header_getBatteryTemp */
+/**
+* @brief Function implementing the GetBatteryTemp thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_getBatteryTemp */
+void getBatteryTemp(void *argument)
+{
+	/* USER CODE BEGIN getBatteryTemp */
+	uint8_t CAN_message[8];
+	IntBytes battery_message;
+	/* Infinite loop */
+	for(;;)
+	{
+		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
+		{
+			// there are multiple CAN IDs being passed through the filter, check if the message is the battery temp
+			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, CAN_message);
+			if (can_rx_header.StdId == BATTERY_MESSAGE_HEADER)
+			{
+				for(int i = 0; i < (sizeof(float)/sizeof(uint8_t)); i++)
+				{
+					battery_message.bytes[i] = CAN_message[i]; // regen_disable bit is stored in bit 17
+				}
+				input_flags.regen_disable = isBitSet(battery_message.int_value, 17);
+			}
+		}
+		osDelay(GET_VELOCITY_DELAY);
+
+	}
+	/* USER CODE END getBatteryTemp */
 }
 
 /* Private application code --------------------------------------------------*/

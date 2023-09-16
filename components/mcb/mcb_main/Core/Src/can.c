@@ -37,7 +37,7 @@ CAN_TxHeaderTypeDef drive_command_header = {
  * 	CAN message header for DID next page command.
  */
 
-CAN_TxHeaderTypeDef DID_next_page = {
+CAN_TxHeaderTypeDef DID_next_page_header = {
     .StdId = DRIVER_CONTROLS_BASE_ADDRESS,
     .ExtId = 0x0000,
     .IDE = CAN_ID_STD,

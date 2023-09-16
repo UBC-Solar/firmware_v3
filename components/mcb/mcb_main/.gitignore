@@ -67,3 +67,6 @@ RemoteSystemsTempFiles*
 
 # Doxygen files
 Doxyfile-firmwarev3
+
+*.mk
+*.list

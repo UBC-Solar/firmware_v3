@@ -36,12 +36,17 @@ extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
 #define DRIVER_CONTROLS_BASE_ADDRESS 0x400
+#define BATTERY_MESSAGE_HEADER		 0x622
+
+#define GET_VELOCITY_HEADER			 0x503
+
+
 #define CAN_DATA_LENGTH 8
 
 
 extern CAN_TxHeaderTypeDef drive_command_header;
 
-extern CAN_TxHeaderTypeDef DID_next_page;
+extern CAN_TxHeaderTypeDef DID_next_page_header;
 
 extern uint32_t can_mailbox;
 

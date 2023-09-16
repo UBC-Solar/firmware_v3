@@ -59,11 +59,14 @@ void UpdateInputFlags(InputFlags* flags)
 	flags->mech_brake_pressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
 	flags->park_enabled = HAL_GPIO_ReadPin(PARK_EN_GPIO_Port, PARK_EN_Pin);
 	flags->reverse_enabled = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin);
-	flags->regen_enabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
-
+	flags->regen_switch_enabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
 	flags->velocity_under_threshold = (velocity_of_car < MIN_REVERSE_VELOCITY);
 	flags->charge_under_threshold = (battery_soc < BATTERY_SOC_THRESHOLD);
 }
 
+bool isBitSet(int num, int pos)
+{
+	return (num & (1 << pos)) != 0;
+}
 
 
