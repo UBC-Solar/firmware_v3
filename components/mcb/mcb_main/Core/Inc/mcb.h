@@ -1,8 +1,7 @@
 /*
- * mcb.h
- *
+ * 	mcb.h
  *  Created on: Jun. 1, 2023
- *      Author: Kyle Groulx
+ *  Author: Kyle Groulx
  */
 
 #ifndef INC_MCB_H_
@@ -17,16 +16,13 @@
 
 #define UPDATE_FLAGS_DELAY 5		  // updateFlags rtos task delay time in ms
 #define UPDATE_STATE_DELAY 5		  // updateState rtos task delay time in ms
-#define SEND_MOTOR_COMMAND_DELAY 100	  // sendMotorCommand rtos task delay time in ms
+#define SEND_MOTOR_COMMAND_DELAY 100  // sendMotorCommand rtos task delay time in ms
 #define GET_ADC_VALUES_DELAY 10		  // getADCValues rtos task delay time in ms
 #define GET_BATTERY_SOC_DELAY 5000	  // getBatterySOC rtos task delay time in ms
 #define GET_VELOCITY_DELAY 500		  // getVelocity rtos task delay time in ms
 
 #define ADC_DEADZONE 500			  // Deadzone value for ADC
 #define ADC_MAX 4096				  // Max possible value for ADC
-
-#define TRUE 0
-#define FALSE 0
 
 #define MIN_REVERSE_VELOCITY 3		  // Minimum forward velocity before switching to the reverse state
 #define CRUISE_INCREMENT_VAL 1 		  // Increment value for cruise up/down buttons
@@ -51,6 +47,11 @@ typedef union FloatBytes {
 	uint8_t bytes[4];
 } FloatBytes;
 
+typedef union IntBytes {
+	int int_value;
+	uint8_t bytes[4];
+} IntBytes;
+
 /*
  *  Input flags used to decide what state to be in
  */
@@ -61,12 +62,14 @@ typedef struct InputFlags {
 
   volatile bool reverse_enabled;
   volatile bool cruise_enabled;
-  volatile bool cruise_accelerate_enabled;
   volatile bool park_enabled;
-  volatile bool regen_enabled;
+  volatile bool cruise_accelerate_enabled;
+  volatile bool regen_switch_enabled;
+
 
   volatile bool velocity_under_threshold;
   volatile bool charge_under_threshold;
+  volatile bool regen_disable;
 } InputFlags;
 
 /*
@@ -100,6 +103,7 @@ void SendCANMotorCommand(float current, float velocity);
 float NormalizeADCValue(uint16_t value);
 void SendCANDIDNextPage();
 void UpdateInputFlags(InputFlags* flags);
+bool isBitSet(int num, int pos);
 
 
 #endif /* INC_MCB_H_ */
