@@ -49,7 +49,7 @@
 /* FUNCTION PROTOTYPES */
 
 void ANA_analyzePack(Pack_t *pack);
-void ANA_writeBalStatus(Pack_Module_t *module, bool discharge_active);
+void ANA_writeBalStatus(Pack_t *pack, bool discharge_setting[PACK_NUM_BATTERY_MODULES]);
 float ANA_findHighestModuleTemp(Pack_t *pack);
 
 #endif /* INC_ANALYSIS_H_ */
