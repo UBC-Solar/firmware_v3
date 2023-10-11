@@ -95,6 +95,10 @@ union {
 uint8_t recent_warnings[4]; // [LV Warn, HV Warn, LT Warn, HT Warn]
 uint8_t recent_faults[15]; // See BS Master BOM (0x622 Bits 0-12, 17, 18)
 
+
+uint8_t lastPage;
+uint32_t lastPageTime;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -193,14 +197,21 @@ void parse_warnings(void)
 	recent_faults[13] = request_regen_turn_off;
 	recent_faults[14] = no_ecu_curr_message_received_warn;
 
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, low_voltage_warning); // PA0
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, high_voltage_warning); // PA1
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, slave_board_comm_fault); // PA4
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, charge_overtemp_trip); // PA6
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, discharge_or_charge_overcurr_fault); // PA7
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, overtemp_fault); // PA8
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, undervolt_fault); // PA9
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, overvolt_fault); // PA10
+
+
+	HAL_GPIO_WritePin(BMS_COMM_FLT_GPIO_Port, BMS_COMM_FLT_Pin, slave_board_comm_fault); // BMS communications fault
+	HAL_GPIO_WritePin(BATT_OT_GPIO_Port, BATT_OT_Pin, overtemp_fault); 					 // Battery over temperature fault
+	HAL_GPIO_WritePin(BATT_UV_GPIO_Port, BATT_UV_Pin, undervolt_fault); 				 // Battery under voltage fault
+	HAL_GPIO_WritePin(BATT_OV_GPIO_Port, BATT_OV_Pin, overvolt_fault); 					 // Battery over voltage fault
+	HAL_GPIO_WritePin(DCH_OC_GPIO_Port, DCH_OC_Pin, discharge_or_charge_overcurr_fault); // Discharging overcurrent fault
+	HAL_GPIO_WritePin(CH_OC_GPIO_Port, CH_OC_Pin, charge_overtemp_trip); 				 // Charging overcurrent fault
+	HAL_GPIO_WritePin(BATT_OV_GPIO_Port, BATT_OV_Pin, high_voltage_warning); 			 // Battery voltage upper limit fault
+
+
+
+
+
+
 	// PA11 (MDU)
 	// PA12 (MDU)
 	// PA15 (MDU)
@@ -368,8 +379,23 @@ int main(void)
 		if (received_CAN_ID == FAULTS) {
 			// Add parse faults function, and output to GPIO
 			parse_warnings();
-			// TODO: GPIO output for fault lights.
+
+
+
+
 //			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, recent_faults[0]);
+		}
+
+		// Timeout functionality
+		// If DID is on a page more than 10 seconds, revert back to PAGE_0
+		if( current_page != lastPage )
+		{
+			lastPage = current_page;
+			lastPageTime = HAL_GetTick();
+		}
+		else if( (HAL_GetTick() - lastPageTime) > PAGE_TIMEOUT )
+		{
+			current_page = PAGE_0;
 		}
 
 		// Switch by page

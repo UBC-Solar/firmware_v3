@@ -32,7 +32,12 @@
 
 /* USER CODE END 1 */
 
-/** Configure pins
+/** Configure pins as
+        * Analog
+        * Input
+        * Output
+        * EVENT_OUT
+        * EXTI
 */
 void MX_GPIO_Init(void)
 {
@@ -51,7 +56,9 @@ void MX_GPIO_Init(void)
                           |RES_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, ONBOARD_LED_Pin|A6_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, BMS_COMM_FLT_Pin|ONBOARD_LED_Pin|CH_OC_Pin|DCH_OC_Pin
+                          |BATT_OT_Pin|BATT_UV_Pin|BATT_OV_Pin|MTR_OT_Pin
+                          |MTR_OC_Pin|MTR_FLT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PCPin PCPin PCPin PCPin
                            PCPin PCPin PCPin PCPin
@@ -66,8 +73,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PAPin PAPin */
-  GPIO_InitStruct.Pin = ONBOARD_LED_Pin|A6_Pin;
+  /*Configure GPIO pins : PAPin PAPin PAPin PAPin
+                           PAPin PAPin PAPin PAPin
+                           PAPin PAPin */
+  GPIO_InitStruct.Pin = BMS_COMM_FLT_Pin|ONBOARD_LED_Pin|CH_OC_Pin|DCH_OC_Pin
+                          |BATT_OT_Pin|BATT_UV_Pin|BATT_OV_Pin|MTR_OT_Pin
+                          |MTR_OC_Pin|MTR_FLT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

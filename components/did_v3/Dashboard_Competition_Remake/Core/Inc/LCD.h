@@ -140,6 +140,8 @@ Header file containing all constants and function declarations to the LCD
 #define PAGE_2 2
 #define PAGE_3 3
 
+#define PAGE_TIMEOUT 10000 // Time in ms until the DID changes back to the main page when on another page
+
 
 //COLUMN 1
 
