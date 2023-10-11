@@ -2,3 +2,6 @@
 RemoteSystemsTempFiles
 .vscode
 /.metadata/
+components/amb/.settings/language.settings.xml
+components/mcb/mcb_main/Debug/
+components/mcb/mcb_main/Release/
