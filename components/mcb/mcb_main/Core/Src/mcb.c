@@ -5,15 +5,13 @@
  *      Author: Kyle Groulx
  */
 
-#include <mcb.h>
+#include "mcb.h"
 
 InputFlags input_flags; 	   // Event flags for deciding what state to be in.
-enum DriveState state;		   // Holds the current the drive state.
+DriveState state;		   // Holds the current the drive state.
 float cruise_velocity = 0; 	   // Velocity for cruise control
 float velocity_of_car = 0; 	   // Current velocity of the car will be stored here.
 uint8_t battery_soc = 0; 	   // Stores the charge of the battery, updated in a task.
-
-
 
 /*
  *   Takes current value and velocity float value and sends in via CAN as an array of bytes.
@@ -49,9 +47,47 @@ float NormalizeADCValue(uint16_t value)
  */
 void SendCANDIDNextPage()
 {
-	//Todo Check BOM for this CAN message
-	uint8_t data_send[CAN_DATA_LENGTH];
-	HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
+	uint8_t data_send[CAN_DATA_LENGTH] = {0};
+	SETBIT(data_send[0], 0);
+	HAL_CAN_AddTxMessage(&hcan, &DID_next_page_header, data_send, &can_mailbox);
+}
+
+/*
+ * 	Sends a CAN message to the DID that contains the drive state of the MCB to display to the driver
+ *  NOTE: The drive state displayed on the DID is a simplified version of the internal state of the MCB,
+ *  IE there are only 5 states that can be shown on the DID: Drive, Regen, Cruise, Park and Reverse.
+ *  INVALID = 0x00	// Should never be in INVALID state
+ *  DRIVE   = 0x02
+ *	REGEN   = 0x03
+ *	CRUISE  = 0x04
+ * 	PARK    = 0x06
+ *	REVERSE = 0x07
+ */
+
+void SendCANDIDDriveState(DriveState state)
+{
+	static DriveState lastState = PARK;
+	uint8_t data_send[CAN_DATA_LENGTH] = {0};
+
+	if( state == DRIVE || state == REGEN || state == CRUISE || state == PARK || state == REVERSE )
+	{
+		data_send[1] = state;
+		lastState = state;
+	}
+	else if( state == IDLE && (lastState == DRIVE || lastState == REGEN || lastState == REVERSE) )
+	{
+		data_send[1] = lastState; // If in the IDLE state, use the last used state
+	}
+	else if (state == CRUISE_ACCELERATE )
+	{
+		data_send[1] = CRUISE; // If in the CRUISE_ACCELERATE state, send the CRUISE state
+	}
+	else
+	{
+		data_send[1] = INVALID; // Should never be in this state.
+	}
+
+	HAL_CAN_AddTxMessage(&hcan, &DID_next_page_header, data_send, &can_mailbox);
 }
 
 void UpdateInputFlags(InputFlags* flags)

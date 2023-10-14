@@ -27,7 +27,7 @@
  * 	send an appropriate drive command to the motor controller.
  */
 CAN_TxHeaderTypeDef drive_command_header = {
-    .StdId = DRIVER_CONTROLS_BASE_ADDRESS + 1,
+    .StdId = MOTOR_DRIVE_COMMAND_ADDRESS,
     .ExtId = 0x0000,
     .IDE = CAN_ID_STD,
     .RTR = CAN_RTR_DATA,
@@ -38,7 +38,7 @@ CAN_TxHeaderTypeDef drive_command_header = {
  */
 
 CAN_TxHeaderTypeDef DID_next_page_header = {
-    .StdId = DRIVER_CONTROLS_BASE_ADDRESS,
+    .StdId = DRIVER_INTERFACE_ADDRESS,
     .ExtId = 0x0000,
     .IDE = CAN_ID_STD,
     .RTR = CAN_RTR_DATA,

@@ -35,6 +35,9 @@
 #define BATTERY_SOC_EMPTY 0			  // Empty battery
 
 
+#define SETBIT(x, bitpos) (x |= (1 << bitpos))
+#define GETBIT(x, bitpos) ((x >> bitpos) & 1)
+
 /*
  * Typedefs
  */
@@ -76,7 +79,7 @@ typedef struct InputFlags {
  * Used to store the value of the drive state
  * See mcb specs doc/wiki for specifications of each state.
 */
-enum DriveState {
+typedef enum {
 	INVALID = (uint8_t) 0x00,
 	IDLE = (uint8_t) 0x01,
 	DRIVE = (uint8_t) 0x02,
@@ -85,13 +88,13 @@ enum DriveState {
 	CRUISE_ACCELERATE = (uint8_t) 0x05,
 	PARK = (uint8_t) 0x06,
 	REVERSE = (uint8_t) 0x07
-};
+}DriveState;
 
 /*
  *  Variables
  */
 extern InputFlags input_flags;
-extern enum DriveState state;
+extern DriveState state;
 extern float cruise_velocity;
 extern float velocity_of_car;
 extern uint8_t battery_soc;
@@ -102,6 +105,7 @@ extern uint8_t battery_soc;
 void SendCANMotorCommand(float current, float velocity);
 float NormalizeADCValue(uint16_t value);
 void SendCANDIDNextPage();
+void SendCANDIDDriveState(DriveState state);
 void UpdateInputFlags(InputFlags* flags);
 bool isBitSet(int num, int pos);
 

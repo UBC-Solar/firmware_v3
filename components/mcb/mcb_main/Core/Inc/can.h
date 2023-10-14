@@ -35,14 +35,15 @@ extern "C" {
 extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
-#define DRIVER_CONTROLS_BASE_ADDRESS 0x400
-#define BATTERY_MESSAGE_HEADER		 0x622
+
+#define DRIVER_INTERFACE_ADDRESS     0x400
+#define MOTOR_DRIVE_COMMAND_ADDRESS  0x401
 
 #define GET_VELOCITY_HEADER			 0x503
 
+#define BATTERY_MESSAGE_HEADER		 0x622
 
 #define CAN_DATA_LENGTH 8
-
 
 extern CAN_TxHeaderTypeDef drive_command_header;
 
