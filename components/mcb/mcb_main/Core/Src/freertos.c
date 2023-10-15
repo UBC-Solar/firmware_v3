@@ -398,7 +398,7 @@ void getVelocity(void *argument)
 /* USER CODE END Header_getBatteryTemp */
 void getBatteryTemp(void *argument)
 {
-	/* USER CODE BEGIN getBatteryTemp */
+  /* USER CODE BEGIN getBatteryTemp */
 	uint8_t CAN_message[8];
 	IntBytes battery_message;
 	/* Infinite loop */
@@ -420,7 +420,7 @@ void getBatteryTemp(void *argument)
 		osDelay(GET_VELOCITY_DELAY);
 
 	}
-	/* USER CODE END getBatteryTemp */
+  /* USER CODE END getBatteryTemp */
 }
 
 /* Private application code --------------------------------------------------*/
