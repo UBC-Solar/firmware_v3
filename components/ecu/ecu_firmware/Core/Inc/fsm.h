@@ -57,6 +57,7 @@ static bool last_LLIM_status;
 #define MESSAGE_INTERVAL 1000
 #define MDU_DCH_INTERVAL 500
 #define SHORT_INTERVAL 300
+#define MDU_PC_INTERVAL 705 
 #define FLT_BLINK_INTERVAL 250
 #define LVS_INTERVAL 200
 

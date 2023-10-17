@@ -214,7 +214,7 @@ void check_LLIM()
  */
 void PC_wait()
 {
-    if (timer_check(SHORT_INTERVAL))
+    if (timer_check(MDU_PC_INTERVAL))
     {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, HIGH);
         FSM_state = LLIM_CLOSED;
