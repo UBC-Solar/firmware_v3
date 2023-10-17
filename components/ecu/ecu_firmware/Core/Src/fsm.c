@@ -77,6 +77,10 @@ void FSM_reset()
  * Exit Condition: FLT High.
  * Exit Action: Start timer
  * Exit State: WAIT_FOR_BMS_READY
+ * 
+ * Exit Condition: Timer surpasses 5 seconds.
+ * Exit Action: -
+ * Exit State: FAULT
  */
 void BMS_powerup()
 {
@@ -166,12 +170,10 @@ void DCDC_plus()
  */
 void disable_MDU_DCH()
 {
-    if (timer_check(MDU_DCH_INTERVAL))
-    {
-        HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, LOW);
-        HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, HIGH);
-        FSM_state = CHECK_LLIM;
-    }
+    HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, HIGH);
+    HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, HIGH);
+    FSM_state = CHECK_LLIM;
+    
     return;
 }
 
@@ -188,14 +190,14 @@ void disable_MDU_DCH()
  */
 void check_LLIM()
 {
-    if (HAL_GPIO_ReadPin(LLIM_IN_GPIO_Port, LLIM_IN_Pin) == LOW)
-    {
-        last_LLIM_status = LOW;
-        FSM_state = CHECK_HLIM;
-    }
-    else if (HAL_GPIO_ReadPin(LLIM_IN_GPIO_Port, LLIM_IN_Pin) == HIGH)
+    if (HAL_GPIO_ReadPin(LLIM_IN_GPIO_Port, LLIM_IN_Pin) == HIGH)
     {
         last_LLIM_status = HIGH;
+        FSM_state = CHECK_HLIM;
+    }
+    else if (HAL_GPIO_ReadPin(LLIM_IN_GPIO_Port, LLIM_IN_Pin) == LOW)
+    {
+        last_LLIM_status = LOW;
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, HIGH);
         last_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_PC;
@@ -204,9 +206,9 @@ void check_LLIM()
 }
 
 /**
- * @brief Waits for pre-charge to complete.
+ * @brief Waits for motor pre-charge to complete.
  *
- * Exit Condition: Timer surpasses 0.3 seconds.
+ * Exit Condition: Timer surpasses 0.705 seconds.
  * Exit Action: Reset timer, close LLIM.
  * Exit State: LLIM_CLOSED
  */
