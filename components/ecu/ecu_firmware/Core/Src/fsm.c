@@ -170,7 +170,7 @@ void DCDC_plus()
  */
 void disable_MDU_DCH()
 {
-    HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, HIGH);
+    HAL_GPIO_WritePin(DIST_RST_GPIO_Port, DIST_RST_Pin, LOW);
     HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, HIGH);
     FSM_state = CHECK_LLIM;
     
