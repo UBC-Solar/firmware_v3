@@ -18,6 +18,8 @@
 #define CFGBR0_DCC_BITS_BITMASK 0xF0U // Upper 4 bits of 1st byte
 #define CFGBR1_DCC_BITS_BITMASK 0x03U // Lowest 2 bits of 2nd byte
 
+#define CFGBR0_DCC_BITS_OFFSET 4
+
 /*============================================================================*/
 /* PUBLIC FUNCTION DEFINITIONS */
 
@@ -63,7 +65,7 @@ void BTM_BAL_setDischarge(Pack_t *pack, const bool discharge_setting[PACK_NUM_BA
 
         // 1st byte of CFGRB - DCH setting for cell inputs 13-16
         BTM_data.cfgrb[device_num][0] &= ~CFGBR0_DCC_BITS_BITMASK;
-        BTM_data.cfgrb[device_num][0] |= (uint8_t)((discharge_bitmask[device_num] >> 12) & CFGBR0_DCC_BITS_BITMASK);
+        BTM_data.cfgrb[device_num][0] |= (uint8_t)((discharge_bitmask[device_num] >> (12 - CFGBR0_DCC_BITS_OFFSET)) & CFGBR0_DCC_BITS_BITMASK);
 
         // 2nd byte of CFGRB - DCH setting for cell inputs 17 and 18
         BTM_data.cfgrb[device_num][1] &= ~CFGBR1_DCC_BITS_BITMASK;
