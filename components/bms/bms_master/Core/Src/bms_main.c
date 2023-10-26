@@ -30,8 +30,8 @@
  * @brief Helper function for initial system checks
  * Returns true for full match, false otherwise
  */
-bool doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
-                       uint8_t reg_group2[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
+static bool doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
+                              uint8_t reg_group2[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
 {
     for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
     {
@@ -44,7 +44,7 @@ bool doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
     return true;
 }
 
-void processSelfTestStatus(Pack_t *pack, BTM_Status_t *self_test_status)
+static void processSelfTestStatus(Pack_t *pack, BTM_Status_t *self_test_status)
 {
     if (self_test_status->error == BTM_ERROR_SELFTEST)
     {
@@ -56,14 +56,14 @@ void processSelfTestStatus(Pack_t *pack, BTM_Status_t *self_test_status)
     }
 }
 
-void stopBalancing(Pack_t *pack)
+static void stopBalancing(Pack_t *pack)
 {
     // Disable balancing of all modules
     bool discharge_setting[PACK_NUM_BATTERY_MODULES] = {false};
     BTM_BAL_setDischarge(pack, discharge_setting); // writes balancing commands for all modules
 }
 
-void clearModuleData(Pack_t *pack)
+static void clearModuleData(Pack_t *pack)
 {
     // Zero out data since valid data could not be collected
     for (uint32_t module_num = 0; module_num < PACK_NUM_BATTERY_MODULES; module_num++)
@@ -79,15 +79,14 @@ void clearModuleData(Pack_t *pack)
 
 /**
  * @brief Perform initial system checks
- * 
+ *
  * Writes COMM bit in status code if checks fail
  */
 void BMS_MAIN_startupChecks(Pack_t *pack)
 {
     uint8_t test_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {
         {0x55, 0x6E, 0x69, 0x42, 0x43, 0x20},
-        {0x53, 0x6f, 0x6c, 0x61, 0x72, 0x21}
-    };
+        {0x53, 0x6f, 0x6c, 0x61, 0x72, 0x21}};
     uint8_t test_data_rx[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
     BTM_Status_t comm_status = {BTM_OK, 0};
     BTM_Status_t ltc_temp_status = {BTM_OK, 0};
@@ -203,7 +202,7 @@ void BMS_MAIN_updatePackData(Pack_t *pack)
  * @brief Update GPIO control signal outputs, balancing state, and fan pwm
  *
  * @param[in] pack Pack data to align output states to
-*/
+ */
 void BMS_MAIN_driveOutputs(Pack_t *pack)
 {
     uint32_t fan_PWM = 0;
@@ -246,7 +245,7 @@ void BMS_MAIN_driveOutputs(Pack_t *pack)
  * @brief Send all of the BMS CAN messages with the most current pack data
  *
  * @param[in] pack Pack data used to populate message data
-*/
+ */
 void BMS_MAIN_sendCanMessages(Pack_t *pack)
 {
     CAN_SendMessage622(pack);

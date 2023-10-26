@@ -32,7 +32,7 @@
  * @param[out] pack Pack data structure in which to update balancing status flags
  * @param[in] discharge_setting Array of toggles to enable (true) or disable (false) balancing discharge of each module
  */
-void BTM_BAL_setDischarge(Pack_t *pack, bool discharge_setting[PACK_NUM_BATTERY_MODULES])
+void BTM_BAL_setDischarge(Pack_t *pack, const bool discharge_setting[PACK_NUM_BATTERY_MODULES])
 {
     uint32_t discharge_bitmask[BTM_NUM_DEVICES] = {0};
     uint32_t device_num;
@@ -43,7 +43,7 @@ void BTM_BAL_setDischarge(Pack_t *pack, bool discharge_setting[PACK_NUM_BATTERY_
         // Construct discharge bitmask using pack module mapping and given discharge settings
         device_num = Pack_module_mapping[module_num].device_num;
         cell_num = Pack_module_mapping[module_num].cell_num;
-        discharge_bitmask[device_num] |= ((uint32_t) discharge_setting[module_num]) << cell_num;
+        discharge_bitmask[device_num] |= ((uint32_t)discharge_setting[module_num]) << cell_num;
         // Update balancing status in pack data
         ANA_writeBalStatus(&(pack->module[module_num]), discharge_setting[module_num]);
     }
@@ -55,19 +55,19 @@ void BTM_BAL_setDischarge(Pack_t *pack, bool discharge_setting[PACK_NUM_BATTERY_
 
         // 5th byte of CFGRA - DCH setting for cell inputs 1-8 (first 8 modules)
         BTM_data.cfgra[device_num][4] &= ~CFGAR4_DCC_BITS_BITMASK;
-        BTM_data.cfgra[device_num][4] |= (uint8_t) (discharge_bitmask[device_num] & CFGAR4_DCC_BITS_BITMASK);
+        BTM_data.cfgra[device_num][4] |= (uint8_t)(discharge_bitmask[device_num] & CFGAR4_DCC_BITS_BITMASK);
 
         // 6th byte of CFGRA - DCH setting for cell inputs 9-12
         BTM_data.cfgra[device_num][5] &= ~CFGAR5_DCC_BITS_BITMASK;
-        BTM_data.cfgra[device_num][5] |= (uint8_t) ((discharge_bitmask[device_num] >> 8) & CFGAR5_DCC_BITS_BITMASK);
+        BTM_data.cfgra[device_num][5] |= (uint8_t)((discharge_bitmask[device_num] >> 8) & CFGAR5_DCC_BITS_BITMASK);
 
         // 1st byte of CFGRB - DCH setting for cell inputs 13-16
         BTM_data.cfgrb[device_num][0] &= ~CFGBR0_DCC_BITS_BITMASK;
-        BTM_data.cfgrb[device_num][0] |= (uint8_t) ((discharge_bitmask[device_num] >> 12) & CFGBR0_DCC_BITS_BITMASK);
+        BTM_data.cfgrb[device_num][0] |= (uint8_t)((discharge_bitmask[device_num] >> 12) & CFGBR0_DCC_BITS_BITMASK);
 
         // 2nd byte of CFGRB - DCH setting for cell inputs 17 and 18
         BTM_data.cfgrb[device_num][1] &= ~CFGBR1_DCC_BITS_BITMASK;
-        BTM_data.cfgrb[device_num][1] |= (uint8_t) ((discharge_bitmask[device_num] >> 16) & CFGBR1_DCC_BITS_BITMASK);
+        BTM_data.cfgrb[device_num][1] |= (uint8_t)((discharge_bitmask[device_num] >> 16) & CFGBR1_DCC_BITS_BITMASK);
     }
 
     BTM_writeRegisterGroup(CMD_WRCFGA, BTM_data.cfgra);
