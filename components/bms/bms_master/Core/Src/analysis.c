@@ -211,19 +211,12 @@ void ANA_analyzePack(Pack_t *pack)
 /**
  * @brief Updates the balancing status bit in the status code for a battery module
  *
- * @param[out] pack Pack structure to update
- * @param[in] discharge_setting New discharge/balancing states for each module
+ * @param[out] module Pack module to update
+ * @param[in] discharge_active New discharge/balancing state
 */
-void ANA_writeBalStatus(Pack_t *pack, bool discharge_setting[PACK_NUM_BATTERY_MODULES])
+void ANA_writeBalStatus(Pack_Module_t *module, bool discharge_active)
 {
-    for (uint32_t module_num = 0; module_num < PACK_NUM_BATTERY_MODULES; module_num++){
-        pack->module[module_num].status.bits.balancing_active = discharge_setting[module_num];
-        
-        if (discharge_setting[module_num]){ // if any module will balance, indicate in pack status code
-            pack->status.bits.balancing_active = true;
-        }
-   
-    }
+    module->status.bits.balancing_active = discharge_active;
 }
 
 /**

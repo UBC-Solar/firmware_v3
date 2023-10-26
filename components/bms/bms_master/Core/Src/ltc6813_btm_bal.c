@@ -44,10 +44,9 @@ void BTM_BAL_setDischarge(Pack_t *pack, bool discharge_setting[PACK_NUM_BATTERY_
         device_num = Pack_module_mapping[module_num].device_num;
         cell_num = Pack_module_mapping[module_num].cell_num;
         discharge_bitmask[device_num] |= ((uint32_t) discharge_setting[module_num]) << cell_num;
+        // Update balancing status in pack data
+        ANA_writeBalStatus(&(pack->module[module_num]), discharge_setting[module_num]);
     }
-
-    // Update balancing status in pack data
-    ANA_writeBalStatus(pack, discharge_setting);
 
     for (device_num = 0; device_num < BTM_NUM_DEVICES; device_num++)
     {
