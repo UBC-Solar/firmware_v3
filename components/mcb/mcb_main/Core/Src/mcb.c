@@ -58,7 +58,6 @@ void SendCANDIDNextPage()
  *  IE there are only 5 states that can be shown on the DID: Drive, Regen, Cruise, Park and Reverse.
  *  INVALID = 0x00	// Should never be in INVALID state
  *  DRIVE   = 0x02
- *	REGEN   = 0x03
  *	CRUISE  = 0x04
  * 	PARK    = 0x06
  *	REVERSE = 0x07
@@ -69,12 +68,16 @@ void SendCANDIDDriveState(DriveState state)
 	static DriveState lastState = PARK;
 	uint8_t data_send[CAN_DATA_LENGTH] = {0};
 
-	if( state == DRIVE || state == REGEN || state == CRUISE || state == PARK || state == REVERSE )
+	if( state == DRIVE || state == CRUISE || state == PARK || state == REVERSE )
 	{
 		data_send[1] = state;
 		lastState = state;
 	}
 	else if( state == IDLE && (lastState == DRIVE || lastState == REGEN || lastState == REVERSE) )
+	{
+		data_send[1] = lastState; // If in the IDLE state, use the last used state
+	}
+	else if( state == REGEN && (lastState == DRIVE || lastState == REGEN || lastState == REVERSE) )
 	{
 		data_send[1] = lastState; // If in the IDLE state, use the last used state
 	}
