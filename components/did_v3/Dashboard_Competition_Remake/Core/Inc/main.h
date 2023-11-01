@@ -71,6 +71,10 @@ void Error_Handler(void);
 #define RD_GPIO_Port GPIOC
 #define DB0_Pin GPIO_PIN_3
 #define DB0_GPIO_Port GPIOC
+#define BATT_LO_Pin GPIO_PIN_0
+#define BATT_LO_GPIO_Port GPIOA
+#define BATT_HI_Pin GPIO_PIN_1
+#define BATT_HI_GPIO_Port GPIOA
 #define BMS_COMM_FLT_Pin GPIO_PIN_4
 #define BMS_COMM_FLT_GPIO_Port GPIOA
 #define ONBOARD_LED_Pin GPIO_PIN_5
