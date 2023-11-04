@@ -1,5 +1,6 @@
 "./Core/Src/can.o"
 "./Core/Src/main.o"
+"./Core/Src/mitsuba_dac_interface.o"
 "./Core/Src/stm32f1xx_hal_msp.o"
 "./Core/Src/stm32f1xx_it.o"
 "./Core/Src/syscalls.o"

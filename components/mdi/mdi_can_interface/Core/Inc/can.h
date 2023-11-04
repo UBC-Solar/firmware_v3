@@ -5,7 +5,7 @@
 
 #ifndef CAN_H
 #define CAN_H 
-#endif
+
 
 #include "stm32f1xx_hal.h"
 #include <stdio.h>
@@ -37,14 +37,17 @@ typedef struct
 {
 	uint16_t id;
 	int32_t  velocity;
-	uint32_t acceleration; 
+	float acceleration;
 	bool direction; 
 	bool power_or_eco; 
-	bool regen; 
+	bool regen;
 } CAN_message_t;
 
 
-void Send_Voltage(uint16_t parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef *hi2c1);
+void Send_Voltage(float parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef *hi2c2);
+
 void CAN_Decode_Velocity_Message(uint8_t RxData[], CAN_message_t* CAN_msg); 
 
+void Send_Test_Message(uint8_t* TxData, int32_t velocity, uint32_t acceleration);
 
+#endif

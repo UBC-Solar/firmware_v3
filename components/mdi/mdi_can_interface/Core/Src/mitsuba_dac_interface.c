@@ -38,12 +38,17 @@ uint16_t Parse_Acceleration(uint32_t pedal_data){
  * @param DAC_ADDR this is the I2C bit address of the DAC we want to send the I2C signal to
  * @param hi2c1 is the HAL handle for I2C
  */
-void Send_Voltage(uint16_t parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef* hi2c1)
+void Send_Voltage(float parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef* hi2c1)
     {
 		uint8_t DAC_msg_buffer[2];
-		uint16_t dac_data;
-		if(parsed_voltage > 1023) parsed_voltage = 1023;
-    	dac_data = parsed_voltage << 2;
+		uint16_t dac_data = 0;
+		//parsed_voltage is a percentage, multiply by 10 bit max number, and we should get expected value
+		dac_data = UINT10_MAX * parsed_voltage;
+
+		if(parsed_voltage > 1023) parsed_voltage = 1023; //not required if we are already initializing the max to 1023 but just in case for now
+    	//dac_data = parsed_voltage << 2;
+
+		dac_data = dac_data << 2;
     	DAC_msg_buffer[0] = dac_data >> 8;
     	DAC_msg_buffer[1] = dac_data;
     	HAL_I2C_Master_Transmit(hi2c1, DAC_ADDR, DAC_msg_buffer, BUFFER_SIZE, HAL_MAX_DELAY);

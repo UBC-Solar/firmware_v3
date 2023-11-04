@@ -58,10 +58,6 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define Direction_Pin GPIO_PIN_10
-#define Direction_GPIO_Port GPIOB
-#define Pwr_Eco_Pin GPIO_PIN_11
-#define Pwr_Eco_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

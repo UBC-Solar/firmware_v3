@@ -19,7 +19,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "math.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -37,14 +36,14 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define DAC_ADDR        (0b0001100 << 1)
+#define DAC_ADDR        (0b0001110 << 1)
 #define DAC_REGEN_ADDR  (0b0001101 << 1)
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan;
 
-I2C_HandleTypeDef hi2c1;
+I2C_HandleTypeDef hi2c2;
 
 /* USER CODE BEGIN PV */
 
@@ -54,7 +53,7 @@ I2C_HandleTypeDef hi2c1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN_Init(void);
-static void MX_I2C1_Init(void);
+static void MX_I2C2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -70,13 +69,13 @@ uint32_t TxMailbox[3]; //3 transmit mailboxes
 uint8_t TxData[8]; //buffer for transmit message
 uint8_t RxData[8]; //buffer for receive message
 
-CAN_msg_t msg0; //where all the info and data for the message will be put
+CAN_message_t msg0; //where all the info and data for the message will be put
 
 
 bool send_data_flag = 0; 
 bool Parse_Data_Flag = 0; 
 
-uint16_t parsed_voltage = 0; 
+float parsed_voltage = 0;
 
 int32_t velocity; //FOR TESTING
 uint32_t acceleration; //FOR TESTING 
@@ -85,6 +84,7 @@ uint64_t t_end; //FOR TESTING
 uint64_t t_elapsed[256]; //FOR TESTING
 uint8_t count_t = 0; //FOR TESTING
 float count = 0; //FOR TESTING
+int test = 0; //FOR TESTING
 
 
 /* USER CODE END 0 */
@@ -119,7 +119,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN_Init();
-  MX_I2C1_Init();
+  MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
   HAL_CAN_Start(&hcan); //starts CAN
   HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING); //FIFO0 message pending interrupt (interrupt callback func will be called when this interrupt is triggered)
@@ -138,23 +138,15 @@ int main(void)
 
   while (1)
   { 
-     msg0.power_or_eco = POWER_ON; //this would come from switch
+	  //BOOT LED
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
-      count_t++; 
-
-      if(count_t == 3) {
-        count = count + 0.1;
-        count_t = 0; 
-      } 
-
-     if(count > 99999.0)
-      count = 0; 
 
     //////////////////TEST MESSAGE GENERATION//////////////////////
-     velocity = -100; 
-     acceleration = 0xFFFFFFFF;
-     acceleration = acceleration/2.0*sin(count)  + acceleration/2.0 ; 
-     Send_Test_Message(TxData, velocity, acceleration); 
+     velocity = -100;
+     acceleration = 0x3f000000;
+    // acceleration = acceleration/2.0*sin(count)  + acceleration/2.0 ;
+     Send_Test_Message(TxData, velocity, acceleration);
 
      HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
     //////////////////////////////////////////////////////////////////
@@ -162,29 +154,33 @@ int main(void)
     if(Parse_Data_Flag == 1 ){ //Parse_Data_Flag set in interrupt
 
       CAN_Decode_Velocity_Message(RxData, &msg0); 
+      velocity = velocity * msg0.acceleration;
 
       Parse_Data_Flag = 0; 
       send_data_flag = 1; 
     }
     
+    //msg0.acceleration = 50;
+    //Send_Voltage(msg0.acceleration, DAC_REGEN_ADDR, &hi2c2);
+
     if( (send_data_flag == 1 ) && (Parse_Data_Flag == 0) ){
 
       if(msg0.regen == REGEN_TRUE)
-        Send_Regen(msg0.acceleration, DAC_REGEN_ADDR, &hi2c1); 
+        Send_Voltage(msg0.acceleration, DAC_REGEN_ADDR, &hi2c2);
       else{
-        parsed_voltage = Parse_Acceleration(msg0.acceleration);
-    	  Send_Voltage(parsed_voltage, DAC_ADDR, &hi2c1); 
+        parsed_voltage = msg0.acceleration;
+    	  Send_Voltage(parsed_voltage, DAC_ADDR, &hi2c2);
       }
       //send direction
       if(msg0.direction == REVERSE_FALSE)
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET); 
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
       else 
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
       //send power/eco
       if(msg0.power_or_eco == ECO_ON)
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET); 
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
       else 
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
 
 	    send_data_flag = 0; 
       
@@ -248,12 +244,11 @@ static void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
-  hcan.Init.Prescaler = 16;
-  hcan.Init.Mode = CAN_MODE_LOOPBACK;   //Loopback for testing, Normal for actual
-  //Time settings need to be adjusted for the can bus frequency and clock frequency
+  hcan.Init.Prescaler = 2;
+  hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_4TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_4TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_3TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
   hcan.Init.AutoWakeUp = DISABLE;
@@ -287,36 +282,36 @@ static void MX_CAN_Init(void)
 }
 
 /**
-  * @brief I2C1 Initialization Function
+  * @brief I2C2 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_I2C1_Init(void)
+static void MX_I2C2_Init(void)
 {
 
-  /* USER CODE BEGIN I2C1_Init 0 */
+  /* USER CODE BEGIN I2C2_Init 0 */
 
-  /* USER CODE END I2C1_Init 0 */
+  /* USER CODE END I2C2_Init 0 */
 
-  /* USER CODE BEGIN I2C1_Init 1 */
+  /* USER CODE BEGIN I2C2_Init 1 */
 
-  /* USER CODE END I2C1_Init 1 */
-  hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 100000;
-  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
-  hi2c1.Init.OwnAddress1 = 0;
-  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c1.Init.OwnAddress2 = 0;
-  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  /* USER CODE END I2C2_Init 1 */
+  hi2c2.Instance = I2C2;
+  hi2c2.Init.ClockSpeed = 100000;
+  hi2c2.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c2.Init.OwnAddress1 = 0;
+  hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c2.Init.OwnAddress2 = 0;
+  hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c2) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN I2C1_Init 2 */
+  /* USER CODE BEGIN I2C2_Init 2 */
 
-  /* USER CODE END I2C1_Init 2 */
+  /* USER CODE END I2C2_Init 2 */
 
 }
 
@@ -330,25 +325,29 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, Direction_Pin|Pwr_Eco_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : Direction_Pin */
-  GPIO_InitStruct.Pin = Direction_Pin;
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12|GPIO_PIN_13, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : PA3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(Direction_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : Pwr_Eco_Pin */
-  GPIO_InitStruct.Pin = Pwr_Eco_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  /*Configure GPIO pins : PB12 PB13 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(Pwr_Eco_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
 
@@ -363,7 +362,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //recieve data i
 		Error_Handler();
 	}
 
-  //sets a flag to let the main loop know a message has been recieved 
+  //sets a flag to let the main loop know a message has been received
 	Parse_Data_Flag = 1; 
 
 }
