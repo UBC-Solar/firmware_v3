@@ -88,7 +88,7 @@ CAN_TxHeaderTypeDef txHeaderTemp = {
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+float volt2temp(uint32_t raw_value);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -120,31 +120,62 @@ void Convert_Values(uint8_t index) {
 			CONVERTED_VALUES[index].float_value = (ADC_VALUES[index] - 1.65) / 0.11;
 			break;
 		case TEMP_1:
-			/* TODO */
+			/* TEMP_1 [Deg. C] = 31.6 * e ^ (-0.042 * R) */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_2:
-			/* TODO */
+			/* TEMP_2 [Deg. C] = 31.6 * e ^ (-0.042 * R) */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_3:
-			/* TODO */
+			/* TEMP_3 [Deg. C] = 31.6 * e ^ (-0.042 * R) */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_4:
-			/* TODO */
+			/* TEMP_4 [Deg. C] = 31.6 * e ^ (-0.042 * R) */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_5:
-			/* TODO */
+			/* TEMP_5 [Deg. C] = 31.6 * e ^ (-0.042 * R) */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_6:
-			/* TODO */
+			/* TEMP_6 [Deg. C] = 31.6 * e ^ (-0.042 * R) */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_7:
-			/* TODO */
+			/* TEMP_7 [Deg. C] = 31.6 * e ^ (-0.042 * R) */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_8:
-			/* Relationship for converting to temperature and modify CONVERTED_VALUES[index] */
-			/* TODO */
+			/* TEMP_8 [Deg. C] = 31.6 * e ^ (-0.042 * R) */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 	}
+}
+
+/**
+ * Method to convert a given ADC Channel value into a Temperature value
+ * @param ADC[index] the raw thermistor value from the ADC
+ * @param REF the reference voltage for the board typically 3.3V
+ *
+ * @return the float value for the converted temperature in Celsius
+ */
+
+float volt2temp(uint32_t raw_value){
+//		const float beta = 3380.0; // from  datasheet
+//	    const float room_temp = 25; // celsius
+	    const float R_balance = 10000.0; // from LTC6813 datasheet p.84. note: this doesn't account for tolerance.
+//	    const float R_room_temp = 10000.0; // resistance at room temperature (25C)
+	    float V_therm = 3.3 * raw_value / pow(2, 12);
+	    float R_therm = 0.0;
+//	    float temp_kelvin = 0.0;
+	    float Vout = 3.3;
+
+	    R_therm = R_balance * ((Vout/V_therm) - 1);
+
+	    return 31.6 * exp(-0.042 * R_therm);
+
 }
 
 /* USER CODE END 0 */
