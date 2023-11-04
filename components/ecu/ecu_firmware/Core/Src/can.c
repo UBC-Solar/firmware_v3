@@ -9,7 +9,7 @@
 #include "can.h"
 
 CAN_TxHeaderTypeDef current_message_header = {
-    0x624, 0, CAN_ID_STD, CAN_RTR_DATA, 6, DISABLE
+    0x450, 0, CAN_ID_STD, CAN_RTR_DATA, 6, DISABLE
 }; 
 
 void CAN_send_current(int currentVal) {
