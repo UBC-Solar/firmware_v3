@@ -143,18 +143,17 @@ int main(void)
 
 
     //////////////////TEST MESSAGE GENERATION//////////////////////
-     velocity = -100;
-     acceleration = 0x3f000000;
+    // velocity = -100;
+    // acceleration = 0x3f000000;
     // acceleration = acceleration/2.0*sin(count)  + acceleration/2.0 ;
-     Send_Test_Message(TxData, velocity, acceleration);
+    // Send_Test_Message(TxData, velocity, acceleration);
 
-     HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+    // HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
     //////////////////////////////////////////////////////////////////
     
     if(Parse_Data_Flag == 1 ){ //Parse_Data_Flag set in interrupt
 
       CAN_Decode_Velocity_Message(RxData, &msg0); 
-      velocity = velocity * msg0.acceleration;
 
       Parse_Data_Flag = 0; 
       send_data_flag = 1; 
