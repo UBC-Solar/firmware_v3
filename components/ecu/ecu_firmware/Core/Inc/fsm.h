@@ -65,6 +65,12 @@ static bool last_LLIM_status;
 #define LOW false
 #define HIGH true
 
+#define CONTACTOR_CLOSED HIGH
+#define CONTACTOR_OPEN LOW
+
+#define REQ_CONTACTOR_CLOSE LOW
+#define REQ_CONTACTOR_OPEN HIGH
+
 // Helper Functions:
 bool timer_check(unsigned int millis);
 
