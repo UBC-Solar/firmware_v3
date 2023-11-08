@@ -89,6 +89,7 @@ CAN_TxHeaderTypeDef txHeaderTemp = {
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 float volt2temp(uint32_t raw_value);
+float log_float(float valueToConvert);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -156,26 +157,37 @@ void Convert_Values(uint8_t index) {
 
 /**
  * Method to convert a given ADC Channel value into a Temperature value
- * @param ADC[index] the raw thermistor value from the ADC
+ * @param raw_value the raw thermistor value from the ADC
  * @param REF the reference voltage for the board typically 3.3V
  *
  * @return the float value for the converted temperature in Celsius
  */
 
 float volt2temp(uint32_t raw_value){
-//		const float beta = 3380.0; // from  datasheet
-//	    const float room_temp = 25; // celsius
-	    const float R_balance = 10000.0; // from LTC6813 datasheet p.84. note: this doesn't account for tolerance.
-//	    const float R_room_temp = 10000.0; // resistance at room temperature (25C)
+		const float A = 3380; //from NXFT15XH103FA2B090 data sheet B25/50 Value
+		const float B = 3428; //from NXFT15XH103FA2B090 data sheet B25/80 Value
+		const float C = 3455; //from NXFT15XH103FA2B090 data sheet B25/100 Value
+
+	    const float R_balance = 3300; // from AMB PCB Schematic component R4.1 to R4.8
 	    float V_therm = 3.3 * raw_value / pow(2, 12);
 	    float R_therm = 0.0;
-//	    float temp_kelvin = 0.0;
-	    float Vout = 3.3;
+	    float Vout = 3.3; //Reference Voltage from Board
+	    float temp_kelvin = 0.0;
 
 	    R_therm = R_balance * ((Vout/V_therm) - 1);
 
-	    return 31.6 * exp(-0.042 * R_therm);
+	    //SteinHart-Hart Equation: https://www.ametherm.com/thermistor/ntc-thermistors-steinhart-and-hart-equation
+	    temp_kelvin = 1/(A + B*log_float(R_therm) + C* pow(log_float(R_therm),3) );
 
+	    //return a Celsius value
+	    return temp_kelvin - 273.15;
+}
+
+/**
+ * Helper method for a floating point logarithmic function
+ */
+float log_float(float valueToConvert){
+	return (float) log(valueToConvert);
 }
 
 /* USER CODE END 0 */
