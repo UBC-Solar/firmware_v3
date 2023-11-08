@@ -11,7 +11,7 @@
 
     c. Note that the script assumes requirements.json is the default name, however, will prompt the user for the name of the JSON. Simply hit `Enter` if you want to use the default name
 
-4. Add your own log files to the same directory. (Ex [log.txt](tools/CAN_Testing/log.txt))
+4. Add your own log files to the same directory. (Ex [exampleLog.txt](tools/CAN_Testing/exampleLog.txt))
 
 5. Run `main.py`
 6. If you want to Recieve messages type `r`
