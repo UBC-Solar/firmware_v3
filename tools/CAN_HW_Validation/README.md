@@ -6,7 +6,13 @@
 > This README doc highlights how to use this STM32 Project for this purpose.
 
 ## Table of Contents
-
+- [CAN Hardware Validation Testing](#can-hardware-validation-testing)
+  - [Table of Contents](#table-of-contents)
+  - [Setup](#setup)
+  - [Project Details](#project-details)
+  - [Using the Serial Monitor to view `printf` output](#using-the-serial-monitor-to-view-printf-output)
+    - [If using UART:](#if-using-uart)
+    - [If Using SWO:](#if-using-swo)
 
 ## Setup
 
@@ -60,3 +66,7 @@ To open this console, go to `Window -> Show View -> SWV -> SWV ITM Data Console`
 ![Show View](./images/show_view.png)
 
 ![SWV Console](./images/swo_console.png)
+
+> This is a great resource to learn about the process of using `printf` to output over SWO: 
+> 
+> [PCB Artists: Debug printf on STM32 using SWO serial wire](https://pcbartists.com/firmware/stm32-firmware/debug-printf-stm32-using-swo-serial-wire/#:~:text=Enable%20SWO%20Debug%20Output%20in%20STM32%20CubeMX&text=In%20the%20active%20debug%20configuration,Serial%20Wire%20Viewer%20(SWV).&text=Find%20SWV%20settings%20and%20enable,terminal%20to%20show%20you%20logs.)
