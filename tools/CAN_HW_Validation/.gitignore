@@ -2,11 +2,13 @@
 
 # Auto-Generated Ceedling Data
 /build/
+
 # CubeMX Unneeded Generated Material
 .mxproject
 Makefile
 startup_stm32f103xe.s
 STM32F103RCTX_FLASH.ld
+/Debug/
 
 # PlatformIO Build Outputs
 .pio
