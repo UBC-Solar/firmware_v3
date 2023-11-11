@@ -128,7 +128,9 @@ int main(void)
 			  TxHeader.RTR = CAN_RTR_DATA; // Data frame
 			  TxHeader.IDE = CAN_ID_STD; // Standard ID
 
-			  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
+			  if (HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox) != HAL_OK) {
+				  printf("Failed to send CAN message with TxData\n");
+			  }
 			  printf("Sent reply CAN message\n");
 
 			  // Verify the message is received with PCAN-View.
@@ -211,6 +213,7 @@ static void MX_CAN_Init(void)
   /* USER CODE BEGIN CAN_Init 2 */
   if (HAL_CAN_Start(&hcan) != HAL_OK)
 	{
+	  printf("HAL CAN Start failed\n");
 	  Error_Handler();
 	}
 
