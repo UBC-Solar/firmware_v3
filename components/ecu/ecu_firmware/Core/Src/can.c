@@ -9,7 +9,7 @@
 #include "can.h"
 
 //Double check with Mischa as max pack discharge most likely different from charging
-#define MAX_CHARGING_CURRENT 0b10100010100  // 1300 in binary, 130 A 0.1A/bit offset
+#define MAX_CHARGING_CURRENT 0b11010010  // 210 in binary, 21 A 0.1A/bit offset
 #define MAX_CHARGING_VOLTAGE 0b10100111100  // 1340 in binary, 134 V 0.1V/bit offset
 
 #define MESSAGE_LENGTH 8
