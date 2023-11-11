@@ -386,6 +386,8 @@ void ECU_monitor()
         CAN_send_current(ADC_netCurrentOut(ADC_getArrayCurrent(), ADC_getMotorCurrent()));
     }
 
+    // THIS IS WHERE I WOULD WRITE MY CODE FOR SENDING CAN MESSAGE TO OBC
+
     // check supplemental battery voltage
     // unsigned int supp_voltage = 0; ******
     if (ADC_getSuppBattVoltage() < SUPP_LIMIT && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) == LOW && !ADC3_getFaultStatus())

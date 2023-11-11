@@ -16,6 +16,7 @@
 CAN_HandleTypeDef *CAN_hcan;
 
 void CAN_send_current(int currentVal);
+void CAN_charging_mode(int charger_enables);
 HAL_StatusTypeDef HAL_CAN_AddTxMessage(CAN_HandleTypeDef *hcan, CAN_TxHeaderTypeDef *pHeader, uint8_t aData[], uint32_t *pTxMailbox);
 
 #endif /* __CAN_H */
