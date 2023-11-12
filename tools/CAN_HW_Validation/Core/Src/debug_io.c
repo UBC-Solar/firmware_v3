@@ -4,8 +4,8 @@
 // =============================================================================
 // Configuration Parameters
 // =============================================================================
-#define USE_UART
-// #define USE_SWO
+//#define USE_UART
+#define USE_SWO
 #define NO_SYSCALL
 
 static UART_HandleTypeDef *io_huart;
