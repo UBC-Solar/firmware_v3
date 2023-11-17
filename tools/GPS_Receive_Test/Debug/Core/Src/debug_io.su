@@ -1,0 +1,6 @@
+../Drivers/CMSIS/Include/core_cm3.h:1876:26:ITM_SendChar	16	static,ignoring_inline_asm
+../Core/Src/debug_io.c:18:6:DebugIO_Init	16	static
+../Core/Src/debug_io.c:24:5:__io_putchar	16	static
+../Core/Src/debug_io.c:39:5:__io_getchar	4	static
+../Core/Src/debug_io.c:46:5:_read	32	static
+../Core/Src/debug_io.c:58:5:_write	32	static
