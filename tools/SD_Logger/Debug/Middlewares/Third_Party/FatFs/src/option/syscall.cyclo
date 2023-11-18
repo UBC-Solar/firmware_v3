@@ -1,0 +1,6 @@
+../Middlewares/Third_Party/FatFs/src/option/syscall.c:18:5:ff_cre_syncobj	1
+../Middlewares/Third_Party/FatFs/src/option/syscall.c:42:5:ff_del_syncobj	1
+../Middlewares/Third_Party/FatFs/src/option/syscall.c:59:5:ff_req_grant	2
+../Middlewares/Third_Party/FatFs/src/option/syscall.c:81:6:ff_rel_grant	1
+../Middlewares/Third_Party/FatFs/src/option/syscall.c:100:7:ff_memalloc	1
+../Middlewares/Third_Party/FatFs/src/option/syscall.c:112:6:ff_memfree	1
