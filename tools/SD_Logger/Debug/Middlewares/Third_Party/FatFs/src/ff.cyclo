@@ -2,8 +2,6 @@
 ../Middlewares/Third_Party/FatFs/src/ff.c:597:6:mem_set	2
 ../Middlewares/Third_Party/FatFs/src/ff.c:606:5:mem_cmp	3
 ../Middlewares/Third_Party/FatFs/src/ff.c:616:5:chk_chr	3
-../Middlewares/Third_Party/FatFs/src/ff.c:629:5:lock_fs	1
-../Middlewares/Third_Party/FatFs/src/ff.c:638:6:unlock_fs	6
 ../Middlewares/Third_Party/FatFs/src/ff.c:662:9:chk_lock	11
 ../Middlewares/Third_Party/FatFs/src/ff.c:688:5:enq_lock	3
 ../Middlewares/Third_Party/FatFs/src/ff.c:698:6:inc_lock	12
@@ -37,9 +35,9 @@
 ../Middlewares/Third_Party/FatFs/src/ff.c:2125:9:follow_path	10
 ../Middlewares/Third_Party/FatFs/src/ff.c:2187:5:get_ldnumber	8
 ../Middlewares/Third_Party/FatFs/src/ff.c:2248:6:check_fs	5
-../Middlewares/Third_Party/FatFs/src/ff.c:2276:9:find_volume	47
-../Middlewares/Third_Party/FatFs/src/ff.c:2445:9:validate	7
-../Middlewares/Third_Party/FatFs/src/ff.c:2475:9:f_mount	8
+../Middlewares/Third_Party/FatFs/src/ff.c:2276:9:find_volume	46
+../Middlewares/Third_Party/FatFs/src/ff.c:2445:9:validate	6
+../Middlewares/Third_Party/FatFs/src/ff.c:2475:9:f_mount	6
 ../Middlewares/Third_Party/FatFs/src/ff.c:2522:9:f_open	24
 ../Middlewares/Third_Party/FatFs/src/ff.c:2658:9:f_read	23
 ../Middlewares/Third_Party/FatFs/src/ff.c:2759:9:f_write	27

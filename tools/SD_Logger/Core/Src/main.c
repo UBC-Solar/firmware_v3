@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
 #include "fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -53,8 +52,6 @@ SPI_HandleTypeDef hspi1;
 
 UART_HandleTypeDef huart2;
 
-osThreadId ReadCANHandle;
-osThreadId SDwriteHandle;
 /* USER CODE BEGIN PV */
 
 //  defining struct for CAN rx header
@@ -97,9 +94,6 @@ static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_CAN_Init(void);
-void StartReadCAN(void const * argument);
-void StartSDwrite(void const * argument);
-
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -189,7 +183,8 @@ int main(void)
   srand( 2 );												// trying to set seed
   int randomNum = rand();
   char fileName[40];
-  sprintf(fileName, "file%d.txt", randomNum);				// generates random file name to be loaded onto SD card
+//  sprintf(fileName, "file%d.txt", randomNum);				// generates random file name to be loaded onto SD card
+  sprintf(fileName, "testfile.txt", randomNum);				// generates random file name to be loaded onto SD card
 
 //  /* card capacity details */
 //
@@ -210,12 +205,12 @@ int main(void)
 //  CAN_DATA.DATA = 0x8324;
 //  CAN_DATA.TIME = 28492;
 //  CAN_DATA.LENGTH = 8;
-//
-//
-//
-//  /* CAN Setup */
-//  HAL_CAN_Start(&hcan);
-//
+
+
+
+  /* CAN Setup */
+  HAL_CAN_Start(&hcan);
+
 //  /* CAN Rx testing */
 //
 //	  // check if message is available
@@ -229,12 +224,16 @@ int main(void)
 //		  CAN_DATA.TIME = (uint64_t) CAN_rx_header.Timestamp;
 //		  CAN_DATA.LENGTH = (uint8_t) CAN_rx_header.DLC;
 //	  }
-
-	  // writing CAN data to SD card
-
+//
+//	  // writing CAN data to SD card
+//
 //	  /* open file to write/ create a file if it doesn't exist */
-//	  fresult = f_open(&fil, fileName, FA_OPEN_APPEND | FA_READ | FA_WRITE);
-
+////	  fresult = f_open(&fil, fileName, FA_OPEN_APPEND | FA_READ | FA_WRITE);
+  	  fresult = f_open(&fil, fileName, FA_CREATE_ALWAYS | FA_WRITE);
+//
+//	  send_uart("File created \r\n");
+//
+//
 //	  // creating message with CAN data
 //	  sprintf(SD_message, "ID: %#.3x, Data: %#.4x, Timestamp: %d, Length: %d", CAN_DATA.ID, CAN_DATA.DATA, CAN_DATA.TIME, CAN_DATA.LENGTH);
 //
@@ -296,39 +295,6 @@ int main(void)
 
   /* USER CODE END 2 */
 
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
-
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
-
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
-
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
-
-  /* Create the thread(s) */
-  /* definition and creation of ReadCAN */
-  osThreadDef(ReadCAN, StartReadCAN, osPriorityNormal, 0, 128);
-  ReadCANHandle = osThreadCreate(osThread(ReadCAN), NULL);
-
-  /* definition and creation of SDwrite */
-  osThreadDef(SDwrite, StartSDwrite, osPriorityLow, 0, 128);
-  SDwriteHandle = osThreadCreate(osThread(SDwrite), NULL);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
-
-  /* Start scheduler */
-  osKernelStart();
-
-  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -336,6 +302,30 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+	  // check if message is available
+	  if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0){
+
+		  send_uart("CAN  message received \r\n");
+
+		  // receive message and store header info in CAN_rx_header, and data bytes into CAN_rx_data
+		  HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data);
+
+		  CAN_DATA.ID = (uint16_t) CAN_rx_header.StdId;
+		  CAN_DATA.DATA = (uint64_t) CAN_rx_data;
+		  CAN_DATA.TIME = (uint64_t) CAN_rx_header.Timestamp;
+		  CAN_DATA.LENGTH = (uint8_t) CAN_rx_header.DLC;
+
+		  // creating message with CAN data
+		  sprintf(SD_message, "ID: %#.3x, Data: %#.4x, Timestamp: %d, Length: %d", CAN_DATA.ID, CAN_DATA.DATA, CAN_DATA.TIME, CAN_DATA.LENGTH);
+
+		  // writing CAN line to SD card
+		  fresult = f_puts(SD_message, &fil);
+
+	  }
+
+	  HAL_Delay(100);
+
   }
   /* USER CODE END 3 */
 }
@@ -520,76 +510,6 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
-
-/* USER CODE BEGIN Header_StartReadCAN */
-/**
-* @brief Function implementing the ReadCAN thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartReadCAN */
-void StartReadCAN(void const * argument)
-{
-  /* USER CODE BEGIN 5 */
-
-	// CAN setup
-	HAL_CAN_Start(&hcan);
-
-	/* testing setting values for CAN_DATA */
-	CAN_DATA.ID = 0x800;
-	CAN_DATA.DATA = 0x8324;
-	CAN_DATA.TIME = 28492;
-	CAN_DATA.LENGTH = 8;
-
-  /* Infinite loop */
-  for(;;)
-  {
-	  osDelay(1);
-
-      // check if message is available
-	  if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0){
-
-		  // receive message and store header info in CAN_rx_header, and data bytes into CAN_rx_data
-		  HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data);
-
-		  CAN_DATA.ID = (uint16_t) CAN_rx_header.StdId;
-		  CAN_DATA.TIME = (uint16_t) CAN_rx_header.Timestamp;
-		  CAN_DATA.LENGTH = (uint16_t) CAN_rx_header.DLC;
-	  }
-  }
-
-  // incase accidentally exits task loop
-  osThreadTerminate(NULL);
-  /* USER CODE END 5 */
-}
-
-/* USER CODE BEGIN Header_StartSDwrite */
-/**
-* @brief Function implementing the SDwrite thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartSDwrite */
-void StartSDwrite(void const * argument)
-{
-  /* USER CODE BEGIN StartSDwrite */
-
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-
-    // creating message with CAN data
-    sprintf(SD_message, "ID: %#.3x, Data: %#.4x, Timestamp: %d, Length: %d", CAN_DATA.ID, CAN_DATA.DATA, CAN_DATA.TIME, CAN_DATA.LENGTH);
-
-    // writing CAN line to SD card
-    fresult = f_puts(SD_message, &fil);
-  }
-
-  // incase accidentally exit task loop
-  osThreadTerminate(NULL);
-  /* USER CODE END StartSDwrite */
-}
 
 /**
   * @brief  This function is executed in case of error occurrence.

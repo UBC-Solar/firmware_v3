@@ -2,8 +2,6 @@
 ../Middlewares/Third_Party/FatFs/src/ff.c:597:6:mem_set	32	static
 ../Middlewares/Third_Party/FatFs/src/ff.c:606:5:mem_cmp	40	static
 ../Middlewares/Third_Party/FatFs/src/ff.c:616:5:chk_chr	16	static
-../Middlewares/Third_Party/FatFs/src/ff.c:629:5:lock_fs	16	static
-../Middlewares/Third_Party/FatFs/src/ff.c:638:6:unlock_fs	16	static
 ../Middlewares/Third_Party/FatFs/src/ff.c:662:9:chk_lock	24	static
 ../Middlewares/Third_Party/FatFs/src/ff.c:688:5:enq_lock	16	static
 ../Middlewares/Third_Party/FatFs/src/ff.c:698:6:inc_lock	24	static
