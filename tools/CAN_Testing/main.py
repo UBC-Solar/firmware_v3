@@ -1,6 +1,7 @@
 from Recieve import AutoChecker
 from Prompter import Prompter
 from Formatter import InfluxDBFormatter
+from FileUtils import getDBCFile
 
 
 # Instaniate prompter class for user inputs
@@ -8,8 +9,9 @@ prompt = Prompter()
 
 
 """ BEGIN SCRIPT """
+
 # Get the DBC file path
-DBC_FILE_PATH = prompt.getDBCFile()
+DBC_FILE_PATH = getDBCFile()
 
 # Continuously get mode from user and perform actions
 mode, displayPassed = prompt.chooseMode()
@@ -25,6 +27,10 @@ while mode != "Stop":
         # Check Log against requirements
         print("\n------------------ CHECKS ------------------\n")
         receiver.checkLog()
+
+        # Check CAN LOAD
+        print("\n------------------ CAN LOAD ------------------\n")
+
 
         # Write the log file to influx format if user wnats to
         if prompt.getInfluxFormatLogs():

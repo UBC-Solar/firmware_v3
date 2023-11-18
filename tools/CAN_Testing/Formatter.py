@@ -1,11 +1,13 @@
 from Recieve import AutoChecker
 from Prompter import Prompter
+from FileUtils import getValidLines
+from FileUtils import getDBCFile
 import os
 
 """ DEFINE NAMING CONSTANTS """
 INFLUX_FILE_NAME = "influx_log.txt"
 prompt = Prompter()
-DBC_FILE_PATH = prompt.getDBCFile()
+DBC_FILE_PATH = getDBCFile()
 
 
 """
@@ -54,9 +56,7 @@ class InfluxDBFormatter:
         try:
             with open(influx_file_path, "w") as influx_file:
                 # Use get valid lines from Reciever
-                reciever = AutoChecker(DBC_FILE_PATH, self.log_file_name, self.json_file_name, self.displayPassed)
-
-                for line in reciever.getValidLines(log_file):
+                for line in getValidLines(log_file, "Rx"):
                     lineAsList = [entry for entry in line.split() if entry]
                     can_message = self.formatCAN(lineAsList)
                     influx_file.write(can_message)

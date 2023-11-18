@@ -1,5 +1,6 @@
 import cantools
 import json
+from FileUtils import getValidLines
 
 
 """ DEFINE CONSTANTS """
@@ -84,29 +85,11 @@ class AutoChecker:
             return
 
         # Continuously Read lines and compare data
-        for line in self.getValidLines(log_file):
+        for line in getValidLines(log_file, type="Rx"):
             self.compareData(line)
 
         # Close the file
         log_file.close()
-
-
-    """
-    Returns all the lines to check assuming they are 'Rx'
-
-    PARAMS:
-        log_file: The log file to read from
-    
-    RETURNS: list of all the lines to check
-    """
-    def getValidLines(self, log_file):
-        valid_lines = []
-
-        for line in log_file:
-            if "Rx" in line:
-                valid_lines.append(line)
-
-        return valid_lines
 
 
     """

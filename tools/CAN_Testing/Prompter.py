@@ -1,4 +1,5 @@
 import os
+from FileUtils import find_file
 
 
 """
@@ -70,7 +71,7 @@ class Prompter:
         # Try for log file
         log_name = input("Enter the name of the log file: ")
         search_path = os.getcwd()  # Get the current working directory
-        log_file_path = self.find_file(log_name, search_path)
+        log_file_path = find_file(log_name, search_path)
         try:
             open(log_file_path, "r")
         except:
@@ -80,9 +81,9 @@ class Prompter:
         # Try for JSON file
         json_name = input("Enter the name of the JSON file (Default is 'requirements.json'): ")
         if json_name == "":
-            json_file_path = self.find_file("requirements.json", search_path)
+            json_file_path = find_file("requirements.json", search_path)
         else:
-            json_file_path = self.find_file(json_name, search_path)
+            json_file_path = find_file(json_name, search_path)
 
         try:
             open(json_file_path, "r")
@@ -91,31 +92,6 @@ class Prompter:
             return
 
         return log_file_path, json_file_path
-
-
-    """
-    Gets the DBC path depending on the user's working directory
-
-    RETURNS: string of the DBC file path relative to the user
-    """
-    def getDBCFile(self):
-        return self.find_file("brightside_2.dbc", os.getcwd())
-
-
-    """
-    Locates the path of a given file name
-
-    PARAMS:
-        filename:       string of the file name to be found
-        search_path:    string of the path to search for the file
-
-    RETURNS: string of the file path for a given file anme
-    """
-    def find_file(self, filename, search_path):
-        for root, dirs, files in os.walk(search_path):
-            if filename in files:
-                return os.path.join(root, filename)
-        return None
     
 
     """
