@@ -268,19 +268,36 @@ void check_HLIM()
     }
     else
     {
-        FSM_state = DASH_MCB_ON;
+        FSM_state = DASH_ON;
     }
     return;
 }
 
 /**
- * @brief Turns on DASH and MCB boards.
+ * @brief Turns on DASH board.
  *
  * Exit Condition: Timer surpasses 0.2 seconds.
- * Exit Action: Set DASH/MCB pin high.
+ * Exit Action: Set DASH pin high.
+ * Exit State: MCB_ON
+ */
+void DASH_on()
+{
+    if (timer_check(LVS_INTERVAL))
+    {
+        HAL_GPIO_WritePin(DID_CTRL_GPIO_Port, DID_CTRL_GPIO_Port, HIGH);
+        FSM_state = MCB_ON;
+    }
+    return;
+}
+
+/**
+ * @brief Turns on MCB board.
+ * 
+ * Exit Condition: Timer surpasses 0.2 seconds.
+ * Exit Action: Set MCB pin high.
  * Exit State: MDU_ON
  */
-void DASH_MCB_on()
+void MCB_on()
 {
     if (timer_check(LVS_INTERVAL))
     {
@@ -307,12 +324,28 @@ void MDU_on()
 }
 
 /**
- * @brief Turns on TELEM board and SPAR1 pin.
+ * @brief Turns on TELEM board.
  * Exit Condition: Timer surpasses 0.2 seconds.
- * Exit Action: Set TELEM/SPAR1 pin high.
- * Exit State: AMB_ON
+ * Exit Action: Set TEL_CTRL pin high.
+ * Exit State: SPAR1_ON
  */
 void TELEM_on()
+{
+    if (timer_check(LVS_INTERVAL))
+    {
+        HAL_GPIO_WritePin(TEL_CTRL_GPIO_Port, TEL_CTRL_Pin, HIGH);
+        FSM_state = SPAR1_ON;
+    }
+    return;
+}
+
+/**
+ * @brief Turns on SPAR1 pin.
+ * Exit Condition: Timer surpasses 0.2 seconds.
+ * Exit Action: Set SPAR1_CTRL pin high.
+ * Exit State: AMB_ON
+ */
+void SPAR1_on()
 {
     if (timer_check(LVS_INTERVAL))
     {
@@ -374,7 +407,7 @@ void ECU_monitor()
     }
 
     // Fault checking
-    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH || HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH || HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH || HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == HIGH || ADC3_getFaultStatus())
+    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH || HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH || HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH || HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == LOW || ADC3_getFaultStatus())
     {
         FSM_state = FAULT;
         return;

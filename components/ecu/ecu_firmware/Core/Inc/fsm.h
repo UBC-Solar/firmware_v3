@@ -32,9 +32,11 @@ typedef enum
     WAIT_FOR_PC,
     LLIM_CLOSED,
     CHECK_HLIM,
-    DASH_MCB_ON,
+    DASH_ON,
+    MCB_ON,
     MDU_ON,
     TELEM_ON,
+    SPAR1_ON,
     AMB_ON,
     MONITORING,
     FAULT
@@ -87,9 +89,11 @@ void check_LLIM();
 void PC_wait();
 void LLIM_closed();
 void check_HLIM();
-void DASH_MCB_on();
+void DASH_on();
+void MCB_on();
 void MDU_on();
 void TELEM_on();
+void SPAR1_on();
 void AMB_on();
 void ECU_monitor();
 void fault();
@@ -108,9 +112,11 @@ static void (*FSM_state_table[])(void) = {
     PC_wait,
     LLIM_closed,
     check_HLIM,
-    DASH_MCB_on,
+    DASH_on,
+    MCB_on,
     MDU_on,
     TELEM_on,
+    SPAR1_on,
     AMB_on,
     ECU_monitor,
     fault};
