@@ -116,7 +116,7 @@ void BMS_ready()
     else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == LOW)
     {
         last_tick = HAL_GetTick();
-        HAL_GPIO_WritePin(DCDC_MINUS_CTRL_GPIO_Port, DCDC_MINUS_CTRL_Pin, HIGH);
+        HAL_GPIO_WritePin(DCDC_MINUS_CTRL_GPIO_Port, DCDC_MINUS_CTRL_Pin, CONTACTOR_CLOSED);
         FSM_state = PC_DCDC;
     }
     return;
@@ -133,46 +133,46 @@ void DCDC_minus()
 {
     if (timer_check(SHORT_INTERVAL))
     {
-        HAL_GPIO_WritePin(DCDC_PLUS_CTRL_GPIO_Port, DCDC_PLUS_CTRL_Pin, HIGH);
+        HAL_GPIO_WritePin(DCDC_PLUS_CTRL_GPIO_Port, DCDC_PLUS_CTRL_Pin, CONTACTOR_CLOSED);
         FSM_state = DCDC_PLUS;
     }
     return;
 }
 
 /**
- * @brief After waiting for DCDC+ to turn on, turn on fans, switch to DCDC convertor, and enable MDU Discharge pin.
+ * @brief After waiting for DCDC+ to turn on, turn on fans, switch to DCDC convertor, and reset discharge relay.
  *
  * Exit Condition: Timer surpasses 0.3 seconds.
- * Exit Action: Reset timer, enable battery fans, set MDU Discharge pin high.
+ * Exit Action: Reset timer, enable battery fans, set discharge reset (DCH_RSTd) pin high.
  * Exit State: DISABLE_MDU_DCH
  */
 void DCDC_plus()
 {
-    if (timer_check(SHORT_INTERVAL))
-    {
-        HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, HIGH);
-        HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, HIGH);
-        HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, HIGH);
-        HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, HIGH);
-        HAL_GPIO_WritePin(FAN4_CTRL_GPIO_Port, FAN4_CTRL_Pin, HIGH);
-        HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, HIGH);
-        FSM_state = DISABLE_MDU_DCH;
-    }
+    HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, HIGH);
+    HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, HIGH);
+    HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, HIGH);
+    HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, HIGH);        
+    HAL_GPIO_WritePin(FAN4_CTRL_GPIO_Port, FAN4_CTRL_Pin, HIGH);
+    HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, HIGH);
+    FSM_state = DISABLE_MDU_DCH;
     return;
 }
 
 /**
- * @brief Waits for the discharge resistor for the MDU to fully discharge.
+ * @brief Waits for the discharge relay to fully reset.
  *
- * Exit Condition: Timer surpasses 0.5 seconds.
+ * Exit Condition: Timer surpasses 0.3 seconds.
  * Exit Action: Set MDU Discharge pin low, close negative contactor.
- * Exit State: CLOSE_NEG
+ * Exit State: CHECK_LLIM;
  */
 void disable_MDU_DCH()
 {
-    HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, LOW);
-    HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, HIGH);
-    FSM_state = CHECK_LLIM;
+    if (timer_check(SHORT_INTERVAL))
+    {
+        HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, LOW);
+        HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, HIGH);
+        FSM_state = CHECK_LLIM;
+    }
     
     return;
 }
@@ -192,12 +192,11 @@ void check_LLIM()
 {
     if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_OPEN)
     {
-        last_LLIM_status = REQ_CONTACTOR_OPEN;
+        last_LLIM_status = CONTACTOR_OPEN;
         FSM_state = CHECK_HLIM;
     }
     else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE)
     {
-        last_LLIM_status = REQ_CONTACTOR_CLOSE;
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
         last_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_PC;
@@ -216,7 +215,8 @@ void PC_wait()
 {
     if (timer_check(MDU_PC_INTERVAL))
     {
-        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, HIGH);
+        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
+        last_LLIM_status = CONTACTOR_CLOSE;
         FSM_state = LLIM_CLOSED;
     }
     return;
@@ -233,7 +233,7 @@ void LLIM_closed()
 {
     if (timer_check(SHORT_INTERVAL))
     {
-        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, LOW);
+        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
         FSM_state = CHECK_HLIM;
     }
     return;
@@ -262,12 +262,28 @@ void check_HLIM()
         last_HLIM_status = CONTACTOR_CLOSED;
     }
 
-    if (LVS_power)
+    if (LVS_ALREADY_ON = true)
     {
         FSM_state = MONITORING;
     }
     else
     {
+        FSM_state = TELEM_ON;
+    }
+    return;
+}
+
+/**
+ * @brief Turns on TELEM board.
+ * Exit Condition: Timer surpasses 0.2 seconds.
+ * Exit Action: Set TEL_CTRL pin high.
+ * Exit State: SPAR1_ON
+ */
+void TELEM_on()
+{
+    if (timer_check(LVS_INTERVAL))
+    {
+        HAL_GPIO_WritePin(TEL_CTRL_GPIO_Port, TEL_CTRL_Pin, HIGH);
         FSM_state = DASH_ON;
     }
     return;
@@ -318,22 +334,6 @@ void MDU_on()
     if (timer_check(LVS_INTERVAL))
     {
         HAL_GPIO_WritePin(MDI_CTRL_GPIO_Port, MDI_CTRL_Pin, HIGH);
-        FSM_state = TELEM_ON;
-    }
-    return;
-}
-
-/**
- * @brief Turns on TELEM board.
- * Exit Condition: Timer surpasses 0.2 seconds.
- * Exit Action: Set TEL_CTRL pin high.
- * Exit State: SPAR1_ON
- */
-void TELEM_on()
-{
-    if (timer_check(LVS_INTERVAL))
-    {
-        HAL_GPIO_WritePin(TEL_CTRL_GPIO_Port, TEL_CTRL_Pin, HIGH);
         FSM_state = SPAR1_ON;
     }
     return;
@@ -366,7 +366,7 @@ void AMB_on()
     if (timer_check(LVS_INTERVAL))
     {
         HAL_GPIO_WritePin(AMB_CTRL_GPIO_Port, AMB_CTRL_Pin, HIGH);
-        LVS_power = true;
+        LVS_ALREADY_ON = true;
         FSM_state = MONITORING;
     }
     return;
@@ -407,7 +407,11 @@ void ECU_monitor()
     }
 
     // Fault checking
-    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH || HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH || HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH || HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == LOW || ADC3_getFaultStatus())
+    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH || \
+        HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH || \
+        HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH || \
+        HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == LOW || \
+        ADC3_getFaultStatus())
     {
         FSM_state = FAULT;
         return;
@@ -457,12 +461,12 @@ void fault()
     // HAL_GPIO_WritePin(MDU_EN_GPIO_Port, MDU_EN_Pin, LOW);
 
     // Open all contactors
-    HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(DCDC_MINUS_CTRL_GPIO_Port, DCDC_MINUS_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(DCDC_PLUS_CTRL_GPIO_Port, DCDC_PLUS_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
+    HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_OPEN);
+    HAL_GPIO_WritePin(DCDC_MINUS_CTRL_GPIO_Port, DCDC_MINUS_CTRL_Pin, CONTACTOR_OPEN);
+    HAL_GPIO_WritePin(DCDC_PLUS_CTRL_GPIO_Port, DCDC_PLUS_CTRL_Pin, CONTACTOR_OPEN);
+    HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, CONTACTOR_OPEN);
+    HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
     return;
 }
 

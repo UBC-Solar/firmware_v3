@@ -32,10 +32,10 @@ typedef enum
     WAIT_FOR_PC,
     LLIM_CLOSED,
     CHECK_HLIM,
+    TELEM_ON,
     DASH_ON,
     MCB_ON,
     MDU_ON,
-    TELEM_ON,
     SPAR1_ON,
     AMB_ON,
     MONITORING,
@@ -47,7 +47,7 @@ typedef enum
 
 static unsigned int last_tick;
 static FSM_state_t FSM_state;
-static bool LVS_power = false;
+static bool LVS_ALREADY_ON = false;
 static bool last_HLIM_status;
 static bool last_LLIM_status;
 
@@ -89,10 +89,10 @@ void check_LLIM();
 void PC_wait();
 void LLIM_closed();
 void check_HLIM();
+void TELEM_on();
 void DASH_on();
 void MCB_on();
 void MDU_on();
-void TELEM_on();
 void SPAR1_on();
 void AMB_on();
 void ECU_monitor();
@@ -112,10 +112,10 @@ static void (*FSM_state_table[])(void) = {
     PC_wait,
     LLIM_closed,
     check_HLIM,
+    TELEM_on,
     DASH_on,
     MCB_on,
     MDU_on,
-    TELEM_on,
     SPAR1_on,
     AMB_on,
     ECU_monitor,
