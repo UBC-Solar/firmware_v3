@@ -10,6 +10,7 @@
 /* FILE IMPORTS */
 
 #include "fsm.h"
+#include "ecu.h"
 /**
  * @brief Initialization of FSM.
  */
