@@ -381,7 +381,24 @@ void AMB_on()
  */
 void ECU_monitor()
 {
-    // Check battery capacity
+    //TODO ADC DOC_COC check
+
+    /*************************
+    Fault Checking
+    **************************/
+    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH || \
+        HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH || \
+        HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH || \
+        HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == LOW || \
+        ADC3_getFaultStatus())
+    {
+        FSM_state = FAULT;
+        return;
+    }
+
+    /*************************
+    Check Battery Capacity
+    **************************/
     if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_HLIM_status == CONTACTOR_CLOSED)
     {
         HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
@@ -406,27 +423,18 @@ void ECU_monitor()
         last_LLIM_status = CONTACTOR_CLOSED;
     }
 
-    // Fault checking
-    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH || \
-        HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH || \
-        HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH || \
-        HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == LOW || \
-        ADC3_getFaultStatus())
-    {
-        FSM_state = FAULT;
-        return;
-    }
 
-    // TODO read current, if too high or too low, set/pulse?? OC LATCH // OR do a reset in the init fcn
-
-    // send CAN message with current values to BMS
+    /*************************
+    Send CAN Messages
+    **************************/
     if (timer_check(MESSAGE_INTERVAL))
     {
         CAN_send_current(ADC_netCurrentOut(ADC_getArrayCurrent(), ADC_getMotorCurrent()));
     }
 
-    // check supplemental battery voltage
-    // unsigned int supp_voltage = 0; ******
+    /*************************
+    Check SUPP Voltage
+    **************************/
     if (ADC_getSuppBattVoltage() < SUPP_LIMIT && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) == LOW && !ADC3_getFaultStatus())
     {
         HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, HIGH);
@@ -445,8 +453,11 @@ void ECU_monitor()
  */
 void fault()
 {
-    // TODO send fault message via CAN
-    // also send current message via CAN?
+    // send CAN message with current values with BMS
+    if (timer_check(MESSAGE_INTERVAL))
+    {
+        //send message 0x450
+    }
 
     // switch to SUPP
     HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, LOW);
@@ -458,7 +469,7 @@ void fault()
     }
 
     // MDU off
-    // HAL_GPIO_WritePin(MDU_EN_GPIO_Port, MDU_EN_Pin, LOW);
+    HAL_GPIO_WritePin(MDU_EN_GPIO_Port, MDU_EN_Pin, LOW);
 
     // Open all contactors
     HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
