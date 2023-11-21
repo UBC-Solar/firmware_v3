@@ -382,6 +382,58 @@ void CAN_SendMessages627(Pack_t *pack)
 }
 
 /**
+ * @brief Get data for set of messages for ID 628, construct CAN messages and send them
+ *
+ * @param pack pack data structure that data will be read from
+ */
+void CAN_SendMessages628(Pack_t *pack)
+{
+    CAN_TxMessage_t txMessage = {0};
+    txMessage.tx_header.StdId = 0x628U;
+    txMessage.tx_header.DLC = 5;
+
+    unint8_t status_bit = 0;
+
+    for(unint8_t multiplex_index = 0; multiplex_index < NUM_MULTIPLEXED_DATA_MESSAGES; multiplex_index++)
+    {            
+         uint32_t base_module_num = multiplex_index * MODULES_PER_MULTIPLEXED_DATA_MESSAGE;
+
+        for ( int index = 1; index <= 4; index++ ){
+            status_bit |= (pack->module[ base_module_num + (index - 1) ]->status.fault_over_temperature);
+            status_bit |= (pack->module[ base_module_num + (index - 1) ]->status.fault_under_voltage)<<2;
+            status_bit |= (pack->module[ base_module_num + (index - 1) ]->status.fault_over_voltage)<<3;
+            status_bit |= (pack->module[ base_module_num + (index - 1) ]->status.charge_over_temperature_limit)<<4;
+            status_bit |= (pack->module[ base_module_num + (index - 1) ]->status.warning_low_voltage)<<5;
+            status_bit |= (pack->module[ base_module_num + (index - 1) ]->status.warning_high_voltage)<<6;
+            status_bit |= (pack->module[ base_module_num + (index - 1) ]->status.warning_high_temperature)<<7;
+        
+            txMessage.data[ base_module_num + index ] = status_bit;
+        }
+
+        queueCanMessage(txMessage);
+    }
+}
+
+/**
+ * @brief Get data for set of messages for ID 629, construct CAN messages and send them
+ *
+ * @param pack pack data structure that data will be read from
+ */
+void CAN_SendMessages629(Pack_t * pack)
+{
+    CAN_TxMessage_t txMessage = {0};
+    txMessage.tx_header.StdId = 0x629U;
+    txMessage.tx_header.DLC = 4;
+
+    for(unint8_t module_num = 0; module_num < PACK_NUM_BATTERY_MODULES; module_num++)
+    {
+        txMesage.data[module_num] = pack->module[module_num]->status.balancing_active;
+    }
+    queueCanMessage(&txMessage);
+}
+
+
+/**
  * @brief Getter for data contained in the last received ECU current data CAN message
  * 
  * @param[out] pack_current Signed pack current in amps
