@@ -2,9 +2,10 @@ from FileUtils import getValidLines
 import numpy as np
 
 """ CONSTANTS """
-INTERVAL_MS                     = 100 
-MAX_CAN_LOAD_INTERVAL_BYTES     = 0.1 * 1000000
-T_BIT                           = 1.0 / (1000000 * 8)
+INTERVAL_MS                         = 1 
+MAX_CAN_LOAD_BYTES_PER_S            = 5 * 1000000           # 5 MB/s
+MAX_CAN_LOAD_INTERVAL_BYTES         = MAX_CAN_LOAD_BYTES_PER_S * (INTERVAL_MS / 1000)
+T_BIT                               = 1.0 / (1000000 * 8)
 
 
 class JitterAnalyzer:
@@ -27,8 +28,13 @@ class JitterAnalyzer:
         min_can_load_percent = (min_bytes / MAX_CAN_LOAD_INTERVAL_BYTES) * 100
 
         # Print the CAN LOAD
-        print(f"Max CAN LOAD ({INTERVAL_MS} ms): {round(max_can_load_percent, 2)}%")
-        print(f"Min CAN LOAD ({INTERVAL_MS} ms): {round(min_can_load_percent, 2)}%")
+        print(f"Max CAN LOAD for {INTERVAL_MS} ms is {round(max_can_load_percent, 2)}%: \n"
+              f"    {round((max_bytes / INTERVAL_MS) * 1000, 2)} bytes/s of MAX ({MAX_CAN_LOAD_BYTES_PER_S} bytes/s)")
+        print()
+        print(f"Min CAN LOAD for {INTERVAL_MS} ms is {round(min_can_load_percent, 2)}%: \n"
+              f"    {round((min_bytes / INTERVAL_MS) * 1000, 2)} bytes/s of MAX ({MAX_CAN_LOAD_BYTES_PER_S} bytes/s)")
+        
+        print()
 
 
     """
@@ -61,7 +67,12 @@ class JitterAnalyzer:
             min_bytes = min(min_bytes, total_bytes)
 
             # Get the next interval
-            start_idx = last_idx
+            start_idx += 1
+
+            # If the current last index is the last line, break
+            if last_idx == len(allValidLines) - 1:
+                break
+
             last_idx = self.getLastIndexOfInterval(start_idx, allValidLines)
     
         # Close the file
@@ -82,6 +93,9 @@ class JitterAnalyzer:
     def getLastIndexOfInterval(self, startIndex, allValidLines):
         # Go through each line and check if the timestamp is within the interval
         for i in range(startIndex, len(allValidLines)):
+            # If the current line is the last line, return its index
+            if i == len(allValidLines) - 1:
+                return i
             curr_line = allValidLines[i]
             start_line = allValidLines[startIndex]
             curr_timestamp = float(curr_line.split()[1])

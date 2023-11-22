@@ -1,6 +1,7 @@
 from Recieve import AutoChecker
 from Prompter import Prompter
 from Formatter import InfluxDBFormatter
+from JitterAnalyzer import JitterAnalyzer
 from FileUtils import getDBCFile
 
 
@@ -19,10 +20,11 @@ while mode != "Stop":
     if mode == "Transmit":
         pass
     elif mode == "Receive":
-        # Instantiate new AutoChecker class and new Formatter class
+        # Instantiate new AutoChecker class, new Formatter class, and new JitterAnalyzer class
         log_file, json_file = prompt.getFilesFromUser()
         receiver = AutoChecker(DBC_FILE_PATH, log_file, json_file, displayPassed)
         formatter = InfluxDBFormatter(log_file, json_file, displayPassed)
+        jitterAnalyzer = JitterAnalyzer(log_file)
 
         # Check Log against requirements
         print("\n------------------ CHECKS ------------------\n")
@@ -30,7 +32,7 @@ while mode != "Stop":
 
         # Check CAN LOAD
         print("\n------------------ CAN LOAD ------------------\n")
-
+        jitterAnalyzer.displayMaxMinCANLoad()
 
         # Write the log file to influx format if user wnats to
         if prompt.getInfluxFormatLogs():
