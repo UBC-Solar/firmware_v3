@@ -11,13 +11,16 @@
 #include "adc.h"
 #include "can.h"
 #include "stdbool.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "cmsis_os.h"
 
 #define CAN_DATA_LENGTH 8			  // Length of a CAN message in bytes
 
-#define UPDATE_FLAGS_DELAY 5		  // updateFlags rtos task delay time in ms
-#define UPDATE_STATE_DELAY 5		  // updateState rtos task delay time in ms
-#define SEND_MOTOR_COMMAND_DELAY 100  // sendMotorCommand rtos task delay time in ms
-#define GET_ADC_VALUES_DELAY 10		  // getADCValues rtos task delay time in ms
+
+
+#define DELAY_MCB_STATE_MACHINE 10	  // Main mcb state machine delay time in ms
+
 #define GET_BATTERY_SOC_DELAY 5000	  // getBatterySOC rtos task delay time in ms
 #define GET_VELOCITY_DELAY 500		  // getVelocity rtos task delay time in ms
 
@@ -95,18 +98,20 @@ typedef enum {
  */
 extern InputFlags input_flags;
 extern DriveState state;
-extern float cruise_velocity;
-extern float velocity_of_car;
-extern uint8_t battery_soc;
+extern float gCruiseVelocity;
+extern float gVelocityOfCar;
+extern uint8_t gBatterySOC;
 
 /*
  *  Functions
  */
+void TaskMCBStateMachine();
+
 void SendCANMotorCommand(float current, float velocity);
 float NormalizeADCValue(uint16_t value);
 void SendCANDIDNextPage();
 void SendCANDIDDriveState(DriveState state);
-void UpdateInputFlags(InputFlags* flags);
+
 bool isBitSet(int num, int pos);
 
 
