@@ -10,6 +10,7 @@
 #include "can.h"
 #include <float.h>
 #include <string.h>
+#include "common.h"
 
 /*============================================================================*/
 /* DEFINITIONS */
@@ -19,10 +20,7 @@
 
 #define CAN_MAX_DATAFRAME_BYTES 8U
 #define OBC_MESSAGE_ID 0x3E5U
-#define ECU_CURRENT_MESSAGE_ID 0x450U
-#define ECU_CURRENT_MESSAGE_LENGTH 3U
-#define ECU_CHARGER_MESSAGE_ID 0x3F4U
-#define ECU_CHARGER_MESSAGE_LENGTH 6U
+
 
 
 typedef struct {
@@ -130,17 +128,21 @@ void CAN_SendMessage450(ECU_t *ECU)
     uint32_t * pTxMailbox = 0;
     CAN_TxMessage_t txMessage = {0};
     txMessage.tx_header.StdId = 0x450U;
-    txMessage.tx_header.DLC = ECU_CURRENT_MESSAGE_LENGTH;
+    txMessage.tx_header.DLC = 5U;
     HAL_StatusTypeDef status;
 
-    txMessage.data[0] = int8_t(ECU->pack_current);
-    txMessage.data[1] = uint8_t(ECU->lv_current); //should I be dividing lv_current by 8.5 to get value in A before sending it out as a CAN message?
-    txMessage.data[2] = uint8_t(ECU->status.raw);
+//TODO: Confirm with Jack how we get analog values
+    txMessage.data[0] = uint8_t(ecu_data.adc_data.pack_current);
+    txMessage.data[1] = uint8_t(ecu_data.adc_data.lv_current); //should I be dividing lv_current by 8.5 to get value in A before sending it out as a CAN message?
+    //txMessage.data[2] = uint8_t(ecu_data.adc_data.supp_batt_volt); //TODO: Confirm with jack
+    //txMessage.data[3] = uint8_t((ecu_data.adc_data.supp_batt_volt) >> 8);
+    txMessage.data[4] = uint8_t(ecu_data.status.raw);
 
     do {
         status = HAL_CAN_AddTxMessage(CAN_data.can_handle, &txMessage.tx_header, txMessage.data, pTxMailbox);
     } while (status != HAL_OK && HAL_GetTick() - begin_tick <= CAN_TIMEOUT);
 }
+
 
 /**
  * @brief Get data for message 624, construct CAN message and send it
@@ -153,7 +155,7 @@ void CAN_SendMessage3F4()
     uint32_t * pTxMailbox = 0;
     CAN_TxMessage_t txMessage = {0};
     txMessage.tx_header.StdId = 0x3F4U;
-    txMessage.tx_header.DLC = ECU_CHARGER_MESSAGE_LENGTH;
+    txMessage.tx_header.DLC = 6U;
     HAL_StatusTypeDef status;
     static uint8_t charger_enable = 0;
 

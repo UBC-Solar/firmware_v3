@@ -11,6 +11,7 @@
 
 #include "fsm.h"
 #include "ecu.h"
+#include "common.h"
 /**
  * @brief Initialization of FSM.
  */

@@ -25,7 +25,7 @@
 #include "fsm.h"
 #include "adc.h"
 #include "can.h"
-
+#include "common.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,6 +55,7 @@ TIM_HandleTypeDef htim3;
 DMA_HandleTypeDef hdma_adc2;
 volatile uint32_t adc1_buf[ADC1_BUF_LENGTH] = {0};
 volatile uint32_t adc3_buf[ADC3_BUF_LENGTH] = {0};
+ECU_Data_t ecu_data = {0};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
