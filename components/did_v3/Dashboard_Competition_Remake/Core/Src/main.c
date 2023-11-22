@@ -338,6 +338,12 @@ int main(void)
 		 * if (current_page + 1 == NUM_PAGES) set current_page = 0
 		 */
 
+		/* Toggle LED that we received CAN message */
+		HAL_GPIO_TogglePin(BMS_COMM_FLT_GPIO_Port, BMS_COMM_FLT_Pin);
+		HAL_Delay(500);
+		continue; // Loop again, skip the rest.
+
+
 		uint8_t button_pressed = FALSE;
 		uint8_t cruise_enabled = FALSE;
 
