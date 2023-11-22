@@ -62,27 +62,6 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for UpdateState */
-osThreadId_t UpdateStateHandle;
-const osThreadAttr_t UpdateState_attributes = {
-  .name = "UpdateState",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for SendMotorCommand */
-osThreadId_t SendMotorCommandHandle;
-const osThreadAttr_t SendMotorCommand_attributes = {
-  .name = "SendMotorCommand",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for GetADCValues */
-osThreadId_t GetADCValuesHandle;
-const osThreadAttr_t GetADCValues_attributes = {
-  .name = "GetADCValues",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
 /* Definitions for GetBatterySOC */
 osThreadId_t GetBatterySOCHandle;
 const osThreadAttr_t GetBatterySOC_attributes = {
@@ -104,6 +83,20 @@ const osThreadAttr_t GetBatteryTemp_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for MCBStateMachine */
+osThreadId_t MCBStateMachineHandle;
+const osThreadAttr_t MCBStateMachine_attributes = {
+  .name = "MCBStateMachine",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for GetCANMessage */
+osThreadId_t GetCANMessageHandle;
+const osThreadAttr_t GetCANMessage_attributes = {
+  .name = "GetCANMessage",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -111,12 +104,11 @@ const osThreadAttr_t GetBatteryTemp_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-void updateState(void *argument);
-void sendMotorCommand(void *argument);
-void getADCValues(void *argument);
 void getBatterySOC(void *argument);
 void getVelocity(void *argument);
 void getBatteryTemp(void *argument);
+void mcbStateMachine(void *argument);
+void getCANMessage(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -149,15 +141,6 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* creation of UpdateState */
-  UpdateStateHandle = osThreadNew(updateState, NULL, &UpdateState_attributes);
-
-  /* creation of SendMotorCommand */
-  SendMotorCommandHandle = osThreadNew(sendMotorCommand, NULL, &SendMotorCommand_attributes);
-
-  /* creation of GetADCValues */
-  GetADCValuesHandle = osThreadNew(getADCValues, NULL, &GetADCValues_attributes);
-
   /* creation of GetBatterySOC */
   GetBatterySOCHandle = osThreadNew(getBatterySOC, NULL, &GetBatterySOC_attributes);
 
@@ -166,6 +149,12 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of GetBatteryTemp */
   GetBatteryTempHandle = osThreadNew(getBatteryTemp, NULL, &GetBatteryTemp_attributes);
+
+  /* creation of MCBStateMachine */
+  MCBStateMachineHandle = osThreadNew(mcbStateMachine, NULL, &MCBStateMachine_attributes);
+
+  /* creation of GetCANMessage */
+  GetCANMessageHandle = osThreadNew(getCANMessage, NULL, &GetCANMessage_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -197,130 +186,6 @@ void StartDefaultTask(void *argument)
   /* USER CODE END StartDefaultTask */
 }
 
-/* USER CODE BEGIN Header_updateState */
-/**
-* @brief Task for setting the state based on the given event_flags.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_updateState */
-void updateState(void *argument)
-{
-  /* USER CODE BEGIN updateState */
-	/* Infinite loop */
-	for(;;)
-	{
-		UpdateInputFlags(&input_flags);
-		/*
-		 *  Conditional statement is intentially organized in a hierarchical structure.
-		 *  If there are two valid states based on the given event_flags, the higher one will take priority.
-		 *  Ex: If throttle and regen are both pressed, the state will be in regen because it has the higher priority.
-		 *  Since it is higher in the conditional statement.
-		 */
-		if (input_flags.park_enabled && (state == IDLE || state == PARK))
-			state = PARK;
-		else if (input_flags.mech_brake_pressed)
-			state = IDLE;
-		else if (input_flags.regen_pressed && input_flags.charge_under_threshold && input_flags.regen_switch_enabled)
-		  	state = REGEN;
-		else if (input_flags.cruise_enabled && input_flags.cruise_accelerate_enabled)
-		  	state = CRUISE_ACCELERATE;
-		else if (input_flags.cruise_enabled)
-		    state = CRUISE;
-		else if (input_flags.reverse_enabled && input_flags.velocity_under_threshold && state != PARK)
-			state = REVERSE;
-		else if (input_flags.throttle_pressed)
-		    state = DRIVE;
-		else
-		  	state = IDLE;
-		osDelay(UPDATE_STATE_DELAY);
-	}
-  /* USER CODE END updateState */
-}
-
-/* USER CODE BEGIN Header_sendMotorCommand */
-/**
-* @brief Task for sending Motor commands via CAN based on the current state
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_sendMotorCommand */
-void sendMotorCommand(void *argument)
-{
-  /* USER CODE BEGIN sendMotorCommand */
-	/* Infinite loop */
-	for(;;)
-	{
-		if(state == PARK)
-		{
-			velocity = 0.0;
-			current = 1.0;
-		}
-		else if(state == REGEN)
-	    {
-	    	velocity = 0.0;
-	    	current = NormalizeADCValue(ADC_regen_val);
-	    }
-	    else if(state == DRIVE)
-	    {
-	    	velocity = 100.0;
-	    	current = NormalizeADCValue(ADC_throttle_val);
-	    }
-	    else if(state == REVERSE)
-	    {
-	    	velocity = -100.0;
-	    	current = NormalizeADCValue(ADC_throttle_val);
-	    }
-	    else if (state == CRUISE)
-	    {
-	    	velocity = cruise_velocity;
-	    	current = 1.0;
-	    }
-		else if (state == CRUISE_ACCELERATE)
-		{
-			velocity = 100.0;
-			current = NormalizeADCValue(ADC_throttle_val);
-		}
-	    else
-	    {
-	    	velocity = 0.0;
-	    	current = 0.0;
-	    }
-		SendCANMotorCommand(velocity, current);
-	    osDelay(SEND_MOTOR_COMMAND_DELAY);
-	}
-  /* USER CODE END sendMotorCommand */
-}
-
-/* USER CODE BEGIN Header_getADCValues */
-/**
-* @brief Gets the throttle and regen ADC values and updates relevent event flags
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_getADCValues */
-void getADCValues(void *argument)
-{
-  /* USER CODE BEGIN getADCValues */
-  /* Infinite loop */
-  for(;;)
-  {
-	// Get ADC value for throttle and sets event flags
-	ADC_throttle_val = ReadADC(&hadc1);
-	input_flags.throttle_pressed = ADC_throttle_val > ADC_DEADZONE;
-	input_flags.cruise_accelerate_enabled = NormalizeADCValue(ADC_throttle_val) > CRUISE_CURRENT;
-
-	// Gets ADC value for regen and sets event flags
-	ADC_regen_val = ReadADC(&hadc2);
-	input_flags.regen_pressed = ADC_regen_val > ADC_DEADZONE;
-	if(ADC_regen_val > ADC_DEADZONE)
-		input_flags.cruise_enabled = false;
-
-    osDelay(GET_ADC_VALUES_DELAY);
-  }
-  /* USER CODE END getADCValues */
-}
-
 /* USER CODE BEGIN Header_getBatterySOC */
 /**
 * @brief Gets battery state of charge from incoming CAN messages.
@@ -343,9 +208,9 @@ void getBatterySOC(void *argument)
 			{
 				// if the battery SOC is out of range, assume it is at 100% as a safety measure
 				if (battery_msg_data[0] < BATTERY_SOC_EMPTY || battery_msg_data[0] > BATTERY_SOC_FULL)
-					battery_soc = BATTERY_SOC_FULL;
+					gBatterySOC = BATTERY_SOC_FULL;
 				else
-					battery_soc = battery_msg_data[0];
+					gBatterySOC = battery_msg_data[0];
 			}
 
 	  		osDelay(GET_BATTERY_SOC_DELAY);
@@ -380,7 +245,7 @@ void getVelocity(void *argument)
 				{
 					velocity.bytes[i] = CAN_message[i+4]; // Vehicle Velocity is stored in bits 32-63.
 				}
-				velocity_of_car = velocity.float_value;
+				gVelocityOfCar = velocity.float_value;
 			}
 		}
 		osDelay(GET_VELOCITY_DELAY);
@@ -418,9 +283,40 @@ void getBatteryTemp(void *argument)
 			}
 		}
 		osDelay(GET_VELOCITY_DELAY);
-
 	}
   /* USER CODE END getBatteryTemp */
+}
+
+/* USER CODE BEGIN Header_mcbStateMachine */
+/**
+* @brief Function implementing the MCBStateMachine thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_mcbStateMachine */
+void mcbStateMachine(void *argument)
+{
+  /* USER CODE BEGIN mcbStateMachine */
+	TaskMCBStateMachine();
+  /* USER CODE END mcbStateMachine */
+}
+
+/* USER CODE BEGIN Header_getCANMessage */
+/**
+* @brief Function implementing the GetCANMessage thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_getCANMessage */
+void getCANMessage(void *argument)
+{
+  /* USER CODE BEGIN getCANMessage */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END getCANMessage */
 }
 
 /* Private application code --------------------------------------------------*/
