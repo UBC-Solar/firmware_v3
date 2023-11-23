@@ -38,10 +38,14 @@ extern CAN_HandleTypeDef hcan;
 
 #define DRIVER_INTERFACE_ADDRESS     0x400
 #define MOTOR_DRIVE_COMMAND_ADDRESS  0x401
-
 #define GET_VELOCITY_HEADER			 0x503
-
 #define BATTERY_MESSAGE_HEADER		 0x622
+
+
+#define CAN_ID_VELOCITY				 0x503
+#define CAN_ID_BATTERY_TEMP			 0x622
+#define CAN_ID_BATTERY_SOC			 0x626
+
 
 #define CAN_DATA_LENGTH 8
 
