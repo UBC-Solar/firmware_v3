@@ -121,7 +121,8 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+    supp_batt_volt = ADC_getSuppBattVoltage();
+    
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
