@@ -62,21 +62,19 @@ typedef union IntBytes {
  *  Input flags used to decide what state to be in
  */
 typedef struct InputFlags {
-  volatile bool regen_pressed;
   volatile bool throttle_pressed;
   volatile bool mech_brake_pressed;
+  volatile bool regen_enabled;
 
   volatile bool reverse_enabled;
   volatile bool cruise_enabled;
   volatile bool park_enabled;
   volatile bool cruise_accelerate_enabled;
-  volatile bool regen_switch_enabled;
 
 
   volatile bool velocity_under_threshold;
-  volatile bool charge_under_threshold;
-  volatile bool regen_disable;
 } InputFlags;
+
 
 /*
  * Used to store the value of the drive state
@@ -106,6 +104,7 @@ extern uint8_t gBatterySOC;
  *  Functions
  */
 void TaskMCBStateMachine();
+void TaskGetCANMessage();
 
 void SendCANMotorCommand(float current, float velocity);
 float NormalizeADCValue(uint16_t value);
@@ -113,6 +112,7 @@ void SendCANDIDNextPage();
 void SendCANDIDDriveState(DriveState state);
 
 bool isBitSet(int num, int pos);
+bool isBitSetFromArray(uint8_t * num, int pos);
 
 
 #endif /* INC_MCB_H_ */

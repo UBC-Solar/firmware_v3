@@ -62,27 +62,6 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for GetBatterySOC */
-osThreadId_t GetBatterySOCHandle;
-const osThreadAttr_t GetBatterySOC_attributes = {
-  .name = "GetBatterySOC",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for GetVelocity */
-osThreadId_t GetVelocityHandle;
-const osThreadAttr_t GetVelocity_attributes = {
-  .name = "GetVelocity",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for GetBatteryTemp */
-osThreadId_t GetBatteryTempHandle;
-const osThreadAttr_t GetBatteryTemp_attributes = {
-  .name = "GetBatteryTemp",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
 /* Definitions for MCBStateMachine */
 osThreadId_t MCBStateMachineHandle;
 const osThreadAttr_t MCBStateMachine_attributes = {
@@ -104,9 +83,6 @@ const osThreadAttr_t GetCANMessage_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-void getBatterySOC(void *argument);
-void getVelocity(void *argument);
-void getBatteryTemp(void *argument);
 void mcbStateMachine(void *argument);
 void getCANMessage(void *argument);
 
@@ -140,15 +116,6 @@ void MX_FREERTOS_Init(void) {
   /* Create the thread(s) */
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
-
-  /* creation of GetBatterySOC */
-  GetBatterySOCHandle = osThreadNew(getBatterySOC, NULL, &GetBatterySOC_attributes);
-
-  /* creation of GetVelocity */
-  GetVelocityHandle = osThreadNew(getVelocity, NULL, &GetVelocity_attributes);
-
-  /* creation of GetBatteryTemp */
-  GetBatteryTempHandle = osThreadNew(getBatteryTemp, NULL, &GetBatteryTemp_attributes);
 
   /* creation of MCBStateMachine */
   MCBStateMachineHandle = osThreadNew(mcbStateMachine, NULL, &MCBStateMachine_attributes);
@@ -186,107 +153,6 @@ void StartDefaultTask(void *argument)
   /* USER CODE END StartDefaultTask */
 }
 
-/* USER CODE BEGIN Header_getBatterySOC */
-/**
-* @brief Gets battery state of charge from incoming CAN messages.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_getBatterySOC */
-void getBatterySOC(void *argument)
-{
-  /* USER CODE BEGIN getBatterySOC */
-	uint8_t battery_msg_data[8];
-	/* Infinite loop */
-	for(;;)
-	{
-		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
-		{
-			// there are multiple CAN IDs being passed through the filter, check if the message is the SOC
-			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, battery_msg_data);
-			if (can_rx_header.StdId == 0x626)
-			{
-				// if the battery SOC is out of range, assume it is at 100% as a safety measure
-				if (battery_msg_data[0] < BATTERY_SOC_EMPTY || battery_msg_data[0] > BATTERY_SOC_FULL)
-					gBatterySOC = BATTERY_SOC_FULL;
-				else
-					gBatterySOC = battery_msg_data[0];
-			}
-
-	  		osDelay(GET_BATTERY_SOC_DELAY);
-		}
-		osDelay(GET_BATTERY_SOC_DELAY);
-	}
-  /* USER CODE END getBatterySOC */
-}
-
-/* USER CODE BEGIN Header_getVelocity */
-/**
-* @brief Gets the velocity of the car from incoming CAN messages
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_getVelocity */
-void getVelocity(void *argument)
-{
-  /* USER CODE BEGIN getVelocity */
-	uint8_t CAN_message[8];
-	FloatBytes velocity;
-	/* Infinite loop */
-	for(;;)
-	{
-		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
-		{
-			// there are multiple CAN IDs being passed through the filter, check if the message is the SOC
-			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, CAN_message);
-			if (can_rx_header.StdId == GET_VELOCITY_HEADER)
-			{
-				for(int i = 0; i < (sizeof(float)/sizeof(uint8_t)); i++)
-				{
-					velocity.bytes[i] = CAN_message[i+4]; // Vehicle Velocity is stored in bits 32-63.
-				}
-				gVelocityOfCar = velocity.float_value;
-			}
-		}
-		osDelay(GET_VELOCITY_DELAY);
-
-	}
-  /* USER CODE END getVelocity */
-}
-
-/* USER CODE BEGIN Header_getBatteryTemp */
-/**
-* @brief Function implementing the GetBatteryTemp thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_getBatteryTemp */
-void getBatteryTemp(void *argument)
-{
-  /* USER CODE BEGIN getBatteryTemp */
-	uint8_t CAN_message[8];
-	IntBytes battery_message;
-	/* Infinite loop */
-	for(;;)
-	{
-		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
-		{
-			// there are multiple CAN IDs being passed through the filter, check if the message is the battery temp
-			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, CAN_message);
-			if (can_rx_header.StdId == BATTERY_MESSAGE_HEADER)
-			{
-				for(int i = 0; i < (sizeof(float)/sizeof(uint8_t)); i++)
-				{
-					battery_message.bytes[i] = CAN_message[i]; // regen_disable bit is stored in bit 17
-				}
-				input_flags.regen_disable = isBitSet(battery_message.int_value, 17);
-			}
-		}
-		osDelay(GET_VELOCITY_DELAY);
-	}
-  /* USER CODE END getBatteryTemp */
-}
-
 /* USER CODE BEGIN Header_mcbStateMachine */
 /**
 * @brief Function implementing the MCBStateMachine thread.
@@ -311,11 +177,7 @@ void mcbStateMachine(void *argument)
 void getCANMessage(void *argument)
 {
   /* USER CODE BEGIN getCANMessage */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+	TaskGetCANMessage();
   /* USER CODE END getCANMessage */
 }
 

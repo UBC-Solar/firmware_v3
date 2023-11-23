@@ -7,12 +7,14 @@
 
 #include "mcb.h"
 
-InputFlags input_flags; 	   // Event flags for deciding what state to be in.
-DriveState state;		   	   // Holds the current the drive state.
+bool gBatteryRegenEnabled = false;
+bool gBatterySOCUnderThreshold = false;
+
 float gCruiseVelocity = 0; 	   // Velocity for cruise control
 float gVelocityOfCar = 0; 	   // Current velocity of the car will be stored here.
 uint8_t gBatterySOC = 0; 	   // Stores the charge of the battery, updated in a task.
-
+InputFlags input_flags;
+DriveState state;
 
 /*
  *	Main state machine task
@@ -23,8 +25,6 @@ void TaskMCBStateMachine()
 	{
 		taskENTER_CRITICAL();
 
-		InputFlags input_flags;
-		DriveState state;
 		uint16_t ADC_throttle_val;
 		uint16_t ADC_regen_val;
 		float velocity = 0.0;
@@ -37,23 +37,22 @@ void TaskMCBStateMachine()
 		// Set input flags
 		input_flags.throttle_pressed = ADC_throttle_val > ADC_DEADZONE;
 		input_flags.cruise_accelerate_enabled = NormalizeADCValue(ADC_throttle_val) > CRUISE_CURRENT;
-		input_flags.regen_pressed = ADC_regen_val > ADC_DEADZONE;
+		input_flags.regen_enabled = (gBatterySOC < BATTERY_SOC_THRESHOLD) && gBatteryRegenEnabled && HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+
 		if(ADC_regen_val > ADC_DEADZONE)
 			input_flags.cruise_enabled = false;
 
 		input_flags.mech_brake_pressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
 		input_flags.park_enabled = HAL_GPIO_ReadPin(PARK_EN_GPIO_Port, PARK_EN_Pin);
 		input_flags.reverse_enabled = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin);
-		input_flags.regen_switch_enabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
 		input_flags.velocity_under_threshold = (gVelocityOfCar < MIN_REVERSE_VELOCITY);
-		input_flags.charge_under_threshold = (gBatterySOC < BATTERY_SOC_THRESHOLD);
 
 		// Calculate state
 		if (input_flags.park_enabled && input_flags.velocity_under_threshold)
 			state = PARK;
 		else if (input_flags.mech_brake_pressed)
 			state = IDLE;
-		else if (input_flags.regen_pressed && input_flags.charge_under_threshold && input_flags.regen_switch_enabled)
+		else if (input_flags.regen_enabled)
 		  	state = REGEN;
 		else if (input_flags.cruise_enabled && input_flags.cruise_accelerate_enabled)
 		  	state = CRUISE_ACCELERATE;
@@ -106,35 +105,63 @@ void TaskMCBStateMachine()
 	}
 }
 
+void ParseCANBatterySOC(uint8_t * CANMessageData)
+{
+	// if the battery SOC is out of range, assume it is at 100% as a safety measure
+	if (CANMessageData[0] < BATTERY_SOC_EMPTY || CANMessageData[0] > BATTERY_SOC_FULL)
+	{
+		gBatterySOC = BATTERY_SOC_FULL;
+	}
+	else
+	{
+		gBatterySOC = CANMessageData[0];
+	}
 
+}
+
+void ParseCANVelocity(uint8_t * CANMessageData)
+{
+	FloatBytes velocity;
+	for(int i = 0; i < (sizeof(float)/sizeof(uint8_t)); i++)
+	{
+		velocity.bytes[i] = CANMessageData[i + 4]; // Vehicle Velocity is stored in bits 32-63.
+	}
+	gVelocityOfCar = velocity.float_value;
+}
+
+void ParseCANBatteryTemp(uint8_t * CANMessageData)
+{
+	gBatteryRegenEnabled = isBitSetFromArray(CANMessageData, 17); // regen_disable bit is stored in bit 17
+}
 
 void TaskGetCANMessage()
 {
-	uint8_t battery_msg_data[8];
-
+	uint8_t CANMessageData[CAN_DATA_LENGTH];
 	/* Infinite loop */
 	for(;;)
 	{
+		// Check if there is a CAN Message
 		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
 		{
-			// there are multiple CAN IDs being passed through the filter, check if the message is the SOC
-			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, battery_msg_data);
-			if (can_rx_header.StdId == 0x626)
+			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, CANMessageData);
+
+			if (can_rx_header.StdId == CAN_ID_BATTERY_SOC)
 			{
-				// if the battery SOC is out of range, assume it is at 100% as a safety measure
-				if (battery_msg_data[0] < BATTERY_SOC_EMPTY || battery_msg_data[0] > BATTERY_SOC_FULL)
-					gBatterySOC = BATTERY_SOC_FULL;
-				else
-					gBatterySOC = battery_msg_data[0];
+				ParseCANBatterySOC(CANMessageData);
 			}
-		  		osDelay(GET_BATTERY_SOC_DELAY);
+			else if (can_rx_header.StdId == CAN_ID_VELOCITY)
+			{
+				ParseCANVelocity(CANMessageData);
+			}
+			else if (can_rx_header.StdId == CAN_ID_BATTERY_TEMP)
+			{
+				ParseCANBatteryTemp(CANMessageData);
+			}
 		}
 		osDelay(GET_BATTERY_SOC_DELAY);
 	}
 	/* USER CODE END getBatterySOC */
 }
-
-
 
 
 
@@ -222,6 +249,13 @@ void SendCANDIDDriveState(DriveState state)
 bool isBitSet(int num, int pos)
 {
 	return (num & (1 << pos)) != 0;
+}
+
+bool isBitSetFromArray(uint8_t * num, int pos)
+{
+	int index = pos / 8;
+	int remainder = pos % 8;
+	return isBitSet(num[index], remainder);
 }
 
 
