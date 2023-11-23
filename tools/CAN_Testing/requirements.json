@@ -4,12 +4,12 @@
             "VoltSensor1": [4, 5, 0.5],
             "VoltSensor2": [4, 5, 0.5]
         },
-    
+
         "0x702": {
             "CurrentSensor1": [4, 5, 0.5],
             "CurrentSensor2": [4, 5, 0.5]
         },
-    
+
         "0x703": {
             "TempSensors1": [0, 0, 0],
             "TempSensors2": [0, 0, 0],
@@ -20,7 +20,7 @@
             "TempSensors7": [0, 0, 0],
             "TempSensors8": [0, 0, 0]
         },
-    
+
         "0x622": {
             "SlaveBoardComm": [1, 0, 0.4],
             "BMSSelfTest": [1, 0, 0.4],
@@ -42,7 +42,7 @@
             "RequestRegenOff": [0, 0, 0],
             "NoECUCurrentMessage": [0, 0, 0]
         },
-    
+
         "0x623": {
             "TotalPackVoltage": [0, 0, 0],
             "VoltageofLeast": [0, 0, 0],
@@ -50,7 +50,7 @@
             "VoltageofHighest": [0, 0, 0],
             "IndexofHighestModule": [0, 0, 0]
         },
-    
+
         "0x624": {
             "SOC": [0, 0, 0],
             "DepthofDischarge": [0, 0, 0],
@@ -58,7 +58,7 @@
             "b0x00": [0, 0, 0],
             "SOH": [0, 0, 0]
         },
-    
+
         "0x625": {
             "AverageTemp": [0, 0, 0],
             "MinTemp": [0, 0, 0],
@@ -66,7 +66,7 @@
             "MaxTemp": [0, 0, 0],
             "IndexofHighestTemp": [0, 0, 0]
         },
-    
+
         "0x626": {
             "MultiplexingBits": [0, 0, 0],
             "Voltage1": [0, 0, 0],
@@ -74,7 +74,7 @@
             "Voltage3": [0, 0, 0],
             "Voltage4": [0, 0, 0]
         },
-    
+
         "0x627": {
             "MultiplexingBits": [0, 0, 0],
             "Temp1": [0, 0, 0],
@@ -82,7 +82,7 @@
             "Temp3": [0, 0, 0],
             "Temp4": [0, 0, 0]
         },
-    
+
         "0x628": {
             "MultiplexingBits": [0, 0, 0],
             "Module1": [0, 0, 0],
@@ -90,11 +90,11 @@
             "Module3": [0, 0, 0],
             "Module4": [0, 0, 0]
         },
-    
+
         "0x629": {
             "ModuleStatusofBits": [0, 0, 0]
         },
-    
+
         "0x450": {
             "PackCurrent": [0, 0, 0],
             "LVCurrent": [0, 0, 0],
@@ -102,18 +102,18 @@
             "PackOverCharge": [0, 0, 0],
             "DOC": [0, 0, 0],
             "COC": [0, 0, 0],
-            "DOC_COC": [0, 0, 0] 
+            "DOC_COC": [0, 0, 0]
         },
-    
+
         "0x3f4": {
             "MaxChargingVoltage": [0, 0, 0],
             "MaxChargingCurrent": [0, 0, 0],
             "ChargerEnables": [0, 0, 0],
             "ChargingModes": [0, 0, 0],
-            "Reserved1": [ 0, 0, 0 ],
-            "Reserved2": [ 0, 0, 0 ]
+            "Reserved1": [0, 0, 0],
+            "Reserved2": [0, 0, 0]
         },
-    
+
         "0x3e5": {
             "OutputVoltage": [0, 0, 0],
             "OutputCurrent": [0, 0, 0],
@@ -138,12 +138,12 @@
             "S2SwitchControlStatus": [0, 0, 0],
             "Temperature": [0, 0, 0]
         },
-    
+
         "0x500": {
             "TritiumID": [0, 0, 0],
             "SerialNumber": [0, 0, 0]
         },
-    
+
         "0x501": {
             "BridgePWM": [0, 0, 0],
             "MotorCurrent": [0, 0, 0],
@@ -160,43 +160,43 @@
             "WatchdogCausedLast": [0, 0, 0],
             "ConfigReadError": [0, 0, 0],
             "A15VRailUnderVoltLock": [0, 0, 0],
-            "Reserved2": [ 0, 0, 0 ],
+            "Reserved2": [0, 0, 0],
             "ActiveMotor": [0, 0, 0],
-            "Reserved3": [ 0, 0, 0 ]
+            "Reserved3": [0, 0, 0]
         },
-    
+
         "0x502": {
             "BusVoltage": [0, 0, 0],
             "BusCurrent": [0, 0, 0]
         },
-    
+
         "0x503": {
             "MotorVelocity": [0, 0, 0],
             "VehicleVelocity": [0, 0, 0]
         },
-    
+
         "0x50b": {
             "MotorTemp": [0, 0, 0],
             "SurfaceTempController": [0, 0, 0]
         },
-    
+
         "0x400": {
             "NextScreenPressed": [0, 0, 0],
             "CruiseEnabled": [0, 0, 0],
-            "Unused": [ 0, 0, 0 ]
+            "Unused": [0, 0, 0]
         },
-    
+
         "0x401": {
             "MotorVelocity": [0, 0, 0],
             "MotorCurrent": [0, 0, 0]
         },
-    
+
         "0x402": {
             "ResetCommand": [0, 0, 0],
-            "Reserved": [ 0, 0, 0 ],
+            "Reserved": [0, 0, 0],
             "BusCurrent": [0, 0, 0]
         },
-    
+
         "0x750": {
             "SimulationSpeed": [0, 0, 0]
         }

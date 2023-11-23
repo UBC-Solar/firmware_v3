@@ -5,13 +5,20 @@ Returns all the lines to check assuming they are 'Rx'
 
 PARAMS:
     log_file: The log file to read from
-    type:     The type of lines to get. "Rx" is the recieved messages, 
+    type:     The type of lines to get: "Rx" is the recieved messages, 
                                         "Tx" is the transmitted messages, 
                                         "All" is BOTH recieved and transmitted messages
 
 RETURNS: list of all the lines as a string to check
 """
 def getValidLines(log_file, type):
+    # Open the log file with try
+    try:
+        log_file = open(log_file, "r")
+    except:
+        print("Error opening log file.")
+        return
+    
     valid_lines = []
 
     # Get all the recieved and transmitted messages to check
@@ -23,6 +30,9 @@ def getValidLines(log_file, type):
         for line in log_file:
             if type in line:
                 valid_lines.append(line)
+
+    # Close the log file
+    log_file.close()
 
     return valid_lines
 

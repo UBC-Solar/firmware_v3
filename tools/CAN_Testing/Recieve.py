@@ -14,7 +14,7 @@ START_VAL = 0
 EXPECTED_VAL = 1
 
 # Parameters for comparing values
-DELTA = 100  # +- 100ms regardless of interval. Ex. interval = 200ms so 100-300ms is acceptable
+DELTA = 0.2  # +- 100ms regardless of interval. Ex. interval = 200ms so 100-300ms is acceptable
 
 
 """
@@ -41,6 +41,9 @@ class AutoChecker:
 
         # Flag to filter PASSED tests
         self.showPassed = displayPassed
+
+        # List to track failed tests with the corresponding message number
+        self.failedSet = set()
 
 
     """
@@ -77,19 +80,9 @@ class AutoChecker:
     RETURNS: None
     """
     def checkLog(self):
-        # Try to open the file
-        try:
-            log_file = open(self.log_name, "r")
-        except:
-            print("Error: Could not open file. Check name and/or path")
-            return
-
         # Continuously Read lines and compare data
-        for line in getValidLines(log_file, type="Rx"):
+        for line in getValidLines(self.log_name, type="Rx"):
             self.compareData(line)
-
-        # Close the file
-        log_file.close()
 
 
     """
@@ -222,6 +215,8 @@ class AutoChecker:
 
         # Make sure it is in the interval
         if not interval - DELTA <= timeSinceLast <= interval + DELTA:
+            # Add to failed list
+            self.failedSet.add(messageNum)
             print(
                 f"FAILED ---- Outside Expected Interval \n"
                 f"    Message Number: {messageNum}, ID: {hex_id}, Signal: {signal}\n"
@@ -268,6 +263,7 @@ class AutoChecker:
 
         # Compare the data to the expected data and a print a message showing differences
         if not interval - DELTA <= timeSinceLast <= interval + DELTA:
+            self.failedSet.add(messageNum)
             print(
                 f"FAILED ---- Outside Expected Interval \n"
                 f"    Message Number: {messageNum}, ID: {hex_id}, Signal: {signal}\n"

@@ -24,15 +24,14 @@ while mode != "Stop":
         log_file, json_file = prompt.getFilesFromUser()
         receiver = AutoChecker(DBC_FILE_PATH, log_file, json_file, displayPassed)
         formatter = InfluxDBFormatter(log_file, json_file, displayPassed)
-        jitterAnalyzer = JitterAnalyzer(log_file)
+        jitterAnalyzer = JitterAnalyzer(log_file, receiver.failedSet)
 
         # Check Log against requirements
-        print("\n------------------ CHECKS ------------------\n")
+        print("\n---------------------------- CHECKS ----------------------------\n")
         receiver.checkLog()
 
         # Check CAN LOAD
-        print("\n------------------ CAN LOAD ------------------\n")
-        jitterAnalyzer.displayMaxMinCANLoad()
+        jitterAnalyzer.displayCANLoadReport()
 
         # Write the log file to influx format if user wnats to
         if prompt.getInfluxFormatLogs():
