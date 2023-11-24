@@ -17,7 +17,7 @@
 
 #define CAN_DATA_LENGTH 8			  // Length of a CAN message in bytes
 
-
+#define P1 0.3						  // TODO find proper value for this
 
 #define DELAY_MCB_STATE_MACHINE 10	  // Main mcb state machine delay time in ms
 
@@ -27,7 +27,7 @@
 #define ADC_DEADZONE 500			  // Deadzone value for ADC
 #define ADC_MAX 4096				  // Max possible value for ADC
 
-#define MIN_REVERSE_VELOCITY 3		  // Minimum forward velocity before switching to the reverse state
+#define VELOCITY_THRESHOLD 0.5     	  // Max velocity allowed during a drive state change (m/s)
 #define CRUISE_INCREMENT_VAL 1 		  // Increment value for cruise up/down buttons
 #define CRUISE_MAX 30 				  // Max cruise speed in m/s
 #define CRUISE_MIN 5 				  // Min cruise speed	in m/s
@@ -62,16 +62,14 @@ typedef union IntBytes {
  *  Input flags used to decide what state to be in
  */
 typedef struct InputFlags {
-  volatile bool throttle_pressed;
-  volatile bool mech_brake_pressed;
-  volatile bool regen_enabled;
-
-  volatile bool reverse_enabled;
   volatile bool cruise_enabled;
+  volatile bool mech_brake_pressed;
+  volatile bool drive_enabled;
+  volatile bool reverse_enabled;
   volatile bool park_enabled;
-  volatile bool cruise_accelerate_enabled;
-
-
+  volatile bool regen_enabled;
+  volatile bool battery_SOC_under_threshold;
+  volatile bool battery_temp_under_threshold;
   volatile bool velocity_under_threshold;
 } InputFlags;
 
@@ -82,13 +80,10 @@ typedef struct InputFlags {
 */
 typedef enum {
 	INVALID = (uint8_t) 0x00,
-	IDLE = (uint8_t) 0x01,
-	DRIVE = (uint8_t) 0x02,
-	REGEN = (uint8_t) 0x03,
-	CRUISE = (uint8_t) 0x04,
-	CRUISE_ACCELERATE = (uint8_t) 0x05,
-	PARK = (uint8_t) 0x06,
-	REVERSE = (uint8_t) 0x07
+	DRIVE = (uint8_t) 0x01,
+	CRUISE = (uint8_t) 0x02,
+	PARK = (uint8_t) 0x03,
+	REVERSE = (uint8_t) 0x04
 }DriveState;
 
 /*
