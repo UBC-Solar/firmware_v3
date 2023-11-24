@@ -32,6 +32,8 @@
 #include "imu.h"
 #include <stdio.h>
 #include "i2c.h"
+#include "gps.h"
+#include "nmea_parse.h"
 
 /* USER CODE END Includes */
 
@@ -49,8 +51,15 @@
 
 #define IMU_QUEUE_SIZE 10
 
+#define NMEA_QUEUE_SIZE 10
+
 #define CAN_BUFFER_LEN 22
 #define IMU_MESSAGE_LEN 17
+#define NMEA_MESSAGE_LEN 80
+
+#define GPS_MODULE_ADDRESS (0x42<<1)
+
+
 
 /* USER CODE END PD */
 
@@ -98,6 +107,10 @@ const osMessageQueueAttr_t imuMessageQueue_attributes = {
   .name = "imuMessageQueue"
 };
 
+const osMessageQueueAttr_t nmeaMessageQueue_attributes = {
+  .name = "nmeaMessageQueue"
+};
+
 /* Definitions for readimu */
 osThreadId_t readimuHandle;
 const osThreadAttr_t readimu_attributes = {
@@ -114,6 +127,24 @@ const osThreadAttr_t transmitIMU_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 
+/* Definitions for readnmea */
+
+osThreadId_t readnmeaHandle;
+const osThreadAttr_t readnmea_attributes = {
+  .name = "readnmea",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
+/* Definitions for transmitNMEA */
+
+osThreadId_t transmitnmeaHandle;
+const osThreadAttr_t transmitNMEA_attributes = {
+  .name = "transmitNMEA",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
 osThreadId_t readCANTaskHandle;
 osThreadId_t kernelLEDTaskHandle;
 osThreadId_t transmitMessageTaskHandle;
@@ -121,6 +152,7 @@ osThreadId_t changeRadioSettingsTaskHandle;
 
 osMessageQueueId_t canMessageQueueHandle;
 osMessageQueueId_t imuMessageQueueHandle;
+osMessageQueueId_t nmeaMessageQueueHandle;
 
 
 /* USER CODE END Variables */
@@ -146,7 +178,14 @@ void sendChar(char c);
 void readIMUTask(void *argument);
 void transmitIMUTask(void *argument);
 
+void readNMEATask(void *argument);
+void addToNMEAQueue(char* message);
+void transmitNMEATask(void *argument);
+
 void addtoIMUQueue(char* type, char* dimension, union FloatBytes data);
+
+void parseNMEA(char *argument);
+
 
 /* USER CODE END FunctionPrototypes */
 
@@ -184,6 +223,7 @@ void MX_FREERTOS_Init(void) {
 
   canMessageQueueHandle = osMessageQueueNew(CAN_MESSAGE_QUEUE_SIZE, sizeof(CAN_msg_t), &canMessageQueue_attributes);
   imuMessageQueueHandle = osMessageQueueNew(IMU_QUEUE_SIZE, sizeof(IMU_msg_t), &imuMessageQueue_attributes);
+  nmeaMessageQueueHandle = osMessageQueueNew(NMEA_QUEUE_SIZE, sizeof(nmea_msg_t), &nmeaMessageQueue_attributes);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -417,7 +457,6 @@ __NO_RETURN void readIMUTask(void *argument){
 
 }
 
-
 /*
  * Stores the data gathered from the IMU into the queue
  */
@@ -439,6 +478,9 @@ void addtoIMUQueue(char* type, char* dimension, union FloatBytes data){
 __NO_RETURN void transmitIMUTask(void *argument){
   osStatus_t imu_queue_status;
   IMU_msg_t imu_message;
+
+
+
 
   while(1)
   {
@@ -482,6 +524,72 @@ __NO_RETURN void transmitIMUTask(void *argument){
   }
 
 }
+
+void readNMEATask(void *argument){
+
+  readNMEA(argument);
+  parseNMEA(argument);
+
+  addToNMEAQueue(argument);
+  }
+
+void addToNMEAQueue(char* message){
+	GPS sentence;
+
+	if(sentence.fix == 1){
+
+		nmea_msg_t nmea_msg;
+
+		//strncpy(nmea_msg.data, message, sizeof(nmea_msg.data) - 1);
+		strncpy((char*)nmea_msg.data, (const char*)message, sizeof(nmea_msg.data) - 1);
+		nmea_msg.data[sizeof(nmea_msg.data) - 1] = '\0';  // Null terminate
+
+		// Add the message to the queue
+		osMessageQueuePut(nmeaMessageQueueHandle, &nmea_msg, 0U, 0U);
+	}
+}
+__NO_RETURN void transmitNMEATask(void *argument){
+  osStatus_t nmea_queue_status;
+  nmea_msg_t nmea_message;
+
+  while(1)
+  {
+    // Check if there are messages in the queue
+    if (osMessageQueueGetCount(nmeaMessageQueueHandle) == 0) {
+        osThreadYield(); // Yield to other tasks if the queue is empty
+    }
+
+    // Get a message from the queue
+    nmea_queue_status = osMessageQueueGet(nmeaMessageQueueHandle, &nmea_message, NULL, osWaitForever);
+
+    if (nmea_queue_status != osOK){
+      // If message retrieval failed, yield and continue the loop
+      osThreadYield();
+      continue; // Skip the rest of this loop iteration
+    }
+
+    uint8_t nmea_buffer[NMEA_MESSAGE_LEN];
+    memset(nmea_buffer, 0, sizeof(nmea_buffer));
+
+
+    // Copy the NMEA data into the buffer, ensuring not to exceed the buffer size
+    strncpy((char *)nmea_buffer, nmea_message.data, NMEA_MESSAGE_LEN - 2); // Save space for CR+LF
+
+    // NEW LINE
+    nmea_buffer[NMEA_MESSAGE_LEN - 2] = '\r'; // Carriage return
+
+    // CARRIAGE RETURN
+    nmea_buffer[NMEA_MESSAGE_LEN - 1] = '\n'; // Line feed
+
+    // Transmit the NMEA message over UART to radio and cellular
+    HAL_UART_Transmit(&huart3, nmea_buffer, sizeof(nmea_buffer), 1000);
+    HAL_UART_Transmit(&huart1, nmea_buffer, sizeof(nmea_buffer), 1000);
+
+  }
+}
+
+
+
 
 /* USER CODE END Application */
 
