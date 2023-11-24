@@ -25,15 +25,150 @@ void TaskMCBStateMachine()
 	{
 		taskENTER_CRITICAL();
 
-		uint16_t ADC_throttle_val;
-		uint16_t ADC_regen_val;
 		float velocity = 0.0;
 		float current = 0.0;
+		uint16_t ADC_throttle_val = ReadADC(&hadc1);
 
-		// Get ADC values from throttle and regen
-		ADC_throttle_val = ReadADC(&hadc1);
-		ADC_regen_val = ReadADC(&hadc2);
+		switch(state)
+		{
+		case DRIVE:
+			current = NormalizeADCValue(ADC_throttle_val);
 
+			/*
+			 * 	Regen Enabled
+			 */
+			if ( input_flags.regen_enabled && input_flags.battery_SOC_under_threshold && input_flags.battery_temp_under_threshold )
+			{
+				if( current == 0.0 )
+				{
+					velocity = 0.0;
+				}
+				else if( current > 0.0 )
+				{
+					velocity = 100.0;
+				}
+			}
+			else // Regen disabled
+			{
+				#ifdef MITSUBA
+				if(current == 0.0)
+				{
+					velocity = 0.0;
+					current = 0.0;
+				}
+				else if(current < P1)
+				{
+					velocity = 100.0;
+					current = P1;
+				}
+				else if(current > P1)
+				{
+					velocity = 100.0;
+				}
+				#endif
+				#ifdef TRITIUM
+				if(current == 0.0)
+				{
+					velocity = 0.0;
+				}
+				else if(current > 0.0)
+				{
+					velocity = 100.0;
+				}
+				#endif
+			}
+			break;
+
+			/*
+			 *  State transitions
+			 */
+			if( input_flags.reverse_enabled && input_flags.velocity_under_threshold )
+			{
+				state = REVERSE;
+			}
+			else if( input_flags.park_enabled && input_flags.velocity_under_threshold )
+			{
+				state = PARK;
+			}
+			else if( input_flags.cruise_enabled )
+			{
+				state = CRUISE;
+			}
+
+		case CRUISE:
+			/*
+			 *  State transitions
+			 */
+			if ( input_flags.mech_brake_pressed || !input_flags.cruise_enabled)
+			{
+				state = DRIVE;
+			}
+			break;
+
+		case REVERSE: // Regen disabled in REVERSE
+			#ifdef MITSUBA
+			if(current == 0.0)
+			{
+				velocity = 0.0;
+				current = 0.0;
+			}
+			else if(current < P1)
+			{
+				velocity = -100.0;
+				current = P1;
+			}
+			else if(current > P1)
+			{
+				velocity = -100.0;
+			}
+			#endif
+			#ifdef TRITIUM
+			if(current == 0.0)
+			{
+				velocity = 0.0;
+			}
+			else if(current > 0.0)
+			{
+				velocity = -100.0;
+			}
+			#endif
+
+			/*
+			 *  State transitions
+			 */
+			if ( input_flags.drive_enabled && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+			{
+				state = DRIVE;
+			}
+			break;
+
+		case PARK:
+			velocity = 0.0;
+			current = 1.0;
+			/*
+			 *  State transitions
+			 */
+			if ( input_flags.park_enabled && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+			{
+				state = DRIVE;
+			}
+			break;
+
+		default:
+			velocity = 0.0;
+			current = 1.0;
+		}
+
+
+		SendCANMotorCommand(current, velocity);
+
+
+
+
+
+
+
+		/*
 		// Set input flags
 		input_flags.throttle_pressed = ADC_throttle_val > ADC_DEADZONE;
 		input_flags.cruise_accelerate_enabled = NormalizeADCValue(ADC_throttle_val) > CRUISE_CURRENT;
@@ -99,6 +234,8 @@ void TaskMCBStateMachine()
 
 		// Send CAN message to motor controller
 		SendCANMotorCommand(velocity, current);
+		*/
+
 
 		taskEXIT_CRITICAL();
 		osDelay(DELAY_MCB_STATE_MACHINE);
@@ -107,16 +244,8 @@ void TaskMCBStateMachine()
 
 void ParseCANBatterySOC(uint8_t * CANMessageData)
 {
-	// if the battery SOC is out of range, assume it is at 100% as a safety measure
-	if (CANMessageData[0] < BATTERY_SOC_EMPTY || CANMessageData[0] > BATTERY_SOC_FULL)
-	{
-		gBatterySOC = BATTERY_SOC_FULL;
-	}
-	else
-	{
-		gBatterySOC = CANMessageData[0];
-	}
-
+	uint8_t batterySOC = CANMessageData[0];
+	input_flags.battery_SOC_under_threshold = batterySOC < BATTERY_SOC_THRESHOLD;
 }
 
 void ParseCANVelocity(uint8_t * CANMessageData)
@@ -127,6 +256,7 @@ void ParseCANVelocity(uint8_t * CANMessageData)
 		velocity.bytes[i] = CANMessageData[i + 4]; // Vehicle Velocity is stored in bits 32-63.
 	}
 	gVelocityOfCar = velocity.float_value;
+	input_flags.velocity_under_threshold = velocity.float_value < VELOCITY_THRESHOLD;
 }
 
 void ParseCANBatteryTemp(uint8_t * CANMessageData)
