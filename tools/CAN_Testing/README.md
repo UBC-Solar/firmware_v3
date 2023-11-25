@@ -1,4 +1,4 @@
-**MVP Complete: How to Use the Script**
+**MMR Complete: How to Use the Script**
 
 1. Go to the `firmware_v3` repository. Then go `tools` -> `CAN_Testing`
 
@@ -27,3 +27,13 @@
 11. If you want the logs you added in **step 4**. to be converted to influxDB format and saved in a file called `influx_logs.txt` inside the same working directory type `y`.
 
 12. Repeat from **step 6** except now you can type `s` to exit the script.
+
+**Changing and using Parameters**
+
+-   locate the `Parameters.py` file which contains the parameters for the various classes that this script uses.
+-   `INFLUX_FILE_NAME` is set to be `"influx_log.txt"` and represents the **name** of the InfluxDB formatted logs.
+-   `INTERVAL_MS ` is set to be **1000 ms** and represents the window to calculate the CAN Load in.
+-   `MAX_CAN_LOAD_BYTES_PER_S` is set to be **500 kilo-bit/s = 64000 bytes/s** and represents the maximum allowed CAN Load.
+-   `MAX_CAN_LOAD_INTERVAL_BYTES` is set to be **64000 bytes** and represents the maximum number of bytes inside the `INTERVAL_MS` before you exceed the CAN Load.
+-   `T_BIT` is **unused** but represents the time for a bit to travel across the CAN bus.
+-   `DELTA` is set to **100 ms** and represents the tolarable range of time values for a CAN message to be recieved in ms. Ex. interval = 200ms so 100-300ms is acceptable.

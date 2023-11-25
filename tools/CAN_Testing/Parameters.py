@@ -9,4 +9,3 @@ T_BIT                               = 1.0 / (1000000 * 8)           # UNUSED: Ti
 
 # Recieve.py parameters
 DELTA = 100  # +- 100ms regardless of interval. Ex. interval = 200ms so 100-300ms is acceptable
-
