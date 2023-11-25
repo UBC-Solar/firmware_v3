@@ -33,19 +33,15 @@ typedef union {
 
 typedef struct{
     
-    int8_t pack_current;
-    uint8_t lv_current;
-    // float ADC_spare_current; //stores spare current sensor value
-    // float ADC_lvs_current; //stores current for the LVS system
-    // float ADC_batt_current;
+    uint16_t ADC_spare_current; //stores spare current sensor value
+    float ADC_lvs_current; //stores current for the LVS system
+    float ADC_batt_current;
 
-    // int ADC_supp_batt_volt; //stores supplemental battery voltage readings
+    uint16_t ADC_supp_batt_volt; //stores supplemental battery voltage readings
 
-    //float ADC_batt_offset; //stores supplemental battery voltage offset
-    //float ADC_lvs_offset; //stores low voltage system current offset
-    //float ADC_am_ref_offset; //stores reference voltage for the array and motor current sensors, from ADC1 
-    //float ADC_batt_ref_offset; //stores reference voltage for the battery current sensor, from ADC1
-    //float ADC_spare_curr_offset; //stores spare current source offset
+    uint16_t ADC_batt_curr_offset; //stores supplemental battery voltage offset
+    uint16_t ADC_lvs_offset; //stores low voltage system current offset
+    uint16_t ADC_spare_curr_offset; //stores spare current source offset
 
 } ECU_ADC_Data_t;
 
