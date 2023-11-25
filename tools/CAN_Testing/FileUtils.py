@@ -4,17 +4,17 @@ import os
 Returns all the lines to check assuming they are 'Rx'
 
 PARAMS:
-    log_file: The log file to read from
+    log_file: The PATH to the log file to read from
     type:     The type of lines to get: "Rx" is the recieved messages, 
                                         "Tx" is the transmitted messages, 
                                         "All" is BOTH recieved and transmitted messages
 
 RETURNS: list of all the lines as a string to check
 """
-def getValidLines(log_file, type):
+def getValidLines(log_file_name, type):
     # Open the log file with try
     try:
-        log_file = open(log_file, "r")
+        log_file = open(log_file_name, "r")
     except:
         print("Error opening log file.")
         return
