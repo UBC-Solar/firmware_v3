@@ -29,6 +29,8 @@ void CAN_SendMessage624(Pack_t *pack);
 void CAN_SendMessage625(Pack_t *pack);
 void CAN_SendMessages626(Pack_t *pack);
 void CAN_SendMessages627(Pack_t *pack);
+void CAN_SendMessages628(Pack_t *pack);
+void CAN_SendMessages629(Pack_t *pack);
 
 bool CAN_GetMessage0x450Data(int8_t *pack_current, uint8_t *low_voltage_current, bool *overcurrent_status, uint32_t *rx_timestamp);
 
