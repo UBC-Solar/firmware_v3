@@ -4,47 +4,32 @@
  * and current sensor read from ECU
  * 
  * @date 2021/10/30
- * @author 
+ * @author Janith W, Jack K
  */
 
 #ifndef __ADC_H
 #define __ADC_H
 
-#include <stdio.h>
 #include <stdint.h>
+#include <main.h>
+
 /*============================================================================*/
-/* CONFIGURATION */
+/* PUBLIC DEFINES */
+
 #define ADC1_NUM_ANALOG_CHANNELS 7
 #define ADC1_BUF_LENGTH_PER_CHANNEL 200
 #define ADC1_BUF_LENGTH (ADC1_BUF_LENGTH_PER_CHANNEL * ADC1_NUM_ANALOG_CHANNELS)
 
-/*
-#define ADC3_NUM_ANALOG_CHANNELS 3 
-#define ADC3_BUF_LENGTH_PER_CHANNEL 200
-#define ADC3_BUF_LENGTH (ADC3_BUF_LENGTH_PER_CHANNEL * ADC3_NUM_ANALOG_CHANNELS)
-*/
+#define ADC_MAX_VOLT 3.3
+#define ADC_MAX_RAW 4095
 
-#define ADC_MAX_VOLT_READING 3.3
-#define ADC_RESOLUTION 4095
-
-#define HASS_50_600_S_VOLTAGE_OFFSET 2.5
 #define HASS_SENSOR_DEFAULT_VOLTAGE_OFFSET 1.5
-#define HASS_50_600_S_CURRENT_SCALE_FACTOR 80.0
 #define HASS_100_S_CURRENT_SCALE_FACTOR 40.0
 
-#define ACS781xLR_VOLTAGE_OFFSET (3.3/2)
-#define ACS782xLR_CURRENT_SCALE_FACTOR 26.4
-
-#define SUPP_BATT_VOLTAGE_DIVIDER 11.0
 #define ADC_VOLTAGE_SCALING 1000.0 // millivolts
 
 /*============================================================================*/
-/* PUBLIC VARIABLES */
-
-/*PRIVATE VARIABLES*/
-static float ADC_am_ref_offset; //stores reference voltage for the array and motor current sensors, from ADC1 
-static float ADC_batt_ref_offset; //stores reference voltage for the battery current sensor, from ADC1
-
+/* PRIVATE VARIABLES */
 
 static float ADC_spare_curr_offset; //stores spare current source offset
 static float ADC_spare_curr; //stores spare current sensor value
@@ -56,9 +41,33 @@ static float ADC_batt_current;
 
 static volatile int ADC1_DMA_in_process_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is in process
 static volatile int ADC1_DMA_fault_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is at fault
-/*============================================================================*/
-/*ADC INPUTS*/
 
+/*============================================================================*/
+/* EXPORTED DATATYPES */
+
+// ADC status codes
+typedef enum {
+  ADC_NO_BUSY = 0,
+  ADC_BUSY,
+  ADC_NO_FAULT, 
+  ADC_FAULT
+} ADC_Status_List_t;
+
+// ADC1
+typedef struct{
+
+  ADC_HandleTypeDef *hadc; // pointer to the adc context  
+  TIM_HandleTypeDef *tim;
+
+  ADC_Status_List_t status;
+  volatile uint16_t dma_buf[ADC1_BUF_LENGTH];
+  uint16_t avg_result[ADC1_NUM_ANALOG_CHANNELS];
+
+  ADC1_Channel_List_t channels;
+
+} ADC1_Context_t;
+
+// Channels in enum must be in the same order as configured in the "rank" of the ADC peripheral
 typedef enum {
   SPAR_CURR_SNS_OFFSET__ADC1_IN5 = 0,
   SUPP_SENSE__ADC1_IN6,
@@ -67,34 +76,13 @@ typedef enum {
   LVS_CURR_SNS__ADC1_IN9,
   BATT_CURR_SNS__ADC1_IN14,
   SPAR_CURR_SNS__ADC1_IN15, 
-}adc_channel_list;
-
+} ADC1_Channel_List_t;
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
-float ADC_getOffsetRef_Batt();
-float ADC_getOffsetRef_AM();
-
-int ADC_getLowVoltageCurrent();
-int ADC_getSuppBattVoltage();
-
-int ADC_getBatteryCurrent();
-int ADC_getMotorCurrent();
-int ADC_getArrayCurrent();
-
-int ADC_netCurrentOut();
-
-void ADC1_processRawReadings(int half, volatile uint32_t adc1_buf[], float result[]);
-
-int ADC1_getBusyStatus();
-void ADC1_setBusyStatus(int flag_value);
-
-int ADC1_getFaultStatus(); 
-void ADC1_setFaultStatus(int flag_value);
-
-int ADC_getReading(int adc_channel);
-void ADC_setReading(float adc_reading, adc_channel_list adc_channel);
+void ADC1_processRawReadings(int half);
+void ADC1_setReading(adc1_channel_list_t adc_channel);
 
 
 #endif /* __ADC_H */

@@ -22,9 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-//#include "fsm.h"
 #include "adc.h"
-// #include "can.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,8 +51,6 @@ TIM_HandleTypeDef htim3;
 UART_HandleTypeDef huart5;
 
 /* USER CODE BEGIN PV */
-volatile uint32_t adc1_buf[ADC1_BUF_LENGTH] = {0};
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -107,13 +104,10 @@ int main(void)
   MX_UART5_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start_IT(&htim3);
   
-  //CAN_hcan = &hcan;
-  //HAL_CAN_Start (&hcan);  
+  HAL_TIM_Base_Start(&htim3);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adc1_buf, ADC1_BUF_LENGTH);
-  //HAL_TIM_Base_Start(&htim3); this was already commented out 
-  //FSM_init();
+  
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -121,7 +115,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    supp_batt_volt = ADC_getSuppBattVoltage();
+    int supp_batt_volt = ADC_getSuppBattVoltage();
     
     /* USER CODE BEGIN 3 */
   }
@@ -493,52 +487,14 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-// Conversion half complete DMA interrupt callback for ADC3
-
-//Callback: timer has rolled over
-// void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-// {
-//   //Check which version of the time triggered this callback and toggle LED
-//   if(htim == &htim3)
-//   {
-//     HAL_GPIO_TogglePin(LED_OUT_GPIO_Port, LED_OUT_Pin);
-//   }
-// }
-
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 {
     if (hadc == &hadc1) averageAndSaveValues_ADC1(0);
 }
 
-// Conversion full complete DMA interrupt callback for ADCs
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
   if (hadc == &hadc1) averageAndSaveValues_ADC1(1);
-}
-
-void averageAndSaveValues_ADC1(int adc_half)
-{
-  if (!ADC1_getBusyStatus()){
-    ADC1_setBusyStatus(1);
-    static float result[ADC1_NUM_ANALOG_CHANNELS];
-
-    ADC1_processRawReadings(adc_half, adc1_buf, result);
-
-    ADC_setReading(result[0], SPAR_CURR_SNS_OFFSET__ADC1_IN5);
-    ADC_setReading(result[1], SUPP_SENSE__ADC1_IN6);
-    ADC_setReading(result[2], BATT_CURR_SNS_OFFSET__ADC1_IN7);
-    ADC_setReading(result[3], LVS_CURR_SNS_OFFSET__ADC1_IN8);
-    ADC_setReading(result[4], LVS_CURR_SNS__ADC1_IN9);
-    ADC_setReading(result[5], BATT_CURR_SNS__ADC1_IN14);
-    ADC_setReading(result[6], SPAR_CURR_SNS__ADC1_IN15);
-
-    ADC1_setBusyStatus(0);
-  }  
-  else
-  {
-    ADC1_setFaultStatus(1);
-    //HAL_TIM_Base_Stop(&htim1);
-  }
 }
 
 
