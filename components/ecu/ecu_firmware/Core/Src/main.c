@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 //#include "fsm.h"
 #include "adc.h"
+#include "debug_io.h"
 // #include "can.h"
 /* USER CODE END Includes */
 
@@ -80,6 +81,9 @@ static void MX_TIM3_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+  
+  DebugIO_Init(&huart5);
+
 
   /* USER CODE END 1 */
 
@@ -121,8 +125,10 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    supp_batt_volt = ADC_getSuppBattVoltage();
-    
+    int supp_batt_volt = ADC_getSuppBattVoltage();
+    printf(supp_batt_volt);
+
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
