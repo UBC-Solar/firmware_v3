@@ -1,12 +1,9 @@
-from Prompter import Prompter
 from FileUtils import getValidLines
 from FileUtils import getDBCFile
-from FileUtils import find_file
 import os
 
 """ DEFINE NAMING CONSTANTS """
-INFLUX_FILE_NAME = "influx_log.txt"
-prompt = Prompter()
+from Parameters import INFLUX_FILE_NAME
 DBC_FILE_PATH = getDBCFile()
 
 

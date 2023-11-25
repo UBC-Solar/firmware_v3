@@ -1,13 +1,10 @@
 from FileUtils import getValidLines
 import numpy as np
 
-# TODO: How big interval??
-
-""" CONSTANTS """
-INTERVAL_MS                         = 1                             # 1 ms for "exampleLog.txt", normally 1000 
-MAX_CAN_LOAD_BYTES_PER_S            = 500 * pow(2, 10) / 8          # 500 kilo-bit/s = 64000 bytes
-MAX_CAN_LOAD_INTERVAL_BYTES         = MAX_CAN_LOAD_BYTES_PER_S * (INTERVAL_MS / 1000)
-T_BIT                               = 1.0 / (1000000 * 8)
+# Constants
+from Parameters import INTERVAL_MS
+from Parameters import MAX_CAN_LOAD_BYTES_PER_S
+from Parameters import MAX_CAN_LOAD_INTERVAL_BYTES
 
 
 class JitterAnalyzer:

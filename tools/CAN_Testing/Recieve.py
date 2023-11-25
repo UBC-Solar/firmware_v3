@@ -4,6 +4,7 @@ from FileUtils import getValidLines
 
 
 """ DEFINE CONSTANTS """
+from Parameters import DELTA
 
 # Indexing constants
 MIN = 0
@@ -12,9 +13,6 @@ INTERVAL = 2
 
 START_VAL = 0
 EXPECTED_VAL = 1
-
-# Parameters for comparing values
-DELTA = 0.2  # +- 100ms regardless of interval. Ex. interval = 200ms so 100-300ms is acceptable
 
 
 """
