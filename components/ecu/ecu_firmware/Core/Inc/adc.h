@@ -42,17 +42,14 @@
 /* PUBLIC VARIABLES */
 
 /*PRIVATE VARIABLES*/
-static float ADC_am_ref_offset; //stores reference voltage for the array and motor current sensors, from ADC1 
-static float ADC_batt_ref_offset; //stores reference voltage for the battery current sensor, from ADC1
 
-
-static float ADC_spare_curr_offset; //stores spare current source offset
-static float ADC_spare_curr; //stores spare current sensor value
-static int ADC_supp_batt_volt; //stores supplemental battery voltage readings
-static float ADC_batt_offset; //stores supplemental battery voltage offset
-static float ADC_lvs_offset; //stores low voltage system current offset
-static float ADC_lvs_current; //stores current for the LVS system
-static float ADC_batt_current;
+// static float ADC_spare_curr_offset; //stores spare current source offset
+// static float ADC_spare_curr; //stores spare current sensor value
+// static int ADC_supp_batt_volt; //stores supplemental battery voltage readings
+// static float ADC_batt_offset; //stores supplemental battery voltage offset
+// static float ADC_lvs_offset; //stores low voltage system current offset
+// static float ADC_lvs_current; //stores current for the LVS system
+// static float ADC_batt_current;
 
 static volatile int ADC1_DMA_in_process_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is in process
 static volatile int ADC1_DMA_fault_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is at fault
@@ -73,19 +70,19 @@ typedef enum {
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
-float ADC_getOffsetRef_Batt();
-float ADC_getOffsetRef_AM();
+// float ADC_getOffsetRef_Batt();
+// float ADC_getOffsetRef_AM();
 
-int ADC_getLowVoltageCurrent();
-int ADC_getSuppBattVoltage();
+// int ADC_getLowVoltageCurrent();
+// int ADC_getSuppBattVoltage();
 
-int ADC_getBatteryCurrent();
-int ADC_getMotorCurrent();
-int ADC_getArrayCurrent();
+// int ADC_getBatteryCurrent();
+// int ADC_getMotorCurrent();
+// int ADC_getArrayCurrent();
 
-int ADC_netCurrentOut();
+// int ADC_netCurrentOut();
 
-void ADC1_processRawReadings(int half, volatile uint32_t adc1_buf[], float result[]);
+void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float result[]);
 
 int ADC1_getBusyStatus();
 void ADC1_setBusyStatus(int flag_value);

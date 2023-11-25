@@ -10,6 +10,7 @@
 
 #include "adc.h"
 #include "stm32f1xx_hal.h"
+#include "common.h"
 
 
 
@@ -40,111 +41,36 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
   switch (adc_channel)
   {
   case SPAR_CURR_SNS_OFFSET__ADC1_IN5: //Records array and motor current sensor voltage offset in mV
-    ADC_spare_curr_offset = 0; //spare current sensor not implemented yet therefore value set to 0
+    ecu_data.adc_data.ADC_spare_curr_offset = 0; //spare current sensor not implemented yet therefore value set to 0
     break;
   
   case SPAR_CURR_SNS__ADC1_IN15:
-    ADC_spare_curr = 0; //spare current sensor not implemented yet therefore value set to 0
+    ecu_data.adc_data.ADC_spare_current = 0; //spare current sensor not implemented yet therefore value set to 0
     break;
 
   case SUPP_SENSE__ADC1_IN6: //Records supplementary battery voltage in mV
-    ADC_supp_batt_volt = (int)(adc_voltage/0.175);
+    ecu_data.adc_data.ADC_supp_batt_volt = (uint16_t)(adc_voltage/0.175);
     break;
 
   case BATT_CURR_SNS_OFFSET__ADC1_IN7:
-    ADC_batt_offset = adc_voltage;
+    ecu_data.adc_data.ADC_batt_curr_offset = adc_voltage;
     break;
   
   case BATT_CURR_SNS__ADC1_IN14: //Records battery current sensor in A
-    ADC_batt_current = 100*(adc_voltage/ADC_VOLTAGE_SCALING-ADC_batt_offset)/0.625; //see HASS100-S datasheet 
+    ecu_data.adc_data.ADC_batt_current = 100*(adc_voltage/ADC_VOLTAGE_SCALING-ecu_data.adc_data.ADC_batt_curr_offset)/0.625; //see HASS100-S datasheet 
     break;
   
   case LVS_CURR_SNS_OFFSET__ADC1_IN8:
-    ADC_lvs_offset = adc_voltage;
+    ecu_data.adc_data.ADC_lvs_offset = adc_voltage;
     break;
 
   case LVS_CURR_SNS__ADC1_IN9: //Records ECU low voltage current in A
-    ADC_lvs_current = (adc_voltage/ADC_VOLTAGE_SCALING-ADC_batt_offset)/0.02525;
+    ecu_data.adc_data.ADC_lvs_current = (adc_voltage/ADC_VOLTAGE_SCALING-ecu_data.adc_data.ADC_batt_curr_offset)/0.02525;
     break;
 
   default:
     break;
   }
-}
-
-/**
- * @brief Retrieves spare current sensor offset
- * 
- */
-
-float ADC_getOffsetRef_SparCurr()
-{
-  return (float)ADC_spare_curr_offset;  
-}
-
-/**
- * @brief Retrieves spare current
- * 
- */
-
-float ADC_getSparCurr()
-{
-  return (float)ADC_spare_curr;  
-}
-
-/**
- * @brief Retrieves the voltage of the supplemental battery (mV)
- * 
- * The supplement battery voltage is stored in the global varialbe ADC_supp_batt_volt (int datatype),
- * and the function returns that global variable
- * Supp battery only for startup not really in driving
- * 
- * @param -
- * @retval returns the global variable ADC_supp_batt_volt (int datatype)
- */
-int ADC_getSuppBattVoltage()
-{
-    return ADC_supp_batt_volt;
-}
-
-/**
- * @brief Retrieves battery current sensor offset 
- * 
- */
-
-float ADC_getOffset_BattCurr()
-{
-  return (float)ADC_batt_offset;  
-}
-
-/**
- * @brief Retrieves current of the battery sensor in A
- * 
- */
-
-float ADC_getBattCurr()
-{
-  return (float)ADC_batt_current;  
-}
-
-/**
- * @brief Retrieves the low voltage system current sensor offset
- * 
- */
-
-float ADC_getOffset_LVS()
-{
-  return (float)ADC_lvs_offset;  
-}
-
-/**
- * @brief Retrieves current of the low voltage system of the ECU in A
- * 
- */
-
-float ADC_getLVSCurr()
-{
-  return (float)ADC_lvs_current;  
 }
 
 /**
@@ -166,7 +92,7 @@ float ADC_getLVSCurr()
  *               each reading.
  * @retval stores the averaged readings of ADC1 to result[]
  */
-void ADC1_processRawReadings(int half, volatile uint32_t adc1_buf[], float result[])
+void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float result[])
 {
   int32_t sum[ADC1_NUM_ANALOG_CHANNELS] = {0}; //used for summing in the averaging process
   

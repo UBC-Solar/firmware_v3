@@ -25,6 +25,7 @@
 //#include "fsm.h"
 #include "adc.h"
 #include "debug_io.h"
+#include "common.h"
 // #include "can.h"
 /* USER CODE END Includes */
 
@@ -53,7 +54,7 @@ TIM_HandleTypeDef htim3;
 UART_HandleTypeDef huart5;
 
 /* USER CODE BEGIN PV */
-volatile uint32_t adc1_buf[ADC1_BUF_LENGTH] = {0};
+volatile uint16_t adc1_buf[ADC1_BUF_LENGTH] = {0};
 
 /* USER CODE END PV */
 
@@ -71,6 +72,8 @@ static void MX_TIM3_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+ECU_Data_t ecu_data = {0}; 
 
 /* USER CODE END 0 */
 
@@ -111,12 +114,11 @@ int main(void)
   MX_UART5_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start_IT(&htim3);
   
   //CAN_hcan = &hcan;
   //HAL_CAN_Start (&hcan);  
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adc1_buf, ADC1_BUF_LENGTH);
-  //HAL_TIM_Base_Start(&htim3); this was already commented out 
+  HAL_TIM_Base_Start(&htim3); 
   //FSM_init();
   /* USER CODE END 2 */
 
@@ -125,8 +127,8 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    int supp_batt_volt = ADC_getSuppBattVoltage();
-    printf(supp_batt_volt);
+    // int supp_batt_volt = ADC_getSuppBattVoltage();
+    // printf(supp_batt_volt);
 
 
     /* USER CODE BEGIN 3 */
@@ -499,18 +501,6 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-// Conversion half complete DMA interrupt callback for ADC3
-
-//Callback: timer has rolled over
-// void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-// {
-//   //Check which version of the time triggered this callback and toggle LED
-//   if(htim == &htim3)
-//   {
-//     HAL_GPIO_TogglePin(LED_OUT_GPIO_Port, LED_OUT_Pin);
-//   }
-// }
-
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 {
     if (hadc == &hadc1) averageAndSaveValues_ADC1(0);
@@ -543,7 +533,6 @@ void averageAndSaveValues_ADC1(int adc_half)
   else
   {
     ADC1_setFaultStatus(1);
-    //HAL_TIM_Base_Stop(&htim1);
   }
 }
 
