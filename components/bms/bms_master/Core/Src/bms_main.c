@@ -254,4 +254,6 @@ void BMS_MAIN_sendCanMessages(Pack_t *pack)
     CAN_SendMessage625(pack);
     CAN_SendMessages626(pack);
     CAN_SendMessages627(pack);
+    CAN_SendMessages628(pack);
+    CAN_SendMessage629(pack);
 }
