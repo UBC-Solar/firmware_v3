@@ -313,7 +313,6 @@ void SendCANMotorCommand(float current, float velocity)
 		data_send[i] = v.bytes[i];
 	    data_send[4 + i] = c.bytes[i];
 	}
-	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 	HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
 }
 
@@ -347,6 +346,7 @@ void SendCANDIDNextPage()
  */
 void SendCANDIDDriveState(DriveState state)
 {
+	/*
 	static DriveState lastState = PARK;
 	uint8_t data_send[CAN_DATA_LENGTH] = {0};
 
@@ -373,6 +373,7 @@ void SendCANDIDDriveState(DriveState state)
 	}
 
 	HAL_CAN_AddTxMessage(&hcan, &DID_next_page_header, data_send, &can_mailbox);
+	*/
 }
 
 
