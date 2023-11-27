@@ -48,6 +48,12 @@ uint16_t ADC_throttle_val;
 uint16_t ADC_regen_val;
 
 
+GPIO_PinState Reverse;
+GPIO_PinState Park;
+GPIO_PinState Drive;
+GPIO_PinState Regen;
+
+
 /*
  *  These are global so I can view their value in the Live Expressions tab, will move to task later.
  */
@@ -146,9 +152,14 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
+	 Reverse = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin);
+	 Drive = HAL_GPIO_ReadPin(FWRD_EN_GPIO_Port, FWRD_EN_Pin);
+	 Park = HAL_GPIO_ReadPin(PARK_EN_GPIO_Port, PARK_EN_Pin);
+	 Regen = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
 	 HAL_GPIO_TogglePin(LED_OUT1_GPIO_Port, LED_OUT1_Pin);
 	 HAL_GPIO_TogglePin(LED_OUT2_GPIO_Port, LED_OUT2_Pin);
-     osDelay(500);
+	 osDelay(100);
+
   }
   /* USER CODE END StartDefaultTask */
 }
