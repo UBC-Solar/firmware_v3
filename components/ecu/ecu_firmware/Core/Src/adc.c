@@ -32,11 +32,10 @@
 
 void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
 {
-  float adc_voltage = adc_reading;
+  uint16_t adc_voltage = adc_reading;
   if (adc_voltage < 0) adc_voltage = 0;
   else if (adc_voltage >= ADC_RESOLUTION) adc_voltage = ADC_RESOLUTION;
   adc_voltage = adc_voltage * ADC_VOLTAGE_SCALING * ADC_MAX_VOLT_READING/ADC_RESOLUTION;
-  float offset_ref = HASS_SENSOR_DEFAULT_VOLTAGE_OFFSET;
 
   switch (adc_channel)
   {
@@ -56,16 +55,16 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
     ecu_data.adc_data.ADC_batt_curr_offset = adc_voltage;
     break;
   
-  case BATT_CURR_SNS__ADC1_IN14: //Records battery current sensor in A
-    ecu_data.adc_data.ADC_batt_current = 100*(adc_voltage/ADC_VOLTAGE_SCALING-ecu_data.adc_data.ADC_batt_curr_offset)/0.625; //see HASS100-S datasheet 
+  case BATT_CURR_SNS__ADC1_IN14: //Records battery current sensor in mA
+    ecu_data.adc_data.ADC_batt_current = (uint32_t)(100*(adc_voltage-ecu_data.adc_data.ADC_batt_curr_offset)/625); //see HASS100-S datasheet 
     break;
   
   case LVS_CURR_SNS_OFFSET__ADC1_IN8:
     ecu_data.adc_data.ADC_lvs_offset = adc_voltage;
     break;
 
-  case LVS_CURR_SNS__ADC1_IN9: //Records ECU low voltage current in A
-    ecu_data.adc_data.ADC_lvs_current = (adc_voltage/ADC_VOLTAGE_SCALING-ecu_data.adc_data.ADC_batt_curr_offset)/0.02525;
+  case LVS_CURR_SNS__ADC1_IN9: //Records ECU low voltage current in mA
+    ecu_data.adc_data.ADC_lvs_current = (uint16_t)((adc_voltage-ecu_data.adc_data.ADC_batt_curr_offset)/25.25);
     break;
 
   default:

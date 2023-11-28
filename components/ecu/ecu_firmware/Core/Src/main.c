@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -74,6 +75,7 @@ static void MX_TIM3_Init(void);
 /* USER CODE BEGIN 0 */
 
 ECU_Data_t ecu_data = {0}; 
+DebugIO_Init(huart5);
 
 /* USER CODE END 0 */
 
