@@ -228,32 +228,35 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		if(state == DRIVE || state == CRUISE)
 		{
 			input_flags.cruise_enabled = !input_flags.cruise_enabled;
-			gCruiseVelocity = gVelocityOfCar;
+			cruiseVelocity = velocityOfCar;
 		}
 	}
 	else if(GPIO_Pin == CRUISE_UP_Pin)
 	{
 		if(state == CRUISE)
 		{
-			if(gCruiseVelocity + CRUISE_INCREMENT_VAL < CRUISE_MAX)
-				gCruiseVelocity += CRUISE_INCREMENT_VAL;
+			if(cruiseVelocity + CRUISE_INCREMENT_VAL < CRUISE_MAX)
+				cruiseVelocity += CRUISE_INCREMENT_VAL;
 			else
-				gCruiseVelocity = CRUISE_MAX;
+				cruiseVelocity = CRUISE_MAX;
 		}
 	}
 	else if(GPIO_Pin == CRUISE_DWN_Pin)
 	{
 		if(state == CRUISE)
 		{
-			if(gCruiseVelocity - CRUISE_INCREMENT_VAL > CRUISE_MIN)
-				gCruiseVelocity -= CRUISE_INCREMENT_VAL;
+			if(cruiseVelocity - CRUISE_INCREMENT_VAL > CRUISE_MIN)
+				cruiseVelocity -= CRUISE_INCREMENT_VAL;
 			else
-				gCruiseVelocity = CRUISE_MIN;
+				cruiseVelocity = CRUISE_MIN;
 		}
 	}
 	else if (GPIO_Pin == BRK_IN_Pin)
 	{
-		SendCANMotorCommand(0, 0);
+		MotorCommand motorCommand;
+		motorCommand.velocity = 0.0;
+		motorCommand.throttle = 0.0;
+		SendCANMotorCommand(motorCommand);
 		input_flags.cruise_enabled = false;
 	}
 	else if (GPIO_Pin == NEXT_SCREEN_Pin)

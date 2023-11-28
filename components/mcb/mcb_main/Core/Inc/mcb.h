@@ -31,7 +31,7 @@
 #define CRUISE_INCREMENT_VAL 1 		  // Increment value for cruise up/down buttons
 #define CRUISE_MAX 30 				  // Max cruise speed in m/s
 #define CRUISE_MIN 5 				  // Min cruise speed	in m/s
-#define CRUISE_CURRENT 0.3            // Base line current in cruise control (0-1)
+#define CRUISE_THROTTLE 0.3            // Base line throttle in cruise control (0-1)
 
 #define BATTERY_SOC_THRESHOLD 90	  // Max battery state of charge for regenerative braking to be enabled.
 #define BATTERY_SOC_FULL 100		  // Full battery
@@ -75,6 +75,15 @@ typedef struct InputFlags {
 
 
 /*
+ *  Struct that contains all information to send a motor command
+ */
+typedef struct MotorCommand {
+  float throttle;
+  float velocity;
+} MotorCommand;
+
+
+/*
  * Used to store the value of the drive state
  * See mcb specs doc/wiki for specifications of each state.
 */
@@ -91,8 +100,8 @@ typedef enum {
  */
 extern InputFlags input_flags;
 extern DriveState state;
-extern float gCruiseVelocity;
-extern float gVelocityOfCar;
+extern float cruiseVelocity;
+extern float velocityOfCar;
 extern uint8_t gBatterySOC;
 
 /*
@@ -101,10 +110,18 @@ extern uint8_t gBatterySOC;
 void TaskMCBStateMachine();
 void TaskGetCANMessage();
 
-void SendCANMotorCommand(float current, float velocity);
+void SendCANMotorCommand(MotorCommand motorCommand);
 float NormalizeADCValue(uint16_t value);
 void SendCANDIDNextPage();
 void SendCANDIDDriveState(DriveState state);
+
+MotorCommand DoStateDRIVE(InputFlags input_flags);
+MotorCommand DoStateCRUISE(InputFlags input_flags);
+MotorCommand DoStateREVERSE(InputFlags input_flags);
+MotorCommand DoStatePARK(InputFlags input_flags);
+
+void UpdateInputFlags(InputFlags * input_flags);
+
 
 bool isBitSet(int num, int pos);
 bool isBitSetFromArray(uint8_t * num, int pos);
