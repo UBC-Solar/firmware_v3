@@ -56,7 +56,7 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
     break;
   
   case BATT_CURR_SNS__ADC1_IN14: //Records battery current sensor in mA
-    ecu_data.adc_data.ADC_batt_current = (uint32_t)(100*(adc_voltage-ecu_data.adc_data.ADC_batt_curr_offset)/625); //see HASS100-S datasheet 
+    ecu_data.adc_data.ADC_batt_current = (int32_t)(100*(adc_voltage-ecu_data.adc_data.ADC_batt_curr_offset)/625); //see HASS100-S datasheet 
     break;
   
   case LVS_CURR_SNS_OFFSET__ADC1_IN8:

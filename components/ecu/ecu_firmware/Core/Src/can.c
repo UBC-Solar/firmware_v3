@@ -132,10 +132,10 @@ void CAN_SendMessage450(ECU_t *ECU)
     HAL_StatusTypeDef status;
 
 //TODO: Confirm with Jack how we get analog values
-    txMessage.data[0] = uint8_t(ecu_data.adc_data.pack_current);
-    txMessage.data[1] = uint8_t(ecu_data.adc_data.lv_current); //should I be dividing lv_current by 8.5 to get value in A before sending it out as a CAN message?
-    //txMessage.data[2] = uint8_t(ecu_data.adc_data.supp_batt_volt); //TODO: Confirm with jack
-    //txMessage.data[3] = uint8_t((ecu_data.adc_data.supp_batt_volt) >> 8);
+    //txMessage.data[0] = uint8_t(ecu_data.adc_data.ADC_batt_current); //TODO: figure out data type
+    //txMessage.data[1] = uint8_t(ecu_data.adc_data.ADC_lvs_current); //should I be dividing lv_current by 8.5 to get value in A before sending it out as a CAN message?
+    txMessage.data[2] = uint8_t(ecu_data.adc_data.ADC_supp_batt_volt);
+    txMessage.data[3] = uint8_t((ecu_data.adc_data.ADC_supp_batt_volt) >> 8);
     txMessage.data[4] = uint8_t(ecu_data.status.raw);
 
     do {

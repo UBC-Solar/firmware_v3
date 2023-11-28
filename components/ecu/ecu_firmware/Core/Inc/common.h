@@ -34,8 +34,8 @@ typedef union {
 typedef struct{
     
     uint16_t ADC_spare_current; //stores spare current sensor value
-    uint16_t ADC_lvs_current; //stores current for the LVS system
-    uint32_t ADC_batt_current;
+    uint16_t ADC_lvs_current; //stores current for the LVS system (mA), max value 30A,
+    int32_t ADC_batt_current;//(mA), max 100A
 
     uint16_t ADC_supp_batt_volt; //stores supplemental battery voltage readings
 

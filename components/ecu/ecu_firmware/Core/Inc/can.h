@@ -10,7 +10,7 @@
 #define __CAN_H
 
 #include "stm32f1xx_hal.h"
-#include "ecu.h"
+#include "common.h"
 
 #define CAN_TIMEOUT 50 // (ms)
 

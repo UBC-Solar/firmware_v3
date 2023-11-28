@@ -75,7 +75,6 @@ static void MX_TIM3_Init(void);
 /* USER CODE BEGIN 0 */
 
 ECU_Data_t ecu_data = {0}; 
-DebugIO_Init(huart5);
 
 /* USER CODE END 0 */
 
@@ -87,7 +86,6 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
   
-  DebugIO_Init(&huart5);
 
 
   /* USER CODE END 1 */
@@ -118,7 +116,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
   
   //CAN_hcan = &hcan;
-  //HAL_CAN_Start (&hcan);  
+  //HAL_CAN_Start (&hcan);
+  DebugIO_Init(huart5);  
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adc1_buf, ADC1_BUF_LENGTH);
   HAL_TIM_Base_Start(&htim3); 
   //FSM_init();
