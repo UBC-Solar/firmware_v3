@@ -1,10 +1,10 @@
 ../Core/Src/main.c:117:6:send_uart	24	static
 ../Core/Src/main.c:124:5:bufsize	24	static
 ../Core/Src/main.c:131:6:bufclear	16	static
-../Core/Src/main.c:145:5:main	104	static
-../Core/Src/main.c:337:6:SystemClock_Config	72	static
-../Core/Src/main.c:377:13:MX_CAN_Init	8	static
-../Core/Src/main.c:414:13:MX_SPI1_Init	8	static
-../Core/Src/main.c:452:13:MX_USART2_UART_Init	8	static
-../Core/Src/main.c:485:13:MX_GPIO_Init	40	static
-../Core/Src/main.c:518:6:Error_Handler	4	static,ignoring_inline_asm
+../Core/Src/main.c:145:5:main	88	static
+../Core/Src/main.c:330:6:SystemClock_Config	72	static
+../Core/Src/main.c:370:13:MX_CAN_Init	8	static
+../Core/Src/main.c:407:13:MX_SPI1_Init	8	static
+../Core/Src/main.c:445:13:MX_USART2_UART_Init	8	static
+../Core/Src/main.c:478:13:MX_GPIO_Init	40	static
+../Core/Src/main.c:511:6:Error_Handler	4	static,ignoring_inline_asm

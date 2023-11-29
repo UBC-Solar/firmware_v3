@@ -1,0 +1,5 @@
+../Core/Src/adc.c:31:6:MX_ADC1_Init	3
+../Core/Src/adc.c:73:6:MX_ADC2_Init	3
+../Core/Src/adc.c:115:6:HAL_ADC_MspInit	3
+../Core/Src/adc.c:161:6:HAL_ADC_MspDeInit	3
+../Core/Src/adc.c:201:10:ReadADC	1

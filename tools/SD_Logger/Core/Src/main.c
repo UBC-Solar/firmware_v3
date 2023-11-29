@@ -58,9 +58,8 @@ UART_HandleTypeDef huart2;
 CAN_RxHeaderTypeDef CAN_rx_header;
 uint8_t CAN_rx_data[8];
 
-char SD_message[64] = "";
 
-// defining structs for CAN, GPS, IMU data
+// Define struct for CAN data
 struct CAN_DATA{
 	uint16_t ID;
 	uint64_t DATA;
@@ -68,23 +67,10 @@ struct CAN_DATA{
 	uint8_t LENGTH;
 };
 
-struct GPS_DATA{
-	float LATITUDE;
-	float LONGITUDE;
-	uint16_t SAT;
-	float ALTITUDE;
-};
 
-struct IMU_DATA{
-	uint16_t TYPE;
-	uint16_t DIM;
-	uint64_t DATA;
-};
-
-// creating structs for CAN, GPS, IMU data
+// Create the struct for CAN data
 struct CAN_DATA CAN_DATA;
-struct GPS_DATA GPS_DATA;
-struct IMU_DATA IMU_DATA;
+
 
 /* USER CODE END PV */
 
@@ -104,7 +90,7 @@ static void MX_CAN_Init(void);
 FATFS fs;				// file system
 FIL fil;				// file
 FRESULT fresult;		// to store the result
-char buffer[1024];		// to store data
+char buffer[1024];		// to store data in buffer
 
 UINT br,bw;				// file read/write count
 
@@ -128,7 +114,7 @@ int bufsize (char *buf)
 	return 1;
 }
 
-void bufclear(void)	// clear buffer
+void bufclear(void)	// Clear buffer so that strings are actually written to the file
 {
 	for (int i = 0; i < 1024; i++)
 	{
@@ -179,119 +165,32 @@ int main(void)
   else
 	  send_uart ("SD Card mounted successfully...\n");
 
-  /* generating random file name for testing purposes - WILL BE CHANGED LATER */
-  srand( 2 );												// trying to set seed
-  int randomNum = rand();
-  char fileName[40];
-//  sprintf(fileName, "file%d.txt", randomNum);				// generates random file name to be loaded onto SD card
-  sprintf(fileName, "testfile.txt", randomNum);				// generates random file name to be loaded onto SD card
-
-//  /* card capacity details */
-//
-//	  /* check free space */
-//	  f_getfree("", &fre_clust, &pfs);
-//
-//	  total = (uint32_t)((pfs->n_fatent - 2) * pfs->csize * 0.5);
-//	  sprintf (buffer, "SD Card total size: \t%lu\r\n", free_space);
-//	  send_uart(buffer);
-//	  bufclear();
-//	  free_space = (uint32_t)(fre_clust * pfs->csize * 0.5);
-//	  sprintf (buffer, "SD Card free space: \t%lu\r\n", free_space);
-//	  send_uart(buffer);
-
-
-//  /* testing setting values for CAN_DATA */
-//  CAN_DATA.ID = 0x800;
-//  CAN_DATA.DATA = 0x8324;
-//  CAN_DATA.TIME = 28492;
-//  CAN_DATA.LENGTH = 8;
-
+  /* Create a file for the SD card */
+  char fileName[14];
+  sprintf(fileName, "testFIXED.txt");
 
 
   /* CAN Setup */
   HAL_CAN_Start(&hcan);
 
-//  /* CAN Rx testing */
-//
-//	  // check if message is available
-//	  if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0){
-//
-//		  // receive message and store header info in CAN_rx_header, and data bytes into CAN_rx_data
-//		  HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data);
-//
-//		  CAN_DATA.ID = (uint16_t) CAN_rx_header.StdId;
-//	  	  CAN_DATA.DATA = (uint64_t) CAN_rx_data;
-//		  CAN_DATA.TIME = (uint64_t) CAN_rx_header.Timestamp;
-//		  CAN_DATA.LENGTH = (uint8_t) CAN_rx_header.DLC;
-//	  }
-//
-//	  // writing CAN data to SD card
-//
-//	  /* open file to write/ create a file if it doesn't exist */
-////	  fresult = f_open(&fil, fileName, FA_OPEN_APPEND | FA_READ | FA_WRITE);
-  	  fresult = f_open(&fil, fileName, FA_CREATE_ALWAYS | FA_WRITE);
-//
-//	  send_uart("File created \r\n");
-//
-//
-//	  // creating message with CAN data
-//	  sprintf(SD_message, "ID: %#.3x, Data: %#.4x, Timestamp: %d, Length: %d", CAN_DATA.ID, CAN_DATA.DATA, CAN_DATA.TIME, CAN_DATA.LENGTH);
-//
-//	  // writing CAN line to SD card and closing file
-//	  fresult = f_puts(SD_message, &fil);
-//
-//	  fresult = f_close(&fil);
-//
-//  	  send_uart("File2.txt created and the data is written \r\n");
-//
-//	  /* open file to read */
-//	  fresult = f_open(&fil, fileName, FA_READ);
-//
-//	  /* read string from the file */
-//	  f_gets(buffer, fil.fsize, &fil);
-//
-//	  send_uart(buffer);
-//
-//	  /* close file */
-//	  f_close(&fil);
-//
-//	  bufclear();
+  // Open the file (Create always necessary)
+  fresult = f_open(&fil, fileName, FA_CREATE_ALWAYS | FA_WRITE);
 
+  /* Set Example CAN Data */
+  CAN_DATA.ID = 0x800;
+  CAN_DATA.DATA = 0x8324;
+  CAN_DATA.TIME = 28492;
+  CAN_DATA.LENGTH = 8;
 
+  // Create message with CAN data
+  char SD_message[64] = "";
+  sprintf(SD_message, "ID: %#.3x, Data: %#.4x, Timestamp: %d, Length: %d", CAN_DATA.ID, CAN_DATA.DATA, CAN_DATA.TIME, CAN_DATA.LENGTH);
 
+  // writing CAN line to SD card and closing file
+  fresult = f_puts(SD_message, &fil);
+  fresult = f_close(&fil);
+  bufclear();
 
-
-
-
-//  /* Testing manually writing to the file */
-//
-//  	  /*********** the following operation is using PUTS and GETS ****************/
-//
-//  	  /* open file to write/ create a file if it doesn't exist */
-//  	  fresult = f_open(&fil, fileName, FA_OPEN_APPEND | FA_READ | FA_WRITE);
-//
-//  	  /* writing text */
-//  	  fresult = f_puts("Appended text4\n\n", &fil);
-//  	  fresult = f_puts("Appended text5\n\n", &fil);
-//  	  fresult = f_puts("Appended text6\n\n", &fil);
-//
-//  	  /* close file */
-//  	  fresult = f_close(&fil);
-//
-//  	  send_uart("File2.txt created and the data is written \r\n");
-//
-//  	  /* open file to read */
-//  	  fresult = f_open(&fil, fileName, FA_READ);
-//
-//  	  /* read string from the file */
-//  	  f_gets(buffer, fil.fsize, &fil);
-//
-//  	  send_uart(buffer);
-//
-//  	  /* close file */
-//  	  f_close(&fil);
-//
-//  	  bufclear();
 
   /* USER CODE END 2 */
 
@@ -302,29 +201,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-	  // check if message is available
-	  if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0){
-
-		  send_uart("CAN  message received \r\n");
-
-		  // receive message and store header info in CAN_rx_header, and data bytes into CAN_rx_data
-		  HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data);
-
-		  CAN_DATA.ID = (uint16_t) CAN_rx_header.StdId;
-		  CAN_DATA.DATA = (uint64_t) CAN_rx_data;
-		  CAN_DATA.TIME = (uint64_t) CAN_rx_header.Timestamp;
-		  CAN_DATA.LENGTH = (uint8_t) CAN_rx_header.DLC;
-
-		  // creating message with CAN data
-		  sprintf(SD_message, "ID: %#.3x, Data: %#.4x, Timestamp: %d, Length: %d", CAN_DATA.ID, CAN_DATA.DATA, CAN_DATA.TIME, CAN_DATA.LENGTH);
-
-		  // writing CAN line to SD card
-		  fresult = f_puts(SD_message, &fil);
-
-	  }
-
-	  HAL_Delay(100);
 
   }
   /* USER CODE END 3 */
