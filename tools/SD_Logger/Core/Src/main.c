@@ -182,12 +182,17 @@ int main(void)
   CAN_DATA.TIME = 28492;
   CAN_DATA.LENGTH = 8;
 
-  // Create message with CAN data
+  // Create message with CAN data and put it in the file 10 times
   char SD_message[64] = "";
   sprintf(SD_message, "ID: %#.3x, Data: %#.4x, Timestamp: %d, Length: %d", CAN_DATA.ID, CAN_DATA.DATA, CAN_DATA.TIME, CAN_DATA.LENGTH);
 
-  // writing CAN line to SD card and closing file
-  fresult = f_puts(SD_message, &fil);
+  // writing CAN line to SD card
+  for (int i = 0; i < 10; i++)
+  {
+	  fresult = f_puts(SD_message, &fil);
+  }
+
+  // Close file and clear the buffer so the string is actually written to the file
   fresult = f_close(&fil);
   bufclear();
 
