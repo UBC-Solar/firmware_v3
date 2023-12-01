@@ -114,6 +114,7 @@ void SendCANMotorCommand(MotorCommand motorCommand);
 float NormalizeADCValue(uint16_t value);
 void SendCANDIDNextPage();
 void SendCANDIDDriveState(DriveState state);
+MotorCommand GetMotorCommand(float throttle, float velocity);
 
 MotorCommand DoStateDRIVE(InputFlags input_flags);
 MotorCommand DoStateCRUISE(InputFlags input_flags);
