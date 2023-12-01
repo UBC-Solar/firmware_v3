@@ -7,10 +7,9 @@
 #ifndef INC_MCB_H_
 #define INC_MCB_H_
 
+#include <stdbool.h>
 #include "can.h"
 #include "adc.h"
-#include "can.h"
-#include "stdbool.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cmsis_os.h"
@@ -21,8 +20,7 @@
 
 #define DELAY_MCB_STATE_MACHINE 10	  // Main mcb state machine delay time in ms
 
-#define GET_BATTERY_SOC_DELAY 5000	  // getBatterySOC rtos task delay time in ms
-#define GET_VELOCITY_DELAY 500		  // getVelocity rtos task delay time in ms
+#define DELAY_GET_CAN_MESSAGES 10	  // Delay for getting CAN messages task
 
 #define ADC_DEADZONE 500			  // Deadzone value for ADC
 #define ADC_MAX 4096				  // Max possible value for ADC
@@ -120,6 +118,11 @@ MotorCommand DoStateDRIVE(InputFlags input_flags);
 MotorCommand DoStateCRUISE(InputFlags input_flags);
 MotorCommand DoStateREVERSE(InputFlags input_flags);
 MotorCommand DoStatePARK(InputFlags input_flags);
+
+void TransitionDRIVEstate( InputFlags input_flags, DriveState * state);
+void TransitionREVERSEstate(InputFlags input_flags, DriveState * state);
+void TransitionCRUISEstate(InputFlags input_flags, DriveState * state);
+void TransitionPARKstate(InputFlags input_flags, DriveState * state);
 
 void UpdateInputFlags(InputFlags * input_flags);
 
