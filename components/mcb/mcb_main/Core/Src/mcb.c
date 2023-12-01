@@ -46,8 +46,7 @@ void TaskMCBStateMachine()
 		break;
 
 		default:
-			motorCommand.velocity = 0.0;
-			motorCommand.throttle = 0.0;
+			motorCommand = GetMotorCommand(0.0, 0.0);
 		}
 
 		SendCANMotorCommand(motorCommand);
@@ -140,20 +139,6 @@ void TransitionREVERSEstate(InputFlags input_flags, DriveState * state)
 		*state = PARK;
 }
 
-
-MotorCommand DoStateCRUISE(InputFlags input_flags)
-{
-	return GetMotorCommand(CRUISE_THROTTLE, cruiseVelocity);
-}
-
-void TransitionCRUISEstate(InputFlags input_flags, DriveState * state)
-{
-	if ( input_flags.mech_brake_pressed || !input_flags.cruise_enabled )
-		*state = DRIVE;
-}
-
-
-
 MotorCommand DoStatePARK(InputFlags input_flags)
 {
 	return GetMotorCommand(1.0, 0.0);
@@ -167,6 +152,16 @@ void TransitionPARKstate(InputFlags input_flags, DriveState * state)
 		*state = REVERSE;
 }
 
+MotorCommand DoStateCRUISE(InputFlags input_flags)
+{
+	return GetMotorCommand(CRUISE_THROTTLE, cruiseVelocity);
+}
+
+void TransitionCRUISEstate(InputFlags input_flags, DriveState * state)
+{
+	if ( input_flags.mech_brake_pressed || !input_flags.cruise_enabled )
+		*state = DRIVE;
+}
 
 void UpdateInputFlags(InputFlags * input_flags)
 {
@@ -218,7 +213,6 @@ void TaskGetCANMessage()
 		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
 		{
 			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, CANMessageData);
-
 			if (can_rx_header.StdId == CAN_ID_BATTERY_SOC)
 			{
 				ParseCANBatterySOC(CANMessageData);
@@ -232,7 +226,7 @@ void TaskGetCANMessage()
 				ParseCANBatteryTemp(CANMessageData);
 			}
 		}
-		osDelay(GET_BATTERY_SOC_DELAY);
+		osDelay(DELAY_GET_CAN_MESSAGES);
 	}
 	/* USER CODE END getBatterySOC */
 }
