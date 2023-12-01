@@ -27,18 +27,22 @@ void TaskMCBStateMachine()
 		{
 		case DRIVE:
 			motorCommand = DoStateDRIVE(input_flags);
-		break;
-
-		case CRUISE:
-			motorCommand = DoStateCRUISE(input_flags);
+			TransitionDRIVEstate(input_flags, &state);
 		break;
 
 		case REVERSE:
 			motorCommand = DoStateREVERSE(input_flags);
+			TransitionREVERSEstate(input_flags, &state);
 		break;
 
 		case PARK:
 			motorCommand = DoStatePARK(input_flags);
+			TransitionPARKstate(input_flags, &state);
+		break;
+
+		case CRUISE:
+			motorCommand = DoStateCRUISE(input_flags);
+			TransitionCRUISEstate(input_flags, &state);
 		break;
 
 		default:
@@ -56,156 +60,113 @@ void TaskMCBStateMachine()
 
 MotorCommand DoStateDRIVE( InputFlags input_flags )
 {
-	MotorCommand motorCommand;
+	float throttle = NormalizeADCValue(ReadADC(&hadc1));
 
-	uint16_t ADC_throttle_val = ReadADC(&hadc1);
-	motorCommand.throttle = NormalizeADCValue(ADC_throttle_val);
-
+	// Check if mech brake is pressed
 	if ( input_flags.mech_brake_pressed )
+		return GetMotorCommand(0.0, 0.0);
+
+	// Check if regen is enabled
+	if ( input_flags.regen_enabled && input_flags.battery_SOC_under_threshold && input_flags.battery_temp_under_threshold )
 	{
-		motorCommand.velocity = 0.0;
-		motorCommand.throttle = 0.0;
-	}
-	else if ( input_flags.regen_enabled && input_flags.battery_SOC_under_threshold && input_flags.battery_temp_under_threshold )
-	{
-		if( motorCommand.throttle == 0.0 )
-		{
-			motorCommand.velocity = 0.0;
-		}
-		else if( motorCommand.throttle > 0.0 )
-		{
-			motorCommand.velocity = 100.0;
-		}
-	}
-	else // Regen disabled
-	{
-		#ifdef MITSUBA
-			if(motorCommand.throttle == 0.0)
-			{
-				motorCommand.velocity = 0.0;
-				motorCommand.throttle = 0.0;
-			}
-			else if(motorCommand.throttle < P1)
-			{
-				motorCommand.velocity = 100.0;
-				motorCommand.throttle = P1;
-			}
-			else if(motorCommand.throttle > P1)
-			{
-				motorCommand.velocity = 100.0;
-			}
-		#endif
-		#ifdef TRITIUM
-			if(motorCommand.throttle == 0.0)
-			{
-				motorCommand.velocity = 0.0;
-			}
-			else if(motorCommand.throttle > 0.0)
-			{
-				motorCommand.velocity = 100.0;
-			}
-		#endif
+		if( throttle == 0.0 )
+			return GetMotorCommand(throttle, 0.0);
+		if( throttle > 0.0 )
+			return GetMotorCommand(throttle, 100.0);
 	}
 
-	/*
-	 *  State transitions
-	 */
+	// Regen disabled
+	#ifdef MITSUBA
+		if( throttle == 0.0 )
+			return GetMotorCommand(throttle, 0.0);
+		if( throttle < P1 )
+			return GetMotorCommand(P1, 0.0);
+		if( throttle > P1)
+			return GetMotorCommand(throttle, 100.0);
+	#endif
+	#ifdef TRITIUM
+		if( throttle == 0.0 )
+			return GetMotorCommand( 0.0, 100.0 );
+		if( throttle > 0.0 )
+			return GetMotorCommand( throttle, 100.0 );
+	#endif
+
+	return GetMotorCommand(0.0,0.0);
+}
+
+void TransitionDRIVEstate( InputFlags input_flags, DriveState * state)
+{
 	if( input_flags.reverse_enabled && input_flags.velocity_under_threshold )
-	{
-		state = REVERSE;
-	}
+		*state = REVERSE;
 	else if( input_flags.park_enabled && input_flags.velocity_under_threshold )
-	{
-		state = PARK;
-	}
+		*state = PARK;
 	else if( input_flags.cruise_enabled )
-	{
-		state = CRUISE;
-	}
+		*state = CRUISE;
+}
 
-	return motorCommand;
+
+MotorCommand DoStateREVERSE(InputFlags input_flags)
+{
+	float throttle = NormalizeADCValue(ReadADC(&hadc1));
+
+	// Check if mech brake is pressed
+	if ( input_flags.mech_brake_pressed )
+		return GetMotorCommand(0.0, 0.0);
+
+	// Regen disabled
+	#ifdef MITSUBA
+		if( throttle == 0.0 )
+			return GetMotorCommand(throttle, 0.0);
+		if( throttle < P1 )
+			return GetMotorCommand(P1, 0.0);
+		if( throttle > P1)
+			return GetMotorCommand(throttle, -100.0);
+	#endif
+	#ifdef TRITIUM
+		if( throttle == 0.0 )
+			return GetMotorCommand( 0.0, -100.0 );
+		if( throttle > 0.0 )
+			return GetMotorCommand( throttle, -100.0 );
+	#endif
+
+	return GetMotorCommand(0.0,0.0);
+}
+
+void TransitionREVERSEstate(InputFlags input_flags, DriveState * state)
+{
+	if ( input_flags.drive_enabled && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+		*state = DRIVE;
+	else if ( input_flags.park_enabled && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+		*state = PARK;
 }
 
 
 MotorCommand DoStateCRUISE(InputFlags input_flags)
 {
-	MotorCommand motorCommand;
-
-	motorCommand.velocity = cruiseVelocity;
-	motorCommand.throttle = CRUISE_THROTTLE;
-	/*
-	 *  State transitions
-	 */
-	if ( input_flags.mech_brake_pressed || !input_flags.cruise_enabled)
-	{
-		state = DRIVE;
-	}
-	return motorCommand;
+	return GetMotorCommand(CRUISE_THROTTLE, cruiseVelocity);
 }
 
-MotorCommand DoStateREVERSE(InputFlags input_flags)
+void TransitionCRUISEstate(InputFlags input_flags, DriveState * state)
 {
-	MotorCommand motorCommand;
-	#ifdef MITSUBA
-		if(motorCommand.throttle == 0.0)
-		{
-			motorCommand.velocity = 0.0;
-			motorCommand.throttle = 0.0;
-		}
-		else if(motorCommand.throttle < P1)
-		{
-			motorCommand.velocity = -100.0;
-			motorCommand.throttle = P1;
-		}
-		else if(motorCommand.throttle > P1)
-		{
-			motorCommand.velocity = -100.0;
-		}
-	#endif
-	#ifdef TRITIUM
-		if(motorCommand.throttle == 0.0)
-		{
-			motorCommand.velocity = 0.0;
-		}
-		else if(motorCommand.throttle > 0.0)
-		{
-			motorCommand.velocity = -100.0;
-		}
-	#endif
-
-	/*
-	 *  State transitions
-	 */
-	if ( input_flags.drive_enabled && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
-	{
-		state = DRIVE;
-	}
-	else if ( input_flags.park_enabled && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
-	{
-		state = PARK;
-	}
-	return motorCommand;
+	if ( input_flags.mech_brake_pressed || !input_flags.cruise_enabled )
+		*state = DRIVE;
 }
+
+
 
 MotorCommand DoStatePARK(InputFlags input_flags)
 {
-	MotorCommand motorCommand;
-	motorCommand.velocity = 0.0;
-	motorCommand.throttle = 1.0;
-
-	/*
-	 *  State transitions
-	 */
-	if ( input_flags.drive_enabled && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
-	{
-		state = DRIVE;
-	}
-	else if ( input_flags.reverse_enabled && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
-	{
-		state = REVERSE;
-	}
-	return motorCommand;
+	return GetMotorCommand(1.0, 0.0);
 }
+
+void TransitionPARKstate(InputFlags input_flags, DriveState * state)
+{
+	if ( input_flags.drive_enabled && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+		*state = DRIVE;
+	else if ( input_flags.reverse_enabled && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+		*state = REVERSE;
+}
+
 
 void UpdateInputFlags(InputFlags * input_flags)
 {
@@ -237,6 +198,14 @@ void ParseCANVelocity(uint8_t * CANMessageData)
 void ParseCANBatteryTemp(uint8_t * CANMessageData)
 {
 	input_flags.battery_temp_under_threshold = isBitSetFromArray(CANMessageData, 17); // regen_disable bit is stored in bit 17
+}
+
+MotorCommand GetMotorCommand(float throttle, float velocity)
+{
+	MotorCommand motorCommand;
+	motorCommand.throttle = throttle;
+	motorCommand.velocity = velocity;
+	return motorCommand;
 }
 
 void TaskGetCANMessage()
