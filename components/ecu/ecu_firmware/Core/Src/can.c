@@ -21,7 +21,14 @@
 #define CAN_MAX_DATAFRAME_BYTES 8U
 #define OBC_MESSAGE_ID 0x3E5U
 
+#define MESSAGE_450_LVS_CURRENT_MAX_VALUE 30U //30A
+#define MESSAGE_450_BATT_CURRENT_MAX_VALUE 100U //100A
 
+#define LVS_CURRENT_LSB_PER_V 1000U // LVS current reading from ADC in mA
+#define BATT_CURRENT_LSB_PER_V 10000U //BATT current reading from ADC in mA but must divide by extra 10 to fit into int16_t because it is signed
+
+#define MESSAGE_450_LVS_CURRENT_SCALE_FACTOR (0xFFU / (MESSAGE_450_LVS_CURRENT_MAX_VALUE))
+#define MESSAGE_450_BATT_CURRENT_SCALE_FACTOR (0xFFFFU / (MESSAGE_450_BATT_CURRENT_MAX_VALUE))
 
 typedef struct {
     CAN_TxHeaderTypeDef tx_header;
@@ -128,15 +135,19 @@ void CAN_SendMessage450(ECU_t *ECU)
     uint32_t * pTxMailbox = 0;
     CAN_TxMessage_t txMessage = {0};
     txMessage.tx_header.StdId = 0x450U;
-    txMessage.tx_header.DLC = 5U;
+    txMessage.tx_header.DLC = 6U;
     HAL_StatusTypeDef status;
 
+    int16_t batt_current_rescaled = (int16_t)((ecu_data.adc_data.ADC_batt_current * MESSAGE_450_BATT_CURRENT_SCALE_FACTOR) / BATT_CURRENT_LSB_PER_V);
+    uint8_t lvs_current_rescaled = (uint8_t)((ecu_data.adc_data.ADC_lvs_current * MESSAGE_450_LVS_CURRENT_SCALE_FACTOR) / LVS_CURRENT_LSB_PER_V);
+
 //TODO: Confirm with Jack how we get analog values
-    //txMessage.data[0] = uint8_t(ecu_data.adc_data.ADC_batt_current); //TODO: figure out data type
-    //txMessage.data[1] = uint8_t(ecu_data.adc_data.ADC_lvs_current); //should I be dividing lv_current by 8.5 to get value in A before sending it out as a CAN message?
-    txMessage.data[2] = uint8_t(ecu_data.adc_data.ADC_supp_batt_volt);
-    txMessage.data[3] = uint8_t((ecu_data.adc_data.ADC_supp_batt_volt) >> 8);
-    txMessage.data[4] = uint8_t(ecu_data.status.raw);
+    txMessage.data[0] = int8_t(batt_current_rescaled); //will this be unsigned since its cutoff from 0-8 bits
+    txMessage.data[1] = int8_t((batt_current_rescaled) >> 8); 
+    txMessage.data[2] = lvs_current_rescaled; 
+    txMessage.data[3] = uint8_t(ecu_data.adc_data.ADC_supp_batt_volt);
+    txMessage.data[4] = uint8_t((ecu_data.adc_data.ADC_supp_batt_volt) >> 8);
+    txMessage.data[5] = uint8_t(ecu_data.status.raw);
 
     do {
         status = HAL_CAN_AddTxMessage(CAN_data.can_handle, &txMessage.tx_header, txMessage.data, pTxMailbox);
