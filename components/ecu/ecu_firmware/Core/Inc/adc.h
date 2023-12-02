@@ -14,13 +14,15 @@
 #include <stdint.h>
 /*============================================================================*/
 /* CONFIGURATION */
-#define ADC1_NUM_ANALOG_CHANNELS 4
+#define ADC1_NUM_ANALOG_CHANNELS 7
 #define ADC1_BUF_LENGTH_PER_CHANNEL 200
 #define ADC1_BUF_LENGTH (ADC1_BUF_LENGTH_PER_CHANNEL * ADC1_NUM_ANALOG_CHANNELS)
 
+/*
 #define ADC3_NUM_ANALOG_CHANNELS 3 
 #define ADC3_BUF_LENGTH_PER_CHANNEL 200
 #define ADC3_BUF_LENGTH (ADC3_BUF_LENGTH_PER_CHANNEL * ADC3_NUM_ANALOG_CHANNELS)
+*/
 
 #define ADC_MAX_VOLT_READING 3.3
 #define ADC_RESOLUTION 4095
@@ -34,61 +36,45 @@
 #define ACS782xLR_CURRENT_SCALE_FACTOR 26.4
 
 #define SUPP_BATT_VOLTAGE_DIVIDER 11.0
+#define ADC_VOLTAGE_SCALING 1000.0 // millivolts
+
 /*============================================================================*/
 /* PUBLIC VARIABLES */
 
 /*PRIVATE VARIABLES*/
-static float ADC_am_ref_offset; //stores reference voltage for the array and motor current sensors, from ADC1 
-static float ADC_batt_ref_offset; //stores reference voltage for the battery current sensor, from ADC1
-static int ADC_lvs_current; //stores current for the LVS system, from ADC1
-static int ADC_supp_batt_volt; //stores supplemental battery voltage readings, from ADC1
-static int ADC_battery_current; //stores current readings, flowing out of the battery, from ADC3
-static int ADC_motor_current; //stores current readings, flowing form the motor to the battery, from ADC3
-static int ADC_array_current; //stores current readings, flowing from solar arrays to the battery, from ADC3
+
+// static float ADC_spare_curr_offset; //stores spare current source offset
+// static float ADC_spare_curr; //stores spare current sensor value
+// static int ADC_supp_batt_volt; //stores supplemental battery voltage readings
+// static float ADC_batt_offset; //stores supplemental battery voltage offset
+// static float ADC_lvs_offset; //stores low voltage system current offset
+// static float ADC_lvs_current; //stores current for the LVS system
+// static float ADC_batt_current;
 
 static volatile int ADC1_DMA_in_process_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is in process
 static volatile int ADC1_DMA_fault_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is at fault
-static volatile int ADC3_DMA_in_process_flag; //flag that indicates the DMA interrupt if ADC3 has been called and is in process
-static volatile int ADC3_DMA_fault_flag; //flag that indicates the DMA interrupt if ADC3 has been called and is at fault
 /*============================================================================*/
 /*ADC INPUTS*/
 
 typedef enum {
-  OFFSET_REF_AM__ADC1_IN0 = 0,
-  LVS_CURR_SENSE__ADC1_IN4,
-  SUPP_SENSE__ADC1_IN5, 
-  OFFSET_REF_BAT__ADC1_IN10, 
-  B_SENSE__ADC3_IN1, 
-  M_SENSE__ADC3_IN2, 
-  A_SENSE__ADC3_IN3
+  SPAR_CURR_SNS_OFFSET__ADC1_IN5 = 0,
+  SUPP_SENSE__ADC1_IN6,
+  BATT_CURR_SNS_OFFSET__ADC1_IN7, 
+  LVS_CURR_SNS_OFFSET__ADC1_IN8,
+  LVS_CURR_SNS__ADC1_IN9,
+  BATT_CURR_SNS__ADC1_IN14,
+  SPAR_CURR_SNS__ADC1_IN15, 
 }adc_channel_list;
 
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
-float ADC_getOffsetRef_Batt();
-float ADC_getOffsetRef_AM();
+void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float result[]);
 
-int ADC_getLowVoltageCurrent();
-int ADC_getSuppBattVoltage();
-
-int ADC_getBatteryCurrent();
-int ADC_getMotorCurrent();
-int ADC_getArrayCurrent();
-
-int ADC_netCurrentOut();
-
-void ADC3_processRawReadings(int half, volatile uint32_t adc3_buf[], float result[]);
-void ADC1_processRawReadings(int half, volatile uint32_t adc1_buf[], float result[]);
-
-int ADC3_getBusyStatus();
-void ADC3_setBusyStatus(int flag_value);
 int ADC1_getBusyStatus();
 void ADC1_setBusyStatus(int flag_value);
 
-int ADC3_getFaultStatus(); 
-void ADC3_setFaultStatus(int flag_value);
 int ADC1_getFaultStatus(); 
 void ADC1_setFaultStatus(int flag_value);
 

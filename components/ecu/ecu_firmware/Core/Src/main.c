@@ -19,13 +19,15 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "fsm.h"
-// #include "adc.h"
+#include "adc.h"
+#include "debug_io.h"
+#include "common.h"
 #include "can.h"
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,14 +50,13 @@ DMA_HandleTypeDef hdma_adc1;
 
 CAN_HandleTypeDef hcan;
 
-TIM_HandleTypeDef htim8;
+TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart5;
 
 /* USER CODE BEGIN PV */
-DMA_HandleTypeDef hdma_adc2;
-volatile uint32_t adc1_buf[ADC1_BUF_LENGTH] = {0};
-volatile uint32_t adc3_buf[ADC3_BUF_LENGTH] = {0};
+volatile uint16_t adc1_buf[ADC1_BUF_LENGTH] = {0};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -65,13 +66,15 @@ static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_CAN_Init(void);
 static void MX_UART5_Init(void);
-static void MX_TIM8_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+ECU_Data_t ecu_data = {0}; 
 
 /* USER CODE END 0 */
 
@@ -82,6 +85,8 @@ static void MX_TIM8_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+  
+
 
   /* USER CODE END 1 */
 
@@ -107,13 +112,17 @@ int main(void)
   MX_ADC1_Init();
   MX_CAN_Init();
   MX_UART5_Init();
-  MX_TIM8_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+  
   CAN_hcan = &hcan;
-  HAL_CAN_Start (&hcan);  
-  // HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adc1_buf, ADC1_BUF_LENGTH);
-  // HAL_ADC_Start_DMA(&hadc2, (uint32_t *) adc3_buf, ADC3_BUF_LENGTH);
-  //HAL_TIM_Base_Start(&htim3);
+
+  HAL_CAN_Start (&hcan);
+
+  DebugIO_Init(huart5);  
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adc1_buf, ADC1_BUF_LENGTH);
+  HAL_TIM_Base_Start(&htim3);
+
   FSM_init();
 
   HAL_GetTick();
@@ -130,6 +139,9 @@ int main(void)
   {
    FSM_run();
     /* USER CODE END WHILE */
+    // int supp_batt_volt = ADC_getSuppBattVoltage();
+    // printf(supp_batt_volt);
+
 
     /* USER CODE BEGIN 3 */
 
@@ -292,7 +304,16 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN ADC1_Init 2 */
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_14;
+  sConfig.Rank = ADC_REGULAR_RANK_3;
+  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC2_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
 
@@ -317,8 +338,8 @@ static void MX_CAN_Init(void)
   hcan.Init.Prescaler = 4;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_4TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_12TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_3TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
   hcan.Init.AutoWakeUp = DISABLE;
@@ -336,50 +357,50 @@ static void MX_CAN_Init(void)
 }
 
 /**
-  * @brief TIM8 Initialization Function
+  * @brief TIM3 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_TIM8_Init(void)
+static void MX_TIM3_Init(void)
 {
 
-  /* USER CODE BEGIN TIM8_Init 0 */
+  /* USER CODE BEGIN TIM3_Init 0 */
 
-  /* USER CODE END TIM8_Init 0 */
+  /* USER CODE END TIM3_Init 0 */
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
-  /* USER CODE BEGIN TIM8_Init 1 */
+  /* USER CODE BEGIN TIM3_Init 1 */
 
-  /* USER CODE END TIM8_Init 1 */
-  htim8.Instance = TIM8;
-  htim8.Init.Prescaler = 16000-1;
-  htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim8.Init.Period = 10;
-  htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim8.Init.RepetitionCounter = 0;
-  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim8) != HAL_OK)
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 16000-1;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 1;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
   }
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim8, &sClockSourceConfig) != HAL_OK)
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
   {
     Error_Handler();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim8, &sMasterConfig) != HAL_OK)
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN TIM8_Init 2 */
+  /* USER CODE BEGIN TIM3_Init 2 */
 
-  /* USER CODE END TIM8_Init 2 */
+  /* USER CODE END TIM3_Init 2 */
 
 }
+
 
 /**
   * @brief UART5 Initialization Function
@@ -516,6 +537,40 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
+{
+    if (hadc == &hadc1) averageAndSaveValues_ADC1(0);
+}
+
+// Conversion full complete DMA interrupt callback for ADCs
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+  if (hadc == &hadc1) averageAndSaveValues_ADC1(1);
+}
+
+void averageAndSaveValues_ADC1(int adc_half)
+{
+  if (!ADC1_getBusyStatus()){
+    ADC1_setBusyStatus(1);
+    static float result[ADC1_NUM_ANALOG_CHANNELS];
+
+    ADC1_processRawReadings(adc_half, adc1_buf, result);
+
+    ADC_setReading(result[0], SPAR_CURR_SNS_OFFSET__ADC1_IN5);
+    ADC_setReading(result[1], SUPP_SENSE__ADC1_IN6);
+    ADC_setReading(result[2], BATT_CURR_SNS_OFFSET__ADC1_IN7);
+    ADC_setReading(result[3], LVS_CURR_SNS_OFFSET__ADC1_IN8);
+    ADC_setReading(result[4], LVS_CURR_SNS__ADC1_IN9);
+    ADC_setReading(result[5], BATT_CURR_SNS__ADC1_IN14);
+    ADC_setReading(result[6], SPAR_CURR_SNS__ADC1_IN15);
+
+    ADC1_setBusyStatus(0);
+  }  
+  else
+  {
+    ADC1_setFaultStatus(1);
+  }
+}
 
 
 /* USER CODE END 4 */
@@ -551,3 +606,4 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
