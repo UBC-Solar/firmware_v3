@@ -125,9 +125,16 @@ void CAN_Init(CAN_HandleTypeDef *hcan)
 }
 
 /**
- * @brief Get data for message 450, construct CAN message and send it, sends pack and low voltage current value
+ * @brief Sends a CAN message with ID 0x450 containing battery and low voltage system (LVS) current information.
+ *        The function calculates and rescales the battery current and LVS current values and configures the CAN message.
  *
- * @param adc adc data structure that data will be read from, will be from Jack's code
+ * @param ECU Pointer to the ECU_t structure containing ECU-related data, including ADC readings.
+ *
+ * @note The function performs rescaling on ADC readings and configures the CAN message with the rescaled values.
+ * @note If retrieving batt_current_rescaled from CAN bus, you must combine the upper and lower byte and cast it back to data type int16_t before use.
+ *
+ * @date 2022/12/02
+ * @author Harris Mai (harristmai)
  */
 void CAN_SendMessage450(ECU_t *ECU)
 {
@@ -138,12 +145,11 @@ void CAN_SendMessage450(ECU_t *ECU)
     txMessage.tx_header.DLC = 6U;
     HAL_StatusTypeDef status;
 
-    int16_t batt_current_rescaled = (int16_t)((ecu_data.adc_data.ADC_batt_current * MESSAGE_450_BATT_CURRENT_SCALE_FACTOR) / BATT_CURRENT_LSB_PER_V);
+    int16_t batt_current_rescaled = (int16_t)((ecu_data.adc_data.ADC_batt_current * (int16_t)MESSAGE_450_BATT_CURRENT_SCALE_FACTOR) / (int16_t)BATT_CURRENT_LSB_PER_V); //must cast scale_factor and BATT_CURRENT_LSB_PER_V as int16_t or else conversion will not work
     uint8_t lvs_current_rescaled = (uint8_t)((ecu_data.adc_data.ADC_lvs_current * MESSAGE_450_LVS_CURRENT_SCALE_FACTOR) / LVS_CURRENT_LSB_PER_V);
 
-//TODO: Confirm with Jack how we get analog values
-    txMessage.data[0] = int8_t(batt_current_rescaled); //will this be unsigned since its cutoff from 0-8 bits
-    txMessage.data[1] = int8_t((batt_current_rescaled) >> 8); 
+    txMessage.data[0] = uint8_t(batt_current_rescaled); 
+    txMessage.data[1] = uint8_t((batt_current_rescaled) >> 8); 
     txMessage.data[2] = lvs_current_rescaled; 
     txMessage.data[3] = uint8_t(ecu_data.adc_data.ADC_supp_batt_volt);
     txMessage.data[4] = uint8_t((ecu_data.adc_data.ADC_supp_batt_volt) >> 8);
@@ -156,9 +162,15 @@ void CAN_SendMessage450(ECU_t *ECU)
 
 
 /**
- * @brief Get data for message 624, construct CAN message and send it
+ * @brief Sends a CAN message with ID 0x3F4 containing charging parameters and control flags.
+ *        The function configures the CAN message with maximum charging current, maximum charging voltage,
+ *        charger enable/disable status, and charging mode information. 
  *
- * @param pack pack data structure that data will be read from
+ * @note This function toggles the charger enable status for subsequent calls, starting the charger when
+ *       the enable status is set to 0. 
+ * 
+ * @date 2023/12/02
+ * @author Harris Mai (harristmai)
  */
 void CAN_SendMessage3F4()
 {
@@ -185,29 +197,4 @@ void CAN_SendMessage3F4()
         charger_enable = 1;
     }
     //TODO: Check w/ PCAN
-}
-
-//Not a complete function, just a template for me to follow
-
-/**
- * @brief Getter for data contained in the last received ECU current data CAN message
- * 
- * @param[out] pack_current Signed pack current in amps
- * @param[out] low_voltage_current Signed low voltage circuits current; LSB = (30/255) amps
- * @param[out] overcurrent_status True if discharge or charge over-current condition has been triggered
- * @param[out] rx_timestamp Time since board power on in ms at which last ECU CAN message was received
- * @returns Whether a CAN message has been received (and there is new data) since the last time this function was called
-*/
-bool CAN_GetMessage0x3E5Data(int8_t *pack_current, uint8_t *low_voltage_current, bool *overcurrent_status)
-{
-    HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section - do not want a CAN RX complete interrupt to be serviced during this function call
-    bool new_rx_message = CAN_data.rx_message_0x3E5.new_rx_message;
-    CAN_data.rx_message_0x3E5.new_rx_message = false;
-
-    *pack_current = (int8_t) CAN_data.rx_message_0x3E5.data[0];
-    *low_voltage_current = CAN_data.rx_message_0x3E5.data[1];
-    *overcurrent_status = CAN_data.rx_message_0x3E5.data[2] & 0x1U;
-
-    HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section
-    return new_rx_message;
 }
