@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "can.h"
+#include "dma.h"
 #include "i2c.h"
 #include "usart.h"
 #include "gpio.h"
@@ -53,16 +54,19 @@ CAN_FilterTypeDef CAN_filter0;
 CAN_FilterTypeDef CAN_filter1;
 
 CAN_RxHeaderTypeDef can_rx_header;
+CAN_TxHeaderTypeDef can_tx_header;
 
 uint8_t current_can_data[8];
+uint8_t uart_rx_buffer[UART_RXBUFFER_SIZE];
 HAL_StatusTypeDef rx_status;
+
+
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
-void Can_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -100,6 +104,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_CAN_Init();
   MX_USART3_UART_Init();
   MX_I2C1_Init();
@@ -108,6 +113,14 @@ int main(void)
 
   // <----- CAN set-up ------>
   Can_Init();
+
+
+
+
+  // USART DMA Interrupt Enable
+  HAL_UART_Receive_DMA(&huart1, uart_rx_buffer, UART_RXBUFFER_SIZE);
+  //Disable half transfer interrupt
+ __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
 
   /* USER CODE END 2 */
 

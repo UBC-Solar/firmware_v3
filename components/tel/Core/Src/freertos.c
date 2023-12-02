@@ -52,6 +52,9 @@
 #define CAN_BUFFER_LEN 22
 #define IMU_MESSAGE_LEN 17
 
+#define USART_RX_BIT 0x01
+#define SIM_SPEED_ID 0x750
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -72,6 +75,12 @@ const osThreadAttr_t readCANTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 
+const osThreadAttr_t transmitSimSpeedTask_attributes = {
+	.name = "transmitSimSpeedTask",
+	.stack_size = 128*8,
+	.priority = (osPriority_t)osPriorityNormal,
+};
+
 const osThreadAttr_t transmitMessageTask_attributes = {
   .name = "transmitMessageTask",
   .stack_size = 128 * 8,
@@ -89,6 +98,7 @@ const osThreadAttr_t changeRadioSettingsTask_attributes = {
   .stack_size = 128 * 8,
   .priority = (osPriority_t) osPriorityNormal,
 };
+
 
 const osMessageQueueAttr_t canMessageQueue_attributes = {
   .name = "canMessageQueue"
@@ -114,10 +124,13 @@ const osThreadAttr_t transmitIMU_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 
+
+
 osThreadId_t readCANTaskHandle;
 osThreadId_t kernelLEDTaskHandle;
 osThreadId_t transmitMessageTaskHandle;
 osThreadId_t changeRadioSettingsTaskHandle;
+osThreadId_t transmitSimSpeedTaskHandle;
 
 osMessageQueueId_t canMessageQueueHandle;
 osMessageQueueId_t imuMessageQueueHandle;
@@ -139,6 +152,7 @@ void kernelLEDTask (void *argument);
 void readCANTask(void *argument);
 void transmitMessageTask(void *argument);
 void changeRadioSettingsTask(void *argument);
+void transmitSimSpeedTask(void *argument);
 
 void sendByte(char c);
 void sendChar(char c);
@@ -188,13 +202,14 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  // defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
 
   // kernelLEDTaskHandle = osThreadNew(kernelLEDTask, NULL, &kernelLEDTask_attributes);
   
   readCANTaskHandle = osThreadNew(readCANTask, NULL, &readCANTask_attributes);
+  transmitSimSpeedTaskHandle = osThreadNew(transmitSimSpeedTask, NULL, &transmitSimSpeedTask_attributes);
   transmitMessageTaskHandle = osThreadNew(transmitMessageTask, NULL, &transmitMessageTask_attributes);
 
   readimuHandle = osThreadNew(readIMUTask, NULL, &readimu_attributes);
@@ -231,6 +246,15 @@ void StartDefaultTask(void *argument)
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
+//interrupt when data transfer from radio is complete
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	//set flag for transmitSimSpeed task
+  xTaskNotifyFromISR(transmitSimSpeedTaskHandle,USART_RX_BIT, eSetBits, NULL);
+
+}
+
+
 __NO_RETURN void kernelLEDTask (void *argument) {
   osKernelState_t kernel_status;
 
@@ -244,6 +268,41 @@ __NO_RETURN void kernelLEDTask (void *argument) {
     osDelay(KERNEL_LED_DELAY);
   }
 }
+
+
+//sends simulation speed over can
+__NO_RETURN void transmitSimSpeedTask (void *argument){
+
+
+	uint32_t ulInterruptStatus;
+	uint8_t canTxData[3];
+
+	//set can header
+	can_tx_header.DLC = 3;
+	can_tx_header.IDE = CAN_ID_STD;
+	can_tx_header.RTR = CAN_RTR_DATA;
+	can_tx_header.StdId = SIM_SPEED_ID;
+
+	while(1){
+		//task waits for interrupt before running
+		xTaskNotifyWait (0x00, USART_RX_BIT, &ulInterruptStatus, portMAX_DELAY);
+
+		//check if flag is set
+		if ((USART_RX_BIT & ulInterruptStatus) != 0){
+			for(int i = 0; i < 3; i++){
+				//add values from rx buffer to CAN data array
+				canTxData[i] = uart_rx_buffer[i];
+			}
+
+			HAL_CAN_AddTxMessage(&hcan, &can_tx_header, canTxData, NULL);
+		}
+	}
+
+
+}
+
+
+
 
 __NO_RETURN void readCANTask(void *argument) {
   static HAL_StatusTypeDef rx_status;
