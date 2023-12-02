@@ -28,6 +28,8 @@
 #include "time.h"
 #include "stdlib.h"
 
+#include "sdcard.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -88,16 +90,8 @@ static void MX_CAN_Init(void);
 /* USER CODE BEGIN 0 */
 
 FATFS fs;				// file system
-FIL fil;				// file
 FRESULT fresult;		// to store the result
 char buffer[1024];		// to store data in buffer
-
-UINT br,bw;				// file read/write count
-
-/* capacity related variables */
-FATFS *pfs;
-DWORD fre_clust;
-uint32_t total, free_space;
 
 /* to send the data to the uart */
 void send_uart (char *string)
@@ -105,13 +99,6 @@ void send_uart (char *string)
 	uint8_t len = strlen(string);
 	HAL_UART_Transmit(&huart2, (uint8_t *) string, len, 2000);	// transmit in blocking mode
 
-}
-
-int bufsize (char *buf)
-{
-	int i = 0;
-	while(*buf++ != '\0') i++;
-	return 1;
 }
 
 void bufclear(void)	// Clear buffer so that strings are actually written to the file
@@ -158,43 +145,73 @@ int main(void)
   MX_CAN_Init();
   /* USER CODE BEGIN 2 */
 
-  /* mount SD card */
-  fresult = f_mount(&fs, "", 0);
-  if(fresult != FR_OK)
-	  send_uart ("error in mounting SD CARD...\n");
-  else
-	  send_uart ("SD Card mounted successfully...\n");
+  // Create a pointer to the FATFS type file
+  FIL *file_pointer = sd_open("my_file_name.txt");
 
-  /* Create a file for the SD card */
-  char fileName[14];
-  sprintf(fileName, "testFIXED.txt");
-
-
-  /* CAN Setup */
-  HAL_CAN_Start(&hcan);
-
-  // Open the file (Create always necessary)
-  fresult = f_open(&fil, fileName, FA_CREATE_ALWAYS | FA_WRITE);
+  // Append to the file (regardless of empty or not)
 
   /* Set Example CAN Data */
-  CAN_DATA.ID = 0x800;
+  CAN_DATA.ID = 0xBEF;
   CAN_DATA.DATA = 0x8324;
   CAN_DATA.TIME = 28492;
   CAN_DATA.LENGTH = 8;
 
-  // Create message with CAN data and put it in the file 10 times
   char SD_message[64] = "";
-  sprintf(SD_message, "ID: %#.3x, Data: %#.4x, Timestamp: %d, Length: %d", CAN_DATA.ID, CAN_DATA.DATA, CAN_DATA.TIME, CAN_DATA.LENGTH);
+  sprintf(SD_message, "ID: %#.3x, Data: %#.4x, Timestamp: %d, Length: %d\n", CAN_DATA.ID, CAN_DATA.DATA, CAN_DATA.TIME, CAN_DATA.LENGTH);
 
-  // writing CAN line to SD card
-  for (int i = 0; i < 10; i++)
-  {
-	  fresult = f_puts(SD_message, &fil);
-  }
+  sd_append(file_pointer, SD_message);
 
-  // Close file and clear the buffer so the string is actually written to the file
-  fresult = f_close(&fil);
-  bufclear();
+  // Close the file
+  sd_close(file_pointer);
+
+
+//  /* mount SD card */
+//  fresult = f_mount(&fs, "", 0);
+//  if(fresult != FR_OK)
+//	  send_uart ("error in mounting SD CARD...\n");
+//  else
+//	  send_uart ("SD Card mounted successfully...\n");
+//
+//
+//  /* Create a RANDOM file name for the SD card */
+//  // Does not actually give random each time we require RTC.
+//  srand((unsigned int)time(NULL));
+//
+//  int random_number = rand() % 100000;
+//  char fileName[16];
+//  sprintf(fileName, "CANLOG%05d.txt", random_number);
+//
+//  /* CAN Setup */
+//  HAL_CAN_Start(&hcan);
+//
+//  // Open the file (Create always necessary)
+//  fresult = f_open(&fil, fileName, FA_WRITE | FA_OPEN_ALWAYS);
+//  if (fresult == FR_OK) {
+//      /* Seek to end of the file to append data */
+//      fresult = f_lseek(&fil, f_size(&fil));
+//      if (fresult != FR_OK)
+//          f_close(&fil);
+//  }
+//
+//  /* Set Example CAN Data */
+//  CAN_DATA.ID = 0xBEF;
+//  CAN_DATA.DATA = 0x8324;
+//  CAN_DATA.TIME = 28492;
+//  CAN_DATA.LENGTH = 8;
+//
+//  // Create message with CAN data and put it in the file 10 times
+//  char SD_message[64] = "";
+//  sprintf(SD_message, "ID: %#.3x, Data: %#.4x, Timestamp: %d, Length: %d\n", CAN_DATA.ID, CAN_DATA.DATA, CAN_DATA.TIME, CAN_DATA.LENGTH);
+
+//  // writing CAN line to SD card
+//  for (int i = 0; i < 7; i++)
+//  {
+//	  fresult = f_puts(SD_message, &fil);
+//	  bufclear();
+//  }
+//
+//  // Close file and clear the buffer so the string is actually written to the file
+//  fresult = f_close(&fil);
 
 
   /* USER CODE END 2 */
