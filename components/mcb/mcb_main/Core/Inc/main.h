@@ -61,12 +61,10 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define REGEN_EN_Pin GPIO_PIN_0
 #define REGEN_EN_GPIO_Port GPIOC
-#define PARK_EN_Pin GPIO_PIN_1
-#define PARK_EN_GPIO_Port GPIOC
-#define FWRD_EN_Pin GPIO_PIN_2
-#define FWRD_EN_GPIO_Port GPIOC
-#define RVRS_EN_Pin GPIO_PIN_3
-#define RVRS_EN_GPIO_Port GPIOC
+#define SWITCH_IN2_Pin GPIO_PIN_1
+#define SWITCH_IN2_GPIO_Port GPIOC
+#define SWITCH_IN1_Pin GPIO_PIN_2
+#define SWITCH_IN1_GPIO_Port GPIOC
 #define CRUISE_STAT_Pin GPIO_PIN_0
 #define CRUISE_STAT_GPIO_Port GPIOA
 #define TMR_OUT_Pin GPIO_PIN_1

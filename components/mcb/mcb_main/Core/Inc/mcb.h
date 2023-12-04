@@ -62,15 +62,14 @@ typedef union IntBytes {
 typedef struct InputFlags {
   volatile bool cruise_enabled;
   volatile bool mech_brake_pressed;
-  volatile bool drive_enabled;
-  volatile bool reverse_enabled;
-  volatile bool park_enabled;
   volatile bool regen_enabled;
   volatile bool battery_SOC_under_threshold;
   volatile bool battery_temp_under_threshold;
   volatile bool velocity_under_threshold;
+  volatile bool switch_pos_drive;
+  volatile bool switch_pos_reverse;
+  volatile bool switch_pos_park;
 } InputFlags;
-
 
 /*
  *  Struct that contains all information to send a motor command
@@ -83,7 +82,6 @@ typedef struct MotorCommand {
 
 /*
  * Used to store the value of the drive state
- * See mcb specs doc/wiki for specifications of each state.
 */
 typedef enum {
 	INVALID = (uint8_t) 0x00,
@@ -92,6 +90,7 @@ typedef enum {
 	PARK = (uint8_t) 0x03,
 	REVERSE = (uint8_t) 0x04
 }DriveState;
+
 
 /*
  *  Variables
@@ -112,6 +111,9 @@ void SendCANMotorCommand(MotorCommand motorCommand);
 float NormalizeADCValue(uint16_t value);
 void SendCANDIDNextPage();
 void SendCANDIDDriveState(DriveState state);
+
+void GetSwitchState(InputFlags * input_flags);
+
 MotorCommand GetMotorCommand(float throttle, float velocity);
 
 MotorCommand DoStateDRIVE(InputFlags input_flags);

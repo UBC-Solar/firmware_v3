@@ -41,20 +41,15 @@ extern CAN_HandleTypeDef hcan;
 #define GET_VELOCITY_HEADER			 0x503
 #define BATTERY_MESSAGE_HEADER		 0x622
 
-
 #define CAN_ID_VELOCITY				 0x503
 #define CAN_ID_BATTERY_TEMP			 0x622
 #define CAN_ID_BATTERY_SOC			 0x626
 
-
 #define CAN_DATA_LENGTH 8
 
 extern CAN_TxHeaderTypeDef drive_command_header;
-
 extern CAN_TxHeaderTypeDef DID_next_page_header;
-
 extern uint32_t can_mailbox;
-
 extern CAN_RxHeaderTypeDef can_rx_header;
 /* USER CODE END Private defines */
 
