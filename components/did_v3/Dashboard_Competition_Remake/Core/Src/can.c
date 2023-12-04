@@ -31,10 +31,6 @@ void CanFilterSetup()
 {
 	// Messages received by the DID (0x622,0x623,0x624,0x625,0x501,0x503,0x50B,0x400,0x750).
 
-	CAN_FilterTypeDef CAN_filter0;
-	CAN_FilterTypeDef CAN_filter1;
-	CAN_FilterTypeDef CAN_filter2;
-
 	// Filter for 0x500 IDs in list mode
     CAN_filter0.FilterIdHigh = (uint16_t) (0x501 << 5);
     CAN_filter0.FilterMaskIdHigh = (uint16_t) (0x7F5 << 5);
@@ -48,28 +44,28 @@ void CanFilterSetup()
     CAN_filter0.FilterScale = CAN_FILTERSCALE_16BIT;
     CAN_filter0.FilterActivation = CAN_FILTER_ENABLE;
 
-    // Filter for 0x600 IDs in mask mode
-    CAN_filter1.FilterIdHigh = (uint16_t) (0x622);
-    CAN_filter1.FilterMaskIdHigh = (uint16_t) (0x623);
+    // Filter for 0x600 IDs in filter mode
+    CAN_filter1.FilterIdHigh = (uint16_t) (0x622 << 5);
+    CAN_filter1.FilterMaskIdHigh = (uint16_t) (0x623 << 5);
 
-    CAN_filter1.FilterIdLow = (uint16_t) (0x624);
-    CAN_filter1.FilterMaskIdLow = (uint16_t) (0x625);
+    CAN_filter1.FilterIdLow = (uint16_t) (0x624 << 5);
+    CAN_filter1.FilterMaskIdLow = (uint16_t) (0x625 << 5);
 
-    CAN_filter1.FilterFIFOAssignment = CAN_FILTER_FIFO1;
+    CAN_filter1.FilterFIFOAssignment = CAN_FILTER_FIFO0;
     CAN_filter1.FilterBank = (uint32_t) 1;
     CAN_filter1.FilterMode = CAN_FILTERMODE_IDLIST;
     CAN_filter1.FilterScale = CAN_FILTERSCALE_16BIT;
     CAN_filter1.FilterActivation = CAN_FILTER_ENABLE;
 
     // Remaining IDs filtered with list mode
-    CAN_filter2.FilterIdHigh = (uint16_t) (0x400);
-    CAN_filter2.FilterMaskIdHigh = (uint16_t) (0x400);
+    CAN_filter2.FilterIdHigh = (uint16_t) (0x400 << 5);
+    CAN_filter2.FilterMaskIdHigh = (uint16_t) (0x400 << 5);
 
-    CAN_filter2.FilterIdLow = (uint16_t) (0x750);
-    CAN_filter2.FilterMaskIdLow = (uint16_t) (0x750);
+    CAN_filter2.FilterIdLow = (uint16_t) (0x750 << 5);
+    CAN_filter2.FilterMaskIdLow = (uint16_t) (0x750 << 5);
 
-    CAN_filter2.FilterFIFOAssignment = CAN_FILTER_FIFO1;
-    CAN_filter2.FilterBank = (uint32_t) 1;
+    CAN_filter2.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+    CAN_filter2.FilterBank = (uint32_t) 2;
     CAN_filter2.FilterMode = CAN_FILTERMODE_IDLIST;
     CAN_filter2.FilterScale = CAN_FILTERSCALE_16BIT;
     CAN_filter2.FilterActivation = CAN_FILTER_ENABLE;

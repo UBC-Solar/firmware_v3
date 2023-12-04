@@ -73,6 +73,7 @@
 
 CAN_FilterTypeDef CAN_filter0;
 CAN_FilterTypeDef CAN_filter1;
+CAN_FilterTypeDef CAN_filter2;
 
 CAN_RxHeaderTypeDef CAN_rx_header;
 uint8_t CAN_rx_data[8];
@@ -270,7 +271,7 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
-  CanFilterSetup();
+//  CanFilterSetup();
   HAL_CAN_Start(&hcan);
 
   // Commented Clock Setup as it is already done in the ioc
@@ -323,8 +324,6 @@ int main(void)
 //		__HAL_TIM_SET_COUNTER(&htim3, 0); // Reset the timer counter to 0
 //	}
 
-
-
 	// Check if message is available
 	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0)
 	{
@@ -337,12 +336,6 @@ int main(void)
 		 * The current_page is simply incremented by +1.
 		 * if (current_page + 1 == NUM_PAGES) set current_page = 0
 		 */
-
-		/* Toggle LED that we received CAN message */
-		HAL_GPIO_TogglePin(BMS_COMM_FLT_GPIO_Port, BMS_COMM_FLT_Pin);
-		HAL_Delay(500);
-		continue; // Loop again, skip the rest.
-
 
 		uint8_t button_pressed = FALSE;
 		uint8_t cruise_enabled = FALSE;

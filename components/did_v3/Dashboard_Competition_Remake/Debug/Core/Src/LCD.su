@@ -9,9 +9,9 @@
 ../Core/Src/LCD.c:285:6:SetBar	24	static
 ../Core/Src/LCD.c:308:6:DisplayScreen	8	static
 ../Core/Src/LCD.c:371:6:UpdateScreenTitles	16	static
-../Core/Src/LCD.c:433:6:UpdateScreenParameter	24	static
-../Core/Src/LCD.c:447:6:WriteByteToDataBus	16	static
-../Core/Src/LCD.c:458:6:TransmitCommand	16	static
-../Core/Src/LCD.c:473:6:TransmitCommandParameter	16	static
-../Core/Src/LCD.c:486:6:InitialiseLCDPins	4	static
-../Core/Src/LCD.c:511:6:ScreenSetup	8	static
+../Core/Src/LCD.c:434:6:UpdateScreenParameter	24	static
+../Core/Src/LCD.c:448:6:WriteByteToDataBus	16	static
+../Core/Src/LCD.c:459:6:TransmitCommand	16	static
+../Core/Src/LCD.c:474:6:TransmitCommandParameter	16	static
+../Core/Src/LCD.c:487:6:InitialiseLCDPins	4	static
+../Core/Src/LCD.c:512:6:ScreenSetup	8	static
