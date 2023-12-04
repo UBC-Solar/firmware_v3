@@ -95,9 +95,9 @@ MotorCommand DoStateDRIVE( InputFlags input_flags )
 
 void TransitionDRIVEstate( InputFlags input_flags, DriveState * state)
 {
-	if( input_flags.reverse_enabled && input_flags.velocity_under_threshold )
+	if( input_flags.switch_pos_reverse && input_flags.velocity_under_threshold )
 		*state = REVERSE;
-	else if( input_flags.park_enabled && input_flags.velocity_under_threshold )
+	else if( input_flags.switch_pos_park && input_flags.velocity_under_threshold )
 		*state = PARK;
 	else if( input_flags.cruise_enabled )
 		*state = CRUISE;
@@ -133,9 +133,9 @@ MotorCommand DoStateREVERSE(InputFlags input_flags)
 
 void TransitionREVERSEstate(InputFlags input_flags, DriveState * state)
 {
-	if ( input_flags.drive_enabled && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+	if ( input_flags.switch_pos_drive && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
 		*state = DRIVE;
-	else if ( input_flags.park_enabled && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+	else if ( input_flags.switch_pos_park && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
 		*state = PARK;
 }
 
@@ -146,9 +146,9 @@ MotorCommand DoStatePARK(InputFlags input_flags)
 
 void TransitionPARKstate(InputFlags input_flags, DriveState * state)
 {
-	if ( input_flags.drive_enabled && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+	if ( input_flags.switch_pos_drive && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
 		*state = DRIVE;
-	else if ( input_flags.reverse_enabled && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+	else if ( input_flags.switch_pos_reverse && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
 		*state = REVERSE;
 }
 
@@ -163,22 +163,29 @@ void TransitionCRUISEstate(InputFlags input_flags, DriveState * state)
 		*state = DRIVE;
 }
 
+/*
+ *  Updates input flags
+ */
 void UpdateInputFlags(InputFlags * input_flags)
 {
-	input_flags->drive_enabled = !HAL_GPIO_ReadPin(FWRD_EN_GPIO_Port, FWRD_EN_Pin);
-	input_flags->drive_enabled = !HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin);
-	input_flags->drive_enabled = !HAL_GPIO_ReadPin(PARK_EN_GPIO_Port, PARK_EN_Pin);
 	input_flags->mech_brake_pressed = !HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
 	input_flags->regen_enabled = !HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+	GetSwitchState(input_flags);
 }
 
 
+/*
+ *  Parses CAN message for battery state of charge
+ */
 void ParseCANBatterySOC(uint8_t * CANMessageData)
 {
 	uint8_t batterySOC = CANMessageData[0];
 	input_flags.battery_SOC_under_threshold = batterySOC < BATTERY_SOC_THRESHOLD;
 }
 
+/*
+ *  Parses CAN message for velocity
+ */
 void ParseCANVelocity(uint8_t * CANMessageData)
 {
 	FloatBytes velocity;
@@ -190,11 +197,17 @@ void ParseCANVelocity(uint8_t * CANMessageData)
 	input_flags.velocity_under_threshold = velocity.float_value < VELOCITY_THRESHOLD;
 }
 
+/*
+ *  Parses CAN message for battery temp
+ */
 void ParseCANBatteryTemp(uint8_t * CANMessageData)
 {
 	input_flags.battery_temp_under_threshold = isBitSetFromArray(CANMessageData, 17); // regen_disable bit is stored in bit 17
 }
 
+/*
+ *  Returns a MotorCommand struct based on the input throttle and velocity arguments
+ */
 MotorCommand GetMotorCommand(float throttle, float velocity)
 {
 	MotorCommand motorCommand;
@@ -203,6 +216,9 @@ MotorCommand GetMotorCommand(float throttle, float velocity)
 	return motorCommand;
 }
 
+/*
+ *  RTOS task for receiving CAN messages
+ */
 void TaskGetCANMessage()
 {
 	uint8_t CANMessageData[CAN_DATA_LENGTH];
@@ -239,17 +255,17 @@ void TaskGetCANMessage()
  */
 void SendCANMotorCommand(MotorCommand motorCommand)
 {
-	union FloatBytes c;
-	union FloatBytes v;
+	union FloatBytes throttle;
+	union FloatBytes velocity;
 
-	c.float_value = motorCommand.throttle;
-	v.float_value = motorCommand.velocity;
+	throttle.float_value = motorCommand.throttle;
+	velocity.float_value = motorCommand.velocity;
 
 	uint8_t data_send[CAN_DATA_LENGTH];
 	for (int i = 0; i < (uint8_t) CAN_DATA_LENGTH / 2; i++)
 	{
-		data_send[i] = v.bytes[i];
-	    data_send[4 + i] = c.bytes[i];
+		data_send[i] = velocity.bytes[i];
+	    data_send[4 + i] = throttle.bytes[i];
 	}
 	HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
 }
@@ -274,46 +290,41 @@ void SendCANDIDNextPage()
 
 /*
  * 	Sends a CAN message to the DID that contains the drive state of the MCB to display to the driver
- *  NOTE: The drive state displayed on the DID is a simplified version of the internal state of the MCB,
- *  IE there are only 5 states that can be shown on the DID: Drive, Regen, Cruise, Park and Reverse.
- *  INVALID = 0x00	// Should never be in INVALID state
- *  DRIVE   = 0x02
- *	CRUISE  = 0x04
- * 	PARK    = 0x06
- *	REVERSE = 0x07
  */
 void SendCANDIDDriveState(DriveState state)
 {
-	/*
 	static DriveState lastState = PARK;
-	uint8_t data_send[CAN_DATA_LENGTH] = {0};
-
-	if( state == DRIVE || state == CRUISE || state == PARK || state == REVERSE )
+	// Only send message if state has changed
+	if ( lastState != state )
 	{
+		uint8_t data_send[CAN_DATA_LENGTH] = {0};
 		data_send[1] = state;
+		HAL_CAN_AddTxMessage(&hcan, &DID_next_page_header, data_send, &can_mailbox);
 		lastState = state;
 	}
-	else if( state == IDLE && (lastState == DRIVE || lastState == REGEN || lastState == REVERSE) )
+}
+
+void GetSwitchState(InputFlags * input_flags)
+{
+	if( !HAL_GPIO_ReadPin(SWITCH_IN1_GPIO_Port, SWITCH_IN1_Pin) && !HAL_GPIO_ReadPin(SWITCH_IN2_GPIO_Port, SWITCH_IN2_Pin) )
 	{
-		data_send[1] = lastState; // If in the IDLE state, use the last used state
+		input_flags->switch_pos_drive = true;
+		input_flags->switch_pos_reverse = false;
+		input_flags->switch_pos_park = false;
 	}
-	else if( state == REGEN && (lastState == DRIVE || lastState == REGEN || lastState == REVERSE) )
+	else if( HAL_GPIO_ReadPin(SWITCH_IN1_GPIO_Port, SWITCH_IN1_Pin) && HAL_GPIO_ReadPin(SWITCH_IN2_GPIO_Port, SWITCH_IN2_Pin) )
 	{
-		data_send[1] = lastState; // If in the IDLE state, use the last used state
-	}
-	else if (state == CRUISE_ACCELERATE )
-	{
-		data_send[1] = CRUISE; // If in the CRUISE_ACCELERATE state, send the CRUISE state
+		input_flags->switch_pos_drive = false;
+		input_flags->switch_pos_reverse = true;
+		input_flags->switch_pos_park = false;
 	}
 	else
 	{
-		data_send[1] = INVALID; // Should never be in this state.
+		input_flags->switch_pos_drive = false;
+		input_flags->switch_pos_reverse = false;
+		input_flags->switch_pos_park = true;
 	}
-
-	HAL_CAN_AddTxMessage(&hcan, &DID_next_page_header, data_send, &can_mailbox);
-	*/
 }
-
 
 bool isBitSet(int num, int pos)
 {
