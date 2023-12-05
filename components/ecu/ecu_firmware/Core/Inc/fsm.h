@@ -56,14 +56,17 @@ static bool last_LLIM_status;
 
 // Time intervals are in milliseconds
 #define BMS_STARTUP_INTERVAL 5000
-#define MESSAGE_INTERVAL 1000
+#define MESSAGE_INTERVAL_0X3F4 1000
+#define MESSAGE_INTERVAL_0X450 200
 #define MDU_DCH_INTERVAL 500
 #define SHORT_INTERVAL 300
 #define MDU_PC_INTERVAL 705 
 #define FLT_BLINK_INTERVAL 200
 #define LVS_INTERVAL 200
 
-#define SUPP_LIMIT 10500
+#define SUPP_LIMIT 10500 //mV
+#define COC_THRESHOLD 22000 //mA
+#define DOC_THRESHOLD -65000 //mA
 #define LOW false
 #define HIGH true
 
@@ -123,7 +126,7 @@ static void (*FSM_state_table[])(void) = {
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
-void FSM_init();
+void FSM_Init();
 void FSM_run();
 
 #endif /* __FSM_H */

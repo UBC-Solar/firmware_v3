@@ -56,7 +56,7 @@ UART_HandleTypeDef huart5;
 
 /* USER CODE BEGIN PV */
 volatile uint16_t adc1_buf[ADC1_BUF_LENGTH] = {0};
-
+ECU_Data_t ecu_data = {0}; 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -73,8 +73,6 @@ static void MX_TIM3_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-ECU_Data_t ecu_data = {0}; 
 
 /* USER CODE END 0 */
 
@@ -114,16 +112,14 @@ int main(void)
   MX_UART5_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  
-  CAN_hcan = &hcan;
 
-  HAL_CAN_Start (&hcan);
+  CAN_Init(&hcan);
 
-  DebugIO_Init(huart5);  
+  DebugIO_Init(&huart5);  
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adc1_buf, ADC1_BUF_LENGTH);
   HAL_TIM_Base_Start(&htim3);
 
-  FSM_init();
+  FSM_Init();
 
   HAL_GetTick();
   int last_blink_time = 0;
@@ -139,7 +135,7 @@ int main(void)
   {
    FSM_run();
     /* USER CODE END WHILE */
-    // int supp_batt_volt = ADC_getSuppBattVoltage();
+    // int supp_batt_volt = ADC_getSuppBattVoltage(;)
     // printf(supp_batt_volt);
 
 

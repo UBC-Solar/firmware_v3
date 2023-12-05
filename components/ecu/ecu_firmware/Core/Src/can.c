@@ -136,7 +136,7 @@ void CAN_Init(CAN_HandleTypeDef *hcan)
  * @date 2022/12/02
  * @author Harris Mai (harristmai)
  */
-void CAN_SendMessage450(ECU_t *ECU)
+void CAN_SendMessage450()
 {
     uint32_t begin_tick = HAL_GetTick();
     uint32_t * pTxMailbox = 0;

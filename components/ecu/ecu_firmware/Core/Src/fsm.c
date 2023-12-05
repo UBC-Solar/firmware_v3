@@ -13,7 +13,7 @@
 /**
  * @brief Initialization of FSM.
  */
-void FSM_init()
+void FSM_Init()
 {
     last_tick = HAL_GetTick();
     FSM_state = FSM_RESET;
@@ -216,7 +216,7 @@ void PC_wait()
     if (timer_check(MDU_PC_INTERVAL))
     {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
-        last_LLIM_status = CONTACTOR_CLOSE;
+        last_LLIM_status = CONTACTOR_CLOSED;
         FSM_state = LLIM_CLOSED;
     }
     return;
@@ -381,16 +381,24 @@ void AMB_on()
  */
 void ECU_monitor()
 {
+    /*************************
+    Current Fault Checking
+    **************************/
+    if (ecu_data.adc_data.ADC_batt_current >= COC_THRESHOLD || ecu_data.adc_data.ADC_batt_current <= DOC_THRESHOLD)
+    {
+        FSM_state = FAULT;
+        return;
+    }
+
     //TODO ADC DOC_COC check
 
     /*************************
-    Fault Checking
+    Other Fault Checking
     **************************/
     if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH || \
         HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH || \
         HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH || \
-        HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == LOW || \
-        ADC3_getFaultStatus())
+        HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == LOW)
     {
         FSM_state = FAULT;
         return;
@@ -409,10 +417,9 @@ void ECU_monitor()
         HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_CLOSED);
         last_HLIM_status = CONTACTOR_CLOSED;
     }
-    else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_LLIM_status == CONTACTOR_CLOSED)
+    else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_LLIM_status == CONTACTOR_OPEN)
     {
-        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_OPEN);
-        last_LLIM_status = CONTACTOR_OPEN;
+        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
         last_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_PC;
         return;
@@ -427,15 +434,20 @@ void ECU_monitor()
     /*************************
     Send CAN Messages
     **************************/
-    if (timer_check(MESSAGE_INTERVAL))
+    if (timer_check(MESSAGE_INTERVAL_0X3F4))
     {
-        CAN_send_current(ADC_netCurrentOut(ADC_getArrayCurrent(), ADC_getMotorCurrent()));
+        CAN_SendMessage3F4();
+    }
+
+    if (timer_check(MESSAGE_INTERVAL_0X450))
+    {
+        CAN_SendMessage450();
     }
 
     /*************************
     Check SUPP Voltage
     **************************/
-    if (ADC_getSuppBattVoltage() < SUPP_LIMIT && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) == LOW && !ADC3_getFaultStatus())
+    if (ecu_data.adc_data.ADC_supp_batt_volt < SUPP_LIMIT)
     {
         HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, HIGH);
     }
