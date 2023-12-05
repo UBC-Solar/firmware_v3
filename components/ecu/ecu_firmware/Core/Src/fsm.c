@@ -57,7 +57,7 @@ void FSM_reset()
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, LOW);
 
     // Read supplemental battery
-    if (ADC_getSuppBattVoltage() < SUPP_LIMIT && HAL_GPIO_ReadPin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin) == LOW && !ADC3_getFaultStatus())
+    if (ecu_data.adc_data.ADC_supp_batt_volt < SUPP_LIMIT)
     {
         HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, HIGH);
     }
@@ -262,7 +262,7 @@ void check_HLIM()
         last_HLIM_status = CONTACTOR_CLOSED;
     }
 
-    if (LVS_ALREADY_ON = true)
+    if (LVS_ALREADY_ON == true)
     {
         FSM_state = MONITORING;
     }
@@ -300,7 +300,7 @@ void DASH_on()
 {
     if (timer_check(LVS_INTERVAL))
     {
-        HAL_GPIO_WritePin(DID_CTRL_GPIO_Port, DID_CTRL_GPIO_Port, HIGH);
+        HAL_GPIO_WritePin(DID_CTRL_GPIO_Port, DID_CTRL_Pin, HIGH);
         FSM_state = MCB_ON;
     }
     return;
@@ -466,9 +466,14 @@ void ECU_monitor()
 void fault()
 {
     // send CAN message with current values with BMS
-    if (timer_check(MESSAGE_INTERVAL))
+    if (timer_check(MESSAGE_INTERVAL_0X3F4))
     {
-        //send message 0x450
+        CAN_SendMessage3F4();
+    }
+
+    if (timer_check(MESSAGE_INTERVAL_0X450))
+    {
+        CAN_SendMessage450();
     }
 
     // switch to SUPP
@@ -481,7 +486,7 @@ void fault()
     }
 
     // MDU off
-    HAL_GPIO_WritePin(MDU_EN_GPIO_Port, MDU_EN_Pin, LOW);
+    HAL_GPIO_WritePin(MDI_CTRL_GPIO_Port, MDI_CTRL_Pin, LOW);
 
     // Open all contactors
     HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
