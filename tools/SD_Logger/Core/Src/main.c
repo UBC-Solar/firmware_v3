@@ -151,7 +151,7 @@ int main(void)
   // Append to the file (regardless of empty or not)
 
   /* Set Example CAN Data */
-  CAN_DATA.ID = 0xBEF;
+  CAN_DATA.ID = 0xBBB;		// First AAA then BBB
   CAN_DATA.DATA = 0x8324;
   CAN_DATA.TIME = 28492;
   CAN_DATA.LENGTH = 8;
@@ -159,7 +159,11 @@ int main(void)
   char SD_message[64] = "";
   sprintf(SD_message, "ID: %#.3x, Data: %#.4x, Timestamp: %d, Length: %d\n", CAN_DATA.ID, CAN_DATA.DATA, CAN_DATA.TIME, CAN_DATA.LENGTH);
 
-  sd_append(file_pointer, SD_message);
+  // Append to the file 2 times
+  for (int i = 0; i < 2; i++)
+  {
+	  sd_append(file_pointer, SD_message);
+  }
 
   // Close the file
   sd_close(file_pointer);

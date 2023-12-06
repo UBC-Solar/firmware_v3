@@ -29,4 +29,11 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>sdLibSrc</name>
+			<type>2</type>
+			<location>C:/Users/Aarja/Documents/UBC/UBC Solar/firmware_v3/libraries/sdCardLib/Core/Src</location>
+		</link>
+	</linkedResources>
 </projectDescription>
