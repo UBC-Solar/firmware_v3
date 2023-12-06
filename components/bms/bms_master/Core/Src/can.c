@@ -451,8 +451,8 @@ bool CAN_GetMessage0x450Data(int8_t *pack_current, uint8_t *low_voltage_current,
     bool new_rx_message = CAN_data.rx_message_0x450.new_rx_message;
     CAN_data.rx_message_0x450.new_rx_message = false;
 
-    *pack_current = (int8_t) CAN_data.rx_message_0x450.data[0];
-    *low_voltage_current = CAN_data.rx_message_0x450.data[1];
+    *pack_current = (int8_t) CAN_data.rx_message_0x450.data[0]; //do we want to scale back to 32 bits here
+    *low_voltage_current = CAN_data.rx_message_0x450.data[1]; // do we want to scale back to 16 bits here
     *overcurrent_status = CAN_data.rx_message_0x450.data[2] & 0x1U;
     *rx_timestamp = CAN_data.rx_message_0x450.timestamp;
 
