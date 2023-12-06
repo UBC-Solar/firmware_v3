@@ -30,6 +30,8 @@
 #define MESSAGE_450_LVS_CURRENT_SCALE_FACTOR (0xFFU / (MESSAGE_450_LVS_CURRENT_MAX_VALUE))
 #define MESSAGE_450_BATT_CURRENT_SCALE_FACTOR (0xFFFFU / (MESSAGE_450_BATT_CURRENT_MAX_VALUE))
 
+#define OBC_STATUS_MESSAGE_ID 0x3E5U
+
 typedef struct {
     CAN_TxHeaderTypeDef tx_header;
     uint8_t data[CAN_MAX_DATAFRAME_BYTES];
@@ -197,4 +199,57 @@ void CAN_SendMessage3F4()
         charger_enable = 1;
     }
     //TODO: Check w/ PCAN
+}
+
+
+
+/**
+ * THIS FUNCTION IS NOT COMPLETE
+ * @brief Getter for data contained in the last received ECU current data CAN message
+ * 
+ * @param[out] pack_current Signed pack current in amps
+ * @param[out] low_voltage_current Signed low voltage circuits current; LSB = (30/255) amps
+ * @param[out] overcurrent_status True if discharge or charge over-current condition has been triggered
+ * @param[out] rx_timestamp Time since board power on in ms at which last ECU CAN message was received
+ * @returns Whether a CAN message has been received (and there is new data) since the last time this function was called
+*/
+bool CAN_GetMessage0x3E5Data(int16_t *pack_current, uint8_t *low_voltage_current, bool *overcurrent_status, uint32_t *rx_timestamp)
+{
+    HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section - do not want a CAN RX complete interrupt to be serviced during this function call
+    bool new_rx_message = CAN_data.rx_message_0x3E5.new_rx_message;
+    CAN_data.rx_message_0x3E5.new_rx_message = false;
+
+    *pack_current = (int8_t) CAN_data.rx_message_0x450.data[0];
+    *low_voltage_current = CAN_data.rx_message_0x450.data[1];
+    *overcurrent_status = CAN_data.rx_message_0x450.data[2] & 0x1U;
+    *rx_timestamp = CAN_data.rx_message_0x450.timestamp;
+
+    HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section
+    return new_rx_message;
+}
+
+/*============================================================================*/
+/* PUBLIC CALLBACK FUNCTION IMPLEMENTATIONS */
+
+/**
+ * @brief Handle a CAN RX message pending interrupt for the FIFO configured to receive ECU current message
+ * 
+ * This function needs to be called from the CAN RX message pending interrupt callback for the appropriate FIFO
+ * (as determined) by the filter configuration; eg. HAL_CAN_RxFifo0MsgPendingCallback()
+ */
+void CAN_RecievedMessageCallback(void)
+{
+    if (HAL_CAN_GetRxMessage(CAN_data.can_handle, 0, (CAN_RxHeaderTypeDef *) &CAN_data.rx_message_0x3E5.rx_header, (uint8_t *) CAN_data.rx_message_0x3E5.data) != HAL_OK) // retrieve message
+    {
+        Error_Handler();
+    }
+
+    if (CAN_data.rx_message_0x3E5.rx_header.StdId != OBC_STATUS_MESSAGE_ID)
+    {
+        // There is likely a problem with the filter configuration
+        Error_Handler();
+    }
+
+    CAN_data.rx_message_0x3E5.timestamp = HAL_GetTick();
+    CAN_data.rx_message_0x3E5.new_rx_message = true;
 }
