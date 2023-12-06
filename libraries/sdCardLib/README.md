@@ -1,3 +1,7 @@
+pre.CodeMirror-line {
+    line-height: 1.3 !important;
+}
+
 ## Purpose
 
 -   The `sdCardLib` library aims to abstract the following functions (and potentially others related to SD Card operations). Currently, the operations involve **opening, appending,** and **closing** a file on the SD Card.
