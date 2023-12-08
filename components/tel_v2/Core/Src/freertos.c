@@ -43,6 +43,9 @@
 
 #define KERNEL_LED_DELAY 200
 
+
+#define CAN_BUFFER_LEN 22
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -284,11 +287,64 @@ void read_CAN_task(void *argument)
 void transmit_CAN_task(void *argument)
 {
   /* USER CODE BEGIN transmit_CAN_task */
+
+  static CAN_msg_t can_message;	/* Can message */
+  osStatus_t queue_status;	/* CAN Message Queue Status */
+
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
+  while (1) {
+    /* Retrieve CAN message from queue */
+    queue_status = osMessageQueueGet(canMessageQueueHandle, &can_message, NULL, osWaitForever);
+
+    /* Yield if nothing on queue */
+    if (queue_status != osOK){
+      osThreadYield();
+    }
+
+    /* Initialize a CAN buffer */
+    uint8_t can_buffer[CAN_BUFFER_LEN] = {0};
+
+    /* TIMESTAMP: 8 ASCII characters */
+    for (uint8_t i=0; i<CAN_BUFFER_LEN - 14; i++) {
+      /* send 'D' as placeholder */
+      can_buffer[i] = 'D';
+    }
+
+    /* CAN MESSAGE IDENTIFIER */
+    can_buffer[CAN_BUFFER_LEN - 14] = '#';
+
+    /* CAN ID: 4 ASCII characters */
+    uint8_t id_h = 0xFFUL & (can_message.header.StdId >> 8);
+    uint8_t id_l = 0xFFUL & (can_message.header.StdId);
+
+    can_buffer[CAN_BUFFER_LEN - 13] = id_h;
+    can_buffer[CAN_BUFFER_LEN - 12] = id_l;
+
+
+    /* CAN DATA: 16 ASCII characters */
+    for (uint8_t i=0; i<8; i++) {
+      /* Copy each byte */
+      can_buffer[i + CAN_BUFFER_LEN - 11]= can_message.data[i];
+    }
+
+
+    /* CAN DATA LENGTH: 1 ASCII character */
+    uint8_t length = "0123456789ABCDEF"[ can_message.header.DLC & 0xFUL];
+    can_buffer[CAN_BUFFER_LEN - 3] = length;
+
+    /* NEW LINE: 1 ASCII character */
+    can_buffer[CAN_BUFFER_LEN - 2] = '\r';
+
+    /* CARRIAGE RETURN: 1 ASCII character */
+    can_buffer[CAN_BUFFER_LEN - 1] = '\n';
+
+    /* Transmit over Radio */
+    HAL_UART_Transmit(&huart1, can_buffer, sizeof(can_buffer), 1000);
+
+    /* TODO: Log to SDLogger */
+
   }
+
   /* USER CODE END transmit_CAN_task */
 }
 
