@@ -303,6 +303,12 @@ void transmit_CAN_task(void *argument)
 
   /* Infinite loop */
   while (1) {
+
+    /* Check if there are messages in the queue */
+    if (osMessageQueueGetCount(canMessageQueueHandle) == 0) {
+      osThreadYield();
+    }
+
     /* Retrieve CAN message from queue */
     queue_status = osMessageQueueGet(canMessageQueueHandle, &can_message, NULL, osWaitForever);
 
@@ -393,13 +399,6 @@ void read_IMU_task(void *argument)
     /* Delay */
     osDelay(READ_IMU_DELAY);
 
-    /* To avoid warnings */
-    (void) gy_x;
-    (void) gy_y;
-    (void) gy_z;
-    (void) ax_x;
-    (void) ax_y;
-    (void) ax_z;
   }
 
   /* USER CODE END read_IMU_task */
@@ -415,11 +414,60 @@ void read_IMU_task(void *argument)
 void transmit_IMU_task(void *argument)
 {
   /* USER CODE BEGIN transmit_IMU_task */
+
+  osStatus_t imu_queue_status;	/* IMU Queue Status */
+  IMU_msg_t imu_message;	/* IMU Message */
+
   /* Infinite loop */
-  for(;;)
+  while(1)
   {
-    osDelay(1);
+    /* Check if there are messages in the queue */
+    if (osMessageQueueGetCount(imuMessageQueueHandle) == 0) {
+	osThreadYield();
+    }
+
+    /* Get IMU Message from Queue */
+    imu_queue_status = osMessageQueueGet(imuMessageQueueHandle, &imu_message, NULL, osWaitForever);
+
+    /* Yield thread if status not ok */
+    if (imu_queue_status != osOK){
+      osThreadYield();
+    }
+
+    /* Initialize a IMU buffer */
+    uint8_t imu_buffer[IMU_MESSAGE_LEN] = {0};
+
+    /* TIMESTAMP */
+    for (uint8_t i=0; i<IMU_MESSAGE_LEN - 9; i++) {
+      /* send 'D' as placeholder */
+      imu_buffer[i] = 'D';
+    }
+
+    /* IMU ID */
+    imu_buffer[IMU_MESSAGE_LEN - 9] = '@';
+
+    /* IMU Data from queue */
+    imu_buffer[IMU_MESSAGE_LEN - 8] = imu_message.imu_type;
+    imu_buffer[IMU_MESSAGE_LEN - 7] = imu_message.dimension;
+
+    /* Copy data */
+    for (int i = 0; i < 4; i++) {
+	imu_buffer[i + IMU_MESSAGE_LEN - 6] = imu_message.data[i];
+    }
+
+    /* NEW LINE */
+    imu_buffer[IMU_MESSAGE_LEN - 2] = '\r';
+
+    /* CARRIAGE RETURN */
+    imu_buffer[IMU_MESSAGE_LEN - 1] = '\n';
+
+    /* Transmit over Radio */
+    HAL_UART_Transmit(&huart1, imu_buffer, sizeof(imu_buffer), 1000);
+
+    /* TODO: Log to SDLogger */
+
   }
+
   /* USER CODE END transmit_IMU_task */
 }
 
