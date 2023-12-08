@@ -40,7 +40,9 @@ extern "C" {
 extern CAN_FilterTypeDef CAN_filter0;
 extern CAN_FilterTypeDef CAN_filter1;
 extern CAN_RxHeaderTypeDef can_rx_header;
+extern CAN_TxHeaderTypeDef can_tx_header;
 extern uint8_t current_can_data[8];
+extern uint8_t uart_rx_buffer[3];
 
 /* USER CODE END ET */
 
@@ -51,7 +53,7 @@ extern uint8_t current_can_data[8];
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-
+#define UART_RXBUFFER_SIZE 3
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
