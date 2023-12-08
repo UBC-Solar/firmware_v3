@@ -36,6 +36,8 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+#define KERNEL_LED_DELAY 200
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -334,10 +336,24 @@ void transmit_GPS_task(void *argument)
 void kernel_LED_task(void *argument)
 {
   /* USER CODE BEGIN kernel_LED_task */
+
+  osKernelState_t kernel_status; /* Kernel Status */
+
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
+  while (1) {
+
+    /* Get the kernel status */
+    kernel_status = osKernelGetState();
+
+    /* Check if the kernel status is "Running" */
+    if (kernel_status == osKernelRunning) {
+
+      /* If running, toggle the LED */
+      HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+    }
+
+    /* Delay */
+    osDelay(KERNEL_LED_DELAY);
   }
   /* USER CODE END kernel_LED_task */
 }
