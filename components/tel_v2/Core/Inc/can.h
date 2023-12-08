@@ -30,17 +30,31 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 
+#include "cmsis_os2.h"
+
 /* USER CODE END Includes */
 
 extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
 
+#define CAN_READY (uint32_t) 0x0001
+
 /* USER CODE END Private defines */
 
 void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
+typedef struct {
+  CAN_RxHeaderTypeDef header;
+  uint8_t data[8];
+} CAN_msg_t;
+
+void CanFilterSetup(void);
+void Can_Init(void);
+
+extern osThreadId_t readCANTaskHandle;
 
 /* USER CODE END Prototypes */
 

@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
+HAL_StatusTypeDef can_start;
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
@@ -118,5 +120,74 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+void CanFilterSetup(void)
+{
+  /* TODO: Review Filter Implementation */
+  // Use mask and list mode to filter IDs from the CAN ID BOM
+
+  // Filter for 0x500 and 0x600 IDs
+  CAN_filter0.FilterIdHigh = (uint16_t) (0x501 << 5);
+  CAN_filter0.FilterMaskIdHigh = (uint16_t) (0x7F5 << 5);
+
+  CAN_filter0.FilterIdLow = (uint16_t) (0x620 << 5);
+  CAN_filter0.FilterMaskIdLow = (uint16_t) (0x7F8 << 5);
+
+  CAN_filter0.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  CAN_filter0.FilterBank = (uint32_t) 0;
+  CAN_filter0.FilterMode = CAN_FILTERMODE_IDMASK;
+  CAN_filter0.FilterScale = CAN_FILTERSCALE_16BIT;
+  CAN_filter0.FilterActivation = CAN_FILTER_ENABLE;
+
+  // Remaining IDs filtered with list mode
+  CAN_filter1.FilterIdHigh = (uint16_t) (0x502 << 5);
+  CAN_filter1.FilterMaskIdHigh = (uint16_t) (0x401 << 5);
+
+  CAN_filter1.FilterIdLow = (uint16_t) (0x401 << 5);
+  CAN_filter1.FilterMaskIdLow = (uint16_t) (0x401 << 5);
+
+  CAN_filter1.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  CAN_filter1.FilterBank = (uint32_t) 1;
+  CAN_filter1.FilterMode = CAN_FILTERMODE_IDLIST;
+  CAN_filter1.FilterScale = CAN_FILTERSCALE_16BIT;
+  CAN_filter1.FilterActivation = CAN_FILTER_ENABLE;
+
+  // Configure reception filters
+  HAL_CAN_ConfigFilter(&hcan, &CAN_filter0);
+  HAL_CAN_ConfigFilter(&hcan, &CAN_filter1);
+
+}
+
+
+/*
+ * CAN set-up: Sets up the filters, Starts CAN with HAL, and Activates notifications for interrupts.
+ */
+void Can_Init(void)
+{
+  CanFilterSetup();
+  can_start = HAL_CAN_Start(&hcan);
+  assert_param(can_start == HAL_OK);
+
+  HAL_StatusTypeDef can_notification_status = HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+  assert_param(can_notification_status == HAL_OK);
+
+  /* To avoid warning of unused variable */
+  (void) can_notification_status;
+}
+
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  HAL_StatusTypeDef status = HAL_CAN_DeactivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+
+  /* Assert the status */
+  assert_param(status == HAL_OK);
+
+  /* Set the Flag to CAN_READY */
+  osThreadFlagsSet(readCANTaskHandle, CAN_READY);
+
+  /* To avoid warning of unused variable */
+  (void) status;
+}
 
 /* USER CODE END 1 */

@@ -26,6 +26,11 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "can.h"
+#include "gpio.h"
+#include "spi.h"
+#include "usart.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -228,11 +233,44 @@ void startDefaultTask(void *argument)
 void read_CAN_task(void *argument)
 {
   /* USER CODE BEGIN read_CAN_task */
+
+  static HAL_StatusTypeDef rx_status;	/* CAN Rx Status */
+  static CAN_msg_t current_can_message; /* CAN message data */
+
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
+  while (1) {
+
+    /* Wait for thread flags to be set in the CAN Rx FIFO0 Interrupt Callback */
+    osThreadFlagsWait(CAN_READY, osFlagsWaitAll, osWaitForever);
+
+    /* If CAN Rx FIFO0 is not empty */
+    if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0) {
+
+      /* There are multiple CAN IDs being passed through the filter, pull out the current message */
+      rx_status = HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, current_can_data);
+
+      /* Check the rx status */
+      if (rx_status != HAL_OK) {
+	  Error_Handler();
+      }
+
+      /* Package into CAN_msg_t */
+      current_can_message.header = can_rx_header;
+
+      /* Copy all bytes of data */
+      for (uint8_t i = 0; i < 8; i++) {
+	current_can_message.data[i] = current_can_data[i];
+      }
+
+      /* Add CAN message onto canMessageQueue */
+      osMessageQueuePut(canMessageQueueHandle, &current_can_message, 0U, 0U);
+    }
+
+    /* Enables Interrupts */
+    HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+
   }
+
   /* USER CODE END read_CAN_task */
 }
 
