@@ -22,6 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 
+
 /* USER CODE END 0 */
 
 I2C_HandleTypeDef hi2c1;
@@ -182,5 +183,61 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+
+float gyro(enum GyroType type)
+{
+  int16_t gyro;
+  uint8_t OUT_H_G, OUT_L_G;
+
+  /* Goes sequential */
+  uint16_t addL = 0x22 + (type * 2);
+  uint16_t addH = 0x23 + (type * 2);
+
+  /* Read */
+  HAL_I2C_Mem_Read(&hi2c1, DEVICE_ADDRESS, addL, 1, &OUT_L_G, 1, 100);
+  HAL_I2C_Mem_Read(&hi2c1, DEVICE_ADDRESS, addH, 1, &OUT_H_G, 1, 100);
+
+  /* The value is expressed as a 16-bit word in two’s complement */
+  gyro = (OUT_H_G << 8) | (OUT_L_G);
+  gyro = (float) gyro / 8.75; /* See data sheet pg10 */
+
+  return (float) gyro * 0.02;
+}
+
+float accel(enum AccelType type)
+{
+  int16_t accel;
+  uint8_t OUT_H_A, OUT_L_A;
+
+  /* Goes sequential */
+  uint16_t addL = 0x28 + (type * 2);
+  uint16_t addH = 0x29 + (type * 2);
+
+  /* Read */
+  HAL_I2C_Mem_Read(&hi2c1, DEVICE_ADDRESS, addL, 1, &OUT_L_A, 1, 100);
+  HAL_I2C_Mem_Read(&hi2c1, DEVICE_ADDRESS, addH, 1, &OUT_H_A, 1, 100);
+
+  /* The value is expressed as a 16-bit word in two’s complement */
+  accel = (OUT_H_A << 8) | (OUT_L_A);
+  accel = (float) accel * 0.061; /* See data sheet pg10 */
+
+  return (float) accel;
+}
+
+
+void initIMU(void)
+{
+  uint8_t data;
+
+  data = 0x80; // 0b10000000
+  HAL_I2C_Mem_Write(&hi2c1, DEVICE_ADDRESS, 0x10, 1, &data, 1, 100);
+
+  data = 0x80; // 0b10000000
+  HAL_I2C_Mem_Write(&hi2c1, DEVICE_ADDRESS, 0x11, 1, &data, 1, 100);
+
+  data = 0x04; // 0b00000100
+  HAL_I2C_Mem_Write(&hi2c1, DEVICE_ADDRESS, 0x12, 1, &data, 1, 100);
+}
 
 /* USER CODE END 1 */

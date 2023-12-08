@@ -30,6 +30,7 @@
 #include "gpio.h"
 #include "spi.h"
 #include "usart.h"
+#include "i2c.h"
 
 /* USER CODE END Includes */
 
@@ -42,9 +43,16 @@
 /* USER CODE BEGIN PD */
 
 #define KERNEL_LED_DELAY 200
+#define READ_IMU_DELAY 	 100
+
+#define CAN_BUFFER_LEN  22
+#define IMU_MESSAGE_LEN 17
 
 
-#define CAN_BUFFER_LEN 22
+union FloatBytes {
+    float float_value;
+    uint8_t bytes[4];
+} FloatBytes;
 
 /* USER CODE END PD */
 
@@ -126,6 +134,8 @@ const osMessageQueueAttr_t imuMessageQueue_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
+
+void add_to_IMU_queue(char* type, char* dimension, union FloatBytes data);
 
 /* USER CODE END FunctionPrototypes */
 
@@ -358,11 +368,40 @@ void transmit_CAN_task(void *argument)
 void read_IMU_task(void *argument)
 {
   /* USER CODE BEGIN read_IMU_task */
+
+  union FloatBytes gy_x, gy_y, gy_z, ax_x, ax_y, ax_z;
+
   /* Infinite loop */
-  for(;;)
+  while(1)
   {
-    osDelay(1);
+    /* Get Data */
+    gy_x.float_value = gyro(GYRO_X);
+    gy_y.float_value = gyro(GYRO_Y);
+    gy_z.float_value = gyro(GYRO_Z);
+    ax_x.float_value = accel(ACCEL_X);
+    ax_y.float_value = accel(ACCEL_Y);
+    ax_z.float_value = accel(ACCEL_Z);
+
+    /* Add to IMU Queue */
+    add_to_IMU_queue("G", "X", gy_x);
+    add_to_IMU_queue("G", "Y", gy_y);
+    add_to_IMU_queue("G", "Z", gy_z);
+    add_to_IMU_queue("A", "X", ax_x);
+    add_to_IMU_queue("A", "Y", ax_y);
+    add_to_IMU_queue("A", "Z", ax_z);
+
+    /* Delay */
+    osDelay(READ_IMU_DELAY);
+
+    /* To avoid warnings */
+    (void) gy_x;
+    (void) gy_y;
+    (void) gy_z;
+    (void) ax_x;
+    (void) ax_y;
+    (void) ax_z;
   }
+
   /* USER CODE END read_IMU_task */
 }
 
@@ -454,6 +493,22 @@ void kernel_LED_task(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
+
+
+/*
+ * Stores the data gathered from the IMU into the queue
+ */
+void add_to_IMU_queue(char* type, char* dimension, union FloatBytes data){
+    IMU_msg_t imu_message;
+
+    imu_message.imu_type = type[0];
+    imu_message.dimension = dimension[0];
+    for (int i = 0; i < 4; i++) {
+        imu_message.data[i] = data.bytes[i];
+    }
+
+    osMessageQueuePut(imuMessageQueueHandle, &imu_message, 0U, 0U);
+}
 
 
 /* USER CODE END Application */

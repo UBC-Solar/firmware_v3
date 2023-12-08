@@ -38,12 +38,41 @@ extern I2C_HandleTypeDef hi2c2;
 
 /* USER CODE BEGIN Private defines */
 
+#define DEVICE_ADDRESS ((0x6A)<<1)
+
 /* USER CODE END Private defines */
 
 void MX_I2C1_Init(void);
 void MX_I2C2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
+
+
+enum GyroType {
+    GYRO_X,
+    GYRO_Y,
+    GYRO_Z
+};
+
+enum AccelType {
+    ACCEL_X,
+    ACCEL_Y,
+    ACCEL_Z
+};
+
+
+typedef struct {
+  uint8_t imu_type;
+  uint8_t dimension;
+  uint8_t data[4];
+} IMU_msg_t;
+
+
+void initIMU(void);
+float gyro(enum GyroType type);
+float accel(enum AccelType type);
+
 
 /* USER CODE END Prototypes */
 
