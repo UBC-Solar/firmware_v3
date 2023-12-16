@@ -396,7 +396,9 @@ void CAN_SendMessages628(Pack_t *pack)
     for(uint8_t multiplex_index = 0; multiplex_index < NUM_MULTIPLEXED_DATA_MESSAGES; multiplex_index++)
     {
         uint32_t base_module_num = multiplex_index * MODULES_PER_MULTIPLEXED_DATA_MESSAGE;
-        for ( int index = 1; index <= 4; index++ )
+        txMessage.data[0] = multiplex_index;
+
+        for (int index = 1; index <= 4; index++)
         {
             status_bits |= (pack->module[ base_module_num + (index - 1) ].status.bits.fault_over_temperature);
             status_bits |= (pack->module[ base_module_num + (index - 1) ].status.bits.fault_under_voltage)<< 1;
@@ -405,7 +407,7 @@ void CAN_SendMessages628(Pack_t *pack)
             status_bits |= (pack->module[ base_module_num + (index - 1) ].status.bits.warning_low_voltage)<< 4;
             status_bits |= (pack->module[ base_module_num + (index - 1) ].status.bits.warning_high_voltage)<< 5;
             status_bits |= (pack->module[ base_module_num + (index - 1) ].status.bits.warning_high_temperature)<< 6;
-            txMessage.data[ base_module_num + index ] = status_bits;
+            txMessage.data[index] = status_bits;
         }
         queueCanMessage(&txMessage);
     }
