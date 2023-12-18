@@ -185,6 +185,8 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
 /* USER CODE BEGIN 1 */
 
 
+/* IMU -----------------------------------------------------------------------*/
+
 float gyro(enum GyroType type)
 {
   int16_t gyro;
@@ -195,8 +197,8 @@ float gyro(enum GyroType type)
   uint16_t addH = 0x23 + (type * 2);
 
   /* Read */
-  HAL_I2C_Mem_Read(&hi2c1, DEVICE_ADDRESS, addL, 1, &OUT_L_G, 1, 100);
-  HAL_I2C_Mem_Read(&hi2c1, DEVICE_ADDRESS, addH, 1, &OUT_H_G, 1, 100);
+  HAL_I2C_Mem_Read(&hi2c1, IMU_DEVICE_ADDRESS, addL, 1, &OUT_L_G, 1, 100);
+  HAL_I2C_Mem_Read(&hi2c1, IMU_DEVICE_ADDRESS, addH, 1, &OUT_H_G, 1, 100);
 
   /* The value is expressed as a 16-bit word in two’s complement */
   gyro = (OUT_H_G << 8) | (OUT_L_G);
@@ -215,8 +217,8 @@ float accel(enum AccelType type)
   uint16_t addH = 0x29 + (type * 2);
 
   /* Read */
-  HAL_I2C_Mem_Read(&hi2c1, DEVICE_ADDRESS, addL, 1, &OUT_L_A, 1, 100);
-  HAL_I2C_Mem_Read(&hi2c1, DEVICE_ADDRESS, addH, 1, &OUT_H_A, 1, 100);
+  HAL_I2C_Mem_Read(&hi2c1, IMU_DEVICE_ADDRESS, addL, 1, &OUT_L_A, 1, 100);
+  HAL_I2C_Mem_Read(&hi2c1, IMU_DEVICE_ADDRESS, addH, 1, &OUT_H_A, 1, 100);
 
   /* The value is expressed as a 16-bit word in two’s complement */
   accel = (OUT_H_A << 8) | (OUT_L_A);
@@ -231,13 +233,36 @@ void initIMU(void)
   uint8_t data;
 
   data = 0x80; // 0b10000000
-  HAL_I2C_Mem_Write(&hi2c1, DEVICE_ADDRESS, 0x10, 1, &data, 1, 100);
+  HAL_I2C_Mem_Write(&hi2c1, IMU_DEVICE_ADDRESS, 0x10, 1, &data, 1, 100);
 
   data = 0x80; // 0b10000000
-  HAL_I2C_Mem_Write(&hi2c1, DEVICE_ADDRESS, 0x11, 1, &data, 1, 100);
+  HAL_I2C_Mem_Write(&hi2c1, IMU_DEVICE_ADDRESS, 0x11, 1, &data, 1, 100);
 
   data = 0x04; // 0b00000100
-  HAL_I2C_Mem_Write(&hi2c1, DEVICE_ADDRESS, 0x12, 1, &data, 1, 100);
+  HAL_I2C_Mem_Write(&hi2c1, IMU_DEVICE_ADDRESS, 0x12, 1, &data, 1, 100);
+}
+
+
+
+
+
+/* GPS -----------------------------------------------------------------------*/
+
+//void parseBuffer(uint8_t *buffer){
+//  GPS myData;
+//  nmea_parse(&myData, buffer);
+//
+//  printf("Fix: %d\r\n", myData.fix);
+//  printf("Time: %s\r\n", myData.lastMeasure);
+//  printf("Latitude: %f%c\r\n", myData.latitude, myData.latSide);
+//  printf("Longitude: %f%c\r\n", myData.longitude, myData.lonSide);
+//  printf("Altitude: %f\r\n", myData.altitude);
+//  printf("Sat Count: %d\r\n", myData.satelliteCount);
+//
+//}
+
+void readNMEA(uint8_t *buffer){
+  HAL_I2C_Master_Receive(&hi2c1, GPS_DEVICE_ADDRESS, buffer, sizeof(buffer), HAL_MAX_DELAY);
 }
 
 /* USER CODE END 1 */

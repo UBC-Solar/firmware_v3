@@ -26,11 +26,13 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <stdio.h>
 #include "can.h"
 #include "gpio.h"
 #include "spi.h"
 #include "usart.h"
 #include "i2c.h"
+#include "nmea_parse.h"
 
 /* USER CODE END Includes */
 
@@ -42,11 +44,15 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define KERNEL_LED_DELAY 200
-#define READ_IMU_DELAY 	 100
+#define KERNEL_LED_DELAY 200		// 200 milliseconds
+#define READ_IMU_DELAY 	 100		// 100 milliseconds
+#define READ_GPS_DELAY   5 * 60 * 1000  // 5 minutes
 
 #define CAN_BUFFER_LEN  22
 #define IMU_MESSAGE_LEN 17
+#define GPS_MESSAGE_LEN 200
+
+#define GPS_RCV_BUFFER_SIZE 512
 
 
 union FloatBytes {
@@ -131,11 +137,17 @@ osMessageQueueId_t imuMessageQueueHandle;
 const osMessageQueueAttr_t imuMessageQueue_attributes = {
   .name = "imuMessageQueue"
 };
+/* Definitions for gpsMessageQueue */
+osMessageQueueId_t gpsMessageQueueHandle;
+const osMessageQueueAttr_t gpsMessageQueue_attributes = {
+  .name = "gpsMessageQueue"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 
 void add_to_IMU_queue(char* type, char* dimension, union FloatBytes data);
+void add_to_GPS_queue(GPS *gps_data);
 
 /* USER CODE END FunctionPrototypes */
 
@@ -178,6 +190,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of imuMessageQueue */
   imuMessageQueueHandle = osMessageQueueNew (10, sizeof(uint16_t), &imuMessageQueue_attributes);
+
+  /* creation of gpsMessageQueue */
+  gpsMessageQueueHandle = osMessageQueueNew (10, sizeof(uint16_t), &gpsMessageQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -482,10 +497,28 @@ void read_GPS_task(void *argument)
 {
   /* USER CODE BEGIN read_GPS_task */
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
+  while(1) {
+
+    /* Initialize a receive buffer */
+    uint8_t receive_buffer[GPS_RCV_BUFFER_SIZE];
+
+    /* Initialize a GPS data struct */
+    GPS parsed_GPS_data;
+
+    /* Read in an NMEA message into the buffer */
+    readNMEA(&receive_buffer);
+
+    /* Parse the buffer data --> gets stored in parsed_GPS_data */
+    nmea_parse(&parsed_GPS_data, &receive_buffer);
+
+    /* Add to the GPS Queue */
+    add_to_GPS_queue(&parsed_GPS_data);
+
+    /* Delay */
+    osDelay(READ_GPS_DELAY);
+
   }
+
   /* USER CODE END read_GPS_task */
 }
 
@@ -499,11 +532,48 @@ void read_GPS_task(void *argument)
 void transmit_GPS_task(void *argument)
 {
   /* USER CODE BEGIN transmit_GPS_task */
+
+  osStatus_t nmea_queue_status;
+  GPS_msg_t gps_message;
+
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
+  while(1) {
+
+    /* Check if there are messages in the queue */
+    if (osMessageQueueGetCount(gpsMessageQueueHandle) == 0) {
+      osThreadYield(); // Yield to other tasks if the queue is empty
+    }
+
+    /* Get a message from the queue */
+    nmea_queue_status = osMessageQueueGet(gpsMessageQueueHandle, &gps_message, NULL, osWaitForever);
+
+    /* Check if the queue status is OK */
+    if (nmea_queue_status != osOK){
+      /* If message retrieval failed, yield and continue the loop */
+      osThreadYield();
+      continue; // Skip the rest of this loop iteration
+    }
+
+    /* Initialize an NMEA buffer */
+    uint8_t gps_buffer[GPS_MESSAGE_LEN];
+    memset(gps_buffer, 0, sizeof(gps_buffer));
+
+    /* Copy the NMEA data into the buffer, ensuring not to exceed the buffer size */
+    strncpy((char *)gps_buffer, gps_message.data, GPS_MESSAGE_LEN - 2); // Save space for CR+LF
+
+    /* NEW LINE */
+    gps_buffer[GPS_MESSAGE_LEN - 2] = '\r'; // Carriage return
+
+    /* CARRIAGE RETURN */
+    gps_buffer[GPS_MESSAGE_LEN - 1] = '\n'; // Line feed
+
+    /* Transmit the NMEA message over UART to radio */
+    HAL_UART_Transmit(&huart1, gps_buffer, sizeof(gps_buffer), 1000);
+
+    /* TODO: Log to SDLogger */
+
   }
+
   /* USER CODE END transmit_GPS_task */
 }
 
@@ -556,6 +626,34 @@ void add_to_IMU_queue(char* type, char* dimension, union FloatBytes data){
     }
 
     osMessageQueuePut(imuMessageQueueHandle, &imu_message, 0U, 0U);
+}
+
+/*
+ * Stores the data gathered from the GPS into the queue
+ */
+void add_to_GPS_queue(GPS *gps_data) {
+
+  /* If there is a fix... */
+  if(gps_data->fix == 1){
+
+    /* Create an nmea_msg */
+    GPS_msg_t nmea_msg;
+
+    /* Create string */
+    sprintf(nmea_msg.data,
+	    "Latitude: %.6f %c, Longitude: %.6f %c, Altitude: %.2f meters, HDOP: %.2f, Satellites: %d, Fix: %d, Time: %s",
+	    gps_data->latitude, gps_data->latSide,
+	    gps_data->longitude, gps_data->lonSide,
+	    gps_data->altitude, gps_data->hdop,
+	    gps_data->satelliteCount, gps_data->fix,
+	    gps_data->lastMeasure);
+
+    /* Null Terminate */
+    nmea_msg.data[sizeof(nmea_msg.data) - 1] = '\0';
+
+    /* Add the message to the queue */
+    osMessageQueuePut(gpsMessageQueueHandle, &nmea_msg, 0U, 0U);
+  }
 }
 
 

@@ -38,7 +38,8 @@ extern I2C_HandleTypeDef hi2c2;
 
 /* USER CODE BEGIN Private defines */
 
-#define DEVICE_ADDRESS ((0x6A)<<1)
+#define IMU_DEVICE_ADDRESS ((0x6A)<<1)
+#define GPS_DEVICE_ADDRESS ((0x42)<<1)
 
 /* USER CODE END Private defines */
 
@@ -47,7 +48,7 @@ void MX_I2C2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
-
+/* IMU -----------------------------------------------------------------------*/
 
 enum GyroType {
     GYRO_X,
@@ -72,6 +73,13 @@ typedef struct {
 void initIMU(void);
 float gyro(enum GyroType type);
 float accel(enum AccelType type);
+
+
+
+/* GPS -----------------------------------------------------------------------*/
+typedef struct{
+  uint8_t data[200];
+} GPS_msg_t;
 
 
 /* USER CODE END Prototypes */
