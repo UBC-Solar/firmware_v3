@@ -9,6 +9,9 @@
 #ifndef __FSM_H
 #define __FSM_H
 
+/*============================================================================*/
+/* IMPORTS */
+
 #include "main.h"
 #include <stdbool.h>
 #include "adc.h"
@@ -16,7 +19,37 @@
 #include "stm32f1xx_hal.h"
 
 /*============================================================================*/
-/* PRIVATE FUNCTION PROTOTYPES */
+/* PUBLIC CONSTANTS AND MACROS */
+
+// Time intervals are in milliseconds
+#define BMS_STARTUP_INTERVAL 5000
+#define MESSAGE_INTERVAL_0X3F4 1000
+#define MESSAGE_INTERVAL_0X450 200
+#define MDU_DCH_INTERVAL 500
+#define SHORT_INTERVAL 300
+#define MDU_PC_INTERVAL 705 
+#define FLT_BLINK_INTERVAL 200
+#define LVS_INTERVAL 200
+
+#define SUPP_LIMIT 10500 //mV
+#define COC_THRESHOLD 22000 //mA
+#define DOC_THRESHOLD -65000 //mA
+#define LOW false
+#define HIGH true
+
+#define CONTACTOR_CLOSED HIGH
+#define CONTACTOR_OPEN LOW
+
+#define REQ_CONTACTOR_CLOSE LOW
+#define REQ_CONTACTOR_OPEN HIGH
+
+
+#define ECU_ANY_FAULTS_SET(STATUS) (\
+    (STATUS).bits.fault_discharge_overcurrent || \
+    (STATUS).bits.fault_charge_overcurrent || \
+    (STATUS).bits.fault_estop \
+) // STATUS needs to be of type ECU_StatusCode_t
+
 /*============================================================================*/
 /* STATE MACHINE STATES */
 
@@ -50,31 +83,6 @@ static FSM_state_t FSM_state;
 static bool LVS_ALREADY_ON = false;
 static bool last_HLIM_status;
 static bool last_LLIM_status;
-
-/*============================================================================*/
-/* DEFINED CONSTANTS */
-
-// Time intervals are in milliseconds
-#define BMS_STARTUP_INTERVAL 5000
-#define MESSAGE_INTERVAL_0X3F4 1000
-#define MESSAGE_INTERVAL_0X450 200
-#define MDU_DCH_INTERVAL 500
-#define SHORT_INTERVAL 300
-#define MDU_PC_INTERVAL 705 
-#define FLT_BLINK_INTERVAL 200
-#define LVS_INTERVAL 200
-
-#define SUPP_LIMIT 10500 //mV
-#define COC_THRESHOLD 22000 //mA
-#define DOC_THRESHOLD -65000 //mA
-#define LOW false
-#define HIGH true
-
-#define CONTACTOR_CLOSED HIGH
-#define CONTACTOR_OPEN LOW
-
-#define REQ_CONTACTOR_CLOSE LOW
-#define REQ_CONTACTOR_OPEN HIGH
 
 // Helper Functions:
 bool timer_check(unsigned int millis);

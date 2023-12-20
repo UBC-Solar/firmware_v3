@@ -36,6 +36,13 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define LED_BLINK_PATTERN_LENGTH 8U
+#define LED_NORMAL_BLINK_PATTERN 0b01010101U // Each bit is the on/off status for one interval
+#define LED_FAULT_BLINK_PATTERN  0b00000101U
+
+#define LED_BLINK_INTERVAL 500U // milliseconds
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -85,7 +92,10 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
   
-
+  uint32_t current_tick;
+  // First update should be right away
+  uint32_t last_blink_tick = -LED_BLINK_INTERVAL;
+  uint32_t led_cycle = 0;
 
   /* USER CODE END 1 */
 
@@ -123,10 +133,7 @@ int main(void)
 
   FSM_Init();
 
-  HAL_GetTick();
-  int last_blink_time = 0;
-  int current_time = 0;
-
+  printf("=======SUCCESSFULLY INITIALIZED ECU=======\r\n");
   
   /* USER CODE END 2 */
 
@@ -135,20 +142,30 @@ int main(void)
 
   while(1)
   {
-   FSM_run();
+    current_tick = HAL_GetTick();
+
+    FSM_run();
+
+    // blink status LED
+    if (current_tick - last_blink_tick >= LED_BLINK_INTERVAL)
+    {
+      uint32_t led_state = 0;
+      if (ECU_ANY_FAULTS_SET(ecu_data.status))
+      {
+        led_state = (LED_FAULT_BLINK_PATTERN >> led_cycle) & 0x1U;
+      }
+      else
+      {
+        led_state = (LED_NORMAL_BLINK_PATTERN >> led_cycle) & 0x1U;
+      }
+      led_cycle = (led_cycle + 1U) % LED_BLINK_PATTERN_LENGTH;
+      HAL_GPIO_WritePin(LED_OUT_GPIO_Port, LED_OUT_Pin, led_state);
+      last_blink_tick = current_tick;
+    }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-    current_time = HAL_GetTick();
-
-    if (current_time - last_blink_time >= 500)
-    {
-    	HAL_GPIO_TogglePin(LED_OUT_GPIO_Port, LED_OUT_Pin);
-
-    	last_blink_time = current_time;
-    }
-
   }
   /* USER CODE END 3 */
 }

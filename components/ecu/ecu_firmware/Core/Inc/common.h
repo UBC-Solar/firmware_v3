@@ -19,13 +19,14 @@ typedef union {
     struct {
         bool warning_pack_overdischarge : 1;          // WARN_PACK_ODC
         bool warning_pack_overcharge : 1;             // WARN_PACK_OC
+        bool warning_supp_low : 1;                    // SUPP_LOW
 
         bool fault_discharge_overcurrent : 1;         // FLT_DOC
         bool fault_charge_overcurrent : 1;            // FLT_COC
 
-        bool estop : 1;                               // Active High: ESTOP pressed
+        bool fault_estop : 1;                         // Active High: ESTOP pressed
 
-        uint8_t _reserved : 3;
+        uint8_t _reserved : 2;
     } bits;
     uint8_t raw;
 

@@ -41,6 +41,8 @@ void FSM_run()
  */
 void FSM_reset()
 {
+    printf("FSM RESET start\r\n");
+
     // Turn fans off
     HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, LOW);
     HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, LOW);
@@ -66,6 +68,8 @@ void FSM_reset()
         HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, LOW);
     }
 
+    printf("NEXT STATE: WAIT_FOR_BMS_POWERUP\r\n");
+
     FSM_state = WAIT_FOR_BMS_POWERUP;
     last_tick = HAL_GetTick();
     return;
@@ -84,14 +88,18 @@ void FSM_reset()
  */
 void BMS_powerup()
 {
+    printf("BMS POWERUP start\r\n");
+
     if (timer_check(BMS_STARTUP_INTERVAL))
     {
         FSM_state = FAULT;
+        printf("NEXT STATE: FAULT\r\n");
     }
     else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH)
     {
         last_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_BMS_READY;
+        printf("NEXT STATE: WAIT_FOR_BMS_READY\r\n");
     }
     return;
 }
@@ -109,8 +117,11 @@ void BMS_powerup()
  */
 void BMS_ready()
 {
+    printf("BMS_READY start\r\n");
+
     if (timer_check(BMS_STARTUP_INTERVAL))
     {
+        printf("NEXT STATE: FAULT\r\n");
         FSM_state = FAULT;
     }
     else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == LOW)
@@ -118,6 +129,7 @@ void BMS_ready()
         last_tick = HAL_GetTick();
         HAL_GPIO_WritePin(DCDC_MINUS_CTRL_GPIO_Port, DCDC_MINUS_CTRL_Pin, CONTACTOR_CLOSED);
         FSM_state = PC_DCDC;
+        printf("NEXT STATE: PC_DCDC\r\n");
     }
     return;
 }
@@ -131,10 +143,12 @@ void BMS_ready()
  */
 void DCDC_minus()
 {
+    printf("DCDC_MINUS start\r\n");
     if (timer_check(SHORT_INTERVAL))
     {
         HAL_GPIO_WritePin(DCDC_PLUS_CTRL_GPIO_Port, DCDC_PLUS_CTRL_Pin, CONTACTOR_CLOSED);
         FSM_state = DCDC_PLUS;
+        printf("NEXT STATE: DCDC_PLUS\r\n");
     }
     return;
 }
@@ -148,6 +162,7 @@ void DCDC_minus()
  */
 void DCDC_plus()
 {
+    printf("DCDC_PLUS start\r\n");
     HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, HIGH);
     HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, HIGH);
     HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, HIGH);
@@ -155,6 +170,7 @@ void DCDC_plus()
     HAL_GPIO_WritePin(FAN4_CTRL_GPIO_Port, FAN4_CTRL_Pin, HIGH);
     HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, HIGH);
     FSM_state = DISABLE_MDU_DCH;
+    printf("NEXT_STATE: DISABLE_MDU_DCH\r\n");
     return;
 }
 
@@ -167,11 +183,13 @@ void DCDC_plus()
  */
 void disable_MDU_DCH()
 {
+    printf("DISABLE_MDU_DCH start\r\n");
     if (timer_check(SHORT_INTERVAL))
     {
         HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, LOW);
         HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, HIGH);
         FSM_state = CHECK_LLIM;
+        printf("NEXT STATE: CHECK_LLIM\r\n");
     }
     
     return;
@@ -190,16 +208,19 @@ void disable_MDU_DCH()
  */
 void check_LLIM()
 {
+    printf("CHECK_LLIM start\r\n");
     if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_OPEN)
     {
         last_LLIM_status = CONTACTOR_OPEN;
         FSM_state = CHECK_HLIM;
+        printf("NEXT STATE: CHECK_HLIM\r\n");
     }
     else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE)
     {
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
         last_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_PC;
+        printf("NEXT STATE: WAIT_FOR_PC\r\n");
     }
     return;
 }
@@ -213,11 +234,13 @@ void check_LLIM()
  */
 void PC_wait()
 {
+    printf("PC_WAIT start\r\n");
     if (timer_check(MDU_PC_INTERVAL))
     {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
         last_LLIM_status = CONTACTOR_CLOSED;
         FSM_state = LLIM_CLOSED;
+        printf("NEXT STATE: LLIM_CLOSED\r\n");
     }
     return;
 }
@@ -231,10 +254,12 @@ void PC_wait()
  */
 void LLIM_closed()
 {
+    printf("LLIM_CLOSED start\r\n");
     if (timer_check(SHORT_INTERVAL))
     {
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
         FSM_state = CHECK_HLIM;
+        printf("NEXT STATE: CHECK_HLIM\r\n");
     }
     return;
 }
@@ -252,6 +277,7 @@ void LLIM_closed()
  */
 void check_HLIM()
 {
+    printf("CHECK_HLIM start\r\n");
     if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN)
     {
         last_HLIM_status = CONTACTOR_OPEN;
@@ -265,10 +291,12 @@ void check_HLIM()
     if (LVS_ALREADY_ON == true)
     {
         FSM_state = MONITORING;
+        printf("NEXT STATE: MONITORING\r\n");
     }
     else
     {
         FSM_state = TELEM_ON;
+        printf("NEXT STATE: TELEM_ON\r\n");
     }
     return;
 }
@@ -363,11 +391,13 @@ void SPAR1_on()
  */
 void AMB_on()
 {
+    printf("AMB_ON start\r\n");
     if (timer_check(LVS_INTERVAL))
     {
         HAL_GPIO_WritePin(AMB_CTRL_GPIO_Port, AMB_CTRL_Pin, HIGH);
         LVS_ALREADY_ON = true;
         FSM_state = MONITORING;
+        printf("NEXT STATE: MONITORING\r\n");
     }
     return;
 }
@@ -381,24 +411,30 @@ void AMB_on()
  */
 void ECU_monitor()
 {
+
+    printf("MONITORING start\r\n");
+
     /*************************
     Current Fault Checking
     **************************/
-    if (ecu_data.adc_data.ADC_batt_current >= COC_THRESHOLD || ecu_data.adc_data.ADC_batt_current <= DOC_THRESHOLD)
-    {
-        FSM_state = FAULT;
-        return;
+    if (ecu_data.adc_data.ADC_batt_current >= COC_THRESHOLD){
+        ecu_data.status.bits.fault_charge_overcurrent = true;
     }
-
-    //TODO ADC DOC_COC check
+    if (ecu_data.adc_data.ADC_batt_curr_offset <= DOC_THRESHOLD){
+        ecu_data.status.bits.fault_discharge_overcurrent = true;
+    }
 
     /*************************
     Other Fault Checking
     **************************/
-    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH || \
+    if (HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == LOW){
+        ecu_data.status.bits.fault_estop = true;
+    }
+
+    if (ECU_ANY_FAULTS_SET(ecu_data.status) || \
+        HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH || \
         HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH || \
-        HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH || \
-        HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == LOW)
+        HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH)
     {
         FSM_state = FAULT;
         return;
@@ -465,6 +501,8 @@ void ECU_monitor()
  */
 void fault()
 {
+    printf("FAULT start\r\n");
+
     // send CAN message with current values with BMS
     if (timer_check(MESSAGE_INTERVAL_0X3F4))
     {
