@@ -349,10 +349,10 @@ void CAN_SendMessages626(Pack_t *pack)
     {
         uint32_t base_module_num = multiplex_index * MODULES_PER_MULTIPLEXED_DATA_MESSAGE;
         txMessage.data[0] = multiplex_index;
-        txMessage.data[1] = ((pack->module[base_module_num     ].voltage * MESSAGE_623_PACK_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
-        txMessage.data[2] = ((pack->module[base_module_num + 1U].voltage * MESSAGE_623_PACK_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
-        txMessage.data[3] = ((pack->module[base_module_num + 2U].voltage * MESSAGE_623_PACK_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
-        txMessage.data[4] = ((pack->module[base_module_num + 3U].voltage * MESSAGE_623_PACK_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
+        txMessage.data[1] = ((pack->module[base_module_num     ].voltage * MESSAGE_623_MODULE_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
+        txMessage.data[2] = ((pack->module[base_module_num + 1U].voltage * MESSAGE_623_MODULE_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
+        txMessage.data[3] = ((pack->module[base_module_num + 2U].voltage * MESSAGE_623_MODULE_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
+        txMessage.data[4] = ((pack->module[base_module_num + 3U].voltage * MESSAGE_623_MODULE_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
         queueCanMessage(&txMessage);
     }
 }
