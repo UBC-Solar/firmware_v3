@@ -417,12 +417,12 @@ void ECU_monitor()
     /*************************
     Current Fault Checking
     **************************/
-    if (ecu_data.adc_data.ADC_batt_current >= COC_THRESHOLD){
-        ecu_data.status.bits.fault_charge_overcurrent = true;
-    }
-    if (ecu_data.adc_data.ADC_batt_curr_offset <= DOC_THRESHOLD){
-        ecu_data.status.bits.fault_discharge_overcurrent = true;
-    }
+    // if (ecu_data.adc_data.ADC_batt_current >= COC_THRESHOLD){
+    //     ecu_data.status.bits.fault_charge_overcurrent = true;
+    // }
+    // if (ecu_data.adc_data.ADC_batt_curr_offset <= DOC_THRESHOLD){
+    //     ecu_data.status.bits.fault_discharge_overcurrent = true;
+    // }
 
     /*************************
     Other Fault Checking
@@ -470,10 +470,10 @@ void ECU_monitor()
     /*************************
     Send CAN Messages
     **************************/
-    if (timer_check(MESSAGE_INTERVAL_0X3F4))
-    {
-        CAN_SendMessage3F4();
-    }
+    // if (timer_check(MESSAGE_INTERVAL_0X3F4))
+    // {
+    //     CAN_SendMessage3F4();
+    // }
 
     if (timer_check(MESSAGE_INTERVAL_0X450))
     {

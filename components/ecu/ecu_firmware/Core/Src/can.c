@@ -157,8 +157,12 @@ void CAN_SendMessage450()
     txMessage.data[4] = (uint8_t)(ecu_data.adc_data.ADC_supp_batt_volt) >> 8;
     txMessage.data[5] = (uint8_t)ecu_data.status.raw;
 
+    printf("hello world from 450\r\n");
+
     do {
+        printf("before tx\r\n");
         status = HAL_CAN_AddTxMessage(CAN_data.can_handle, &txMessage.tx_header, txMessage.data, pTxMailbox);
+        printf("after tx\r\n");
     } while (status != HAL_OK && HAL_GetTick() - begin_tick <= CAN_TIMEOUT);
 }
 
