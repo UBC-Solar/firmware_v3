@@ -141,7 +141,7 @@ void CAN_Init(CAN_HandleTypeDef *hcan)
 void CAN_SendMessage450()
 {
     uint32_t begin_tick = HAL_GetTick();
-    uint32_t * pTxMailbox = 0;
+    uint32_t mailbox;
     CAN_TxMessage_t txMessage = {0};
     txMessage.tx_header.StdId = 0x450U;
     txMessage.tx_header.DLC = 6U;
@@ -157,11 +157,9 @@ void CAN_SendMessage450()
     txMessage.data[4] = (uint8_t)(ecu_data.adc_data.ADC_supp_batt_volt) >> 8;
     txMessage.data[5] = (uint8_t)ecu_data.status.raw;
 
-    printf("hello world from 450\r\n");
-
     do {
         printf("before tx\r\n");
-        status = HAL_CAN_AddTxMessage(CAN_data.can_handle, &txMessage.tx_header, txMessage.data, pTxMailbox);
+        status = HAL_CAN_AddTxMessage(CAN_data.can_handle, &txMessage.tx_header, txMessage.data, &mailbox);
         printf("after tx\r\n");
     } while (status != HAL_OK && HAL_GetTick() - begin_tick <= CAN_TIMEOUT);
 }

@@ -134,22 +134,6 @@ int main(void)
   FSM_Init();
 
   printf("=======SUCCESSFULLY INITIALIZED ECU=======\r\n");
-
-  uint32_t pTxMailbox;
-  uint8_t data[8] = {1, 2, 3, 4, 5, 6, 7, 8};
-  HAL_StatusTypeDef status = HAL_OK;
-
-  CAN_TxHeaderTypeDef tx_header = {0};
-  tx_header.StdId = 0x450U;
-  tx_header.DLC = 8U;
-
-  HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, GPIO_PIN_SET);
-  HAL_Delay(10);
-  
-  for(int i=0; i<5; i++){
-    status = HAL_CAN_AddTxMessage(&hcan, &tx_header, data, &pTxMailbox);
-    printf("single tx status: %d\r\n", status);
-  }
   
   /* USER CODE END 2 */
 
@@ -160,7 +144,7 @@ int main(void)
   {
     current_tick = HAL_GetTick();
 
-    // FSM_run();
+    FSM_run();
 
     // blink status LED
     if (current_tick - last_blink_tick >= LED_BLINK_INTERVAL)
@@ -355,11 +339,11 @@ static void MX_CAN_Init(void)
   hcan.Init.TimeSeg1 = CAN_BS1_15TQ;
   hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
-  hcan.Init.AutoBusOff = DISABLE;
+  hcan.Init.AutoBusOff = ENABLE;
   hcan.Init.AutoWakeUp = DISABLE;
   hcan.Init.AutoRetransmission = DISABLE;
   hcan.Init.ReceiveFifoLocked = DISABLE;
-  hcan.Init.TransmitFifoPriority = DISABLE;
+  hcan.Init.TransmitFifoPriority = ENABLE;
   if (HAL_CAN_Init(&hcan) != HAL_OK)
   {
     Error_Handler();

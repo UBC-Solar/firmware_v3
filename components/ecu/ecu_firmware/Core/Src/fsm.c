@@ -470,10 +470,10 @@ void ECU_monitor()
     /*************************
     Send CAN Messages
     **************************/
-    // if (timer_check(MESSAGE_INTERVAL_0X3F4))
-    // {
-    //     CAN_SendMessage3F4();
-    // }
+    if (timer_check(MESSAGE_INTERVAL_0X3F4))
+    {
+        CAN_SendMessage3F4();
+    }
 
     if (timer_check(MESSAGE_INTERVAL_0X450))
     {
