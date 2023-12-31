@@ -33,6 +33,7 @@
 #include "usart.h"
 #include "i2c.h"
 #include "nmea_parse.h"
+#include "sdcard.h"     // From sdCardLib in "Libraries"
 
 /* USER CODE END Includes */
 
@@ -373,6 +374,9 @@ void transmit_CAN_task(void *argument)
     HAL_UART_Transmit(&huart1, can_buffer, sizeof(can_buffer), 1000);
 
     /* TODO: Log to SDLogger */
+    FIL *can_file_ptr = sd_open("CAN_Messages.txt");
+    sd_append(can_file_ptr, can_buffer);    // Append can message to the SD card
+    sd_close(can_file_ptr);
 
   }
 
@@ -480,6 +484,9 @@ void transmit_IMU_task(void *argument)
     HAL_UART_Transmit(&huart1, imu_buffer, sizeof(imu_buffer), 1000);
 
     /* TODO: Log to SDLogger */
+    FIL *imu_file_ptr = sd_open("IMU_Messages.txt");
+    sd_append(imu_file_ptr, imu_buffer);    // Append imu message to the SD card
+    sd_close(imu_file_ptr);
 
   }
 
@@ -571,6 +578,9 @@ void transmit_GPS_task(void *argument)
     HAL_UART_Transmit(&huart1, gps_buffer, sizeof(gps_buffer), 1000);
 
     /* TODO: Log to SDLogger */
+    FIL *gps_file_ptr = sd_open("GPS_Messages.txt");
+    sd_append(gps_file_ptr, gps_buffer);    // Append gps message to the SD card
+    sd_close(gps_file_ptr);
 
   }
 

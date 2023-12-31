@@ -24,6 +24,7 @@
 #include "spi.h"
 #include "usart.h"
 #include "gpio.h"
+#include "sdcard.h"     // From sdCardLib in "Libraries"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -115,6 +116,9 @@ int main(void)
 
   Can_Init();
   initIMU();
+
+  // Initialize SD card
+
 
   /* USER CODE END 2 */
 
