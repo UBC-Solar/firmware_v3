@@ -1,0 +1,12 @@
+main.c:78:1:__io_putchar	1
+main.c:94:6:readNMEA	1
+main.c:98:6:getGPSTime	3
+main.c:118:5:timeStringToSeconds	1
+main.c:125:6:correctRTC	2
+main.c:148:5:main	1
+main.c:221:6:SystemClock_Config	4
+main.c:269:13:MX_I2C1_Init	2
+main.c:303:13:MX_RTC_Init	4
+main.c:361:13:MX_USART1_UART_Init	2
+main.c:394:13:MX_GPIO_Init	1
+main.c:417:6:Error_Handler	1
