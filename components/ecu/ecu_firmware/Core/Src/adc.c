@@ -48,7 +48,7 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
     break;
 
   case SUPP_SENSE__ADC1_IN6: //Records supplementary battery voltage in mV
-    ecu_data.adc_data.ADC_supp_batt_volt = (uint16_t)(adc_voltage/0.175);
+    ecu_data.adc_data.ADC_supp_batt_volt = (uint16_t)((double)adc_voltage/0.2249408050513023);
     break;
 
   case BATT_CURR_SNS_OFFSET__ADC1_IN7:

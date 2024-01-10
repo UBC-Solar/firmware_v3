@@ -70,7 +70,7 @@ void FSM_reset()
 
     printf("NEXT STATE: WAIT_FOR_BMS_POWERUP\r\n");
 
-    FSM_state = WAIT_FOR_BMS_POWERUP;
+    FSM_state = PC_DCDC;
     last_tick = HAL_GetTick();
     return;
 }
@@ -431,14 +431,14 @@ void ECU_monitor()
         ecu_data.status.bits.fault_estop = true;
     }
 
-    if (ECU_ANY_FAULTS_SET(ecu_data.status) || \
-        HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH || \
-        HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH || \
-        HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH)
-    {
-        FSM_state = FAULT;
-        return;
-    }
+    // if (ECU_ANY_FAULTS_SET(ecu_data.status) || \
+    //     HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH || \
+    //     HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH || \
+    //     HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH)
+    // {
+    //     FSM_state = FAULT;
+    //     return;
+    // }
 
     /*************************
     Check Battery Capacity
@@ -465,7 +465,6 @@ void ECU_monitor()
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
         last_LLIM_status = CONTACTOR_CLOSED;
     }
-
 
     /*************************
     Send CAN Messages
