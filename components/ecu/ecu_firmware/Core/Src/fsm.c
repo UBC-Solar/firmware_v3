@@ -423,7 +423,7 @@ void ECU_monitor()
     // if (ecu_data.adc_data.ADC_batt_curr_offset <= DOC_THRESHOLD){
     //     ecu_data.status.bits.fault_discharge_overcurrent = true;
     // }
-
+    printf("Pack current: %d\r\n", ecu_data.adc_data.ADC_batt_current);
     /*************************
     Other Fault Checking
     **************************/
@@ -492,6 +492,8 @@ void ECU_monitor()
     }
     return;
 }
+
+
 
 /**
  * @brief Fault state. Occurs when there is any fault (COM, BMS, ESTOP, OT, OC, OD).
