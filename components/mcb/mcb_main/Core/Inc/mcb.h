@@ -117,9 +117,9 @@ void GetSwitchState(InputFlags * input_flags);
 MotorCommand GetMotorCommand(float throttle, float velocity);
 
 MotorCommand DoStateDRIVE(InputFlags input_flags);
-MotorCommand DoStateCRUISE(InputFlags input_flags);
+MotorCommand DoStateCRUISE();
 MotorCommand DoStateREVERSE(InputFlags input_flags);
-MotorCommand DoStatePARK(InputFlags input_flags);
+MotorCommand DoStatePARK();
 
 void TransitionDRIVEstate( InputFlags input_flags, DriveState * state);
 void TransitionREVERSEstate(InputFlags input_flags, DriveState * state);

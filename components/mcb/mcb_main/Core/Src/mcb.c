@@ -11,7 +11,8 @@ float cruiseVelocity = 0.0;		// Velocity for cruise control
 float velocityOfCar = 0.0;		// Current velocity of the car will be stored here.
 InputFlags input_flags;
 DriveState state = PARK;
-
+MotorCommand motorCommand;
+uint16_t throttle_ADC;
 /*
  *	Main state machine task
  */
@@ -20,7 +21,7 @@ void TaskMCBStateMachine()
 	for(;;)
 	{
 		taskENTER_CRITICAL();
-		MotorCommand motorCommand;
+		throttle_ADC = ReadADC(&hadc1);
 		UpdateInputFlags(&input_flags);
 
 		switch(state)
@@ -79,7 +80,7 @@ MotorCommand DoStateDRIVE( InputFlags input_flags )
 		if( throttle == 0.0 )
 			return GetMotorCommand(throttle, 0.0);
 		if( throttle < P1 )
-			return GetMotorCommand(P1, 0.0);
+			return GetMotorCommand(P1, 100.0);
 		if( throttle > P1)
 			return GetMotorCommand(throttle, 100.0);
 	#endif
@@ -117,7 +118,7 @@ MotorCommand DoStateREVERSE(InputFlags input_flags)
 		if( throttle == 0.0 )
 			return GetMotorCommand(throttle, 0.0);
 		if( throttle < P1 )
-			return GetMotorCommand(P1, 0.0);
+			return GetMotorCommand(P1, -100.0);
 		if( throttle > P1)
 			return GetMotorCommand(throttle, -100.0);
 	#endif
@@ -139,7 +140,7 @@ void TransitionREVERSEstate(InputFlags input_flags, DriveState * state)
 		*state = PARK;
 }
 
-MotorCommand DoStatePARK(InputFlags input_flags)
+MotorCommand DoStatePARK()
 {
 	return GetMotorCommand(1.0, 0.0);
 }
@@ -152,7 +153,7 @@ void TransitionPARKstate(InputFlags input_flags, DriveState * state)
 		*state = REVERSE;
 }
 
-MotorCommand DoStateCRUISE(InputFlags input_flags)
+MotorCommand DoStateCRUISE()
 {
 	return GetMotorCommand(CRUISE_THROTTLE, cruiseVelocity);
 }
@@ -168,8 +169,9 @@ void TransitionCRUISEstate(InputFlags input_flags, DriveState * state)
  */
 void UpdateInputFlags(InputFlags * input_flags)
 {
-	input_flags->mech_brake_pressed = !HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
+	input_flags->mech_brake_pressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
 	input_flags->regen_enabled = !HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+	input_flags->velocity_under_threshold = velocityOfCar < VELOCITY_THRESHOLD;
 	GetSwitchState(input_flags);
 }
 
@@ -194,7 +196,6 @@ void ParseCANVelocity(uint8_t * CANMessageData)
 		velocity.bytes[i] = CANMessageData[i + 4]; // Vehicle Velocity is stored in bits 32-63.
 	}
 	velocityOfCar = velocity.float_value;
-	input_flags.velocity_under_threshold = velocity.float_value < VELOCITY_THRESHOLD;
 }
 
 /*
@@ -228,7 +229,7 @@ void TaskGetCANMessage()
 		// Check if there is a CAN Message
 		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
 		{
-			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, CANMessageData);
+ 			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, CANMessageData);
 			if (can_rx_header.StdId == CAN_ID_BATTERY_SOC)
 			{
 				ParseCANBatterySOC(CANMessageData);
@@ -308,14 +309,14 @@ void GetSwitchState(InputFlags * input_flags)
 {
 	if( !HAL_GPIO_ReadPin(SWITCH_IN1_GPIO_Port, SWITCH_IN1_Pin) && !HAL_GPIO_ReadPin(SWITCH_IN2_GPIO_Port, SWITCH_IN2_Pin) )
 	{
-		input_flags->switch_pos_drive = true;
-		input_flags->switch_pos_reverse = false;
+		input_flags->switch_pos_drive = false;
+		input_flags->switch_pos_reverse = true;
 		input_flags->switch_pos_park = false;
 	}
 	else if( HAL_GPIO_ReadPin(SWITCH_IN1_GPIO_Port, SWITCH_IN1_Pin) && HAL_GPIO_ReadPin(SWITCH_IN2_GPIO_Port, SWITCH_IN2_Pin) )
 	{
-		input_flags->switch_pos_drive = false;
-		input_flags->switch_pos_reverse = true;
+		input_flags->switch_pos_drive = true;
+		input_flags->switch_pos_reverse = false;
 		input_flags->switch_pos_park = false;
 	}
 	else
