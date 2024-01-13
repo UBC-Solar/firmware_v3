@@ -73,6 +73,7 @@
 
 CAN_FilterTypeDef CAN_filter0;
 CAN_FilterTypeDef CAN_filter1;
+CAN_FilterTypeDef CAN_filter2;
 
 CAN_RxHeaderTypeDef CAN_rx_header;
 uint8_t CAN_rx_data[8];
@@ -252,8 +253,6 @@ int main(void)
   uint8_t current_page = 0;
 
   /* Timer */
-  uint16_t timer_val;
-  TIM_HandleTypeDef htim3;
 
   /* USER CODE END Init */
 
@@ -298,33 +297,12 @@ int main(void)
   InitLEDs();
   UpdateScreenTitles(PAGE_0);
 
-  // Start timer
-//  HAL_TIM_Base_Start(&htim3);
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-
-	// Get current time (microseconds)
-//	timer_val = __HAL_TIM_GET_COUNTER(&htim3);
-
-	/* LED toggle on Pin A6 for debugging */
-//	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 1);
-//	HAL_Delay(1000);
-//	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 0);
-//	HAL_Delay(1000);
-	// Timeout condition
-//	if (timer_val >= TIMEOUT_10_SECONDS) {
-//		current_page = PAGE_0; // set page back to PAGE_0 (main page)
-//		__HAL_TIM_SET_COUNTER(&htim3, 0); // Reset the timer counter to 0
-//	}
-
-
-
 	// Check if message is available
 	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0)
 	{
@@ -369,7 +347,6 @@ int main(void)
 			if (current_page == NUM_PAGES) current_page = 0; // Reset to 0 if changing from last page
 			button_pressed = FALSE; // Set back to False
 			ClearScreen();
-//			__HAL_TIM_SET_COUNTER(&htim3, 0); // Reset the timer counter to 0
 		}
 
 		/* FAULTS = 0x622

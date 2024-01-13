@@ -156,9 +156,9 @@ Header file containing all constants and function declarations to the LCD
 #define BATTERY_VOLTAGE_UNIT_YPOS 3
 
 #define MOTOR_CURRENT_XPOS 0
-#define MOTOR_CURRENT_YPOS 6
-#define MOTOR_CURRENT_UNIT_XPOS 18
-#define MOTOR_CURRENT_UNIT_YPOS 6
+//#define MOTOR_CURRENT_YPOS 6
+//#define MOTOR_CURRENT_UNIT_XPOS 18
+//#define MOTOR_CURRENT_UNIT_YPOS 6
 
 #define MOTOR_TEMP_XPOS 0
 #define MOTOR_TEMP_YPOS 9
