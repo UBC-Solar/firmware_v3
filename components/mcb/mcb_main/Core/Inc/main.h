@@ -85,8 +85,6 @@ void Error_Handler(void);
 #define CRUISE_TOGGLE_Pin GPIO_PIN_7
 #define CRUISE_TOGGLE_GPIO_Port GPIOA
 #define CRUISE_TOGGLE_EXTI_IRQn EXTI9_5_IRQn
-#define REGEN_VAL_Pin GPIO_PIN_5
-#define REGEN_VAL_GPIO_Port GPIOC
 #define BRK_IN_Pin GPIO_PIN_0
 #define BRK_IN_GPIO_Port GPIOB
 #define BRK_IN_EXTI_IRQn EXTI0_IRQn

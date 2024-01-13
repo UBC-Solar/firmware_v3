@@ -91,7 +91,6 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN_Init();
   MX_ADC1_Init();
-  MX_ADC2_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   HAL_CAN_Start(&hcan);
