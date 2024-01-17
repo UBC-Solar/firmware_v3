@@ -57,6 +57,13 @@ void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
+/**
+ * @brief Initialize CAN node for sending and receiving
+ * @param: CAN filter structure
+ * @retval: nothing
+ */
+void CanFilterSetup();
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
