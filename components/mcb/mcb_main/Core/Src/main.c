@@ -49,7 +49,12 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+CAN_FilterTypeDef CAN_filter0;
+CAN_FilterTypeDef CAN_filter1;
+CAN_FilterTypeDef CAN_filter2;
 
+CAN_RxHeaderTypeDef CAN_rx_header;
+uint8_t CAN_rx_data[8];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,6 +98,8 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+
+  CanFilterSetup();
   HAL_CAN_Start(&hcan);
   /* USER CODE END 2 */
 
