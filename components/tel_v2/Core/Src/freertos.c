@@ -481,12 +481,12 @@ void transmit_IMU_task(void *argument)
     imu_buffer[IMU_MESSAGE_LEN - 1] = '\n';
 
     /* Transmit over Radio */
-    HAL_UART_Transmit(&huart1, imu_buffer, sizeof(imu_buffer), 1000);
+//    HAL_UART_Transmit(&huart1, imu_buffer, sizeof(imu_buffer), 1000);
 
     /* TODO: Log to SDLogger */
-    FIL *imu_file_ptr = sd_open("IMU_Messages.txt");
-    sd_append(imu_file_ptr, imu_buffer);    // Append imu message to the SD card
-    sd_close(imu_file_ptr);
+//    FIL *imu_file_ptr = sd_open("IMU_Messages.txt");
+//    sd_append(imu_file_ptr, imu_buffer);    // Append imu message to the SD card
+//    sd_close(imu_file_ptr);
 
   }
 
@@ -575,12 +575,12 @@ void transmit_GPS_task(void *argument)
     gps_buffer[GPS_MESSAGE_LEN - 1] = '\n'; // Line feed
 
     /* Transmit the NMEA message over UART to radio */
-    HAL_UART_Transmit(&huart1, gps_buffer, sizeof(gps_buffer), 1000);
+//    HAL_UART_Transmit(&huart1, gps_buffer, sizeof(gps_buffer), 1000);
 
     /* TODO: Log to SDLogger */
-    FIL *gps_file_ptr = sd_open("GPS_Messages.txt");
-    sd_append(gps_file_ptr, gps_buffer);    // Append gps message to the SD card
-    sd_close(gps_file_ptr);
+//    FIL *gps_file_ptr = sd_open("GPS_Messages.txt");
+//    sd_append(gps_file_ptr, gps_buffer);    // Append gps message to the SD card
+//    sd_close(gps_file_ptr);
 
   }
 
