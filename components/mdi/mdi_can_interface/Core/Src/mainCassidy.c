@@ -47,8 +47,8 @@ typedef struct
 	uint8_t softwareOverCurrent;
 	uint8_t DCBusOverVoltage;
 	//0x502
-	uint8_t busVoltage;
-	uint8_t busCurrent;
+	uint32_t busVoltage;
+	uint32_t busCurrent;
 	//0x503
 	uint8_t motorVelocity;
 	uint8_t vehicleVelocity;
@@ -76,8 +76,8 @@ TIM_HandleTypeDef htim2;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_TIM2_Init(void);
 static void MX_CAN_Init(void);
+static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -90,10 +90,19 @@ uint32_t TxMailbox[3]; //3 transmit mailboxes
 
 uint8_t TxData[8];
 uint8_t RxData[8];
+uint8_t getTxData[8];
 
 CAN_message_t testMessage;
 
 void get501(uint8_t* message501);
+
+void get502(uint8_t* message502);
+
+void get503(uint8_t* message502);
+
+void get50B(uint8_t* message502);
+
+void split_32_bit_number(uint32_t number, uint8_t *bytes);
 
 uint8_t getBit(uint8_t lsb, uint8_t one, uint8_t two, uint8_t three,
 		  uint8_t four, uint8_t five, uint8_t six, uint8_t msb);
@@ -139,8 +148,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_TIM2_Init();
   MX_CAN_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_CAN_Start(&hcan);
@@ -160,9 +169,10 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1){
+
+
 	  if(timerInterupt == 1){
 		  timerInterupt = 0;
-		  uint8_t getTxData[8];
 
 		  //txData 0x501
 		  TxHeader.StdId = txIDList[0];
@@ -173,16 +183,28 @@ int main(void)
 		  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
 
 		  //txData 0x502
-		  txIDList[1] = TxHeader;
-		  HAL_CAN_AddTxMessage(&hcan, TxHeader, TxData, TxMailbox);
+		  TxHeader.StdId = txIDList[1];
+		  get502(getTxData);
+		  for(int i = 0; i < 8; i++){
+			  TxData[i] = getTxData[i];
+		  }
+		  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
 
 		  //txData 0x503
-		  txIDList[2] = TxHeader;
-		  HAL_CAN_AddTxMessage(&hcan, TxHeader, TxData, TxMailbox);
+		  TxHeader.StdId = txIDList[2];
+		  get503(getTxData);
+		  for(int i = 0; i < 8; i++){
+			  TxData[i] = getTxData[i];
+		  }
+		  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
 
 		  //txData 0x50B
-		  txIDList[3] = TxHeader;
-		  HAL_CAN_AddTxMessage(&hcan, TxHeader, TxData, TxMailbox);
+		  TxHeader.StdId = txIDList[3];
+		  get50B(getTxData);
+		  for(int i = 0; i < 8; i++){
+			  TxData[i] = getTxData[i];
+		  }
+		  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
 		  }
 
 	  //send out message for test only
@@ -249,11 +271,11 @@ static void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
-  hcan.Init.Prescaler = 1;
-  hcan.Init.Mode = CAN_MODE_LOOPBACK;
+  hcan.Init.Prescaler = 16;
+  hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_1TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_1TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
   hcan.Init.AutoWakeUp = DISABLE;
@@ -281,6 +303,7 @@ static void MX_CAN_Init(void)
 
   HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);
   /* USER CODE END CAN_Init 2 */
+
 }
 
 /**
@@ -296,15 +319,16 @@ static void MX_TIM2_Init(void)
   /* USER CODE END TIM2_Init 0 */
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_SlaveConfigTypeDef sSlaveConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
   /* USER CODE BEGIN TIM2_Init 1 */
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 1000;
+  htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 1600;
+  htim2.Init.Period = 65535;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -313,6 +337,12 @@ static void MX_TIM2_Init(void)
   }
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_RESET;
+  sSlaveConfig.InputTrigger = TIM_TS_ITR0;
+  if (HAL_TIM_SlaveConfigSynchro(&htim2, &sSlaveConfig) != HAL_OK)
   {
     Error_Handler();
   }
@@ -335,23 +365,13 @@ static void MX_TIM2_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
 /* USER CODE BEGIN MX_GPIO_Init_1 */
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin : PA5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_5;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -415,6 +435,67 @@ uint8_t getBit(uint8_t msb, uint8_t two, uint8_t three, uint8_t four,
 	 return byte;
 }
 
+void split_32_bit_number(uint32_t number, uint8_t *bytes) {
+    bytes[0] = (number >> 24) & 0xFF;
+    bytes[1] = (number >> 16) & 0xFF;
+    bytes[2] = (number >> 8) & 0xFF;
+    bytes[3] = number & 0xFF;
+}
+
+void get502(uint8_t* message502){
+
+	uint8_t busVoltageSplit[4];
+	split_32_bit_number(testMessage.busVoltage, busVoltageSplit);
+	uint8_t busCurrentSplit[4];
+	split_32_bit_number(testMessage.busCurrent, busCurrentSplit);
+
+	message502[0] = busVoltageSplit[0];
+	message502[1] = busVoltageSplit[1];
+	message502[2] = busVoltageSplit[2];
+	message502[3] = busVoltageSplit[3];
+	message502[4] = busCurrentSplit[0];
+	message502[5] = busCurrentSplit[1];
+	message502[6] = busCurrentSplit[2];
+	message502[7] = busCurrentSplit[3];
+
+}
+
+void get503(uint8_t* message503){
+
+	uint8_t motorVelocitySplit[4];
+	split_32_bit_number(testMessage.motorVelocity, motorVelocitySplit);
+	uint8_t vehicleVelocitytSplit[4];
+	split_32_bit_number(testMessage.vehicleVelocity, vehicleVelocitytSplit);
+
+	message503[0] = motorVelocitySplit[0];
+	message503[1] = motorVelocitySplit[1];
+	message503[2] = motorVelocitySplit[2];
+	message503[3] = motorVelocitySplit[3];
+	message503[4] = vehicleVelocitytSplit[0];
+	message503[5] = vehicleVelocitytSplit[1];
+	message503[6] = vehicleVelocitytSplit[2];
+	message503[7] = vehicleVelocitytSplit[3];
+
+}
+
+void get50B(uint8_t* message50B){
+
+	uint8_t motorTempSplit[4];
+	split_32_bit_number(testMessage.motorTemp, motorTempSplit);
+	uint8_t controllerHeatsinkTempSplit[4];
+	split_32_bit_number(testMessage.controllerHeatsinkTemp,  controllerHeatsinkTempSplit);
+
+	message50B[0] = motorTempSplit[0];
+	message50B[1] = motorTempSplit[1];
+	message50B[2] = motorTempSplit[2];
+	message50B[3] = motorTempSplit[3];
+	message50B[4] = controllerHeatsinkTempSplit[0];
+	message50B[5] = controllerHeatsinkTempSplit[1];
+	message50B[6] = controllerHeatsinkTempSplit[2];
+	message50B[7] = controllerHeatsinkTempSplit[3];
+
+}
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	timerInterupt = 1;
 }
@@ -463,3 +544,4 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
