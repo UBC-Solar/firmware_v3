@@ -49,6 +49,7 @@
 #define MCB_BASE 0x400
 #define LV_BASE 0x450
 #define FAULTS 0x622
+#define SIMULATION_SPEED 0x750
 
 #define CRUISE_TARGET 234 // Placeholder values
 #define REGEN 543 // Placeholder values
@@ -99,6 +100,17 @@ uint8_t recent_faults[15]; // See BS Master BOM (0x622 Bits 0-12, 17, 18)
 
 uint8_t lastPage;
 uint32_t lastPageTime;
+
+/*
+ * Page Layout
+ * Page 0: Main Page
+ * Page 1: Warnings
+ * Page 2: Current Summary
+ * Page 3: Pack Summary (Voltage + Temperature)
+ */
+
+// Page initialized to Page 0
+uint8_t current_page = 0;
 
 /* USER CODE END PV */
 
@@ -208,15 +220,14 @@ void parse_warnings(void)
 	HAL_GPIO_WritePin(CH_OC_GPIO_Port, CH_OC_Pin, charge_overtemp_trip); 				 // Charging overcurrent fault
 	// HAL_GPIO_WritePin(BATT_OV_GPIO_Port, BATT_OV_Pin, high_voltage_warning); 			 // Battery voltage upper limit fault
 
-
-
-
-
-
-	// PA11 (MDU)
-	// PA12 (MDU)
-	// PA15 (MDU)
-	// Don't need to control SUPP_LO, BATT_FLT (high_voltage_warning)
+	/* Check if any warnings are set */
+	for (int i = 0; i < 4; i++) {
+		if (recent_warnings[i] > 0) {
+			/* Change to warnings page */
+			current_page = PAGE_1;
+			break;
+		}
+	}
 
 }
 
@@ -240,17 +251,6 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
-  /*
-   * Page Layout
-   * Page 0: Main Page
-   * Page 1: Warnings
-   * Page 2: Current Summary
-   * Page 3: Pack Summary (Voltage + Temperature)
-   */
-
-  // Page initialized to Page 0
-  uint8_t current_page = 0;
 
   /* Timer */
 
@@ -356,11 +356,6 @@ int main(void)
 		if (received_CAN_ID == FAULTS) {
 			// Add parse faults function, and output to GPIO
 			parse_warnings();
-
-
-
-
-//			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, recent_faults[0]);
 		}
 
 		// Timeout functionality
@@ -388,7 +383,9 @@ int main(void)
 						UpdateScreenParameter(SOC_DATA_XPOS, SOC_DATA_YPOS, (int8_t) CAN_rx_data[0], 0, FALSE);
 						break;
 					case CRUISE_TARGET: // Change MACRO
-						UpdateScreenParameter(CRUISE_DATA_XPOS, CRUISE_DATA_YPOS, (int8_t) 80, 5, TRUE);
+						/* TODO: Use MCB Motor Velocity for this (check if not 100 -> display. If 100, then print OFF */
+						OutputString("OFF", CRUISE_DATA_XPOS, CRUISE_DATA_YPOS);
+//						UpdateScreenParameter(CRUISE_DATA_XPOS, CRUISE_DATA_YPOS, (int8_t) 80, 5, TRUE);
 						// Add data parameter
 						break;
 					case (MC_BASE + 3): // Vehicle Velocity
@@ -408,16 +405,16 @@ int main(void)
 						UpdateScreenParameter(SPEED_DATA_XPOS, SPEED_DATA_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10, TRUE);
 						break;
 					case REGEN: // Change MACRO
-						if (cruise_enabled) UpdateScreenParameter(REGEN_DATA_XPOS, REGEN_DATA_YPOS, 50, 0, FALSE);
+						/* TODO: Add REGEN parsing logic - IF we think it's worth having here, otherwise SCRAP */
+						uint8_t regen_enabled = FALSE;
+						if (regen_enabled) UpdateScreenParameter(REGEN_DATA_XPOS, REGEN_DATA_YPOS, 50, 0, FALSE);
 						else {
 							OutputString("     ", REGEN_DATA_XPOS, REGEN_DATA_YPOS); // Clear
 							OutputString("OFF", REGEN_DATA_XPOS, REGEN_DATA_YPOS); // Write "OFF"
 						}
 						break;
-					case FAULTS: ;
-						/* ADD recent Warning on bottom line of page 0 */
-						// Warnings are already parsed
-						/* Add code to update page 0 bottom line */
+					case SIMULATION_SPEED: ;
+						/* ADD SIMUALTION SPEED HERE - Similar to Velocity parsing */
 
 					default:
 						// CAN message read is not part of the current page, Ignore.
