@@ -420,7 +420,7 @@ void AMB_on()
 void ECU_monitor()
 {
 
-    printf("MONITORING start\r\n");
+    // printf("MONITORING start\r\n");
 
     /*************************
     Current Fault Checking
@@ -431,7 +431,8 @@ void ECU_monitor()
     // if (ecu_data.adc_data.ADC_batt_curr_offset <= DOC_THRESHOLD){
     //     ecu_data.status.bits.fault_discharge_overcurrent = true;
     // }
-    printf("Pack current: %d\r\n", ecu_data.adc_data.ADC_batt_current);
+    printf("Pack current (mA): %d\r\n", ecu_data.adc_data.ADC_batt_current);
+    // printf("HASS Offset (mV): %d\r\n", ecu_data.adc_data.ADC_batt_curr_offset);
     /*************************
     Other Fault Checking
     **************************/

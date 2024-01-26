@@ -27,10 +27,7 @@
 #define ADC_MAX_VOLT_READING 3.3
 #define ADC_RESOLUTION 4095
 
-#define HASS_50_600_S_VOLTAGE_OFFSET 2.5
-#define HASS_SENSOR_DEFAULT_VOLTAGE_OFFSET 1.5
-#define HASS_50_600_S_CURRENT_SCALE_FACTOR 80.0
-#define HASS_100_S_CURRENT_SCALE_FACTOR 40.0
+#define HASS100S_INTERNAL_OFFSET -2551.5 // (mA) see spreadsheet in BMS BOM for sensor default offset characterization, add this value to standard current measurement to get correct current
 
 #define ACS781xLR_VOLTAGE_OFFSET (3.3/2)
 #define ACS782xLR_CURRENT_SCALE_FACTOR 26.4
