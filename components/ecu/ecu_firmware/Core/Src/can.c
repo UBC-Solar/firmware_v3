@@ -130,7 +130,6 @@ void CAN_Init(CAN_HandleTypeDef *hcan)
  * @brief Sends a CAN message with ID 0x450 containing battery and low voltage system (LVS) current information.
  *        The function calculates and rescales the battery current and LVS current values and configures the CAN message.
  *
- * @param ECU Pointer to the ECU_t structure containing ECU-related data, including ADC readings.
  *
  * @note The function performs rescaling on ADC readings and configures the CAN message with the rescaled values.
  * @note If retrieving batt_current_rescaled from CAN bus, you must combine the upper and lower byte and cast it back to data type int16_t before use.
@@ -144,18 +143,18 @@ void CAN_SendMessage450()
     uint32_t mailbox = 0;
     CAN_TxMessage_t txMessage = {0};
     txMessage.tx_header.StdId = 0x450U;
-    txMessage.tx_header.DLC = 6U;
+    txMessage.tx_header.DLC = 5U;
     HAL_StatusTypeDef status;
 
     int16_t batt_current_rescaled = (int16_t)((ecu_data.adc_data.ADC_batt_current * (int16_t)MESSAGE_450_BATT_CURRENT_SCALE_FACTOR) / (int16_t)BATT_CURRENT_LSB_PER_V); //must cast scale_factor and BATT_CURRENT_LSB_PER_V as int16_t or else conversion will not work
-    uint8_t lvs_current_rescaled = (uint8_t)((ecu_data.adc_data.ADC_lvs_current * MESSAGE_450_LVS_CURRENT_SCALE_FACTOR) / LVS_CURRENT_LSB_PER_V);
+    //uint8_t lvs_current_rescaled = (uint8_t)((ecu_data.adc_data.ADC_lvs_current * MESSAGE_450_LVS_CURRENT_SCALE_FACTOR) / LVS_CURRENT_LSB_PER_V); //Tigran says not needed, unsure why but will comment out for now
 
     txMessage.data[0] = (uint8_t)batt_current_rescaled; 
     txMessage.data[1] = (uint8_t)(batt_current_rescaled) >> 8; 
-    txMessage.data[2] = lvs_current_rescaled; 
-    txMessage.data[3] = (uint8_t)ecu_data.adc_data.ADC_supp_batt_volt;
-    txMessage.data[4] = (uint8_t)(ecu_data.adc_data.ADC_supp_batt_volt) >> 8;
-    txMessage.data[5] = (uint8_t)ecu_data.status.raw;
+    //txMessage.data[2] = lvs_current_rescaled; // Tigran says not needed, unsure why but will comment out for now
+    txMessage.data[2] = (uint8_t)ecu_data.adc_data.ADC_supp_batt_volt;
+    txMessage.data[3] = (uint8_t)(ecu_data.adc_data.ADC_supp_batt_volt) >> 8;
+    txMessage.data[4] = (uint8_t)ecu_data.status.raw;
 
     do {
         status = HAL_CAN_AddTxMessage(CAN_data.can_handle, &txMessage.tx_header, txMessage.data, &mailbox);
