@@ -144,7 +144,15 @@ void BMS_ready()
 void DCDC_minus()
 {
     printf("DCDC_MINUS start\r\n");
-    if (timer_check(SHORT_INTERVAL))
+
+    // this line is for testing only
+    // HAL_GPIO_WritePin(DCDC_MINUS_CTRL_GPIO_Port, DCDC_MINUS_CTRL_Pin, CONTACTOR_CLOSED);
+    HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, CONTACTOR_CLOSED);
+    HAL_Delay(SHORT_INTERVAL);
+    HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
+    // DCDC now being charged through DCPCRES
+    
+    if (timer_check(1000))
     {
         HAL_GPIO_WritePin(DCDC_PLUS_CTRL_GPIO_Port, DCDC_PLUS_CTRL_Pin, CONTACTOR_CLOSED);
         FSM_state = DCDC_PLUS;
@@ -440,6 +448,11 @@ void ECU_monitor()
     //     return;
     // }
 
+    if (ECU_ANY_FAULTS_SET(ecu_data.status)){
+        FSM_state = FAULT;
+        return;
+    }
+
     /*************************
     Check Battery Capacity
     **************************/
@@ -471,12 +484,12 @@ void ECU_monitor()
     **************************/
     if (timer_check(MESSAGE_INTERVAL_0X3F4))
     {
-        CAN_SendMessage3F4();
+        // CAN_SendMessage3F4();
     }
 
     if (timer_check(MESSAGE_INTERVAL_0X450))
     {
-        CAN_SendMessage450();
+        // CAN_SendMessage450();
     }
 
     /*************************
