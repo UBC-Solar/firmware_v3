@@ -104,8 +104,8 @@ void BMS_powerup()
  * @brief Waits for the BMS to be in a ready-to-operate condition. FLT pin going low means OK, if it doesn't within 5s, fault.
  *
  * Exit Condition: FLT Low && timer < 5 seconds
- * Exit Action: Reset timer, Close DCDC-.
- * Exit State: PC_DCDC
+ * Exit Action: Reset timer
+ * Exit State: HV_Connect
  *
  * Exit Condition: Timer surpasses 5 seconds.
  * Exit Action: -
@@ -126,11 +126,11 @@ void BMS_ready()
 }
 
 /**
- * @brief Waits for the DCDC- to fully pre-charge.
+ * @brief Closes NEG and POS contactors.
  *
  * Exit Condition: Timer surpasses 0.3 seconds.
- * Exit Action: Reset timer, Close DCDC+.
- * Exit State: DCDC_PLUS
+ * Exit Action: Close NEG and POS contactors.
+ * Exit State: swap_DCDC
  */
 void HV_Connect()
 {
@@ -147,7 +147,7 @@ void HV_Connect()
 /**
  * @brief After HV is connected, swap 12V supply to DCDC converter, turn on fans, reset discharge relay.
  *
- * Exit Condition: Timer surpasses 0.3 seconds.
+ * Exit Condition: None
  * Exit Action: Reset timer, enable battery fans, set discharge reset (DCH_RSTd) pin high.
  * Exit State: DISABLE_MDU_DCH
  */
