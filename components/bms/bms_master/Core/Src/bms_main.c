@@ -146,18 +146,22 @@ void BMS_MAIN_startupChecks(Pack_t *pack)
 void BMS_MAIN_updatePackData(Pack_t *pack)
 {
     // ECU CAN Message
-    int8_t pack_current = 0;
-    uint8_t low_voltage_current = 0;
-    bool overcurrent_detected = 0;
+    int16_t pack_current = 0;
+    uint16_t supp_batt_volt = 0;
+    uint8_t ecu_status = 0;
     uint32_t ecu_can_rx_timestamp = 0;
     bool new_ecu_can_message_received;
     // Other
     static bool soc_initialized = false;
+    uint8_t doc_coc_mask = 0x0C; // bits 2 and 3 are DOC and COC from ecu_status
+    uint8_t overcurrent_detected;
 
     // Check for new ECU CAN message
-    new_ecu_can_message_received = CAN_GetMessage0x450Data(&pack_current, &low_voltage_current, &overcurrent_detected, &ecu_can_rx_timestamp);
+    new_ecu_can_message_received = CAN_GetMessage0x450Data(&pack_current, &supp_batt_volt, &ecu_status, &ecu_can_rx_timestamp);
 
-    if (new_ecu_can_message_received && overcurrent_detected)
+    overcurrent_detected = ecu_status && doc_coc_mask;// masking ecu_status to extract doc_coc bits
+
+    if (new_ecu_can_message_received && ((overcurrent_detected == 8) || (overcurrent_detected == 4) || (overcurrent_detected == 12) ))// 8,4,12 are values overcurrent_detected will take if doc/coc occurs on ecu_status
     {
         pack->status.bits.fault_over_current = true; // set FLT_DOC_COC bit
     }

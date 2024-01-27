@@ -439,21 +439,21 @@ void CAN_SendMessages629(Pack_t * pack)
 /**
  * @brief Getter for data contained in the last received ECU current data CAN message
  * 
- * @param[out] pack_current Signed pack current in amps
- * @param[out] low_voltage_current Signed low voltage circuits current; LSB = (30/255) amps
- * @param[out] overcurrent_status True if discharge or charge over-current condition has been triggered
+ * @param[out] pack_current Signed pack current scaled, to get in current in A divide by 65.535
+ * @param[out] supp_batt_volt Unsigned supplemental battery voltage scaled, divide by 1000 to get voltage in V
+ * @param[out] ecu_status Refer to Solar CAN ID Excel Sheet for specifics on each bit, last 3 bits are reserved
  * @param[out] rx_timestamp Time since board power on in ms at which last ECU CAN message was received
  * @returns Whether a CAN message has been received (and there is new data) since the last time this function was called
 */
-bool CAN_GetMessage0x450Data(int8_t *pack_current, uint8_t *low_voltage_current, bool *overcurrent_status, uint32_t *rx_timestamp)
+bool CAN_GetMessage0x450Data(int16_t *pack_current, uint16_t *supp_batt_volt, uint8_t *ecu_status, uint32_t *rx_timestamp)
 {
     HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section - do not want a CAN RX complete interrupt to be serviced during this function call
     bool new_rx_message = CAN_data.rx_message_0x450.new_rx_message;
     CAN_data.rx_message_0x450.new_rx_message = false;
 
-    *pack_current = (int8_t) CAN_data.rx_message_0x450.data[0]; //do we want to scale back to 32 bits here
-    *low_voltage_current = CAN_data.rx_message_0x450.data[1]; // do we want to scale back to 16 bits here
-    *overcurrent_status = CAN_data.rx_message_0x450.data[2] & 0x1U;
+    *pack_current = (uint8_t) CAN_data.rx_message_0x450.data[0] + (int16_t)(CAN_data.rx_message_0x450.data[1] << 8);
+    *supp_batt_volt = (uint8_t)CAN_data.rx_message_0x450.data[2] + (uint16_t)(CAN_data.rx_message_0x450.data[3] << 8);
+    *ecu_status = CAN_data.rx_message_0x450.data[4];
     *rx_timestamp = CAN_data.rx_message_0x450.timestamp;
 
     HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section
