@@ -25,8 +25,8 @@ typedef enum
     FSM_RESET = 0,
     WAIT_FOR_BMS_POWERUP,
     WAIT_FOR_BMS_READY,
-    PC_DCDC,
-    DCDC_PLUS,
+    HV_CONNECT,
+    SWAP_DCDC,
     DISABLE_MDU_DCH,
     CHECK_LLIM,
     WAIT_FOR_PC,
@@ -36,7 +36,6 @@ typedef enum
     DASH_ON,
     MCB_ON,
     MDU_ON,
-    SPAR1_ON,
     AMB_ON,
     MONITORING,
     FAULT
@@ -65,8 +64,8 @@ static bool last_LLIM_status;
 #define LVS_INTERVAL 200
 
 #define SUPP_LIMIT 10500 //mV
-#define COC_THRESHOLD 22000 //mA
-#define DOC_THRESHOLD -65000 //mA
+#define DOC_COC_FAULT 0
+#define ESTOP_ACTIVE_FAULT 0
 #define LOW false
 #define HIGH true
 
@@ -76,17 +75,14 @@ static bool last_LLIM_status;
 #define REQ_CONTACTOR_CLOSE LOW
 #define REQ_CONTACTOR_OPEN HIGH
 
-// Helper Functions:
-bool timer_check(unsigned int millis);
-
 /*============================================================================*/
 /* STATE MACHINE FUNCTIONS */
 
 void FSM_reset();
 void BMS_powerup();
 void BMS_ready();
-void DCDC_minus();
-void DCDC_plus();
+void HV_Connect();
+void swap_DCDC();
 void disable_MDU_DCH();
 void check_LLIM();
 void PC_wait();
@@ -96,7 +92,6 @@ void TELEM_on();
 void DASH_on();
 void MCB_on();
 void MDU_on();
-void SPAR1_on();
 void AMB_on();
 void ECU_monitor();
 void fault();
@@ -108,8 +103,8 @@ static void (*FSM_state_table[])(void) = {
     FSM_reset,
     BMS_powerup,
     BMS_ready,
-    DCDC_minus,
-    DCDC_plus,
+    HV_Connect,
+    swap_DCDC,
     disable_MDU_DCH,
     check_LLIM,
     PC_wait,
@@ -119,7 +114,6 @@ static void (*FSM_state_table[])(void) = {
     DASH_on,
     MCB_on,
     MDU_on,
-    SPAR1_on,
     AMB_on,
     ECU_monitor,
     fault};

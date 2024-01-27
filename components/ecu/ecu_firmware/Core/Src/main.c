@@ -116,10 +116,13 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   CAN_Init(&hcan);
-
+  
   DebugIO_Init(&huart5);  
+
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adc1_buf, ADC1_BUF_LENGTH);
   HAL_TIM_Base_Start(&htim3);
+
+  HAL_GPIO_WritePin(OC_LATCH_GPIO_Port, OC_LATCH_Pin, HIGH); // enable OC fault latching
 
   FSM_Init();
 
@@ -496,24 +499,21 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, SUPP_LOW_Pin|MDU_FAN_CTRL_Pin|FAN1_CTRL_Pin|FAN2_CTRL_Pin
-                          |DCH_RST_Pin|DCDC_PLUS_CTRL_Pin|LLIM_CTRL_Pin|PC_CTRL_Pin
-                          |HLIM_BMS_Pin, GPIO_PIN_RESET);
+                          |DCH_RST_Pin|LLIM_CTRL_Pin|PC_CTRL_Pin|HLIM_BMS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, FAN4_CTRL_Pin|FAN3_CTRL_Pin|LED_OUT_Pin|FLT_OUT_Pin
-                          |HLIM_CTRL_Pin|NEG_CTRL_Pin|SWAP_CTRL_Pin|DCDC_MINUS_CTRL_Pin
+                          |HLIM_CTRL_Pin|NEG_CTRL_Pin|SWAP_CTRL_Pin|POS_CTRL_Pin
                           |OC_LATCH_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, SPAR1_CTRL_Pin|TEL_CTRL_Pin|DID_CTRL_Pin|AMB_CTRL_Pin
-                          |MCB_CTRL_Pin|MDI_CTRL_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, TEL_CTRL_Pin|DID_CTRL_Pin|AMB_CTRL_Pin|MCB_CTRL_Pin
+                          |MDI_CTRL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : SUPP_LOW_Pin MDU_FAN_CTRL_Pin FAN1_CTRL_Pin FAN2_CTRL_Pin
-                           DCH_RST_Pin DCDC_PLUS_CTRL_Pin LLIM_CTRL_Pin PC_CTRL_Pin
-                           HLIM_BMS_Pin */
+                           DCH_RST_Pin LLIM_CTRL_Pin PC_CTRL_Pin HLIM_BMS_Pin */
   GPIO_InitStruct.Pin = SUPP_LOW_Pin|MDU_FAN_CTRL_Pin|FAN1_CTRL_Pin|FAN2_CTRL_Pin
-                          |DCH_RST_Pin|DCDC_PLUS_CTRL_Pin|LLIM_CTRL_Pin|PC_CTRL_Pin
-                          |HLIM_BMS_Pin;
+                          |DCH_RST_Pin|LLIM_CTRL_Pin|PC_CTRL_Pin|HLIM_BMS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -526,10 +526,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : FAN4_CTRL_Pin FAN3_CTRL_Pin LED_OUT_Pin FLT_OUT_Pin
-                           HLIM_CTRL_Pin NEG_CTRL_Pin SWAP_CTRL_Pin DCDC_MINUS_CTRL_Pin
+                           HLIM_CTRL_Pin NEG_CTRL_Pin SWAP_CTRL_Pin POS_CTRL_Pin
                            OC_LATCH_Pin */
   GPIO_InitStruct.Pin = FAN4_CTRL_Pin|FAN3_CTRL_Pin|LED_OUT_Pin|FLT_OUT_Pin
-                          |HLIM_CTRL_Pin|NEG_CTRL_Pin|SWAP_CTRL_Pin|DCDC_MINUS_CTRL_Pin
+                          |HLIM_CTRL_Pin|NEG_CTRL_Pin|SWAP_CTRL_Pin|POS_CTRL_Pin
                           |OC_LATCH_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -542,19 +542,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SPAR1_CTRL_Pin TEL_CTRL_Pin DID_CTRL_Pin AMB_CTRL_Pin
-                           MCB_CTRL_Pin MDI_CTRL_Pin */
-  GPIO_InitStruct.Pin = SPAR1_CTRL_Pin|TEL_CTRL_Pin|DID_CTRL_Pin|AMB_CTRL_Pin
-                          |MCB_CTRL_Pin|MDI_CTRL_Pin;
+  /*Configure GPIO pins : DOC_COC_Pin LLIM_BMS_Pin FLT_BMS_Pin BAL_BMS_Pin */
+  GPIO_InitStruct.Pin = DOC_COC_Pin|LLIM_BMS_Pin|FLT_BMS_Pin|BAL_BMS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : TEL_CTRL_Pin DID_CTRL_Pin AMB_CTRL_Pin MCB_CTRL_Pin
+                           MDI_CTRL_Pin */
+  GPIO_InitStruct.Pin = TEL_CTRL_Pin|DID_CTRL_Pin|AMB_CTRL_Pin|MCB_CTRL_Pin
+                          |MDI_CTRL_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : LLIM_BMS_Pin FLT_BMS_Pin BAL_BMS_Pin */
-  GPIO_InitStruct.Pin = LLIM_BMS_Pin|FLT_BMS_Pin|BAL_BMS_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */

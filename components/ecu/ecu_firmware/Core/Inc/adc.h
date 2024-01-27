@@ -18,22 +18,15 @@
 #define ADC1_BUF_LENGTH_PER_CHANNEL 200
 #define ADC1_BUF_LENGTH (ADC1_BUF_LENGTH_PER_CHANNEL * ADC1_NUM_ANALOG_CHANNELS)
 
-/*
-#define ADC3_NUM_ANALOG_CHANNELS 3 
-#define ADC3_BUF_LENGTH_PER_CHANNEL 200
-#define ADC3_BUF_LENGTH (ADC3_BUF_LENGTH_PER_CHANNEL * ADC3_NUM_ANALOG_CHANNELS)
-*/
-
 #define ADC_MAX_VOLT_READING 3.3
 #define ADC_RESOLUTION 4095
 
-#define HASS_50_600_S_VOLTAGE_OFFSET 2.5
-#define HASS_SENSOR_DEFAULT_VOLTAGE_OFFSET 1.5
-#define HASS_50_600_S_CURRENT_SCALE_FACTOR 80.0
-#define HASS_100_S_CURRENT_SCALE_FACTOR 40.0
+#define HASS100S_STD_DEV 1381.049759 // (mA) add this value to sensor's current scaling
+// for details, see https://ubcsolar.monday.com/boards/3313680328/pulses/3328157336/posts/2752255843
+#define HASS100S_INTERNAL_OFFSET -2551.5 // (mA) see spreadsheet in BMS BOM for sensor default offset characterization
+// add this value to standard current measurement to get correct current
 
-#define ACS781xLR_VOLTAGE_OFFSET (3.3/2)
-#define ACS782xLR_CURRENT_SCALE_FACTOR 26.4
+#define SUPP_VOLT_DIVIDER_SCALING 0.2249408050513023 //divide ADC reading by this value to get actual SUPP voltage
 
 #define SUPP_BATT_VOLTAGE_DIVIDER 11.0
 #define ADC_VOLTAGE_SCALING 1000.0 // millivolts
@@ -42,14 +35,6 @@
 /* PUBLIC VARIABLES */
 
 /*PRIVATE VARIABLES*/
-
-// static float ADC_spare_curr_offset; //stores spare current source offset
-// static float ADC_spare_curr; //stores spare current sensor value
-// static int ADC_supp_batt_volt; //stores supplemental battery voltage readings
-// static float ADC_batt_offset; //stores supplemental battery voltage offset
-// static float ADC_lvs_offset; //stores low voltage system current offset
-// static float ADC_lvs_current; //stores current for the LVS system
-// static float ADC_batt_current;
 
 static volatile int ADC1_DMA_in_process_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is in process
 static volatile int ADC1_DMA_fault_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is at fault
