@@ -31,7 +31,6 @@ void FSM_Init()
 void FSM_run()
 {
     FSM_state_table[FSM_state]();
-    //printf("Started: \r\n");
 }
 
 /**
@@ -63,14 +62,7 @@ void FSM_reset()
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, LOW);
 
     // Read supplemental battery
-    if (ecu_data.adc_data.ADC_supp_batt_volt < SUPP_LIMIT)
-    {
-        HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, HIGH);
-    }
-    else
-    {
-        HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, LOW);
-    }
+    check_supp_voltage();
 
     FSM_state = WAIT_FOR_BMS_POWERUP;
     last_tick = HAL_GetTick();
@@ -93,7 +85,6 @@ void BMS_powerup()
    // printf("Current state: BMS_powerup\r\n");
     if (timer_check(BMS_STARTUP_INTERVAL))
     {
-        printf("Fault\r\n");
         FSM_state = FAULT;
     }
     else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH)
@@ -117,17 +108,15 @@ void BMS_powerup()
  */
 void BMS_ready()
 {
-    //HAL_GPIO_WritePin(FLT_BMS_GPIO_Port, FLT_BMS_Pin, LOW);
-    //HAL_Delay(500);
-    // if (timer_check(BMS_STARTUP_INTERVAL))
-    // {
-    //     FSM_state = FAULT;
-    // }
-    // else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == LOW)
-    // {
+     if (timer_check(BMS_STARTUP_INTERVAL))
+     {
+         FSM_state = FAULT;
+     }
+     else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == LOW)
+     {
         last_tick = HAL_GetTick();
         FSM_state = HV_CONNECT;
-  //  }
+    }
     return;
 }
 
@@ -145,7 +134,10 @@ void HV_Connect()
     {
         HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, CONTACTOR_CLOSED);
         HAL_Delay(SHORT_INTERVAL);
+
         HAL_GPIO_WritePin(POS_CTRL_GPIO_Port, POS_CTRL_Pin, CONTACTOR_CLOSED);
+        HAL_Delay(SHORT_INTERVAL);
+
         FSM_state = SWAP_DCDC;
     }
     return;
@@ -160,14 +152,13 @@ void HV_Connect()
  */
 void swap_DCDC()
 {
-    HAL_Delay(SHORT_INTERVAL);
     HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, HIGH);
-    //HAL_Delay(SHORT_INTERVAL);
 
     HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, HIGH);
     HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, HIGH);
     HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, HIGH);        
     HAL_GPIO_WritePin(FAN4_CTRL_GPIO_Port, FAN4_CTRL_Pin, HIGH);
+
     HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, HIGH);
     
     FSM_state = DISABLE_MDU_DCH;
@@ -186,7 +177,6 @@ void disable_MDU_DCH()
    
     if (timer_check(SHORT_INTERVAL))
     {
-        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
         HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, LOW);
         FSM_state = CHECK_LLIM;
     }   
@@ -207,9 +197,6 @@ void disable_MDU_DCH()
  */
 void check_LLIM()
 {
-    //HAL_GPIO_WritePin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin, REQ_CONTACTOR_CLOSE);
-    //HAL_Delay(500);
-
     if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_OPEN)
     {
         last_LLIM_status = CONTACTOR_OPEN;
@@ -386,7 +373,7 @@ void AMB_on()
  */
 void ECU_monitor()
 {
-    printf("Pack current: %d\r\n", ecu_data.adc_data.ADC_batt_current);
+
     /*************************
     Current Fault Checking
     **************************/
@@ -404,9 +391,9 @@ void ECU_monitor()
     /*************************
     Other Fault Checking
     **************************/
-    if (/*HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH || \*/
-        /*HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH || \ */
-        /*HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH || \ */
+    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH || \
+        HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH || \
+        HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH || \
         HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT)
     {
         FSM_state = FAULT;
@@ -456,14 +443,8 @@ void ECU_monitor()
     /*************************
     Check SUPP Voltage
     **************************/
-    if (ecu_data.adc_data.ADC_supp_batt_volt < SUPP_LIMIT)
-    {
-        HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, HIGH);
-    }
-    else
-    {
-        HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, LOW);
-    }
+    check_supp_voltage();
+    
     return;
 }
 
@@ -474,7 +455,6 @@ void ECU_monitor()
  */
 void fault()
 {    
-
 
     /*************************
     Put Pack in Safe State

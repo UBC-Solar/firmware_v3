@@ -11,6 +11,7 @@
 #include <float.h>
 #include <string.h>
 #include "common.h"
+#include "stdio.h"
 
 /*============================================================================*/
 /* PRIVATE STRUCTURES */
@@ -83,7 +84,7 @@ void CAN_Init(CAN_HandleTypeDef *hcan)
 void CAN_SendMessage450()
 {
     uint32_t begin_tick = HAL_GetTick();
-    uint32_t * pTxMailbox = 0;
+    uint32_t tx_mailbox;
     CAN_TxMessage_t txMessage = {0};
     txMessage.tx_header.StdId = 0x450U;
     txMessage.tx_header.DLC = 5U;
@@ -100,7 +101,7 @@ void CAN_SendMessage450()
     txMessage.data[4] = (uint8_t)ecu_data.status.raw;
 
     do {
-        status = HAL_CAN_AddTxMessage(CAN_data.can_handle, &txMessage.tx_header, txMessage.data, pTxMailbox);
+        status = HAL_CAN_AddTxMessage(CAN_data.can_handle, &txMessage.tx_header, txMessage.data, &tx_mailbox);
     } while (status != HAL_OK && HAL_GetTick() - begin_tick <= CAN_TIMEOUT);
 }
 
@@ -119,7 +120,7 @@ void CAN_SendMessage450()
 void CAN_SendMessage3F4()
 {
     uint32_t begin_tick = HAL_GetTick();
-    uint32_t * pTxMailbox = 0;
+    uint32_t tx_mailbox;
     CAN_TxMessage_t txMessage = {0};
     txMessage.tx_header.StdId = 0x3F4U;
     txMessage.tx_header.DLC = 6U;
@@ -134,7 +135,7 @@ void CAN_SendMessage3F4()
     txMessage.data[5] = 0; //Charging Mode: 0 = Charging Mode
 
     do {
-        status = HAL_CAN_AddTxMessage(CAN_data.can_handle, &txMessage.tx_header, txMessage.data, pTxMailbox);
+        status = HAL_CAN_AddTxMessage(CAN_data.can_handle, &txMessage.tx_header, txMessage.data, &tx_mailbox);
     } while (status != HAL_OK && HAL_GetTick() - begin_tick <= CAN_TIMEOUT);
 
     if (charger_enable == 0){

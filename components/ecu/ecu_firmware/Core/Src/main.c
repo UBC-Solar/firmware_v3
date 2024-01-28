@@ -124,14 +124,12 @@ int main(void)
 
   HAL_GPIO_WritePin(OC_LATCH_GPIO_Port, OC_LATCH_Pin, HIGH); // enable OC fault latching
 
-
   FSM_Init();
 
   HAL_GetTick();
   int last_blink_time = 0;
   int current_time = 0;
 
-  
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -156,7 +154,6 @@ int main(void)
 
   }
 
-  printf("Reached here\r\n");
   /* USER CODE END 3 */
 }
 
