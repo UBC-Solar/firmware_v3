@@ -430,9 +430,9 @@ void ECU_monitor()
     /*************************
     Send CAN Messages
     **************************/
-    if (timer_check(MESSAGE_INTERVAL_0X3F4))
+    if (timer_check(MESSAGE_INTERVAL_0X1806E5F4))
     {
-        CAN_SendMessage3F4();
+        CAN_SendMessage1806E5F4();
     }
 
     if (timer_check(MESSAGE_INTERVAL_0X450))
@@ -475,9 +475,9 @@ void fault()
     check_supp_voltage();
     
     // send CAN messages
-    if (timer_check(MESSAGE_INTERVAL_0X3F4))
+    if (timer_check(MESSAGE_INTERVAL_0X1806E5F4))
     {
-        CAN_SendMessage3F4();
+        CAN_SendMessage1806E5F4();
     }
 
     if (timer_check(MESSAGE_INTERVAL_0X450))

@@ -55,7 +55,7 @@ static bool last_LLIM_status;
 
 // Time intervals are in milliseconds
 #define BMS_STARTUP_INTERVAL 5000
-#define MESSAGE_INTERVAL_0X3F4 1000
+#define MESSAGE_INTERVAL_0X1806E5F4 1000
 #define MESSAGE_INTERVAL_0X450 200
 #define MDU_DCH_INTERVAL 500
 #define SHORT_INTERVAL 300

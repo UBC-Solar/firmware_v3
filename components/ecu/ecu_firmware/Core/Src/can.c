@@ -30,7 +30,7 @@ typedef struct {
 
 typedef struct {
     CAN_HandleTypeDef *can_handle;
-    volatile CAN_RxMessage_t rx_message_0x3E5;
+    volatile CAN_RxMessage_t rx_message_0x18FF50E5;
 } CAN_Data_t;
 
 
@@ -42,7 +42,7 @@ static CAN_Data_t CAN_data;
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
 
-static void initFilter0x3E5(void);
+static void initFilter0x18FF50E5(void);
 
 /*============================================================================*/
 /* PUBLIC FUNCTIONS */
@@ -64,7 +64,7 @@ void CAN_Init(CAN_HandleTypeDef *hcan)
         Error_Handler();
     }
 
-    initFilter0x3E5();
+    initFilter0x18FF50E5();
     // any additional filter configuration functions should go here
 
     HAL_CAN_Start(CAN_data.can_handle);
@@ -107,7 +107,7 @@ void CAN_SendMessage450()
 
 
 /**
- * @brief Sends a CAN message with ID 0x3F4 containing charging parameters and control flags.
+ * @brief Sends a CAN message with ID 0x1806E5F4 containing charging parameters and control flags.
  *        The function configures the CAN message with maximum charging current, maximum charging voltage,
  *        charger enable/disable status, and charging mode information. 
  *
@@ -117,22 +117,23 @@ void CAN_SendMessage450()
  * @date 2023/12/02
  * @author Harris Mai (harristmai)
  */
-void CAN_SendMessage3F4()
+void CAN_SendMessage1806E5F4()
 {
     uint32_t begin_tick = HAL_GetTick();
     uint32_t tx_mailbox;
     CAN_TxMessage_t txMessage = {0};
-    txMessage.tx_header.StdId = 0x3F4U;
-    txMessage.tx_header.DLC = 6U;
+    txMessage.tx_header.ExtId = 0x1806E5F4;
+    txMessage.tx_header.DLC = 6U; //technically 8 bytes but last 2 are reserved, note this when testing
     HAL_StatusTypeDef status;
     static uint8_t charger_enable = 0;
+    static uint8_t charger_switch = 1; //for now charger will not output anything, I'd like to know when we should turn off the charger before we use it.
 
-    txMessage.data[0] = (uint8_t) MAX_CHARGING_CURRENT;
-    txMessage.data[1] = (uint8_t) (MAX_CHARGING_CURRENT >> 8);
-    txMessage.data[2] = (uint8_t)MAX_CHARGING_VOLTAGE;
-    txMessage.data[3] = (uint8_t)(MAX_CHARGING_VOLTAGE >> 8);
-    txMessage.data[4] = charger_enable; //Charger Enable: 0 = Start Charger (no current flowing?), 1: Close output of charger
-    txMessage.data[5] = 0; //Charging Mode: 0 = Charging Mode
+    txMessage.data[0] = (uint8_t) MAX_CHARGING_VOLTAGE;
+    txMessage.data[1] = (uint8_t) (MAX_CHARGING_VOLTAGE >> 8);
+    txMessage.data[2] = (uint8_t)MAX_CHARGING_CURRENT;
+    txMessage.data[3] = (uint8_t)(MAX_CHARGING_CURRENT >> 8);
+    txMessage.data[4] = charger_switch; //Charger Switch: 0 = Close output (Voltage and current will flow), 1: Open output (Voltage and current will slowly drop to 0)
+    txMessage.data[5] = charger_enable; //Charger Enable: 0 = OBC receives CAN message but will not close output even if byte 4 tells it to (stop/standby mode), 1: OBC will process request from byte 4 (start)
 
     do {
         status = HAL_CAN_AddTxMessage(CAN_data.can_handle, &txMessage.tx_header, txMessage.data, &tx_mailbox);
@@ -153,11 +154,11 @@ void CAN_SendMessage3F4()
 //  * @param[out] rx_timestamp Time since board power on in ms at which last ECU CAN message was received
 //  * @returns Whether a CAN message has been received (and there is new data) since the last time this function was called
 // */
-// bool CAN_GetMessage0x3E5Data(int16_t *pack_current, uint8_t *low_voltage_current, bool *overcurrent_status, uint32_t *rx_timestamp)
+// bool CAN_GetMessage0x18FF50E5Data(int16_t *pack_current, uint8_t *low_voltage_current, bool *overcurrent_status, uint32_t *rx_timestamp)
 // {
 //     HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section - do not want a CAN RX complete interrupt to be serviced during this function call
-//     bool new_rx_message = CAN_data.rx_message_0x3E5.new_rx_message;
-//     CAN_data.rx_message_0x3E5.new_rx_message = false;
+//     bool new_rx_message = CAN_data.rx_message_0x18FF50E5.new_rx_message;
+//     CAN_data.rx_message_0x18FF50E5.new_rx_message = false;
 
 //     *pack_current = (int8_t) CAN_data.rx_message_0x450.data[0];
 //     *low_voltage_current = CAN_data.rx_message_0x450.data[1];
@@ -176,19 +177,19 @@ void CAN_SendMessage3F4()
  */
 void CAN_RecievedMessageCallback(void)
 {
-    if (HAL_CAN_GetRxMessage(CAN_data.can_handle, 0, (CAN_RxHeaderTypeDef *) &CAN_data.rx_message_0x3E5.rx_header, (uint8_t *) CAN_data.rx_message_0x3E5.data) != HAL_OK) // retrieve message
+    if (HAL_CAN_GetRxMessage(CAN_data.can_handle, 0, (CAN_RxHeaderTypeDef *) &CAN_data.rx_message_0x18FF50E5.rx_header, (uint8_t *) CAN_data.rx_message_0x18FF50E5.data) != HAL_OK) // retrieve message
     {
         Error_Handler();
     }
 
-    if (CAN_data.rx_message_0x3E5.rx_header.StdId != OBC_STATUS_MESSAGE_ID)
+    if (CAN_data.rx_message_0x18FF50E5.rx_header.StdId != OBC_STATUS_MESSAGE_ID)
     {
         // There is likely a problem with the filter configuration
         Error_Handler();
     }
 
-    CAN_data.rx_message_0x3E5.timestamp = HAL_GetTick();
-    CAN_data.rx_message_0x3E5.new_rx_message = true;
+    CAN_data.rx_message_0x18FF50E5.timestamp = HAL_GetTick();
+    CAN_data.rx_message_0x18FF50E5.new_rx_message = true;
 }
 
 
@@ -200,7 +201,7 @@ void CAN_RecievedMessageCallback(void)
  * Additional functions should be created to configure different filter banks
  * This function is SPECIFICALLY for the filter bank for message 0x450
  */
-static void initFilter0x3E5(void)
+static void initFilter0x18FF50E5(void)
 {
     /*
     Filter Information (see page 644 onward of stm32f103 reference manual)
@@ -226,11 +227,11 @@ static void initFilter0x3E5(void)
     filter_config.FilterBank = 0;                                   // settings applied for filterbank 0
     filter_config.FilterFIFOAssignment = CAN_FILTER_FIFO0;          // rx'd message will be placed into this FIFO
     filter_config.FilterMode = CAN_FILTERMODE_IDLIST;               // identifier list mode
-    filter_config.FilterScale = CAN_FILTERSCALE_32BIT;              // don't need double layer of filters, not using EXTID, 32bit fine (if rx'ing many messages with diff ID's, could use double layer of filters)
-    filter_config.FilterMaskIdHigh = OBC_MESSAGE_ID << 5;   // ID upper 16 bits (not using mask), bit shift per bit order (see large comment above)
-    filter_config.FilterMaskIdLow = 0;                              // ID lower 16 bits (not using mask), all 0 means standard ID, RTR mode = data
-    filter_config.FilterIdHigh = OBC_MESSAGE_ID << 5;       // filter ID upper 16 bits (list mode, mask = ID)
-    filter_config.FilterIdLow = 0;                                  // filter ID lower 16 bits, all 0 means standard ID, RTR mode = data
+    filter_config.FilterScale = CAN_FILTERSCALE_32BIT;              // don't need double layer of filters (if rx'ing many messages with diff ID's, could use double layer of filters)
+    filter_config.FilterMaskIdHigh = (uint8_t)OBC_MESSAGE_ID;   // ID upper 16 bits (not using mask), bit shift per bit order (see large comment above)
+    filter_config.FilterMaskIdLow = (uint8_t)(OBC_MESSAGE_ID << 8);  // ID lower 16 bits (not using mask), all 0 means standard ID, RTR mode = data
+    filter_config.FilterIdHigh = (uint8_t)OBC_MESSAGE_ID;       // filter ID upper 16 bits (list mode, mask = ID)
+    filter_config.FilterIdLow = (uint8_t)(OBC_MESSAGE_ID << 8);      // filter ID lower 16 bits, all 0 means standard ID, RTR mode = data
 
     if (HAL_CAN_ConfigFilter(CAN_data.can_handle, &filter_config) != HAL_OK)
     {

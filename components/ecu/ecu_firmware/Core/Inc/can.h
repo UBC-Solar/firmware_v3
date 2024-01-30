@@ -17,11 +17,11 @@
 
 #define CAN_TIMEOUT 50 // (ms)
 
-#define MAX_CHARGING_CURRENT 130U  // 21 A 0.1A/bit offset //update to 13 max outlet current is 15 A
+#define MAX_CHARGING_CURRENT 180U  // 18 A 0.1A/bit offset //update to 13 max outlet current is 15 A
 #define MAX_CHARGING_VOLTAGE 1344U  // 134.4 V 0.1V/bit offset
 
 #define CAN_MAX_DATAFRAME_BYTES 8U
-#define OBC_MESSAGE_ID 0x3E5U
+#define OBC_MESSAGE_ID 0x18FF50E5U
 
 #define MESSAGE_450_LVS_CURRENT_MAX_VALUE 30U //30A
 #define MESSAGE_450_BATT_CURRENT_MAX_VALUE 100U //100A
@@ -32,17 +32,17 @@
 #define MESSAGE_450_LVS_CURRENT_SCALE_FACTOR (0xFFU / (MESSAGE_450_LVS_CURRENT_MAX_VALUE))
 #define MESSAGE_450_BATT_CURRENT_SCALE_FACTOR (0xFFFFU / (MESSAGE_450_BATT_CURRENT_MAX_VALUE))
 
-#define OBC_STATUS_MESSAGE_ID 0x3E5U
+#define OBC_STATUS_MESSAGE_ID 0x18FF50E5U
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
 void CAN_Init(CAN_HandleTypeDef *hcan);
 void CAN_SendMessage450();
-void CAN_SendMessage3F4();
+void CAN_SendMessage1806E5F4();
 
 //not a complete function just there as a template
-// bool CAN_GetMessage0x3E5DataData(int8_t *pack_current, uint8_t *low_voltage_current, bool *overcurrent_status, uint32_t *rx_timestamp);
+// bool CAN_GetMessage0x18FF50E5DataData(int8_t *pack_current, uint8_t *low_voltage_current, bool *overcurrent_status, uint32_t *rx_timestamp);
 
 
 #endif /* __CAN_H */
