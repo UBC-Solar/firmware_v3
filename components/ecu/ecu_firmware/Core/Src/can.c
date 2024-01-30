@@ -126,7 +126,7 @@ void CAN_SendMessage1806E5F4()
     txMessage.tx_header.DLC = 6U; //technically 8 bytes but last 2 are reserved, note this when testing
     HAL_StatusTypeDef status;
     static uint8_t charger_enable = 0;
-    static uint8_t charger_switch = 1; //for now charger will not output anything, I'd like to know when we should turn off the charger before we use it.
+    static uint8_t charger_switch = 0; //for now charger will always be outputting
 
     txMessage.data[0] = (uint8_t) MAX_CHARGING_VOLTAGE;
     txMessage.data[1] = (uint8_t) (MAX_CHARGING_VOLTAGE >> 8);
@@ -222,16 +222,16 @@ static void initFilter0x18FF50E5(void)
 
     CAN_FilterTypeDef filter_config;
 
-    filter_config.FilterActivation = CAN_FILTER_ENABLE;             // enable filters
-    filter_config.SlaveStartFilterBank = 14;                        // only one CAN interface, parameter meaningless (all filter banks for the one controller)
-    filter_config.FilterBank = 0;                                   // settings applied for filterbank 0
-    filter_config.FilterFIFOAssignment = CAN_FILTER_FIFO0;          // rx'd message will be placed into this FIFO
-    filter_config.FilterMode = CAN_FILTERMODE_IDLIST;               // identifier list mode
-    filter_config.FilterScale = CAN_FILTERSCALE_32BIT;              // don't need double layer of filters (if rx'ing many messages with diff ID's, could use double layer of filters)
-    filter_config.FilterMaskIdHigh = (uint8_t)OBC_MESSAGE_ID;   // ID upper 16 bits (not using mask), bit shift per bit order (see large comment above)
-    filter_config.FilterMaskIdLow = (uint8_t)(OBC_MESSAGE_ID << 8);  // ID lower 16 bits (not using mask), all 0 means standard ID, RTR mode = data
-    filter_config.FilterIdHigh = (uint8_t)OBC_MESSAGE_ID;       // filter ID upper 16 bits (list mode, mask = ID)
-    filter_config.FilterIdLow = (uint8_t)(OBC_MESSAGE_ID << 8);      // filter ID lower 16 bits, all 0 means standard ID, RTR mode = data
+    filter_config.FilterActivation = CAN_FILTER_ENABLE;                 // enable filters
+    filter_config.SlaveStartFilterBank = 14;                            // only one CAN interface, parameter meaningless (all filter banks for the one controller)
+    filter_config.FilterBank = 0;                                       // settings applied for filterbank 0
+    filter_config.FilterFIFOAssignment = CAN_FILTER_FIFO0;              // rx'd message will be placed into this FIFO
+    filter_config.FilterMode = CAN_FILTERMODE_IDLIST;                   // identifier list mode
+    filter_config.FilterScale = CAN_FILTERSCALE_32BIT;                  // don't need double layer of filters (if rx'ing many messages with diff ID's, could use double layer of filters)
+    filter_config.FilterMaskIdHigh = (uint16_t)OBC_MESSAGE_ID;          // ID upper 16 bits (not using mask), bit shift per bit order (see large comment above)
+    filter_config.FilterMaskIdLow = (uint16_t)(OBC_MESSAGE_ID << 16);   // ID lower 16 bits (not using mask), all 0 means standard ID, RTR mode = data
+    filter_config.FilterIdHigh = (uint16_t)OBC_MESSAGE_ID;              // filter ID upper 16 bits (list mode, mask = ID)
+    filter_config.FilterIdLow = (uint16_t)(OBC_MESSAGE_ID << 16);       // filter ID lower 16 bits, all 0 means standard ID, RTR mode = data
 
     if (HAL_CAN_ConfigFilter(CAN_data.can_handle, &filter_config) != HAL_OK)
     {
