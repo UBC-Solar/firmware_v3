@@ -221,15 +221,6 @@ void parse_warnings(void)
 	HAL_GPIO_WritePin(CH_OC_GPIO_Port, CH_OC_Pin, charge_overtemp_trip); 				 // Charging overcurrent fault
 	// HAL_GPIO_WritePin(BATT_OV_GPIO_Port, BATT_OV_Pin, high_voltage_warning); 			 // Battery voltage upper limit fault
 
-	/* Check if any warnings are set */
-	for (int i = 0; i < 4; i++) {
-		if (recent_warnings[i] > 0) {
-			/* Change to warnings page */
-			current_page = PAGE_1;
-			break;
-		}
-	}
-
 }
 
 /* USER CODE END 0 */
