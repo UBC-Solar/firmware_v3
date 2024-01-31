@@ -48,15 +48,17 @@ Header file containing all constants and function declarations to the LCD
 #define STATE_YPOS 9
 #define STATE_DATA_XPOS 15
 #define STATE_DATA_YPOS 9
-#define STATE_UNIT_XPOS 38
-#define STATE_UNIT_YPOS 9
-// Simulation Target TARGET
+// Simulation Target Speed
 #define TARGET_XPOS 0
 #define TARGET_YPOS 12
-#define TARGET_DATA_XPOS 15
+#define TARGET_DATA_XPOS 12
 #define TARGET_DATA_YPOS 12
-#define TARGET_UNIT_XPOS 35
+#define TARGET_UNIT_XPOS 32
 #define TARGET_UNIT_YPOS 12
+// Warning flag
+#define WARNING_XPOS 38
+#define WARNING_YPOS 12
+
 
 /* Page 1 */
 // Warnings

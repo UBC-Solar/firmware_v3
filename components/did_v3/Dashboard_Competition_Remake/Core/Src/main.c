@@ -400,7 +400,6 @@ int main(void)
 						UpdateScreenParameter(SPEED_DATA_XPOS, SPEED_DATA_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10, TRUE);
 						break;
 
-
 					case MCB_DRIVE_STATE:
 						drive_state = CAN_rx_data[0];
 						if ( drive_state == 0x01 ) 		
@@ -413,6 +412,13 @@ int main(void)
 							OutputString("REV", STATE_DATA_XPOS, STATE_DATA_YPOS); // REVERSE
 						else   							
 							OutputString("ERR", STATE_DATA_XPOS, STATE_DATA_YPOS); // INVALID (MCB should never send this)
+						break;
+
+					case FAULTS:
+						if (recent_faults[0] != 0 || recent_faults[1] != 0 || recent_faults[2] != 0 || recent_faults[3] != 0)
+							OutputString("W", WARNING_XPOS, WARNING_YPOS); 
+						else
+							OutputString(" ", WARNING_XPOS, WARNING_YPOS); 
 						break;
 					default:
 						// CAN message read is not part of the current page, Ignore.
