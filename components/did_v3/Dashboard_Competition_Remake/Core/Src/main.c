@@ -243,7 +243,8 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   int32_t tempInt32;
-  uint8_t drive_state;
+  uint8_t drive_state = 0;
+  float target_speed = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -338,6 +339,17 @@ int main(void)
 			parse_warnings();
 		}
 
+		// Simulation target speed
+		if (received_CAN_ID == SIMULATION_SPEED)
+		{
+			u.chars[0] = CAN_rx_data[4];
+			u.chars[1] = CAN_rx_data[5];
+			u.chars[2] = CAN_rx_data[6];
+			u.chars[3] = CAN_rx_data[7];
+
+			target_speed = u.float_var;
+		}
+
 		// Timeout functionality
 		// If DID is on a page more than 10 seconds, revert back to PAGE_0
 		if( current_page != lastPage )
@@ -356,6 +368,9 @@ int main(void)
 		{
 			case PAGE_0: // main page
 				UpdateScreenTitles(PAGE_0);
+				
+				// Update screen parameter for simulation target speed
+				UpdateScreenParameter(TARGET_DATA_XPOS, TARGET_DATA_YPOS, (uint32_t)target_speed, ((uint32_t) (target_speed * 10)) % 10, TRUE);
 				switch(received_CAN_ID)
 				{
 					case (BATT_BASE + 4): // SOC
@@ -384,18 +399,7 @@ int main(void)
 //						UpdateScreenParameter(SPEED_DATA_XPOS, SPEED_DATA_YPOS, -45, 7, TRUE);
 						UpdateScreenParameter(SPEED_DATA_XPOS, SPEED_DATA_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10, TRUE);
 						break;
-					case REGEN: // Change MACRO
-						/* TODO: Add REGEN parsing logic - IF we think it's worth having here, otherwise SCRAP */
-						uint8_t regen_enabled = FALSE;
-						if (regen_enabled) UpdateScreenParameter(STATE_DATA_XPOS, STATE_DATA_YPOS, 50, 0, FALSE);
-						else {
-							OutputString("     ", STATE_DATA_XPOS, STATE_DATA_YPOS); // Clear
-							OutputString("OFF", STATE_DATA_XPOS, STATE_DATA_YPOS); 	// Write "OFF"
-						}
-						break;
-					case SIMULATION_SPEED:
-						/* ADD SIMUALTION SPEED HERE - Similar to Velocity parsing */
-						break;
+
 
 					case MCB_DRIVE_STATE:
 						drive_state = CAN_rx_data[0];

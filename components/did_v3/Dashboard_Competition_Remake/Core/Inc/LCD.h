@@ -43,13 +43,20 @@ Header file containing all constants and function declarations to the LCD
 #define SPEED_DATA_YPOS 6
 #define SPEED_UNIT_XPOS 35
 #define SPEED_UNIT_YPOS 6
-// STATE
+// MCB Drive State
 #define STATE_XPOS 0
 #define STATE_YPOS 9
 #define STATE_DATA_XPOS 15
 #define STATE_DATA_YPOS 9
 #define STATE_UNIT_XPOS 38
 #define STATE_UNIT_YPOS 9
+// Simulation Target TARGET
+#define TARGET_XPOS 0
+#define TARGET_YPOS 12
+#define TARGET_DATA_XPOS 15
+#define TARGET_DATA_YPOS 12
+#define TARGET_UNIT_XPOS 35
+#define TARGET_UNIT_YPOS 12
 
 /* Page 1 */
 // Warnings
