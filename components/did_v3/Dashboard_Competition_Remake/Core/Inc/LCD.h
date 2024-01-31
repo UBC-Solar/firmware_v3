@@ -43,13 +43,13 @@ Header file containing all constants and function declarations to the LCD
 #define SPEED_DATA_YPOS 6
 #define SPEED_UNIT_XPOS 35
 #define SPEED_UNIT_YPOS 6
-// Regen
-#define REGEN_XPOS 0
-#define REGEN_YPOS 9
-#define REGEN_DATA_XPOS 15
-#define REGEN_DATA_YPOS 9
-#define REGEN_UNIT_XPOS 38
-#define REGEN_UNIT_YPOS 9
+// STATE
+#define STATE_XPOS 0
+#define STATE_YPOS 9
+#define STATE_DATA_XPOS 15
+#define STATE_DATA_YPOS 9
+#define STATE_UNIT_XPOS 38
+#define STATE_UNIT_YPOS 9
 
 /* Page 1 */
 // Warnings

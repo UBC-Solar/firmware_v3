@@ -47,6 +47,7 @@
 #define BATT_BASE 0x620
 #define ARR_BASE 0x700
 #define MCB_BASE 0x400
+#define MCB_DRIVE_STATE 0x403
 #define LV_BASE 0x450
 #define FAULTS 0x622
 #define SIMULATION_SPEED 0x750
@@ -242,7 +243,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   int32_t tempInt32;
-
+  uint8_t drive_state;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -389,12 +390,26 @@ int main(void)
 						if (regen_enabled) UpdateScreenParameter(STATE_DATA_XPOS, STATE_DATA_YPOS, 50, 0, FALSE);
 						else {
 							OutputString("     ", STATE_DATA_XPOS, STATE_DATA_YPOS); // Clear
-							OutputString("OFF", STATE_DATA_XPOS, STATE_DATA_YPOS); // Write "OFF"
+							OutputString("OFF", STATE_DATA_XPOS, STATE_DATA_YPOS); 	// Write "OFF"
 						}
 						break;
-					case SIMULATION_SPEED: ;
+					case SIMULATION_SPEED:
 						/* ADD SIMUALTION SPEED HERE - Similar to Velocity parsing */
+						break;
 
+					case MCB_DRIVE_STATE:
+						drive_state = CAN_rx_data[0];
+						if ( drive_state == 0x01 ) 		
+							OutputString("DRV", STATE_DATA_XPOS, STATE_DATA_YPOS); // DRIVE
+						else if (drive_state == 0x02)   
+							OutputString("CRS", STATE_DATA_XPOS, STATE_DATA_YPOS); // CRUISE
+						else if (drive_state == 0x03)   
+							OutputString("PRK", STATE_DATA_XPOS, STATE_DATA_YPOS); // PARK
+						else if (drive_state == 0x04)  
+							OutputString("REV", STATE_DATA_XPOS, STATE_DATA_YPOS); // REVERSE
+						else   							
+							OutputString("ERR", STATE_DATA_XPOS, STATE_DATA_YPOS); // INVALID (MCB should never send this)
+						break;
 					default:
 						// CAN message read is not part of the current page, Ignore.
 						break;

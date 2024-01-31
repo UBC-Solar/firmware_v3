@@ -378,12 +378,12 @@ void UpdateScreenTitles(uint8_t pageNum) {
 			OutputString("SOC", SOC_XPOS, SOC_YPOS);
 			OutputString("CRUZE", CRUISE_XPOS, CRUISE_YPOS);
 			OutputString("SPEED", SPEED_XPOS, SPEED_YPOS);
-			OutputString("REGEN", REGEN_XPOS, REGEN_YPOS);
+			OutputString("STATE", STATE_XPOS, STATE_YPOS);
 			/* Units */
 			OutputString("%", SOC_UNIT_XPOS, SOC_UNIT_YPOS);
 			OutputString("KM", CRUISE_UNIT_XPOS, CRUISE_UNIT_YPOS);
 			OutputString("KM", SPEED_UNIT_XPOS, SPEED_UNIT_YPOS);
-			OutputString("%", REGEN_UNIT_XPOS, REGEN_UNIT_YPOS);
+			OutputString("%", STATE_UNIT_XPOS, STATE_UNIT_YPOS);
 			break;
 		case PAGE_1:
 			/* Titles */
