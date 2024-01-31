@@ -436,7 +436,7 @@ void ECU_monitor()
     /*************************
     Send CAN Messages
     **************************/
-    if (timer_check(MESSAGE_INTERVAL_0X1806E5F4))
+    if (CAN_GetMessage0x18FF50E5Data())
     {
         CAN_SendMessage1806E5F4();
     }

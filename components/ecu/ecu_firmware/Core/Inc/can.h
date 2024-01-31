@@ -41,8 +41,7 @@ void CAN_Init(CAN_HandleTypeDef *hcan);
 void CAN_SendMessage450();
 void CAN_SendMessage1806E5F4();
 
-//not a complete function just there as a template
-// bool CAN_GetMessage0x18FF50E5DataData(int8_t *pack_current, uint8_t *low_voltage_current, bool *overcurrent_status, uint32_t *rx_timestamp);
+bool CAN_GetMessage0x18FF50E5Data();
 
 
 #endif /* __CAN_H */

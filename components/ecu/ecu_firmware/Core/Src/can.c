@@ -144,30 +144,21 @@ void CAN_SendMessage1806E5F4()
     }
 }
 
-// /**
-//  * THIS FUNCTION IS NOT COMPLETE
-//  * @brief Getter for data contained in the last received ECU current data CAN message
-//  * 
-//  * @param[out] pack_current Signed pack current in amps
-//  * @param[out] low_voltage_current Signed low voltage circuits current; LSB = (30/255) amps
-//  * @param[out] overcurrent_status True if discharge or charge over-current condition has been triggered
-//  * @param[out] rx_timestamp Time since board power on in ms at which last ECU CAN message was received
-//  * @returns Whether a CAN message has been received (and there is new data) since the last time this function was called
-// */
-// bool CAN_GetMessage0x18FF50E5Data(int16_t *pack_current, uint8_t *low_voltage_current, bool *overcurrent_status, uint32_t *rx_timestamp)
-// {
-//     HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section - do not want a CAN RX complete interrupt to be serviced during this function call
-//     bool new_rx_message = CAN_data.rx_message_0x18FF50E5.new_rx_message;
-//     CAN_data.rx_message_0x18FF50E5.new_rx_message = false;
+/**
+ * 
+ * @brief Getter to check if we are receiving messages from the OBC
+ * 
+ * @returns Whether a CAN message has been received since the last time this function was called
+*/
+bool CAN_GetMessage0x18FF50E5Data()
+{
+    HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section - do not want a CAN RX complete interrupt to be serviced during this function call
+    bool new_rx_message = CAN_data.rx_message_0x18FF50E5.new_rx_message;
+    CAN_data.rx_message_0x18FF50E5.new_rx_message = false;
 
-//     *pack_current = (int8_t) CAN_data.rx_message_0x450.data[0];
-//     *low_voltage_current = CAN_data.rx_message_0x450.data[1];
-//     *overcurrent_status = CAN_data.rx_message_0x450.data[2] & 0x1U;
-//     *rx_timestamp = CAN_data.rx_message_0x450.timestamp;
-
-//     HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section
-//     return new_rx_message;
-// }
+    HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section
+    return new_rx_message;
+}
 
 /**
  * @brief Handle a CAN RX message pending interrupt for the FIFO configured to receive ECU current message
