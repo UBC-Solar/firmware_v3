@@ -316,38 +316,17 @@ int main(void)
 		 * if (current_page + 1 == NUM_PAGES) set current_page = 0
 		 */
 
-		uint8_t button_pressed = FALSE;
-		uint8_t cruise_enabled = FALSE;
-
 		if (received_CAN_ID == MCB_BASE)
 		{
-			/* Check for Button Press
-			 * Bit 0 = button press event
-			 * Bit 1 = cruise enabled
-			 */
-			uint8_t mcb_data = CAN_rx_data[0];
-
-			/* For Cruise Enabled:
-			 * - If Enabled, display the cruise velocity on page 1
-			 * - If Disabled, display "OFF" instead of speed
-			 */
-
-			if (mcb_data == 1) { // binary 01
-				button_pressed = TRUE;
-			} else if (mcb_data == 3) { // binary 11
-				button_pressed = TRUE;
-				cruise_enabled = TRUE;
-			} else if (mcb_data == 2){ // binary 10
-				cruise_enabled = TRUE;
-			} // any other cases, don't need to reassign.
+			if ( CAN_rx_data[0] != 0 ) 
+			{
+				current_page = current_page + 1; // Increment page
+				if (current_page == NUM_PAGES) current_page = 0; // Reset to 0 if changing from last page
+				ClearScreen();
+			}
 		}
 
-		if (button_pressed) {
-			current_page = current_page + 1; // Increment page
-			if (current_page == NUM_PAGES) current_page = 0; // Reset to 0 if changing from last page
-			button_pressed = FALSE; // Set back to False
-			ClearScreen();
-		}
+
 
 		/* FAULTS = 0x622
 		 * Parse Warnings and Faults if received CAN message is 0x622
@@ -407,10 +386,10 @@ int main(void)
 					case REGEN: // Change MACRO
 						/* TODO: Add REGEN parsing logic - IF we think it's worth having here, otherwise SCRAP */
 						uint8_t regen_enabled = FALSE;
-						if (regen_enabled) UpdateScreenParameter(REGEN_DATA_XPOS, REGEN_DATA_YPOS, 50, 0, FALSE);
+						if (regen_enabled) UpdateScreenParameter(STATE_DATA_XPOS, STATE_DATA_YPOS, 50, 0, FALSE);
 						else {
-							OutputString("     ", REGEN_DATA_XPOS, REGEN_DATA_YPOS); // Clear
-							OutputString("OFF", REGEN_DATA_XPOS, REGEN_DATA_YPOS); // Write "OFF"
+							OutputString("     ", STATE_DATA_XPOS, STATE_DATA_YPOS); // Clear
+							OutputString("OFF", STATE_DATA_XPOS, STATE_DATA_YPOS); // Write "OFF"
 						}
 						break;
 					case SIMULATION_SPEED: ;
