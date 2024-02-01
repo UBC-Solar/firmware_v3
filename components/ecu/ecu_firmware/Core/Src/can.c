@@ -150,7 +150,8 @@ void CAN_SendMessage1806E5F4()
  * 
  * @returns Whether a CAN message has been received since the last time this function was called
 */
-bool CAN_GetMessage0x18FF50E5Data()
+bool 
+
 {
     HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section - do not want a CAN RX complete interrupt to be serviced during this function call
     bool new_rx_message = CAN_data.rx_message_0x18FF50E5.new_rx_message;
@@ -166,8 +167,9 @@ bool CAN_GetMessage0x18FF50E5Data()
  * This function needs to be called from the CAN RX message pending interrupt callback for the appropriate FIFO
  * (as determined) by the filter configuration; eg. HAL_CAN_RxFifo0MsgPendingCallback()
  */
-void CAN_RecievedMessageCallback(void)
+bool CAN_RecievedMessageCallback(void)
 {
+    if (HAL_CAN_GetRxFifoFillLevel())
     if (HAL_CAN_GetRxMessage(CAN_data.can_handle, 0, (CAN_RxHeaderTypeDef *) &CAN_data.rx_message_0x18FF50E5.rx_header, (uint8_t *) CAN_data.rx_message_0x18FF50E5.data) != HAL_OK) // retrieve message
     {
         Error_Handler();
@@ -219,10 +221,10 @@ static void initFilter0x18FF50E5(void)
     filter_config.FilterFIFOAssignment = CAN_FILTER_FIFO0;              // rx'd message will be placed into this FIFO
     filter_config.FilterMode = CAN_FILTERMODE_IDLIST;                   // identifier list mode
     filter_config.FilterScale = CAN_FILTERSCALE_32BIT;                  // don't need double layer of filters (if rx'ing many messages with diff ID's, could use double layer of filters)
-    filter_config.FilterMaskIdHigh = (uint16_t)OBC_MESSAGE_ID;          // ID upper 16 bits (not using mask), bit shift per bit order (see large comment above)
-    filter_config.FilterMaskIdLow = (uint16_t)(OBC_MESSAGE_ID << 16);   // ID lower 16 bits (not using mask), all 0 means standard ID, RTR mode = data
-    filter_config.FilterIdHigh = (uint16_t)OBC_MESSAGE_ID;              // filter ID upper 16 bits (list mode, mask = ID)
-    filter_config.FilterIdLow = (uint16_t)(OBC_MESSAGE_ID << 16);       // filter ID lower 16 bits, all 0 means standard ID, RTR mode = data
+    filter_config.FilterMaskIdHigh = (uint16_t)(OBC_MESSAGE_ID >> 16);          // ID upper 16 bits (not using mask), bit shift per bit order (see large comment above)
+    filter_config.FilterMaskIdLow = (uint16_t)OBC_MESSAGE_ID;   // ID lower 16 bits (not using mask), all 0 means standard ID, RTR mode = data
+    filter_config.FilterIdHigh = (uint16_t)(OBC_MESSAGE_ID >> 16);              // filter ID upper 16 bits (list mode, mask = ID)
+    filter_config.FilterIdLow = (uint16_t)OBC_MESSAGE_ID;       // filter ID lower 16 bits, all 0 means standard ID, RTR mode = data
 
     if (HAL_CAN_ConfigFilter(CAN_data.can_handle, &filter_config) != HAL_OK)
     {
