@@ -42,7 +42,7 @@ void CAN_Init(CAN_HandleTypeDef *hcan);
 void CAN_SendMessage450();
 void CAN_SendMessage1806E5F4();
 
-bool CAN_GetMessage0x18FF50E5Data();
+bool CAN_CheckRxMailbox(void);
 
 
 #endif /* __CAN_H */

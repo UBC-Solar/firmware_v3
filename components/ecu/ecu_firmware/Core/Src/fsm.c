@@ -436,7 +436,7 @@ void ECU_monitor()
     /*************************
     Send CAN Messages
     **************************/
-    if (CAN_GetMessage0x18FF50E5Data())
+    if (CAN_CheckRxMailbox())
     {
         CAN_SendMessage1806E5F4();
     }

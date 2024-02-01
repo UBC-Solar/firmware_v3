@@ -145,44 +145,34 @@ void CAN_SendMessage1806E5F4()
 }
 
 /**
- * 
- * @brief Getter to check if we are receiving messages from the OBC
- * 
+ * @brief return true if there is a message in the RX mailbox and incoming message ID matches filter ID
+ *
  * @returns Whether a CAN message has been received since the last time this function was called
-*/
-bool 
-
-{
-    HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section - do not want a CAN RX complete interrupt to be serviced during this function call
-    bool new_rx_message = CAN_data.rx_message_0x18FF50E5.new_rx_message;
-    CAN_data.rx_message_0x18FF50E5.new_rx_message = false;
-
-    HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section
-    return new_rx_message;
-}
-
-/**
- * @brief Handle a CAN RX message pending interrupt for the FIFO configured to receive ECU current message
- * 
- * This function needs to be called from the CAN RX message pending interrupt callback for the appropriate FIFO
- * (as determined) by the filter configuration; eg. HAL_CAN_RxFifo0MsgPendingCallback()
  */
-bool CAN_RecievedMessageCallback(void)
+bool CAN_CheckRxMailbox(void)
 {
-    if (HAL_CAN_GetRxFifoFillLevel())
-    if (HAL_CAN_GetRxMessage(CAN_data.can_handle, 0, (CAN_RxHeaderTypeDef *) &CAN_data.rx_message_0x18FF50E5.rx_header, (uint8_t *) CAN_data.rx_message_0x18FF50E5.data) != HAL_OK) // retrieve message
-    {
-        Error_Handler();
+    bool new_rx_message = CAN_data.rx_message_0x18FF50E5.new_rx_message;
+    if (HAL_CAN_GetRxFifoFillLevel(CAN_data.can_handle, 0) >= 1){
+
+        if (HAL_CAN_GetRxMessage(CAN_data.can_handle, 0, (CAN_RxHeaderTypeDef *) &CAN_data.rx_message_0x18FF50E5.rx_header, (uint8_t *) CAN_data.rx_message_0x18FF50E5.data) != HAL_OK) // retrieve message
+            {
+                    if (CAN_data.rx_message_0x18FF50E5.rx_header.StdId == OBC_STATUS_MESSAGE_ID)
+                        {
+                            CAN_data.rx_message_0x18FF50E5.new_rx_message = true;                           
+                        }
+
+                    else {
+                        CAN_data.rx_message_0x18FF50E5.new_rx_message = false;
+                    }
+            }
     }
 
-    if (CAN_data.rx_message_0x18FF50E5.rx_header.StdId != OBC_STATUS_MESSAGE_ID)
-    {
-        // There is likely a problem with the filter configuration
-        Error_Handler();
+    else {
+        CAN_data.rx_message_0x18FF50E5.new_rx_message = false;
     }
 
     CAN_data.rx_message_0x18FF50E5.timestamp = HAL_GetTick();
-    CAN_data.rx_message_0x18FF50E5.new_rx_message = true;
+    return new_rx_message;
 }
 
 
