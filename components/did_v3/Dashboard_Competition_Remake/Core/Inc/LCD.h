@@ -106,12 +106,12 @@ Header file containing all constants and function declarations to the LCD
 #define LV_CURRENT_UNIT_XPOS 37
 #define LV_CURRENT_UNIT_YPOS 6
 // BUS Current (Total)
-#define BUS_CURRENT_XPOS 0
-#define BUS_CURRENT_YPOS 9
-#define BUS_CURRENT_DATA_XPOS 15
-#define BUS_CURRENT_DATA_YPOS 9
-#define BUS_CURRENT_UNIT_XPOS 37
-#define BUS_CURRENT_UNIT_YPOS 9
+#define PACK_CURRENT_XPOS 0
+#define PACK_CURRENT_YPOS 9
+#define PACK_CURRENT_DATA_XPOS 15
+#define PACK_CURRENT_DATA_YPOS 9
+#define PACK_CURRENT_UNIT_XPOS 37
+#define PACK_CURRENT_UNIT_YPOS 9
 
 /* Page 3 */
 // Pack Temperature

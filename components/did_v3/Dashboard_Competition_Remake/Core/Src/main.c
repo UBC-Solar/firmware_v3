@@ -508,19 +508,13 @@ int main(void)
 						tempInt32 = (int32_t) u.float_var;
 						UpdateScreenParameter(ARRAY_CURRENT_DATA_XPOS, ARRAY_CURRENT_DATA_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10, TRUE); // Float
 						break;
-					case (LV_BASE): // Array Current
-						// Using Sensor 2 Data
-						// 2nd lowest byte
-						UpdateScreenParameter(ARRAY_CURRENT_DATA_XPOS, ARRAY_CURRENT_DATA_YPOS, CAN_rx_data[1], 0, FALSE);
-						break;
-					case (MCB_BASE + 2): // Bus Current
-						// Upper 4 bytes of data
-						u.chars[0] = CAN_rx_data[4];
-						u.chars[1] = CAN_rx_data[5];
-						u.chars[2] = CAN_rx_data[6];
-						u.chars[3] = CAN_rx_data[7];
-						tempInt32 = (int32_t) u.float_var;
-						UpdateScreenParameter(BUS_CURRENT_DATA_XPOS, BUS_CURRENT_DATA_YPOS, tempInt32, 0, FALSE); // percentage of max current
+					case (LV_BASE):
+						// Pack Current
+						// Lower 2 bytes of data
+						u_u16_bytes.chars[0] = CAN_rx_data[0];
+						u_u16_bytes.chars[1] = CAN_rx_data[1];
+						tempInt32 = u_u16_bytes.int_var / 65.535;
+						UpdateScreenParameter(PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS, tempInt32, 0, FALSE);
 						break;
 					default:
 						// CAN message read is not part of the current page, Ignore.
