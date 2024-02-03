@@ -33,14 +33,14 @@ void CanFilterSetup()
 
 	// Filter for 0x500 IDs in list mode
     CAN_filter0.FilterIdHigh = (uint16_t) (0x501 << 5);
-    CAN_filter0.FilterMaskIdHigh = (uint16_t) (0x7F5 << 5);
+    CAN_filter0.FilterMaskIdHigh = (uint16_t) (0x503 << 5);
 
-    CAN_filter0.FilterIdLow = (uint16_t) (0x501 << 5);
-    CAN_filter0.FilterMaskIdLow = (uint16_t) (0x7F5 << 5);
+    CAN_filter0.FilterIdLow = (uint16_t) (0x50B << 5);
+    CAN_filter0.FilterMaskIdLow = (uint16_t) (0x401 << 5);
 
     CAN_filter0.FilterFIFOAssignment = CAN_FILTER_FIFO0;
     CAN_filter0.FilterBank = (uint32_t) 0;
-    CAN_filter0.FilterMode = CAN_FILTERMODE_IDMASK;
+    CAN_filter0.FilterMode = CAN_FILTERMODE_IDLIST;
     CAN_filter0.FilterScale = CAN_FILTERSCALE_16BIT;
     CAN_filter0.FilterActivation = CAN_FILTER_ENABLE;
 
