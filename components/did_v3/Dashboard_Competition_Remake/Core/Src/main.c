@@ -47,6 +47,7 @@
 #define BATT_BASE 0x620
 #define ARR_BASE 0x700
 #define MCB_BASE 0x400
+#define MCB_MOTOR_COMMAND 0x401
 #define MCB_DRIVE_STATE 0x403
 #define LV_BASE 0x450
 #define FAULTS 0x622
@@ -368,11 +369,18 @@ int main(void)
 //						UpdateScreenParameter(SOC_DATA_XPOS, SOC_DATA_YPOS, (int8_t) 100, 0, FALSE);
 						UpdateScreenParameter(SOC_DATA_XPOS, SOC_DATA_YPOS, (int8_t) CAN_rx_data[0], 0, FALSE);
 						break;
-					case CRUISE_TARGET: // Change MACRO
-						/* TODO: Use MCB Motor Velocity for this (check if not 100 -> display. If 100, then print OFF */
-						OutputString("OFF", CRUISE_DATA_XPOS, CRUISE_DATA_YPOS);
-//						UpdateScreenParameter(CRUISE_DATA_XPOS, CRUISE_DATA_YPOS, (int8_t) 80, 5, TRUE);
-						// Add data parameter
+					case MCB_MOTOR_COMMAND: // Get target cruse
+						if ( drive_state == 0x02 )
+						{
+							u.chars[0] = CAN_rx_data[0];
+							u.chars[1] = CAN_rx_data[1];
+							u.chars[2] = CAN_rx_data[2];
+							u.chars[3] = CAN_rx_data[3];
+							tempInt32 = (int32_t) u.float_var * 3.6;
+							UpdateScreenParameter(CRUISE_DATA_XPOS, CRUISE_DATA_YPOS, tempInt32, 0, FALSE);
+						}
+						else
+							OutputString("OFF", CRUISE_DATA_XPOS, CRUISE_DATA_YPOS);
 						break;
 					case (MC_BASE + 3): // Vehicle Velocity
 						u.chars[0] = CAN_rx_data[4];
