@@ -114,10 +114,10 @@ int main(void)
   MX_TIM8_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-
-  CAN_Init(&hcan);
   
   DebugIO_Init(&huart5);  
+
+  CAN_Init(&hcan);
 
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adc1_buf, ADC1_BUF_LENGTH);
   HAL_TIM_Base_Start(&htim3);
@@ -138,7 +138,8 @@ int main(void)
   while(1)
   {
    
-   FSM_run();
+   //FSM_run();
+   check_FIFO();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

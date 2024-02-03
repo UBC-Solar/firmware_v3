@@ -90,7 +90,7 @@ void BMS_powerup()
     else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH)
     {
         last_tick = HAL_GetTick();
-        FSM_state = WAIT_FOR_BMS_READY;
+        FSM_state = HV_CONNECT;
     }
     return;
 }
@@ -388,6 +388,8 @@ void ECU_monitor()
         return;
     }
 
+    //check_FIFO();
+
     /*************************
     Other Fault Checking
     **************************/
@@ -400,11 +402,11 @@ void ECU_monitor()
     //     return;
     // }
 
-    if (HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT)
-    {
-        FSM_state = FAULT;
-        return;
-    }
+    // if (HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT)
+    // {
+    //     FSM_state = FAULT;
+    //     return;
+    // }
 
     /*************************
     Check Battery Capacity

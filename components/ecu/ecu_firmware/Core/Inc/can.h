@@ -42,6 +42,7 @@ void CAN_Init(CAN_HandleTypeDef *hcan);
 void CAN_SendMessage450();
 void CAN_SendMessage1806E5F4();
 
+void check_FIFO();
 bool CAN_CheckRxMailbox(void);
 
 

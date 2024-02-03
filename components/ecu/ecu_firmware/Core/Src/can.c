@@ -54,17 +54,13 @@ static void initFilter0x18FF50E5(void);
  */
 void CAN_Init(CAN_HandleTypeDef *hcan)
 {
+
     memset((uint8_t *) &CAN_data, 0, sizeof(CAN_data));
 
     CAN_data.can_handle = hcan;
 
-    // Activate interrupt for completion of message transmission
-    if (HAL_CAN_ActivateNotification(CAN_data.can_handle, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
-    {
-        Error_Handler();
-    }
-
     initFilter0x18FF50E5();
+
     // any additional filter configuration functions should go here
 
     HAL_CAN_Start(CAN_data.can_handle);
@@ -144,6 +140,11 @@ void CAN_SendMessage1806E5F4()
     }
 }
 
+void check_FIFO()
+{
+    printf("FIFO: %d\r\n", HAL_CAN_GetRxFifoFillLevel(CAN_data.can_handle, CAN_FILTER_FIFO0));
+}
+
 /**
  * @brief return true if there is a message in the RX mailbox and incoming message ID matches filter ID
  *
@@ -156,7 +157,7 @@ bool CAN_CheckRxMailbox(void)
 
         if (HAL_CAN_GetRxMessage(CAN_data.can_handle, 0, (CAN_RxHeaderTypeDef *) &CAN_data.rx_message_0x18FF50E5.rx_header, (uint8_t *) CAN_data.rx_message_0x18FF50E5.data) != HAL_OK) // retrieve message
             {
-                    if (CAN_data.rx_message_0x18FF50E5.rx_header.StdId == OBC_STATUS_MESSAGE_ID)
+                    if (CAN_data.rx_message_0x18FF50E5.rx_header.ExtId == OBC_STATUS_MESSAGE_ID)
                         {
                             CAN_data.rx_message_0x18FF50E5.new_rx_message = true;                           
                         }
@@ -205,19 +206,20 @@ static void initFilter0x18FF50E5(void)
 
     CAN_FilterTypeDef filter_config;
 
-    filter_config.FilterActivation = CAN_FILTER_ENABLE;                 // enable filters
-    filter_config.SlaveStartFilterBank = 14;                            // only one CAN interface, parameter meaningless (all filter banks for the one controller)
-    filter_config.FilterBank = 0;                                       // settings applied for filterbank 0
-    filter_config.FilterFIFOAssignment = CAN_FILTER_FIFO0;              // rx'd message will be placed into this FIFO
-    filter_config.FilterMode = CAN_FILTERMODE_IDLIST;                   // identifier list mode
-    filter_config.FilterScale = CAN_FILTERSCALE_32BIT;                  // don't need double layer of filters (if rx'ing many messages with diff ID's, could use double layer of filters)
-    filter_config.FilterMaskIdHigh = (uint16_t)(OBC_MESSAGE_ID >> 16);          // ID upper 16 bits (not using mask), bit shift per bit order (see large comment above)
-    filter_config.FilterMaskIdLow = (uint16_t)OBC_MESSAGE_ID;   // ID lower 16 bits (not using mask), all 0 means standard ID, RTR mode = data
-    filter_config.FilterIdHigh = (uint16_t)(OBC_MESSAGE_ID >> 16);              // filter ID upper 16 bits (list mode, mask = ID)
-    filter_config.FilterIdLow = (uint16_t)OBC_MESSAGE_ID;       // filter ID lower 16 bits, all 0 means standard ID, RTR mode = data
+    filter_config.FilterActivation = CAN_FILTER_ENABLE;                         // enable filters
+    filter_config.SlaveStartFilterBank = 0;                                    // only one CAN interface, parameter meaningless (all filter banks for the one controller)
+    filter_config.FilterBank = 0;                                               // settings applied for filterbank 0
+    filter_config.FilterFIFOAssignment = CAN_FILTER_FIFO0;                      // rx'd message will be placed into this FIFO
+    filter_config.FilterMode = CAN_FILTERMODE_IDLIST;                           // identifier list mode
+    filter_config.FilterScale = CAN_FILTERSCALE_32BIT;                          // don't need double layer of filters (if rx'ing many messages with diff ID's, could use double layer of filters)
+    filter_config.FilterMaskIdHigh = 0xFFFF;          // ID upper 16 bits (not using mask), bit shift per bit order (see large comment above)
+    filter_config.FilterMaskIdLow = 0xFFFC;                   // ID lower 16 bits (not using mask), all 0 means standard ID, RTR mode = data
+    filter_config.FilterIdHigh = (OBC_MESSAGE_ID >> 13) & 0xFFFF;              // filter ID upper 16 bits (list mode, mask = ID)
+    filter_config.FilterIdLow = ((OBC_MESSAGE_ID << 3) & 0xFFF8) | 4;                       // filter ID lower 16 bits, all 0 means standard ID, RTR mode = data
 
     if (HAL_CAN_ConfigFilter(CAN_data.can_handle, &filter_config) != HAL_OK)
     {
         Error_Handler();
     }
+
 }
