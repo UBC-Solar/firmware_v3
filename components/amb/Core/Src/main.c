@@ -248,7 +248,7 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 //float volt2temp(uint32_t raw_value);
 float interpolate(float x, float x0, float x1, float y0, float y1);
-float getTemperature(float resistanceValue);
+float getTemperature(uint32_t raw_value);
 
 //uint32_t avgReading();
 //float log_float(float valueToConvert);
@@ -285,35 +285,35 @@ void Convert_Values(uint8_t index) {
 			break;
 		case TEMP_1:
 			/* TEMP_1 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((float)ADC_VALUES[index]);
+			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_2:
 			/* TEMP_2 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((float)ADC_VALUES[index]);
+			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_3:
 			/* TEMP_3 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((float)ADC_VALUES[index]);
+			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_4:
 			/* TEMP_4 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((float)ADC_VALUES[index]);
+			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_5:
 			/* TEMP_5 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((float)ADC_VALUES[index]);
+			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_6:
 			/* TEMP_6 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((float)ADC_VALUES[index]);
+			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_7:
 			/* TEMP_7 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((float)ADC_VALUES[index]);
+			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_8:
 			/* TEMP_8 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((float)ADC_VALUES[index]);
+			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
 			break;
 	}
 }
@@ -377,8 +377,20 @@ float interpolate(float x, float x0, float x1, float y0, float y1)
  * @param raw_value the raw thermistor value from the ADC
  * @return the float value for the converted temperature in Celsius
  */
-float getTemperature(float resistanceValue)
+float getTemperature(uint32_t raw_value)
 {
+
+	//Converting Raw ADC value to a resistance value in kOhm
+	const float R_balance = 3300; // from AMB PCB Schematic component R4.1 to R4.8
+	float V_therm = 0.0;
+	float R_therm = 0.0;
+	float Vout = 3.3; //Reference Voltage from Board
+	double temp_celsius = 0.0;
+
+    V_therm = 3.3 * raw_value / pow(2, 12); //Obtain the voltage from sensor
+	float resistanceValue = (float) (R_balance * ((Vout/V_therm) - 1))/1000; //convert voltage to kOhm
+
+
     // Find the index of the closest entry to reading
     int closestIndex = 0;
     double closestDiff = fabs(resistanceValue - lookupTable[0].resistanceValue);
