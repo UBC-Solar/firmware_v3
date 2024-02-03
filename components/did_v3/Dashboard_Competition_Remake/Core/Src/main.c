@@ -52,6 +52,8 @@
 #define LV_BASE 0x450
 #define FAULTS 0x622
 #define SIMULATION_SPEED 0x750
+#define PACK_VOLTAGE 0x623
+#define PACK_TEMP 0x625
 
 #define CRUISE_TARGET 234 // Placeholder values
 #define REGEN 543 // Placeholder values
@@ -95,6 +97,14 @@ union {
 	float float_var;
 	uint8_t chars[4];
 } u;
+
+union{
+	uint16_t int_var;
+	uint8_t chars[2];
+} u_u16_bytes;
+
+uint16_t pack_voltage;
+uint16_t pack_temperature;
 
 uint8_t recent_warnings[4]; // [LV Warn, HV Warn, LT Warn, HT Warn]
 uint8_t recent_faults[15]; // See BS Master BOM (0x622 Bits 0-12, 17, 18)
@@ -521,6 +531,19 @@ int main(void)
 				UpdateScreenTitles(PAGE_3);
 				switch(received_CAN_ID)
 				{
+					case (PACK_VOLTAGE):
+						u_u16_bytes.chars[0] = CAN_rx_data[0];
+						u_u16_bytes.chars[1] = CAN_rx_data[1];
+						tempInt32 = u_u16_bytes.int_var / 468;
+						UpdateScreenParameter(PACK_VOLT_DATA_XPOS, PACK_VOLT_DATA_YPOS, tempInt32, 0, FALSE); //displays the pack voltage
+						break;
+
+					case(PACK_TEMP):
+						tempInt32 = CAN_rx_data[3];
+						UpdateScreenParameter(PACK_TEMP_DATA_XPOS, PACK_TEMP_DATA_YPOS, tempInt32, 0, FALSE); //displays the pack temperature
+						break;
+
+
 					default:
 						// CAN message read is not part of the current page, Ignore.
 						break;

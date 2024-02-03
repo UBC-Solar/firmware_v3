@@ -409,13 +409,11 @@ void UpdateScreenTitles(uint8_t pageNum) {
 			/* Titles */
 			OutputString("PK T", PACK_TEMP_XPOS, PACK_TEMP_YPOS);
 			OutputString("PK V", PACK_VOLT_XPOS, PACK_VOLT_YPOS);
-			OutputString("CL LV", CELL_LV_XPOS, CELL_LV_YPOS);
-			OutputString("CL HV", CELL_HV_XPOS, CELL_HV_YPOS);
+
 			/* Units */
 			OutputString("C", PACK_TEMP_UNIT_XPOS, PACK_TEMP_UNIT_YPOS);
 			OutputString("V", PACK_VOLT_UNIT_XPOS, PACK_VOLT_UNIT_XPOS);
-			OutputString("V", CELL_LV_UNIT_XPOS, CELL_LV_UNIT_YPOS);
-			OutputString("V", CELL_HV_UNIT_XPOS, CELL_HV_UNIT_YPOS);
+
 			break;
 		default:
 			// Clear Screen
