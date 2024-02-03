@@ -29,14 +29,14 @@
  */
 void CanFilterSetup()
 {
-	// Messages received by the DID (0x622,0x623,0x624,0x625,0x501,0x503,0x50B,0x400, 0x401, 0x750,).
+	// Messages received by the DID (0x622,0x623,0x624,0x625,0x501,0x503,0x50B,0x400, 0x401, 0x403, 0x750,).
 
 	// Filter for 0x500 and 401 IDs in list mode
     CAN_filter0.FilterIdHigh = (uint16_t) (0x501 << 5);
     CAN_filter0.FilterMaskIdHigh = (uint16_t) (0x503 << 5);
 
     CAN_filter0.FilterIdLow = (uint16_t) (0x50B << 5);
-    CAN_filter0.FilterMaskIdLow = (uint16_t) (0x401 << 5);
+    CAN_filter0.FilterMaskIdLow = (uint16_t) (0x750 << 5);
 
     CAN_filter0.FilterFIFOAssignment = CAN_FILTER_FIFO0;
     CAN_filter0.FilterBank = (uint32_t) 0;
@@ -57,18 +57,19 @@ void CanFilterSetup()
     CAN_filter1.FilterScale = CAN_FILTERSCALE_16BIT;
     CAN_filter1.FilterActivation = CAN_FILTER_ENABLE;
 
-    // Remaining IDs filtered with list mode
+    // Filter for 0x400
     CAN_filter2.FilterIdHigh = (uint16_t) (0x400 << 5);
-    CAN_filter2.FilterMaskIdHigh = (uint16_t) (0x400 << 5);
+    CAN_filter2.FilterMaskIdHigh = (uint16_t) (0x401<< 5);
 
-    CAN_filter2.FilterIdLow = (uint16_t) (0x750 << 5);
-    CAN_filter2.FilterMaskIdLow = (uint16_t) (0x750 << 5);
+    CAN_filter2.FilterIdLow = (uint16_t) (0x403 << 5);
+    CAN_filter2.FilterMaskIdLow = (uint16_t) (0x403 << 5);
 
     CAN_filter2.FilterFIFOAssignment = CAN_FILTER_FIFO0;
     CAN_filter2.FilterBank = (uint32_t) 2;
     CAN_filter2.FilterMode = CAN_FILTERMODE_IDLIST;
     CAN_filter2.FilterScale = CAN_FILTERSCALE_16BIT;
     CAN_filter2.FilterActivation = CAN_FILTER_ENABLE;
+
 
 
 	// Configure reception filters
