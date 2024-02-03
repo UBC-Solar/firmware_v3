@@ -23,6 +23,8 @@ typedef struct NMEA_DATA {
     int satelliteCount; //number of satellites used in measurement
     int fix; // 1 = fix, 0 = no fix
     char lastMeasure[10]; // hhmmss.ss UTC of last successful measurement; time read from the GPS module
+    char date[7];
+    uint8_t RMC_Flag; // 0 or 1 to check for RMC message
 } GPS;
 /*******************************************************************************
  * @brief Parses NMEA data from the GPS module
