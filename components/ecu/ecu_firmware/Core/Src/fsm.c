@@ -373,7 +373,7 @@ void AMB_on()
  */
 void ECU_monitor()
 {
-
+    printf("ECU monitorng:\r\n");
     /*************************
     Current Fault Checking
     **************************/
@@ -402,11 +402,11 @@ void ECU_monitor()
     //     return;
     // }
 
-    // if (HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT)
-    // {
-    //     FSM_state = FAULT;
-    //     return;
-    // }
+    if (HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT)
+    {
+        FSM_state = FAULT;
+        return;
+    }
 
     /*************************
     Check Battery Capacity
@@ -441,6 +441,9 @@ void ECU_monitor()
     if (CAN_CheckRxMailbox())
     {
         CAN_SendMessage1806E5F4();
+
+        printf("message sent\r\n");
+
     }
 
     if (timer_check(MESSAGE_INTERVAL_0X450))
@@ -463,7 +466,7 @@ void ECU_monitor()
  */
 void fault()
 {    
-
+    printf("ECU Fault:\r\n");
     /*************************
     Put Pack in Safe State
     **************************/

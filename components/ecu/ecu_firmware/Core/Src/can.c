@@ -124,10 +124,10 @@ void CAN_SendMessage1806E5F4()
     static uint8_t charger_enable = 0;
     static uint8_t charger_switch = 0; //for now charger will always be outputting
 
-    txMessage.data[0] = (uint8_t) MAX_CHARGING_VOLTAGE;
-    txMessage.data[1] = (uint8_t) (MAX_CHARGING_VOLTAGE >> 8);
-    txMessage.data[2] = (uint8_t)MAX_CHARGING_CURRENT;
-    txMessage.data[3] = (uint8_t)(MAX_CHARGING_CURRENT >> 8);
+    txMessage.data[0] = (uint8_t) (MAX_CHARGING_VOLTAGE >> 8);
+    txMessage.data[1] = (uint8_t) MAX_CHARGING_VOLTAGE;
+    txMessage.data[2] = (uint8_t) (MAX_CHARGING_CURRENT>>8);
+    txMessage.data[3] = (uint8_t)(MAX_CHARGING_CURRENT);
     txMessage.data[4] = charger_switch; //Charger Switch: 0 = Close output (Voltage and current will flow), 1: Open output (Voltage and current will slowly drop to 0)
     txMessage.data[5] = charger_enable; //Charger Enable: 0 = OBC receives CAN message but will not close output even if byte 4 tells it to (stop/standby mode), 1: OBC will process request from byte 4 (start)
 
@@ -155,7 +155,7 @@ bool CAN_CheckRxMailbox(void)
     bool new_rx_message = CAN_data.rx_message_0x18FF50E5.new_rx_message;
     if (HAL_CAN_GetRxFifoFillLevel(CAN_data.can_handle, 0) >= 1){
 
-        if (HAL_CAN_GetRxMessage(CAN_data.can_handle, 0, (CAN_RxHeaderTypeDef *) &CAN_data.rx_message_0x18FF50E5.rx_header, (uint8_t *) CAN_data.rx_message_0x18FF50E5.data) != HAL_OK) // retrieve message
+        if (HAL_CAN_GetRxMessage(CAN_data.can_handle, 0, (CAN_RxHeaderTypeDef *) &CAN_data.rx_message_0x18FF50E5.rx_header, (uint8_t *) CAN_data.rx_message_0x18FF50E5.data) == HAL_OK) // retrieve message
             {
                     if (CAN_data.rx_message_0x18FF50E5.rx_header.ExtId == OBC_STATUS_MESSAGE_ID)
                         {
