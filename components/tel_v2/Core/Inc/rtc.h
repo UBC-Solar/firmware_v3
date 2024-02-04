@@ -1,13 +1,13 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    i2c.h
+  * @file    rtc.h
   * @brief   This file contains all the function prototypes for
-  *          the i2c.c file
+  *          the rtc.c file
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2023 STMicroelectronics.
+  * Copyright (c) 2024 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -18,8 +18,8 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __I2C_H__
-#define __I2C_H__
+#ifndef __RTC_H__
+#define __RTC_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,58 +29,25 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
+#include <time.h>
 
 /* USER CODE END Includes */
 
-extern I2C_HandleTypeDef hi2c1;
-
-extern I2C_HandleTypeDef hi2c2;
+extern RTC_HandleTypeDef hrtc;
 
 /* USER CODE BEGIN Private defines */
 
-#define IMU_DEVICE_ADDRESS ((0x6A)<<1)
-#define GPS_DEVICE_ADDRESS ((0x42)<<1)
-
 /* USER CODE END Private defines */
 
-void MX_I2C1_Init(void);
-void MX_I2C2_Init(void);
+void MX_RTC_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
-/* IMU -----------------------------------------------------------------------*/
-
-enum GyroType {
-    GYRO_X,
-    GYRO_Y,
-    GYRO_Z
-};
-
-enum AccelType {
-    ACCEL_X,
-    ACCEL_Y,
-    ACCEL_Z
-};
-
-
-typedef struct {
-  uint8_t imu_type;
-  uint8_t dimension;
-  uint8_t data[4];
-} IMU_msg_t;
-
-
-void initIMU(void);
-float gyro(enum GyroType type);
-float accel(enum AccelType type);
-
-
-
-/* GPS -----------------------------------------------------------------------*/
-typedef struct{
-  uint8_t data[150];
-} GPS_msg_t;
-
+void Sync_RTC_With_GPS(void);
+void getGPSDateTime(uint8_t *buffer, char *GPSTime, char *GPSDate, uint8_t *RTC_Sync_Flag);
+time_t get_current_timestamp();
+time_t convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate);
+int lastDayOfMonth(int month, int year);
 
 /* USER CODE END Prototypes */
 
@@ -88,5 +55,5 @@ typedef struct{
 }
 #endif
 
-#endif /* __I2C_H__ */
+#endif /* __RTC_H__ */
 

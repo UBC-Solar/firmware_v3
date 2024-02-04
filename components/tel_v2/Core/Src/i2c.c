@@ -262,7 +262,9 @@ void initIMU(void)
 //}
 
 void readNMEA(uint8_t *buffer){
-  HAL_I2C_Master_Receive(&hi2c1, GPS_DEVICE_ADDRESS, buffer, sizeof(buffer), HAL_MAX_DELAY);
+  if(HAL_I2C_IsDeviceReady(&hi2c1, GPS_DEVICE_ADDRESS, 1, HAL_MAX_DELAY) == HAL_OK) {
+      HAL_I2C_Master_Receive(&hi2c1, GPS_DEVICE_ADDRESS, buffer, sizeof(buffer), HAL_MAX_DELAY);
+  }
 }
 
 /* USER CODE END 1 */

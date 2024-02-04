@@ -27,13 +27,15 @@
 /* USER CODE BEGIN Includes */
 
 #include <stdio.h>
+#include <time.h>
 #include "can.h"
 #include "gpio.h"
 #include "spi.h"
 #include "usart.h"
 #include "i2c.h"
 #include "nmea_parse.h"
-#include "sdcard.h"     // From sdCardLib in "Libraries"
+#include "rtc.h"
+//#include "sdcard.h"     // From sdCardLib in "Libraries"
 
 /* USER CODE END Includes */
 
@@ -60,6 +62,9 @@ union FloatBytes {
     float float_value;
     uint8_t bytes[4];
 } FloatBytes;
+
+/* Use this MACRO to split the time stamp into individual bytes */
+#define TIMESTAMP_BYTE(i, timestamp) ((timestamp >> (i * 8)) & 0xFF);
 
 /* USER CODE END PD */
 
@@ -336,10 +341,13 @@ void transmit_CAN_task(void *argument)
     /* Initialize a CAN buffer */
     uint8_t can_buffer[CAN_BUFFER_LEN] = {0};
 
-    /* TIMESTAMP: 8 ASCII characters */
+    /* Get current epoch Time Stamp */
+    time_t current_timestamp = get_current_timestamp();
+
+    /* TIMESTAMP: 8 Bytes */
     for (uint8_t i=0; i<CAN_BUFFER_LEN - 14; i++) {
-      /* send 'D' as placeholder */
-      can_buffer[i] = 'D';
+      /* Put each byte in position 'i' */
+      can_buffer[i] = TIMESTAMP_BYTE(i, current_timestamp);
     }
 
     /* CAN MESSAGE IDENTIFIER */
@@ -374,9 +382,9 @@ void transmit_CAN_task(void *argument)
     HAL_UART_Transmit(&huart1, can_buffer, sizeof(can_buffer), 1000);
 
     /* TODO: Log to SDLogger */
-    FIL *can_file_ptr = sd_open("CAN_Messages.txt");
-    sd_append(can_file_ptr, can_buffer);    // Append can message to the SD card
-    sd_close(can_file_ptr);
+//    FIL *can_file_ptr = sd_open("CAN_Messages.txt");
+//    sd_append(can_file_ptr, can_buffer);    // Append can message to the SD card
+//    sd_close(can_file_ptr);
 
   }
 
@@ -456,10 +464,13 @@ void transmit_IMU_task(void *argument)
     /* Initialize a IMU buffer */
     uint8_t imu_buffer[IMU_MESSAGE_LEN] = {0};
 
-    /* TIMESTAMP */
+    /* Get current epoch Time Stamp */
+    time_t current_timestamp = get_current_timestamp();
+
+    /* TIMESTAMP: 8 Bytes */
     for (uint8_t i=0; i<IMU_MESSAGE_LEN - 9; i++) {
-      /* send 'D' as placeholder */
-      imu_buffer[i] = 'D';
+      /* Put each byte in position 'i' */
+      imu_buffer[i] = TIMESTAMP_BYTE(i, current_timestamp);
     }
 
     /* IMU ID */
@@ -484,9 +495,9 @@ void transmit_IMU_task(void *argument)
     HAL_UART_Transmit(&huart1, imu_buffer, sizeof(imu_buffer), 1000);
 
     /* TODO: Log to SDLogger */
-    FIL *imu_file_ptr = sd_open("IMU_Messages.txt");
-    sd_append(imu_file_ptr, imu_buffer);    // Append imu message to the SD card
-    sd_close(imu_file_ptr);
+//    FIL *imu_file_ptr = sd_open("IMU_Messages.txt");
+//    sd_append(imu_file_ptr, imu_buffer);    // Append imu message to the SD card
+//    sd_close(imu_file_ptr);
 
   }
 
@@ -562,11 +573,22 @@ void transmit_GPS_task(void *argument)
     }
 
     /* Initialize an NMEA buffer */
-    uint8_t gps_buffer[GPS_MESSAGE_LEN];
-    memset(gps_buffer, 0, sizeof(gps_buffer));
+    uint8_t gps_buffer[GPS_MESSAGE_LEN] = {0};
 
-    /* Copy the NMEA data into the buffer, ensuring not to exceed the buffer size */
-    strncpy((char *)gps_buffer, gps_message.data, GPS_MESSAGE_LEN - 2); // Save space for CR+LF
+    /* Get current epoch Time Stamp */
+    time_t current_timestamp = get_current_timestamp();
+
+    /* TIMESTAMP: 8 Bytes */
+    for (uint8_t i=0; i<8; i++) {
+      /* Put each byte in position 'i' */
+      gps_buffer[i] = TIMESTAMP_BYTE(i, current_timestamp);
+    }
+
+    /*
+     * Copy the NMEA data into the buffer, ensuring not to exceed the buffer size
+     * Adds 8 to the start to skip the time stamp
+     */
+    strncpy(gps_buffer + 8, gps_message.data, 150); // Save space for CR+LF
 
     /* NEW LINE */
     gps_buffer[GPS_MESSAGE_LEN - 2] = '\r'; // Carriage return
@@ -578,9 +600,9 @@ void transmit_GPS_task(void *argument)
     HAL_UART_Transmit(&huart1, gps_buffer, sizeof(gps_buffer), 1000);
 
     /* TODO: Log to SDLogger */
-    FIL *gps_file_ptr = sd_open("GPS_Messages.txt");
-    sd_append(gps_file_ptr, gps_buffer);    // Append gps message to the SD card
-    sd_close(gps_file_ptr);
+//    FIL *gps_file_ptr = sd_open("GPS_Messages.txt");
+//    sd_append(gps_file_ptr, gps_buffer);    // Append gps message to the SD card
+//    sd_close(gps_file_ptr);
 
   }
 

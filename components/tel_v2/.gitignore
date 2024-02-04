@@ -54,4 +54,4 @@ dkms.conf
 # Cyclomatic Complexity Analysis Results
 *.cyclo
 
-/Debug/
+Debug/
