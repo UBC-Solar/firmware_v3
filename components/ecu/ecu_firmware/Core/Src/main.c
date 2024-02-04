@@ -139,7 +139,7 @@ int main(void)
   {
    
    FSM_run();
-   //check_FIFO();
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

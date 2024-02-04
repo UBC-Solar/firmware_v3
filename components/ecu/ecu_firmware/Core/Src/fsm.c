@@ -64,7 +64,7 @@ void FSM_reset()
     // Read supplemental battery
     check_supp_voltage();
 
-    FSM_state = HV_CONNECT;
+    FSM_state = WAIT_FOR_BMS_POWERUP;
     last_tick = HAL_GetTick();
     return;
 }
@@ -90,7 +90,7 @@ void BMS_powerup()
     else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH)
     {
         last_tick = HAL_GetTick();
-        FSM_state = HV_CONNECT;
+        FSM_state = WAIT_FOR_BMS_READY;
     }
     return;
 }
@@ -110,8 +110,8 @@ void BMS_ready()
 {
      if (timer_check(BMS_STARTUP_INTERVAL))
      {
-         FSM_state = FAULT;
-     }
+        FSM_state = FAULT;
+     } 
      else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == LOW)
      {
         last_tick = HAL_GetTick();
@@ -373,77 +373,80 @@ void AMB_on()
  */
 void ECU_monitor()
 {
-    printf("ECU monitorng:\r\n");
     /*************************
     Current Fault Checking
     **************************/
-    if(HAL_GPIO_ReadPin(DOC_COC_GPIO_Port, DOC_COC_Pin) == DOC_COC_FAULT){
-        // ECUR1.0 has both DOC and COC or'd together
-        // Current threshold checking can be implemented once we understand the current sensor's characterization better
-        // Don't want to be in a state where HW has faulted but FW hasn't because ADC reading is off from hardware
-        ecu_data.status.bits.fault_charge_overcurrent = true;
-        ecu_data.status.bits.fault_discharge_overcurrent = true;
+    // if(HAL_GPIO_ReadPin(DOC_COC_GPIO_Port, DOC_COC_Pin) == DOC_COC_FAULT){
+    //     // ECUR1.0 has both DOC and COC or'd together
+    //     // Current threshold checking can be implemented once we understand the current sensor's characterization better
+    //     // Don't want to be in a state where HW has faulted but FW hasn't because ADC reading is off from hardware
+    //     ecu_data.status.bits.fault_charge_overcurrent = true;
+    //     ecu_data.status.bits.fault_discharge_overcurrent = true;
         
-        FSM_state = FAULT;
-        return;
-    }
-
-    //check_FIFO();
-
-    /*************************
-    Other Fault Checking
-    **************************/
-    // if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH || \
-    //     HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH || \
-    //     HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH || \
-    //     HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT)
-    // {
     //     FSM_state = FAULT;
     //     return;
     // }
 
-    if (HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT)
+    if(ecu_data.adc_data.ADC_batt_current >= DOC_THRESHOLD)
+    {
+        ecu_data.status.bits.fault_discharge_overcurrent = true;
+        FSM_state = FAULT;
+        return;
+    
+    }
+    else if(ecu_data.adc_data.ADC_batt_current <= COC_THRESHOLD)
+    {
+        ecu_data.status.bits.fault_charge_overcurrent = true;
+        FSM_state = FAULT;
+        return;
+    }
+
+    /*************************
+    Other Fault Checking
+    **************************/
+    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH || \
+        HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH || \
+        HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH || \
+        HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT)
     {
         FSM_state = FAULT;
         return;
     }
 
+
     /*************************
     Check Battery Capacity
     **************************/
-    // if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_HLIM_status == CONTACTOR_CLOSED)
-    // {
-    //     HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
-    //     last_HLIM_status = CONTACTOR_OPEN;
-    // }
-    // else if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_HLIM_status == CONTACTOR_OPEN)
-    // {
-    //     HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_CLOSED);
-    //     last_HLIM_status = CONTACTOR_CLOSED;
-    // }
-    // else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_LLIM_status == CONTACTOR_OPEN)
-    // {
-    //     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
-    //     last_tick = HAL_GetTick();
-    //     FSM_state = WAIT_FOR_PC;
-    //     return;
-    // }
-    // else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_LLIM_status == CONTACTOR_CLOSED)
-    // {
-    //     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
-    //     last_LLIM_status = CONTACTOR_OPEN;
-    // }
+    if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_HLIM_status == CONTACTOR_CLOSED)
+    {
+        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
+        last_HLIM_status = CONTACTOR_OPEN;
+    }
+    else if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_HLIM_status == CONTACTOR_OPEN)
+    {
+        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_CLOSED);
+        last_HLIM_status = CONTACTOR_CLOSED;
+    }
+    else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_LLIM_status == CONTACTOR_OPEN)
+    {
+        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
+        last_tick = HAL_GetTick();
+        FSM_state = WAIT_FOR_PC;
+        return;
+    }
+    else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_LLIM_status == CONTACTOR_CLOSED)
+    {
+        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
+        last_LLIM_status = CONTACTOR_OPEN;
+    }
 
 
     /*************************
     Send CAN Messages
     **************************/
-    if (CAN_CheckRxMailbox())
+    if (CAN_data.rx_message_0x18FF50E5.new_rx_message)
     {
         CAN_SendMessage1806E5F4();
-
-        printf("message sent\r\n");
-
     }
 
     if (timer_check(MESSAGE_INTERVAL_0X450))
@@ -466,19 +469,16 @@ void ECU_monitor()
  */
 void fault()
 {    
-    printf("ECU Fault:\r\n");
     /*************************
     Put Pack in Safe State
     **************************/
     HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, LOW);
-    
     HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(POS_CTRL_GPIO_Port, POS_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN); 
     HAL_GPIO_WritePin(MDI_CTRL_GPIO_Port, MDI_CTRL_Pin, LOW);
-
 
     /****************************
     Preform Perpetual Fault Tasks

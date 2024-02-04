@@ -76,6 +76,11 @@ static bool last_LLIM_status;
 #define REQ_CONTACTOR_OPEN HIGH
 
 /*============================================================================*/
+//  Threshold Values
+#define DOC_THRESHOLD 64500 //mA, induced 60A discharge
+#define COC_THRESHOLD -20500//mA, induced 21A charge
+
+/*============================================================================*/
 /* STATE MACHINE FUNCTIONS */
 
 void FSM_reset();

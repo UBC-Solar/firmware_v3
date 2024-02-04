@@ -118,6 +118,7 @@ void CAN_SendMessage1806E5F4()
     uint32_t begin_tick = HAL_GetTick();
     uint32_t tx_mailbox;
     CAN_TxMessage_t txMessage = {0};
+    txMessage.tx_header.IDE = CAN_ID_EXT;
     txMessage.tx_header.ExtId = 0x1806E5F4;
     txMessage.tx_header.DLC = 6U; //technically 8 bytes but last 2 are reserved, note this when testing
     HAL_StatusTypeDef status;
@@ -140,40 +141,32 @@ void CAN_SendMessage1806E5F4()
     }
 }
 
-void check_FIFO()
-{
-    printf("FIFO: %d\r\n", HAL_CAN_GetRxFifoFillLevel(CAN_data.can_handle, CAN_FILTER_FIFO0));
-}
-
 /**
  * @brief return true if there is a message in the RX mailbox and incoming message ID matches filter ID
  *
  * @returns Whether a CAN message has been received since the last time this function was called
  */
-bool CAN_CheckRxMailbox(void)
+void CAN_CheckRxMailbox(void)
 {
-    bool new_rx_message = CAN_data.rx_message_0x18FF50E5.new_rx_message;
-    if (HAL_CAN_GetRxFifoFillLevel(CAN_data.can_handle, 0) >= 1){
-
-        if (HAL_CAN_GetRxMessage(CAN_data.can_handle, 0, (CAN_RxHeaderTypeDef *) &CAN_data.rx_message_0x18FF50E5.rx_header, (uint8_t *) CAN_data.rx_message_0x18FF50E5.data) == HAL_OK) // retrieve message
+    if (HAL_CAN_GetRxFifoFillLevel(CAN_data.can_handle, 0) > 0)
+    {
+        if (HAL_CAN_GetRxMessage(CAN_data.can_handle, 0, (CAN_RxHeaderTypeDef *) &CAN_data.rx_message_0x18FF50E5.rx_header, (uint8_t *) CAN_data.rx_message_0x18FF50E5.data) != HAL_OK) // retrieve message
             {
-                    if (CAN_data.rx_message_0x18FF50E5.rx_header.ExtId == OBC_STATUS_MESSAGE_ID)
-                        {
-                            CAN_data.rx_message_0x18FF50E5.new_rx_message = true;                           
-                        }
-
-                    else {
-                        CAN_data.rx_message_0x18FF50E5.new_rx_message = false;
-                    }
+                    CAN_data.rx_message_0x18FF50E5.new_rx_message = false;
+                    Error_Handler();
             }
-    }
-
-    else {
-        CAN_data.rx_message_0x18FF50E5.new_rx_message = false;
-    }
+        
+        if (CAN_data.rx_message_0x18FF50E5.rx_header.ExtId == OBC_STATUS_MESSAGE_ID)
+        {
+            CAN_data.rx_message_0x18FF50E5.new_rx_message = true;                           
+        }
+        else 
+        {
+            CAN_data.rx_message_0x18FF50E5.new_rx_message = false;
+        }
+    }  
 
     CAN_data.rx_message_0x18FF50E5.timestamp = HAL_GetTick();
-    return new_rx_message;
 }
 
 
