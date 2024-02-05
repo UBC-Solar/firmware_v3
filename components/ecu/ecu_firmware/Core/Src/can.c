@@ -186,7 +186,7 @@ void CAN_CheckRxMessages(uint32_t rx_fifo)
  */
 bool CAN_CheckRxChargerMessage()
 {
-    if (CAN_data.new_charger_msg_received = true)
+    if (CAN_data.new_charger_msg_received)
     {
         CAN_data.new_charger_msg_received = false;
         return true;
