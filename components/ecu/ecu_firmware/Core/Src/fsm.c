@@ -521,7 +521,7 @@ void fault()
 /*============================================================================*/
 /* NON-STATE FUNCTIONS */
 
-void FSM_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
+void FSM_ADC_LevelOutOfWindowCallback()
 {
     FSM_state = FAULT;
     FSM_run(); // Immediately transition to fault state

@@ -162,7 +162,6 @@ void CAN_CheckRxMessages(uint32_t rx_fifo)
     rx_fifo_fill_level = HAL_CAN_GetRxFifoFillLevel(CAN_data.can_handle, rx_fifo);
     if (rx_fifo_fill_level > 0)
     {
-        // Retrieve and store pending messages
         for (int i = 0; i < rx_fifo_fill_level; i++)
         {
             // Retrieve message
@@ -171,7 +170,7 @@ void CAN_CheckRxMessages(uint32_t rx_fifo)
                 Error_Handler();
             }
 
-            // Preform checks/storing on retrieved message
+            // Preform checks/store retrieved message
             if (CAN_data.rx_message.rx_header.ExtId == CHARGER_STATUS_MESSAGE_ID)
             {
                 CAN_data.new_charger_msg_received = true;
