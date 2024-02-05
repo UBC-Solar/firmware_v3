@@ -42,28 +42,18 @@ typedef enum
 } FSM_state_t;
 
 /*============================================================================*/
-/* GLOBAL VARIABLES */
-
-static unsigned int last_tick;
-static FSM_state_t FSM_state;
-static bool LVS_ALREADY_ON = false;
-static bool last_HLIM_status;
-static bool last_LLIM_status;
-
-/*============================================================================*/
 /* DEFINED CONSTANTS */
 
 // Time intervals are in milliseconds
 #define BMS_STARTUP_INTERVAL 5000
-#define MESSAGE_INTERVAL_0X1806E5F4 1000
 #define MESSAGE_INTERVAL_0X450 200
 #define MDU_DCH_INTERVAL 500
-#define SHORT_INTERVAL 300
-#define MDU_PC_INTERVAL 705 
+#define SHORT_INTERVAL 200
+#define MDU_PC_INTERVAL 705
 #define FLT_BLINK_INTERVAL 200
-#define LVS_INTERVAL 200
+#define LVS_INTERVAL 100
 
-#define SUPP_LIMIT 10500 //mV
+#define SUPP_LIMIT 10500 // mV
 #define DOC_COC_FAULT 0
 #define ESTOP_ACTIVE_FAULT 0
 #define LOW false
@@ -77,8 +67,8 @@ static bool last_LLIM_status;
 
 /*============================================================================*/
 //  Threshold Values
-#define DOC_THRESHOLD 64500 //mA, induced 60A discharge
-#define COC_THRESHOLD -20500//mA, induced 21A charge
+#define DOC_THRESHOLD 64500  // mA, induced 60A discharge
+#define COC_THRESHOLD -20500 // mA, induced 21A charge
 
 /*============================================================================*/
 /* STATE MACHINE FUNCTIONS */
@@ -125,7 +115,12 @@ static void (*FSM_state_table[])(void) = {
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
+
+// FSM
 void FSM_Init();
 void FSM_run();
+
+// ADC
+void FSM_ADC_LevelOutOfWindowCallback();
 
 #endif /* __FSM_H */
