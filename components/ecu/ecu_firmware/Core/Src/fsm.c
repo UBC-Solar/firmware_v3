@@ -80,7 +80,7 @@ void FSM_reset()
     // Read supplemental battery
     check_supp_voltage();
 
-    FSM_state = WAIT_FOR_BMS_POWERUP;
+    FSM_state = HV_CONNECT;
     last_generic_tick = HAL_GetTick();
     return;
 }
@@ -168,6 +168,7 @@ void HV_Connect()
  */
 void swap_DCDC()
 {
+    printf("beginning of SWAP\r\n");
     HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, HIGH);
 
     HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, HIGH);
@@ -176,6 +177,8 @@ void swap_DCDC()
     HAL_GPIO_WritePin(FAN4_CTRL_GPIO_Port, FAN4_CTRL_Pin, HIGH);
 
     HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, HIGH);
+
+    printf("end of SWAP\r\n");
 
     FSM_state = DISABLE_MDU_DCH;
     return;
@@ -190,12 +193,14 @@ void swap_DCDC()
  */
 void disable_MDU_DCH()
 {
-
+    
     if (timer_check(SHORT_INTERVAL, &last_generic_tick))
     {
         HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, LOW);
         FSM_state = CHECK_LLIM;
     }
+
+    printf("end of MDU dch\r\n");
 
     return;
 }
@@ -225,6 +230,8 @@ void check_LLIM()
         FSM_state = WAIT_FOR_PC;
     }
 
+    printf("end of check LLIM\r\n");
+
     return;
 }
 
@@ -237,12 +244,16 @@ void check_LLIM()
  */
 void PC_wait()
 {
+    printf("start of PC state\r\n");
     if (timer_check(MDU_PC_INTERVAL, &last_generic_tick))
     {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
         last_LLIM_status = CONTACTOR_CLOSED;
         FSM_state = LLIM_CLOSED;
     }
+
+    printf("end of PC wait\r\n");
+
     return;
 }
 
@@ -276,6 +287,7 @@ void LLIM_closed()
  */
 void check_HLIM()
 {
+    printf("start of check HLIM\r\n");
     if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN)
     {
         last_HLIM_status = CONTACTOR_OPEN;
@@ -294,6 +306,9 @@ void check_HLIM()
     {
         FSM_state = TELEM_ON;
     }
+
+    printf("end of check HLIM\r\n");
+
     return;
 }
 
@@ -310,6 +325,9 @@ void TELEM_on()
         HAL_GPIO_WritePin(TEL_CTRL_GPIO_Port, TEL_CTRL_Pin, HIGH);
         FSM_state = DASH_ON;
     }
+
+    printf("end of TELEM on\r\n");
+
     return;
 }
 
@@ -327,6 +345,9 @@ void DASH_on()
         HAL_GPIO_WritePin(DID_CTRL_GPIO_Port, DID_CTRL_Pin, HIGH);
         FSM_state = MCB_ON;
     }
+
+    printf("end of DASH on\r\n");
+
     return;
 }
 
@@ -344,6 +365,9 @@ void MCB_on()
         HAL_GPIO_WritePin(MCB_CTRL_GPIO_Port, MCB_CTRL_Pin, HIGH);
         FSM_state = MDU_ON;
     }
+
+    printf("end of MCB on\r\n");
+
     return;
 }
 
@@ -360,6 +384,9 @@ void MDU_on()
         HAL_GPIO_WritePin(MDI_CTRL_GPIO_Port, MDI_CTRL_Pin, HIGH);
         FSM_state = AMB_ON;
     }
+
+    printf("end of MDU on\r\n");
+
     return;
 }
 
@@ -371,12 +398,18 @@ void MDU_on()
  */
 void AMB_on()
 {
+
+    printf("start of AMB on\r\n");
+
     if (timer_check(LVS_INTERVAL, &last_generic_tick))
     {
         HAL_GPIO_WritePin(AMB_CTRL_GPIO_Port, AMB_CTRL_Pin, HIGH);
         LVS_ALREADY_ON = true;
         FSM_state = MONITORING;
     }
+
+    printf("end of AMB on \r\n");
+
     return;
 }
 
@@ -419,11 +452,17 @@ void ECU_monitor()
     /*************************
     Other Fault Checking
     **************************/
-    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH ||
-        HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH ||
-        HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH ||
-        HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT)
-    {
+    // if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH ||
+    //     HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH ||
+    //     HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH ||
+    //     HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT)
+    // {
+    //     FSM_state = FAULT;
+    //     return;
+    // }
+
+    
+    if(HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT){
         FSM_state = FAULT;
         return;
     }
@@ -431,28 +470,30 @@ void ECU_monitor()
     /*************************
     Check Battery Capacity
     **************************/
-    if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_HLIM_status == CONTACTOR_CLOSED)
-    {
-        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
-        last_HLIM_status = CONTACTOR_OPEN;
-    }
-    else if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_HLIM_status == CONTACTOR_OPEN)
-    {
-        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_CLOSED);
-        last_HLIM_status = CONTACTOR_CLOSED;
-    }
-    else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_LLIM_status == CONTACTOR_OPEN)
-    {
-        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
-        last_generic_tick = HAL_GetTick();
-        FSM_state = WAIT_FOR_PC;
-        return;
-    }
-    else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_LLIM_status == CONTACTOR_CLOSED)
-    {
-        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
-        last_LLIM_status = CONTACTOR_OPEN;
-    }
+    // if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_HLIM_status == CONTACTOR_CLOSED)
+    // {
+    //     HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
+    //     last_HLIM_status = CONTACTOR_OPEN;
+    // }
+    // else if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_HLIM_status == CONTACTOR_OPEN)
+    // {
+    //     HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_CLOSED);
+    //     last_HLIM_status = CONTACTOR_CLOSED;
+    // }
+    // else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_LLIM_status == CONTACTOR_OPEN)
+    // {
+    //     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
+    //     last_generic_tick = HAL_GetTick();
+    //     FSM_state = WAIT_FOR_PC;
+    //     return;
+    // }
+    // else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_LLIM_status == CONTACTOR_CLOSED)
+    // {
+    //     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
+    //     last_LLIM_status = CONTACTOR_OPEN;
+    // }
+
+    // printf("Current Sensor voltage: %d\r\n", ecu_data.adc_data.ADC_batt_current_rawvoltage);
 
     /*************************
     Send CAN Messages

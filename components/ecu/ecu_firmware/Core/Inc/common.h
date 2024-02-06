@@ -43,6 +43,8 @@ typedef struct{
     uint16_t ADC_lvs_offset; //stores low voltage system current offset
     uint16_t ADC_spare_curr_offset; //stores spare current source offset
 
+    uint16_t ADC_batt_current_rawvoltage;
+
 } ECU_ADC_Data_t;
 
 typedef struct{
