@@ -362,6 +362,7 @@ int main(void)
 		else if( (HAL_GetTick() - lastPageTime) > PAGE_TIMEOUT )
 		{
 			current_page = PAGE_0;
+			ClearScreen();
 		}
 
 		// Switch by page
@@ -399,12 +400,14 @@ int main(void)
 						u.chars[3] = CAN_rx_data[7];
 
 						u.float_var = u.float_var * -3.6;
-						tempInt32 = (int32_t) u.float_var;
+
 
 						if (u.float_var < 0)
 						{
 							u.float_var = u.float_var * -1;
 						}
+
+						tempInt32 = (int32_t) u.float_var;
 //						UpdateScreenParameter(SPEED_DATA_XPOS, SPEED_DATA_YPOS, -45, 7, TRUE);
 						UpdateScreenParameter(SPEED_DATA_XPOS, SPEED_DATA_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10, TRUE);
 						break;
