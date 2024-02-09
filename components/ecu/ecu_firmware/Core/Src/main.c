@@ -80,7 +80,6 @@ static void MX_TIM3_Init(void);
 
 void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
 {
-  // HAL_GPIO_WritePin(GPIO_BMS_GPIO_Port, GPIO_BMS_Pin, HIGH);
   FSM_ADC_LevelOutOfWindowCallback();
 }
 
