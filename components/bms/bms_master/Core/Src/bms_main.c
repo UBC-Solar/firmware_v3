@@ -160,10 +160,10 @@ void BMS_MAIN_updatePackData(Pack_t *pack)
     // Check for new ECU CAN message
     new_ecu_can_message_received = CAN_GetMessage0x450Data(&pack_current, &low_voltage_current, &overcurrent_detected, &ecu_can_rx_timestamp);
 
-    if (new_ecu_can_message_received && overcurrent_detected)
-    {
-        pack->status.bits.fault_over_current = true; // set FLT_DOC_COC bit
-    }
+    // if (new_ecu_can_message_received && overcurrent_detected)
+    // {
+    //     pack->status.bits.fault_over_current = true; // set FLT_DOC_COC bit
+    // }
 
     pack->status.bits.warning_no_ecu_message = !new_ecu_can_message_received;
 
@@ -195,6 +195,9 @@ void BMS_MAIN_updatePackData(Pack_t *pack)
         {
             SOC_allModulesEst(pack, pack_current, ecu_can_rx_timestamp);
         }
+
+        UTIL_printModuleVoltages(pack);
+        UTIL_printModuleTemps(pack);
 
         // write pack status code
         ANA_analyzePack(pack);

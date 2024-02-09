@@ -34,10 +34,10 @@ void CONT_init(TIM_HandleTypeDef *timer_handle, uint32_t timer_pwm_channel)
 
     CONT_BAL_switch(false);
     CONT_COM_switch(false);
-    CONT_FLT_switch(false);
-    CONT_HLIM_switch(false);
-    CONT_LLIM_switch(false);
-    CONT_OT_switch(false);
+    CONT_FLT_switch(true);          // ECU expects it to be HIGH on startup
+    CONT_HLIM_switch(true);
+    CONT_LLIM_switch(true);
+    CONT_OT_switch(true);
 
     CONT_FAN_PWM_set(0);
     HAL_TIM_PWM_Start(CONT_data.timer_handle, CONT_data.timer_pwm_channel);
