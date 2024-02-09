@@ -196,9 +196,6 @@ void BMS_MAIN_updatePackData(Pack_t *pack)
             SOC_allModulesEst(pack, pack_current, ecu_can_rx_timestamp);
         }
 
-        UTIL_printModuleVoltages(pack);
-        UTIL_printModuleTemps(pack);
-
         // write pack status code
         ANA_analyzePack(pack);
     }
