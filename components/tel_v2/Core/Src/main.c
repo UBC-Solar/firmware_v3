@@ -115,8 +115,10 @@ int main(void)
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
 
-  /* Sync the RTC with GPS */
-  Sync_RTC_With_GPS();
+  /* Sync the RTC with GPS if GPIO is set to high*/
+  if (HAL_GPIO_ReadPin(RTC_SYNC_GPIO_Port, RTC_SYNC_Pin) == GPIO_PIN_SET) {
+      Sync_RTC_With_GPS();
+  }
 
   Can_Init();
   initIMU();
