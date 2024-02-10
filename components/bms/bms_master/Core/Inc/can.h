@@ -59,10 +59,9 @@ typedef union {
 
 typedef struct{
     
-    uint8_t lvs_current; //stores current for the LVS system (mA), max value 30A,
-    int16_t batt_current;//(mA), max 100A
+    int16_t batt_current; //Signed pack current scaled, to get in current in A divide by 65.535, max 100A
 
-    uint16_t supp_batt_volt; //stores supplemental battery voltage readings
+    uint16_t supp_batt_volt; //Unsigned supplemental battery voltage scaled, divide by 1000 to get voltage in V
 
 } ECU_ADC_Data_t;
 

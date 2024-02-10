@@ -16,7 +16,7 @@
 /* FUNCTION PROTOTYPES */
 
 void BMS_MAIN_startupChecks(Pack_t *pack);
-void BMS_MAIN_updatePackData(Pack_t *pack);
+void BMS_MAIN_updatePackData(Pack_t *pack, ECU_Data_t *ecu_data);
 void BMS_MAIN_driveOutputs(Pack_t *pack);
 void BMS_MAIN_sendCanMessages(Pack_t *pack);
 
