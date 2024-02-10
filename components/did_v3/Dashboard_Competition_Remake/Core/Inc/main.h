@@ -41,6 +41,7 @@ extern "C" {
 extern CAN_FilterTypeDef CAN_filter0;
 extern CAN_FilterTypeDef CAN_filter1;
 extern CAN_FilterTypeDef CAN_filter2;
+extern CAN_FilterTypeDef CAN_filter3;
 
 extern CAN_RxHeaderTypeDef CAN_rx_header;
 

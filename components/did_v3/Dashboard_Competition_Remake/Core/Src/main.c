@@ -79,6 +79,7 @@
 CAN_FilterTypeDef CAN_filter0;
 CAN_FilterTypeDef CAN_filter1;
 CAN_FilterTypeDef CAN_filter2;
+CAN_FilterTypeDef CAN_filter3;
 
 CAN_RxHeaderTypeDef CAN_rx_header;
 uint8_t CAN_rx_data[8];
