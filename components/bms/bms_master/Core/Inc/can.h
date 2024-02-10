@@ -32,7 +32,7 @@ void CAN_SendMessages627(Pack_t *pack);
 void CAN_SendMessages628(Pack_t *pack);
 void CAN_SendMessages629(Pack_t *pack);
 
-bool CAN_GetMessage0x450Data(int16_t *pack_current, uint16_t *supp_batt_volt, uint8_t *ecu_status, uint32_t *rx_timestamp);
+bool CAN_GetMessage0x450Data(uint32_t *rx_timestamp);
 
 void CAN_RecievedMessageCallback(void);
 void CAN_TxCompleteCallback(void);
