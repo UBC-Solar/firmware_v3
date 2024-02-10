@@ -170,8 +170,12 @@ int main(void)
   BTM_init(&hspi2); // initialize the LTC6813s and driver state
 
   BMS_MAIN_startupChecks(&pack);
-  /* USER CODE END 2 */
 
+  HAL_GPIO_WritePin(CONT_FLT_PORT, CONT_FLT_PIN, SET);
+  HAL_Delay(500);
+  HAL_GPIO_WritePin(CONT_FLT_PORT, CONT_FLT_PIN, RESET);
+
+  /* USER CODE END 2 */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)

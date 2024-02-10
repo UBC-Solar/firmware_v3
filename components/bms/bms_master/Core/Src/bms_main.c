@@ -197,6 +197,7 @@ void BMS_MAIN_updatePackData(Pack_t *pack)
         }
 
         // write pack status code
+
         ANA_analyzePack(pack);
     }
 }
@@ -240,7 +241,9 @@ void BMS_MAIN_driveOutputs(Pack_t *pack)
             max_temp = ANA_findHighestModuleTemp(pack);
             fan_PWM = CONT_fanPwmFromTemp(max_temp);
         }
+
         CONT_FAN_PWM_set(fan_PWM);
+
     }
 }
 
