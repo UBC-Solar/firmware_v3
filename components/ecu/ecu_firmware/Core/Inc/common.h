@@ -23,9 +23,8 @@ typedef union {
         bool fault_discharge_overcurrent : 1;         // FLT_DOC
         bool fault_charge_overcurrent : 1;            // FLT_COC
 
-        bool estop : 1;                               // Active High: ESTOP pressed
-
         bool reset_from_watchdog : 1;
+        bool estop : 1;                               // Active High: ESTOP pressed
 
         uint8_t _reserved : 2;
     } bits;
