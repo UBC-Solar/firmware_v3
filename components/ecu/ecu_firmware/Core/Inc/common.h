@@ -52,7 +52,6 @@ typedef struct{
     ECU_StatusCode_t status;
     ECU_ADC_Data_t adc_data;
     
-
 } ECU_Data_t;
 
 /*============================================================================*/
