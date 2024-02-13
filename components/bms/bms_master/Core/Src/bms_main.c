@@ -24,6 +24,10 @@
 #include "selftest.h"
 
 /*============================================================================*/
+/* PRIVATE VARIABLES */
+static ECU_Data_t ecu_data = {0};
+
+/*============================================================================*/
 /* PRIVATE FUNCTION DEFINITIONS */
 
 /**
@@ -149,21 +153,19 @@ void BMS_MAIN_startupChecks(Pack_t *pack)
 void BMS_MAIN_updatePackData(Pack_t *pack)
 {
     // ECU CAN Message
-    int8_t pack_current = 0;
-    uint8_t low_voltage_current = 0;
-    bool overcurrent_detected = 0;
     uint32_t ecu_can_rx_timestamp = 0;
     bool new_ecu_can_message_received;
+    int32_t pack_current_unscaled; //(Amps)
     // Other
     static bool soc_initialized = false;
 
     // Check for new ECU CAN message
-    new_ecu_can_message_received = CAN_GetMessage0x450Data(&pack_current, &low_voltage_current, &overcurrent_detected, &ecu_can_rx_timestamp);
+    new_ecu_can_message_received = CAN_GetMessage0x450Data(&ecu_can_rx_timestamp, &ecu_data);
 
-    // if (new_ecu_can_message_received && overcurrent_detected)
-    // {
-    //     pack->status.bits.fault_over_current = true; // set FLT_DOC_COC bit
-    // }
+    if (new_ecu_can_message_received && ((ecu_data.status.bits.fault_charge_overcurrent || ecu_data.status.bits.fault_discharge_overcurrent) == true))
+    {
+        pack->status.bits.fault_over_current = true; // set FLT_DOC_COC bit
+    }
 
     pack->status.bits.warning_no_ecu_message = !new_ecu_can_message_received;
 
@@ -193,7 +195,8 @@ void BMS_MAIN_updatePackData(Pack_t *pack)
         }
         else if (new_ecu_can_message_received)
         {
-            SOC_allModulesEst(pack, pack_current, ecu_can_rx_timestamp);
+            pack_current_unscaled = ecu_data.adc_data.batt_current / 65.535;
+            SOC_allModulesEst(pack, pack_current_unscaled, ecu_can_rx_timestamp);
         }
 
         // write pack status code
@@ -213,8 +216,13 @@ void BMS_MAIN_driveOutputs(Pack_t *pack)
     float max_temp = 0;
 
     // if any fault active, drive FLT, COM, OT GPIOs, turn off balancing, drive fans 100%
-    if (PACK_ANY_FAULTS_SET(pack->status))
+    if (PACK_ANY_FAULTS_SET(pack->status) || ecu_data.status.bits.estop == true)
     {
+        // We want to visualize this on Grafana, so we are setting HLIM and LLIM Status high
+        // if there is any fault or estop is pressed
+        pack->status.bits.hlim = 1;
+        pack->status.bits.llim = 1;
+
         CONT_FLT_switch(true);
         CONT_COM_switch(pack->status.bits.fault_communications);
         CONT_OT_switch(pack->status.bits.fault_over_temperature);

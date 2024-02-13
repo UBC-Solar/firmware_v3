@@ -443,23 +443,30 @@ void CAN_SendMessages629(Pack_t * pack)
 /**
  * @brief Getter for data contained in the last received ECU current data CAN message
  * 
- * @param[out] pack_current Signed pack current in amps
- * @param[out] low_voltage_current Signed low voltage circuits current; LSB = (30/255) amps
- * @param[out] overcurrent_status True if discharge or charge over-current condition has been triggered
+ * @param batt_current Signed pack current scaled, to get in current in A divide by 65.535
+ * @param supp_batt_volt Unsigned supplemental battery voltage scaled, divide by 1000 to get voltage in V
+ * @param status Refer to Solar CAN ID Excel Sheet for specifics on each bit, last 3 bits are reserved
  * @param[out] rx_timestamp Time since board power on in ms at which last ECU CAN message was received
  * @returns Whether a CAN message has been received (and there is new data) since the last time this function was called
 */
-bool CAN_GetMessage0x450Data(int8_t *pack_current, uint8_t *low_voltage_current, bool *overcurrent_status, uint32_t *rx_timestamp)
+bool CAN_GetMessage0x450Data(uint32_t *rx_timestamp, ECU_Data_t *ecu_data)
 {
+
     HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section - do not want a CAN RX complete interrupt to be serviced during this function call
     bool new_rx_message = CAN_data.rx_message_0x450.new_rx_message;
-    CAN_data.rx_message_0x450.new_rx_message = false;
 
-    *pack_current = (int8_t) CAN_data.rx_message_0x450.data[0];
-    *low_voltage_current = CAN_data.rx_message_0x450.data[1];
-    *overcurrent_status = CAN_data.rx_message_0x450.data[2] & 0x1U;
-    *rx_timestamp = CAN_data.rx_message_0x450.timestamp;
+    if(new_rx_message == true){
 
+        CAN_data.rx_message_0x450.new_rx_message = false;
+
+        ecu_data->adc_data.batt_current = ((int16_t)(CAN_data.rx_message_0x450.data[1])) << 8  | (int16_t)(CAN_data.rx_message_0x450.data[0]);
+        ecu_data->adc_data.supp_batt_volt = ((uint8_t)(CAN_data.rx_message_0x450.data[3])) << 8 | (uint16_t)(CAN_data.rx_message_0x450.data[2]);
+        ecu_data->adc_data.lvs_current = (int8_t) CAN_data.rx_message_0x450.data[4];        
+        ecu_data->status.raw = CAN_data.rx_message_0x450.data[5];
+        *rx_timestamp = CAN_data.rx_message_0x450.timestamp;
+
+    }
+    
     HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section
     return new_rx_message;
 }
