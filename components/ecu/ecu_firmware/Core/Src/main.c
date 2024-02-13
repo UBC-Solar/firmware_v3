@@ -80,7 +80,7 @@ static void MX_TIM3_Init(void);
 
 void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
 {
-  FSM_ADC_LevelOutOfWindowCallback();
+  // FSM_ADC_LevelOutOfWindowCallback();
 }
 
 /* USER CODE END 0 */
@@ -108,6 +108,8 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
+
+  HAL_Delay(100); // add delay to allow current sensor power supply to stabilize
 
   /* USER CODE END SysInit */
 

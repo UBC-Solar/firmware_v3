@@ -67,8 +67,9 @@ typedef enum
 
 /*============================================================================*/
 //  Threshold Values
-#define DOC_THRESHOLD 64500  // mA, induced 60A discharge
-#define COC_THRESHOLD -20500 // mA, induced 21A charge
+
+#define DOC_WARNING_THRESHOLD 55000 // mA
+#define COC_WARNING_THRESHOLD -18000 // mA
 
 /*============================================================================*/
 /* STATE MACHINE FUNCTIONS */

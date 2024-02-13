@@ -90,14 +90,14 @@ void CAN_SendMessage450()
     HAL_StatusTypeDef status;
 
     int16_t batt_current_rescaled = (int16_t)((ecu_data.adc_data.ADC_batt_current * (int16_t)MESSAGE_450_BATT_CURRENT_SCALE_FACTOR) / (int16_t)BATT_CURRENT_LSB_PER_V); // must cast scale_factor and BATT_CURRENT_LSB_PER_V as int16_t or else conversion will not work
-    // uint8_t lvs_current_rescaled = (uint8_t)((ecu_data.adc_data.ADC_lvs_current * MESSAGE_450_LVS_CURRENT_SCALE_FACTOR) / LVS_CURRENT_LSB_PER_V); //Tigran says not needed, unsure why but will comment out for now
+    uint8_t lvs_current_rescaled = (uint8_t)((ecu_data.adc_data.ADC_lvs_current * MESSAGE_450_LVS_CURRENT_SCALE_FACTOR) / LVS_CURRENT_LSB_PER_V);
 
     txMessage.data[0] = (uint8_t)batt_current_rescaled;
     txMessage.data[1] = (uint8_t)(batt_current_rescaled) >> 8;
-    // txMessage.data[2] = lvs_current_rescaled; // Tigran says not needed, unsure why but will comment out for now
     txMessage.data[2] = (uint8_t)ecu_data.adc_data.ADC_supp_batt_volt;
     txMessage.data[3] = (uint8_t)(ecu_data.adc_data.ADC_supp_batt_volt) >> 8;
-    txMessage.data[4] = (uint8_t)ecu_data.status.raw;
+    txMessage.data[4] = (uint8_t)lvs_current_rescaled;
+    txMessage.data[5] = (uint8_t)ecu_data.status.raw;
 
     do
     {

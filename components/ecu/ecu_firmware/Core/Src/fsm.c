@@ -109,7 +109,6 @@ void BMS_powerup()
         last_generic_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_BMS_READY;
     }
-    printf("end of BMS powerup\r\n");
     return;
 }
 
@@ -426,7 +425,19 @@ void AMB_on()
 void ECU_monitor()
 {
 
-    printf("start of monitoring state\r\n");
+    // Current Status Checks
+    if(ecu_data.adc_data.ADC_batt_current >= DOC_WARNING_THRESHOLD){
+        ecu_data.status.bits.warning_pack_overdischarge_current = true;
+        ecu_data.status.bits.warning_pack_overcharge_current = false;
+    }
+    else if(ecu_data.adc_data.ADC_batt_current <= COC_WARNING_THRESHOLD){
+        ecu_data.status.bits.warning_pack_overdischarge_current = false;
+        ecu_data.status.bits.warning_pack_overcharge_current = true;
+    }
+    else{
+        ecu_data.status.bits.warning_pack_overdischarge_current = false;
+        ecu_data.status.bits.warning_pack_overcharge_current = false;
+    }
 
     /*************************
     BMS and ESTOP Fault Checking
@@ -439,12 +450,6 @@ void ECU_monitor()
         FSM_state = FAULT;
         return;
     }
-
-    
-    // if(HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT){
-    //     FSM_state = FAULT;
-    //     return;
-    // }
 
     /*************************
     Check Battery Capacity
@@ -505,8 +510,7 @@ void ECU_monitor()
 void fault()
 {
 
-    // printf("start of fault state \r\n");
-    printf("current %d\r\n", ecu_data.adc_data.ADC_batt_current);
+    printf("fault\r\n");
 
     /*************************
     Put Pack in Safe State

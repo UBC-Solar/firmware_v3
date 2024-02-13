@@ -17,15 +17,17 @@
 
 typedef union {
     struct {
-        bool warning_pack_overdischarge : 1;          // WARN_PACK_ODC
-        bool warning_pack_overcharge : 1;             // WARN_PACK_OC
+        bool warning_pack_overdischarge_current : 1;          // WARN_PACK_ODC
+        bool warning_pack_overcharge_current : 1;             // WARN_PACK_OC
 
         bool fault_discharge_overcurrent : 1;         // FLT_DOC
         bool fault_charge_overcurrent : 1;            // FLT_COC
 
         bool estop : 1;                               // Active High: ESTOP pressed
 
-        uint8_t _reserved : 3;
+        bool reset_from_watchdog : 1;
+
+        uint8_t _reserved : 2;
     } bits;
     uint8_t raw;
 
@@ -43,14 +45,13 @@ typedef struct{
     uint16_t ADC_lvs_offset; //stores low voltage system current offset
     uint16_t ADC_spare_curr_offset; //stores spare current source offset
 
-    uint16_t ADC_batt_current_rawvoltage;
-
 } ECU_ADC_Data_t;
 
 typedef struct{
 
     ECU_StatusCode_t status;
     ECU_ADC_Data_t adc_data;
+    
 
 } ECU_Data_t;
 
