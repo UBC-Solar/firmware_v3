@@ -24,6 +24,10 @@
 #include "selftest.h"
 
 /*============================================================================*/
+/* PRIVATE VARIABLES */
+static ECU_Data_t ecu_data = {0};
+
+/*============================================================================*/
 /* PRIVATE FUNCTION DEFINITIONS */
 
 /**
@@ -153,7 +157,7 @@ void BMS_MAIN_updatePackData(Pack_t *pack)
     static bool soc_initialized = false;
 
     // Check for new ECU CAN message
-    new_ecu_can_message_received = CAN_GetMessage0x450Data(&ecu_can_rx_timestamp);
+    new_ecu_can_message_received = CAN_GetMessage0x450Data(&ecu_can_rx_timestamp, &ecu_data);
 
     if (new_ecu_can_message_received && ((ecu_data.status.bits.fault_charge_overcurrent || ecu_data.status.bits.fault_discharge_overcurrent) == true))
     {
@@ -208,8 +212,13 @@ void BMS_MAIN_driveOutputs(Pack_t *pack)
     float max_temp = 0;
 
     // if any fault active, drive FLT, COM, OT GPIOs, turn off balancing, drive fans 100%
-    if (PACK_ANY_FAULTS_SET(pack->status))
+    if (PACK_ANY_FAULTS_SET(pack->status) || ecu_data.status.bits.estop == true)
     {
+        // We want to visualize this on Grafana, so we are setting HLIM and LLIM Status high
+        // if there is any fault or estop is pressed
+        pack->status.bits.hlim = 1;
+        pack->status.bits.llim = 1;
+
         CONT_FLT_switch(true);
         CONT_COM_switch(pack->status.bits.fault_communications);
         CONT_OT_switch(pack->status.bits.fault_over_temperature);

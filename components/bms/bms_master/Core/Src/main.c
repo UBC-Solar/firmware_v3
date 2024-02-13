@@ -63,7 +63,7 @@ UART_HandleTypeDef huart1;
 /* USER CODE BEGIN PV */
 
 static Pack_t pack;
-ECU_Data_t ecu_data = {0};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
