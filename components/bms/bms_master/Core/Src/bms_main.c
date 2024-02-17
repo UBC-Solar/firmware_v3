@@ -218,11 +218,6 @@ void BMS_MAIN_driveOutputs(Pack_t *pack)
     // if any fault active, drive FLT, COM, OT GPIOs, turn off balancing, drive fans 100%
     if (PACK_ANY_FAULTS_SET(pack->status) || ecu_data.status.bits.estop == true)
     {
-        // We want to visualize this on Grafana, so we are setting HLIM and LLIM Status high
-        // if there is any fault or estop is pressed
-        pack->status.bits.hlim = 1;
-        pack->status.bits.llim = 1;
-
         CONT_FLT_switch(true);
         CONT_COM_switch(pack->status.bits.fault_communications);
         CONT_OT_switch(pack->status.bits.fault_over_temperature);
