@@ -181,7 +181,7 @@ int main(void)
   while (1)
   {
     current_tick = HAL_GetTick();
-
+    //printf("Pack voltage: %d V\r\n", Pack_GetPackVoltage(&pack)/10000);
     // update pack values and control signals if pack update interval has elapsed
     if (current_tick - last_update_tick >= UPDATE_INTERVAL)
     {
