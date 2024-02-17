@@ -243,8 +243,8 @@ void CAN_SendMessage623(Pack_t *pack)
     uint8_t max_volt_rescaled = (uint8_t) ((max_module_voltage * MESSAGE_623_MODULE_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
 
     // Store in message 623 data array
-    txMessage.data[0] = (uint8_t) (total_pack_voltage >> 8); // casting shifted 16 bit integer into 8 bit integer get rids of upper 8 bits, leaves lower 8 bits
-    txMessage.data[1] = (uint8_t) total_pack_voltage;        // casting 16 bit integer into 8 bit integer gets rid of upper 8 bits, leaves lower 8 bits
+    txMessage.data[0] = (uint8_t)total_pack_voltage;        // LSB
+    txMessage.data[1] = (uint8_t)(total_pack_voltage >> 8); // MSB
     txMessage.data[2] = min_volt_rescaled;
     txMessage.data[3] = min_module; // add one because of indexing from zero
     txMessage.data[4] = max_volt_rescaled;

@@ -23,14 +23,15 @@
 
 typedef union {
     struct {
-        bool warning_pack_overdischarge : 1;          // WARN_PACK_ODC
-        bool warning_pack_overcharge : 1;             // WARN_PACK_OC
+        bool warning_pack_overdischarge_current : 1;          // WARN_PACK_ODC
+        bool warning_pack_overcharge_current : 1;             // WARN_PACK_OC
 
         bool fault_discharge_overcurrent : 1;         // FLT_DOC
         bool fault_charge_overcurrent : 1;            // FLT_COC
 
         bool reset_from_watchdog : 1;                 // Reset From Independent Watchdog
         bool estop : 1;                               // Active High: ESTOP pressed
+        
 
         uint8_t _reserved : 2;
     } bits;
