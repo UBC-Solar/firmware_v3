@@ -25,6 +25,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "LCD.h"
+#include "cyclic_data.h"
+#include "DID.h"
 
 /* USER CODE END Includes */
 
@@ -43,32 +45,7 @@
 #define TRUE 1
 #define FALSE 0
 
-#define MC_BASE 0x500
-#define BATT_BASE 0x620
-#define ARR_BASE 0x700
-#define MCB_BASE 0x400
-#define MCB_MOTOR_COMMAND 0x401
-#define MCB_DRIVE_STATE 0x403
-#define LV_BASE 0x450
-#define FAULTS 0x622
-#define SIMULATION_SPEED 0x750
-#define PACK_VOLTAGE 0x623
-#define PACK_TEMP 0x625
 
-#define CRUISE_TARGET 234 // Placeholder values
-#define REGEN 543 // Placeholder values
-
-#define FILTER_LEN 9
-
-#define NUM_PAGES 4
-#define PAGE_0 0
-#define PAGE_1 1
-#define PAGE_2 2
-#define PAGE_3 3
-
-#define TIMEOUT_10_SECONDS 10000000 // microseconds
-
-#define GETBIT(var, bit)	(((var) >> (bit)) & 1) // gives bit position
 
 /* USER CODE END PM */
 
@@ -82,48 +59,10 @@ CAN_FilterTypeDef CAN_filter2;
 CAN_FilterTypeDef CAN_filter3;
 
 CAN_RxHeaderTypeDef CAN_rx_header;
-uint8_t CAN_rx_data[8];
-
-union {
-	float float_var;
-	uint8_t chars[4];
-}vel;
-
-union {
-	float float_var;
-	uint8_t chars[4];
-}cur;
-
-union {
-	float float_var;
-	uint8_t chars[4];
-} u;
-
-union{
-	uint16_t int_var;
-	uint8_t chars[2];
-} u_u16_bytes;
-
-uint16_t pack_voltage;
-uint16_t pack_temperature;
-
-uint8_t recent_warnings[4]; // [LV Warn, HV Warn, LT Warn, HT Warn]
-uint8_t recent_faults[15]; // See BS Master BOM (0x622 Bits 0-12, 17, 18)
 
 
-uint8_t lastPage;
-uint32_t lastPageTime;
 
-/*
- * Page Layout
- * Page 0: Main Page
- * Page 1: Warnings
- * Page 2: Current Summary
- * Page 3: Pack Summary (Voltage + Temperature)
- */
 
-// Page initialized to Page 0
-uint8_t current_page = 0;
 
 /* USER CODE END PV */
 
@@ -159,81 +98,10 @@ void InitLEDs(void)
 }
 
 
-/**
- * Called when warning CAN message received
- * Updates recent_warnings array with latest warnings
- */
-void parse_warnings(void)
-{
-	/* Local Variables declarations */
-	uint8_t temp_byte, slave_board_comm_fault, bms_self_test_fault, overtemp_fault,
-			undervolt_fault, overvolt_fault, isolation_loss_fault, discharge_or_charge_overcurr_fault,
-			volt_out_of_range_fault, temp_out_of_range_fault, pack_balancing_active, LLIM_active,
-			HLIM_active, charge_overtemp_trip, request_regen_turn_off, no_ecu_curr_message_received_warn,
-			low_voltage_warning, high_voltage_warning, low_temperature_warning, high_temperature_warning;
-
-	/* Byte 0 readings */
-	temp_byte = CAN_rx_data[0]; // Contains bits 0-7, 7 6 5 4 3 2 1 0
-	slave_board_comm_fault = GETBIT(temp_byte, 0);
-	bms_self_test_fault = GETBIT(temp_byte, 1);
-	overtemp_fault = GETBIT(temp_byte, 2);
-	undervolt_fault = GETBIT(temp_byte, 3);
-	overvolt_fault = GETBIT(temp_byte, 4);
-	isolation_loss_fault = GETBIT(temp_byte, 5);
-	discharge_or_charge_overcurr_fault = GETBIT(temp_byte, 6);
-	volt_out_of_range_fault = GETBIT(temp_byte, 7);
-
-	/* Byte 1 readings */
-	temp_byte = CAN_rx_data[1]; // Contains bits 8-15, 15 14 13 12 11 10 9 8
-	temp_out_of_range_fault = GETBIT(temp_byte, 0);
-	pack_balancing_active = GETBIT(temp_byte, 1);
-	LLIM_active = GETBIT(temp_byte, 2);
-	HLIM_active = GETBIT(temp_byte, 3);
-	charge_overtemp_trip = GETBIT(temp_byte, 4);
-	low_voltage_warning = GETBIT(temp_byte, 5);
-	high_voltage_warning = GETBIT(temp_byte, 6);
-	low_temperature_warning = GETBIT(temp_byte, 7);
-
-	/* Byte 2 readings */
-	temp_byte = CAN_rx_data[2]; // Contains bits 16-23, 23 22 21 20 19 18 17 16
-	high_temperature_warning = GETBIT(temp_byte, 0);
-	request_regen_turn_off = GETBIT(temp_byte, 1);
-	no_ecu_curr_message_received_warn = GETBIT(temp_byte, 2);
-
-	/* Update Warnings for Screen */
-	recent_warnings[0] = low_voltage_warning;
-	recent_warnings[1] = high_voltage_warning;
-	recent_warnings[2] = low_temperature_warning;
-	recent_warnings[3] = high_temperature_warning;
-
-	/* Update Faults */
-	recent_faults[0] = slave_board_comm_fault; // bms_comm_flt
-	recent_faults[1] = bms_self_test_fault;
-	recent_faults[2] = overtemp_fault;  // batt_ot
-	recent_faults[3] = undervolt_fault; // batt_uv
-	recent_faults[4] = overvolt_fault; // batt_ov
-	recent_faults[5] = isolation_loss_fault;
-	recent_faults[6] = discharge_or_charge_overcurr_fault; // dch_oc
-	recent_faults[7] = volt_out_of_range_fault;
-	recent_faults[8] = temp_out_of_range_fault;
-	recent_faults[9] = pack_balancing_active;
-	recent_faults[10] = LLIM_active;
-	recent_faults[11] = HLIM_active;
-	recent_faults[12] = charge_overtemp_trip; // ch_oc
-	recent_faults[13] = request_regen_turn_off;
-	recent_faults[14] = no_ecu_curr_message_received_warn;
 
 
 
-	HAL_GPIO_WritePin(BMS_COMM_FLT_GPIO_Port, BMS_COMM_FLT_Pin, slave_board_comm_fault); // BMS communications fault
-	HAL_GPIO_WritePin(BATT_OT_GPIO_Port, BATT_OT_Pin, overtemp_fault); 					 // Battery over temperature fault
-	HAL_GPIO_WritePin(BATT_UV_GPIO_Port, BATT_UV_Pin, undervolt_fault); 				 // Battery under voltage fault
-	HAL_GPIO_WritePin(BATT_OV_GPIO_Port, BATT_OV_Pin, overvolt_fault); 					 // Battery over voltage fault
-	HAL_GPIO_WritePin(DCH_OC_GPIO_Port, DCH_OC_Pin, discharge_or_charge_overcurr_fault); // Discharging overcurrent fault
-	HAL_GPIO_WritePin(CH_OC_GPIO_Port, CH_OC_Pin, charge_overtemp_trip); 				 // Charging overcurrent fault
-	// HAL_GPIO_WritePin(BATT_OV_GPIO_Port, BATT_OV_Pin, high_voltage_warning); 			 // Battery voltage upper limit fault
 
-}
 
 /* USER CODE END 0 */
 
@@ -244,10 +112,7 @@ void parse_warnings(void)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
-  int32_t tempInt32;
-  uint8_t drive_state = 0;
-  float target_speed = 0;
+  uint8_t CAN_rx_data[8];
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -256,16 +121,12 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
-  /* Timer */
-
   /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -276,18 +137,6 @@ int main(void)
 
   CanFilterSetup();
   HAL_CAN_Start(&hcan);
-
-  // Commented Clock Setup as it is already done in the ioc
-  //Setup System Clock C
-  // RCC->APB2ENR &= 0;
-  // RCC->APB2ENR |= 0x1UL << 4;
-
-  // Commented Pinout setup as it is already done in the ioc
-  //Setup Pins C5 - C12 as OUTPUT
-  // GPIOC->CRL &= 0;
-  // GPIOC->CRH &= 0;
-  // GPIOC->CRL |= 0x33333333UL; //Initialise C0 to C7
-  // GPIOC->CRH |= 0x33333UL; //Initialise C8 to C12
 
   //Set Pin initial values
   GPIOC->BSRR = 0x1UL << 0;	 // C0 HIGH
@@ -300,259 +149,23 @@ int main(void)
 
   // Check if this is required!
   InitLEDs();
-  UpdateScreenTitles(PAGE_0);
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	// Check if message is available
-	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0)
+	// / Parse received CAN message if available
+	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0 && HAL_OK == HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data))
 	{
-		// Populate CAN header and data variables (CAN_rx_header/data is updated respectively)
-		HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data);
-		uint16_t received_CAN_ID = (uint16_t) CAN_rx_header.StdId;
-
-		/* Check for CAN message that is incoming to change the page
-		 * This CAN message comes from the MCB
-		 * The current_page is simply incremented by +1.
-		 * if (current_page + 1 == NUM_PAGES) set current_page = 0
-		 */
-
-		if (received_CAN_ID == MCB_BASE)
-		{
-			if ( CAN_rx_data[0] != 0 ) 
-			{
-				current_page = current_page + 1; // Increment page
-				if (current_page == NUM_PAGES) current_page = 0; // Reset to 0 if changing from last page
-				ClearScreen();
-			}
-		}
-
-
-
-		/* FAULTS = 0x622
-		 * Parse Warnings and Faults if received CAN message is 0x622
-		 * and set GPIO output for fault lights accordingly
-		 */
-		if (received_CAN_ID == FAULTS) {
-			// Add parse faults function, and output to GPIO
-			parse_warnings();
-		}
-
-		// Simulation target speed
-		if (received_CAN_ID == SIMULATION_SPEED)
-		{
-			u.chars[0] = CAN_rx_data[4];
-			u.chars[1] = CAN_rx_data[5];
-			u.chars[2] = CAN_rx_data[6];
-			u.chars[3] = CAN_rx_data[7];
-
-			target_speed = u.float_var;
-		}
-
-		// Timeout functionality
-		// If DID is on a page more than 10 seconds, revert back to PAGE_0
-		if( current_page != lastPage )
-		{
-			lastPage = current_page;
-			lastPageTime = HAL_GetTick();
-		}
-		else if( (HAL_GetTick() - lastPageTime) > PAGE_TIMEOUT )
-		{
-			current_page = PAGE_0;
-			ClearScreen();
-		}
-
-		// Switch by page
-		// If parsed message is not on the current page, it is ignored
-		switch(current_page)
-		{
-			case PAGE_0: // main page
-				UpdateScreenTitles(PAGE_0);
-				
-				// Update screen parameter for simulation target speed
-				UpdateScreenParameter(TARGET_DATA_XPOS, TARGET_DATA_YPOS, (uint32_t)target_speed, ((uint32_t) (target_speed * 10)) % 10, TRUE);
-				switch(received_CAN_ID)
-				{
-					case (BATT_BASE + 4): // SOC
-//						UpdateScreenParameter(SOC_DATA_XPOS, SOC_DATA_YPOS, (int8_t) 100, 0, FALSE);
-						UpdateScreenParameter(SOC_DATA_XPOS, SOC_DATA_YPOS, (int8_t) CAN_rx_data[0], 0, FALSE);
-						break;
-					case MCB_MOTOR_COMMAND: // Get target cruse
-						if ( drive_state == 0x02 )
-						{
-							u.chars[0] = CAN_rx_data[0];
-							u.chars[1] = CAN_rx_data[1];
-							u.chars[2] = CAN_rx_data[2];
-							u.chars[3] = CAN_rx_data[3];
-							tempInt32 = (int32_t) u.float_var * 3.6;
-							UpdateScreenParameter(CRUISE_DATA_XPOS, CRUISE_DATA_YPOS, tempInt32, 0, FALSE);
-						}
-						else
-							OutputString("OFF", CRUISE_DATA_XPOS, CRUISE_DATA_YPOS);
-						break;
-					case (MC_BASE + 3): // Vehicle Velocity
-						u.chars[0] = CAN_rx_data[4];
-						u.chars[1] = CAN_rx_data[5];
-						u.chars[2] = CAN_rx_data[6];
-						u.chars[3] = CAN_rx_data[7];
-
-						u.float_var = u.float_var * -3.6;
-
-
-						if (u.float_var < 0)
-						{
-							u.float_var = u.float_var * -1;
-						}
-
-						tempInt32 = (int32_t) u.float_var;
-//						UpdateScreenParameter(SPEED_DATA_XPOS, SPEED_DATA_YPOS, -45, 7, TRUE);
-						UpdateScreenParameter(SPEED_DATA_XPOS, SPEED_DATA_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10, TRUE);
-						break;
-
-					case MCB_DRIVE_STATE:
-						drive_state = CAN_rx_data[0];
-						if ( drive_state == 0x01 ) 		
-							OutputString("DRV", STATE_DATA_XPOS, STATE_DATA_YPOS); // DRIVE
-						else if (drive_state == 0x02)   
-							OutputString("CRS", STATE_DATA_XPOS, STATE_DATA_YPOS); // CRUISE
-						else if (drive_state == 0x03)   
-							OutputString("PRK", STATE_DATA_XPOS, STATE_DATA_YPOS); // PARK
-						else if (drive_state == 0x04)  
-							OutputString("REV", STATE_DATA_XPOS, STATE_DATA_YPOS); // REVERSE
-						else   							
-							OutputString("ERR", STATE_DATA_XPOS, STATE_DATA_YPOS); // INVALID (MCB should never send this)
-						break;
-
-					case FAULTS:
-						if (recent_faults[0] != 0 || recent_faults[1] != 0 || recent_faults[2] != 0 || recent_faults[3] != 0)
-							OutputString("W", WARNING_XPOS, WARNING_YPOS); 
-						else
-							OutputString(" ", WARNING_XPOS, WARNING_YPOS); 
-						break;
-					default:
-						// CAN message read is not part of the current page, Ignore.
-						break;
-
-				}
-				break;
-			case PAGE_1: // warnings
-				UpdateScreenTitles(PAGE_1);
-				switch(received_CAN_ID)
-				{
-					case (FAULTS): ; // need semicolon as have declaration after colon :
-						/* Check which warning message
-						 * Bit 13 = Low Voltage Warning
-						 * Bit 14 = High Voltage Warning
-						 * Bit 15 = Low Temperature Warning
-						 * Bit 16 = High Temperature Warning
-						 */
-
-						// Warnings are already parsed
-
-						if (recent_warnings[0]) { // Low Voltage Warning
-							OutputString("     ", LV_WARN_DATA_XPOS, LV_WARN_DATA_YPOS); // Clear
-							OutputString("YES", LV_WARN_DATA_XPOS, LV_WARN_DATA_YPOS); // Write "YES"
-						} else {
-							OutputString("     ", LV_WARN_DATA_XPOS, LV_WARN_DATA_YPOS); // Clear
-							OutputString("---", LV_WARN_DATA_XPOS, LV_WARN_DATA_YPOS); // Write "---"
-						}
-						if (recent_warnings[1]) { // High Voltage Warning
-							OutputString("     ", HV_WARN_DATA_XPOS, HV_WARN_DATA_YPOS); // Clear
-							OutputString("YES", HV_WARN_DATA_XPOS, HV_WARN_DATA_YPOS); // Write "YES"
-						} else {
-							OutputString("     ", HV_WARN_DATA_XPOS, HV_WARN_DATA_YPOS); // Clear
-							OutputString("---", HV_WARN_DATA_XPOS, HV_WARN_DATA_YPOS); // Write "---"
-						}
-						if (recent_warnings[2]) { // Low Temperature Warning
-							OutputString("     ", LT_WARN_DATA_XPOS, LT_WARN_DATA_YPOS); // Clear
-							OutputString("YES", LT_WARN_DATA_XPOS, LT_WARN_DATA_YPOS); // Write "YES"
-						} else {
-							OutputString("     ", LT_WARN_DATA_XPOS, LT_WARN_DATA_YPOS); // Clear
-							OutputString("---", LT_WARN_DATA_XPOS, LT_WARN_DATA_YPOS); // Write "---"
-						}
-						if (recent_warnings[3]) { // High Temperature Warning
-							OutputString("     ", HT_WARN_DATA_XPOS, HT_WARN_DATA_YPOS); // Clear
-							OutputString("YES", HT_WARN_DATA_XPOS, HT_WARN_DATA_YPOS); // Write "YES"
-						} else {
-							OutputString("     ", HT_WARN_DATA_XPOS, HT_WARN_DATA_YPOS); // Clear
-							OutputString("---", HT_WARN_DATA_XPOS, HT_WARN_DATA_YPOS); // Write "---"
-						}
-
-						break;
-					default:
-						// CAN message read is not part of the current page, Ignore.
-						break;
-				}
-
-				break;
-			case PAGE_2: // Current Summary
-				UpdateScreenTitles(PAGE_2);
-				switch(received_CAN_ID)
-				{
-					case (MCB_BASE + 1): // Motor Current
-						// Upper 4 bytes of data
-						u.chars[0] = CAN_rx_data[4];
-						u.chars[1] = CAN_rx_data[5];
-						u.chars[2] = CAN_rx_data[6];
-						u.chars[3] = CAN_rx_data[7];
-						tempInt32 = (int32_t) u.float_var;
-						UpdateScreenParameter(MOTOR_CURRENT_DATA_XPOS, MOTOR_CURRENT_DATA_YPOS, tempInt32, 0, FALSE); // percentage of max current
-						break;
-					case (ARR_BASE + 2): // Array Current
-						// Using Sensor 2 Data
-						// Upper 4 bytes of data
-						u.chars[0] = CAN_rx_data[4];
-						u.chars[1] = CAN_rx_data[5];
-						u.chars[2] = CAN_rx_data[6];
-						u.chars[3] = CAN_rx_data[7];
-						tempInt32 = (int32_t) u.float_var;
-						UpdateScreenParameter(ARRAY_CURRENT_DATA_XPOS, ARRAY_CURRENT_DATA_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10, TRUE); // Float
-						break;
-					case (LV_BASE):
-						// Pack Current
-						// Lower 2 bytes of data
-						u_u16_bytes.chars[0] = CAN_rx_data[0];
-						u_u16_bytes.chars[1] = CAN_rx_data[1];
-						tempInt32 = u_u16_bytes.int_var / 65.535;
-						UpdateScreenParameter(PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS, tempInt32, 0, FALSE);
-						break;
-					default:
-						// CAN message read is not part of the current page, Ignore.
-						break;
-				}
-				break;
-			case PAGE_3: // Pack Summary (Voltage + Temperature)
-				UpdateScreenTitles(PAGE_3);
-				switch(received_CAN_ID)
-				{
-					case (PACK_VOLTAGE):
-						u_u16_bytes.chars[0] = CAN_rx_data[0];
-						u_u16_bytes.chars[1] = CAN_rx_data[1];
-						tempInt32 = u_u16_bytes.int_var / 468;
-						UpdateScreenParameter(PACK_VOLT_DATA_XPOS, PACK_VOLT_DATA_YPOS, tempInt32, 0, FALSE); //displays the pack voltage
-						break;
-
-					case(PACK_TEMP):
-						tempInt32 = CAN_rx_data[3];
-						UpdateScreenParameter(PACK_TEMP_DATA_XPOS, PACK_TEMP_DATA_YPOS, tempInt32, 0, FALSE); //displays the pack temperature
-						break;
-
-
-					default:
-						// CAN message read is not part of the current page, Ignore.
-						break;
-				}
-				break;
-			default:
-				// Should never reach here.
-				break;
-		}
-
+		parse_can_message( CAN_rx_data, CAN_rx_header.StdId );
 	}
+
+	// Check DID timeout
+	DID_timeout();
+
+	// Update DID LCD screen
+	update_DID_screen();
 
     /* USER CODE END WHILE */
 
