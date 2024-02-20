@@ -80,7 +80,7 @@ static void MX_TIM3_Init(void);
 
 void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
 {
-  // FSM_ADC_LevelOutOfWindowCallback();
+  FSM_ADC_LevelOutOfWindowCallback();
 }
 
 /* USER CODE END 0 */
