@@ -300,7 +300,7 @@ void SendCANDIDDriveState(DriveState state)
 	{
 		uint8_t data_send[CAN_DATA_LENGTH] = {0};
 		data_send[1] = state;
-		HAL_CAN_AddTxMessage(&hcan, &DID_next_page_header, data_send, &can_mailbox);
+		HAL_CAN_AddTxMessage(&hcan, &drive_state_header, data_send, &can_mailbox);
 		lastState = state;
 	}
 }
