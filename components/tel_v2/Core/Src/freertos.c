@@ -126,13 +126,6 @@ const osThreadAttr_t transmitGPSTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for kernelLEDTask */
-osThreadId_t kernelLEDTaskHandle;
-const osThreadAttr_t kernelLEDTask_attributes = {
-  .name = "kernelLEDTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
 /* Definitions for canMessageQueue */
 osMessageQueueId_t canMessageQueueHandle;
 const osMessageQueueAttr_t canMessageQueue_attributes = {
@@ -164,7 +157,6 @@ void read_IMU_task(void *argument);
 void transmit_IMU_task(void *argument);
 void read_GPS_task(void *argument);
 void transmit_GPS_task(void *argument);
-void kernel_LED_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -226,9 +218,6 @@ void MX_FREERTOS_Init(void) {
   /* creation of transmitGPSTask */
   transmitGPSTaskHandle = osThreadNew(transmit_GPS_task, NULL, &transmitGPSTask_attributes);
 
-  /* creation of kernelLEDTask */
-  kernelLEDTaskHandle = osThreadNew(kernel_LED_task, NULL, &kernelLEDTask_attributes);
-
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -252,7 +241,9 @@ void startDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+
+    HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+    osDelay(1000);
   }
   /* USER CODE END startDefaultTask */
 }
@@ -607,38 +598,6 @@ void transmit_GPS_task(void *argument)
   }
 
   /* USER CODE END transmit_GPS_task */
-}
-
-/* USER CODE BEGIN Header_kernel_LED_task */
-/**
-  * @brief  Function implementing the kernelLEDTask thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_kernel_LED_task */
-void kernel_LED_task(void *argument)
-{
-  /* USER CODE BEGIN kernel_LED_task */
-
-  osKernelState_t kernel_status; /* Kernel Status */
-
-  /* Infinite loop */
-  while (1) {
-
-    /* Get the kernel status */
-    kernel_status = osKernelGetState();
-
-    /* Check if the kernel status is "Running" */
-    if (kernel_status == osKernelRunning) {
-
-      /* If running, toggle the LED */
-      HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-    }
-
-    /* Delay */
-    osDelay(KERNEL_LED_DELAY);
-  }
-  /* USER CODE END kernel_LED_task */
 }
 
 /* Private application code --------------------------------------------------*/

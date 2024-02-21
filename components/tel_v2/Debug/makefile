@@ -56,6 +56,9 @@ default.size.stdout \
 OBJDUMP_LIST += \
 tel_v2.list \
 
+OBJCOPY_BIN += \
+tel_v2.bin \
+
 
 # All Target
 all: main-build
@@ -79,12 +82,17 @@ tel_v2.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
+tel_v2.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "tel_v2.bin"
+	@echo 'Finished building: $@'
+	@echo ' '
+
 # Other Targets
 clean:
-	-$(RM) default.size.stdout tel_v2.elf tel_v2.list tel_v2.map
+	-$(RM) default.size.stdout tel_v2.bin tel_v2.elf tel_v2.list tel_v2.map
 	-@echo ' '
 
-secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
+secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_BIN)
 
 fail-specified-linker-script-missing:
 	@echo 'Error: Cannot find the specified linker script. Check the linker settings in the build configuration.'
