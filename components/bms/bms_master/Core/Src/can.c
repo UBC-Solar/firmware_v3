@@ -432,10 +432,10 @@ void CAN_SendMessages629(Pack_t * pack)
         balancing_status_raw |= pack->module[module_num].status.bits.balancing_active << module_num;
     }
 
-    txMessage.data[0] = (uint8_t)balancing_status_raw >> 0;
-    txMessage.data[1] = (uint8_t)balancing_status_raw >> 8;
-    txMessage.data[2] = (uint8_t)balancing_status_raw >> 16;
-    txMessage.data[3] = (uint8_t)balancing_status_raw >> 24;
+    txMessage.data[0] = (uint8_t)(balancing_status_raw >> 0);
+    txMessage.data[1] = (uint8_t)(balancing_status_raw >> 8);
+    txMessage.data[2] = (uint8_t)(balancing_status_raw >> 16);
+    txMessage.data[3] = (uint8_t)(balancing_status_raw >> 24);
 
     queueCanMessage(&txMessage);
 }
