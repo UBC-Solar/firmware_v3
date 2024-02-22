@@ -30,7 +30,7 @@
 
 
 //Limit voltage out into the motor 
-#define MAX_VOLTAGE_OUT 0x3C1 //Coresponds to 4.7V (0.938*10'b1_111_111_111)
+#define MAX_VOLTAGE_OUT 0x3C1 //Corresponds to 4.7V (0.938*10'b1_111_111_111)
 
 
 typedef struct
@@ -41,6 +41,30 @@ typedef struct
 	bool direction; 
 	bool power_or_eco; 
 	bool regen;
+
+	//0x501
+	uint8_t motorCurrentFlag;
+	uint8_t velocityFlag;
+	uint8_t busCurrentFlag;
+	uint8_t busVoltageUpperLimitFlag;
+	uint8_t busVoltageLowerLimitFlag;
+	uint8_t heatsinkTemp;
+	uint8_t hardwareOverCurrent;
+	uint8_t softwareOverCurrent;
+	uint8_t DCBusOverVoltage;
+
+	//0x502
+	uint32_t busVoltage;
+	uint32_t busCurrent;
+
+	//0x503
+	uint8_t motorVelocity;
+	uint8_t vehicleVelocity;
+
+	//0x504
+	uint8_t motorTemp;
+	uint8_t controllerHeatsinkTemp;
+
 } CAN_message_t;
 
 
@@ -49,5 +73,23 @@ void Send_Voltage(float parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef *hi2
 void CAN_Decode_Velocity_Message(uint8_t RxData[], CAN_message_t* CAN_msg); 
 
 void Send_Test_Message(uint8_t* TxData, int32_t velocity, uint32_t acceleration);
+
+void Decode_Frame0(uint8_t RxData[], CAN_message_t* CAN_msg);
+
+void Decode_Frame2(uint8_t RxData[], CAN_message_t* CAN_msg);
+
+uint8_t getBit(uint8_t msb, uint8_t two, uint8_t three, uint8_t four, uint8_t five, uint8_t six, uint8_t seven, uint8_t lsb);
+
+void split_32_bit_number(uint32_t number, uint8_t *bytes);
+
+void get501(uint8_t* message501, CAN_message_t CanMessage);
+
+void get502(uint8_t* message502, CAN_message_t CanMessage);
+
+void get503(uint8_t* message503, CAN_message_t CanMessage);
+
+void get50B(uint8_t* message50B, CAN_message_t CanMessage);
+
+
 
 #endif

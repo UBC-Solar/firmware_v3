@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <can.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,6 +45,9 @@ CAN_HandleTypeDef hcan;
 
 I2C_HandleTypeDef hi2c2;
 
+TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim6;
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -54,6 +57,8 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN_Init(void);
 static void MX_I2C2_Init(void);
+static void MX_TIM3_Init(void);
+static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -68,12 +73,20 @@ uint32_t TxMailbox[3]; //3 transmit mailboxes
 
 uint8_t TxData[8]; //buffer for transmit message
 uint8_t RxData[8]; //buffer for receive message
+uint8_t getTxData[8];
 
 CAN_message_t msg0; //where all the info and data for the message will be put
 
+int txIDList[] = {0x501, 0x502, 0x503, 0x50B}; //array for the messages to be sent 
 
+bool SendMessageTimerInterrupt = 0;
+bool SendSlowMessage = 0;
+bool UpdateSpeedInterrupt = 0;
 bool send_data_flag = 0; 
 bool Parse_Data_Flag = 0; 
+bool parse_frame0 = 0;
+bool parse_frame1 = 0;
+bool parse_frame2 = 0;
 
 float parsed_voltage = 0;
 
@@ -82,9 +95,16 @@ uint32_t acceleration; //FOR TESTING
 uint64_t t_start; //FOR TESTING
 uint64_t t_end; //FOR TESTING
 uint64_t t_elapsed[256]; //FOR TESTING
-uint8_t count_t = 0; //FOR TESTING
+uint32_t count_t = 0; //FOR TESTING
 float count = 0; //FOR TESTING
 int test = 0; //FOR TESTING
+
+uint32_t count0 = 0; //for testing
+uint32_t count1 = 1; //for testing
+uint32_t count2 = 2; //for testing
+
+
+
 
 
 /* USER CODE END 0 */
@@ -120,15 +140,19 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN_Init();
   MX_I2C2_Init();
+  MX_TIM3_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   HAL_CAN_Start(&hcan); //starts CAN
   HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING); //FIFO0 message pending interrupt (interrupt callback func will be called when this interrupt is triggered)
 
+  HAL_TIM_Base_Start_IT(&htim3); //timer for sending messages
+  HAL_TIM_Base_Start_IT(&htim6); //timer for updating speed
+
   TxHeader.DLC = 8;
-  TxHeader.ExtId = 0;
-  TxHeader.IDE = CAN_ID_STD;
+  TxHeader.IDE = CAN_ID_EXT; //type of id being sent ext or simple
   TxHeader.RTR = CAN_RTR_DATA; 
-  TxHeader.StdId = 0x401; 
+  TxHeader.ExtId = 0x08F89540; //request frame ExtId
   TxHeader.TransmitGlobalTime = DISABLE;
 
   /* USER CODE END 2 */
@@ -136,21 +160,30 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  while (1)
-  { 
-	  //BOOT LED
-	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
+  //BOOT LED
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
+
+  while (1) { 
+	  //////////////////TEST MESSAGE GENERATION//////////////////////
+	  //count_t++;
+	  //if(count_t == 500000){
+	  //  velocity = 0x7;
+	  //  acceleration = 0x3f000000;
+	  //  velocity = 100;
+	  //  acceleration = acceleration/2.0*sin(count)  + acceleration/2.0 ;
+	/*	TxHeader.IDE = CAN_ID_EXT; //type of id being sent ext or simple
+		TxHeader.ExtId = 0x08F89540; //request frame ExtId
+	    Send_Test_Message(TxData, 7, 7); //request all frames
+	    HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+	    count_t = 0;
+	  }
+	  */
+	  ///////////////////////////////////////////////////////////////
 
 
-    //////////////////TEST MESSAGE GENERATION//////////////////////
-    // velocity = -100;
-    // acceleration = 0x3f000000;
-    // acceleration = acceleration/2.0*sin(count)  + acceleration/2.0 ;
-    // Send_Test_Message(TxData, velocity, acceleration);
-
-    // HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
-    //////////////////////////////////////////////////////////////////
-    
+    //////////////////////////////////////
+    // PARSE MESSAGES COMING FROM MOTOR CONTROLLER  
+    //////////////////////////////////////
     if(Parse_Data_Flag == 1 ){ //Parse_Data_Flag set in interrupt
 
       CAN_Decode_Velocity_Message(RxData, &msg0); 
@@ -159,8 +192,26 @@ int main(void)
       send_data_flag = 1; 
     }
     
-    //msg0.acceleration = 50;
-    //Send_Voltage(msg0.acceleration, DAC_REGEN_ADDR, &hi2c2);
+    if(parse_frame0 == 1){ //TODO parse the frame based on info we want (need to make design decisions since info doesnt translate 1:1)
+    	Decode_Frame0(RxData,&msg0);
+    	parse_frame0 = 0; //reset flag
+    }
+
+    if(parse_frame1 == 1){ //TODO parse the frame based on info we want (need to make design decisions since info doesnt translate 1:1)
+    	count1++; //TEST Variable
+    	parse_frame1 = 0; //reset flag
+
+    }
+
+    if(parse_frame2 == 1){ //TODO parse the frame based on info we want (need to make design decisions since info doesnt translate 1:1)
+    	count2++; //TEST Variable
+    	parse_frame2 = 0; //reset flag
+    	Decode_Frame2(RxData,&msg0);
+    }
+
+    //////////////////////////////////////
+    // SEND SIGNALS TO MOTOR CONTROLLER  
+    //////////////////////////////////////
 
     if( (send_data_flag == 1 ) && (Parse_Data_Flag == 0) ){
 
@@ -184,7 +235,66 @@ int main(void)
 	    send_data_flag = 0; 
       
     }
-  
+
+    //////////////////////////////////////
+    // SEND MESSEGE TO MCB
+    //////////////////////////////////////
+    if(SendMessageTimerInterrupt == 1){
+    	SendMessageTimerInterrupt = 0;
+
+
+    	//send request for data from MC
+    	TxHeader.IDE = CAN_ID_EXT; //type of id being sent ext or simple
+    	TxHeader.ExtId = 0x08F89540; //request frame ExtId
+    	Send_Test_Message(TxData, 7, 7); //request all frames
+    	HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+
+
+      //txData 0x501
+      TxHeader.StdId = txIDList[0];
+      TxHeader.IDE = CAN_ID_STD; //type of id being sent ext or simple
+      get501(getTxData, msg0);
+      for(int i = 0; i < 8; i++){
+        TxData[i] = getTxData[i];
+      }
+      HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+      
+      //txData 0x502
+      TxHeader.StdId = txIDList[1];
+      TxHeader.IDE = CAN_ID_STD; //type of id being sent ext or simple
+      get502(getTxData, msg0);
+      for(int i = 0; i < 8; i++){
+        TxData[i] = getTxData[i];
+      }
+      HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+      
+      //need to wait for mailbox to clear before sending msg
+      while(HAL_CAN_GetTxMailboxesFreeLevel(&hcan) < 1 ){};
+
+      //txData 0x503
+      TxHeader.StdId = txIDList[2];
+      TxHeader.IDE = CAN_ID_STD; //type of id being sent ext or simple
+      get503(getTxData, msg0);
+      for(int i = 0; i < 8; i++){
+        TxData[i] = getTxData[i];
+      }
+      HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+      
+      //need to wait for mailbox to clear before sending msg
+      while(HAL_CAN_GetTxMailboxesFreeLevel(&hcan) < 1 ){}; //very sketch this was added by BEN :) - P.S Mischa dont kill me
+
+      if(SendSlowMessage == 1){
+      //txData 0x50B
+    	  TxHeader.StdId = txIDList[3];
+    	  TxHeader.IDE = CAN_ID_STD; //type of id being sent ext or simple
+    	  get50B(getTxData, msg0);
+    	  for(int i = 0; i < 8; i++){
+    		  TxData[i] = getTxData[i];
+    	  }
+    	  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+    	  SendSlowMessage = 0;
+      }
+    }
   }
     /* USER CODE END WHILE */
 
@@ -264,7 +374,7 @@ static void MX_CAN_Init(void)
    CAN_FilterTypeDef canfilterconfig; //struct that contains all the info for filters
 
    canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;  //ENABLE
-   canfilterconfig.FilterBank = 10;                       //Current filter bank to use
+   canfilterconfig.FilterBank = 0;                       //Current filter bank to use
    canfilterconfig.FilterFIFOAssignment = CAN_RX_FIFO0;   //Using Fifo0 interrupt
    canfilterconfig.FilterIdHigh = 0x401<<5;               //Assuming we are only filtering for 0x401 message
    canfilterconfig.FilterIdLow = 0x0000;
@@ -275,6 +385,28 @@ static void MX_CAN_Init(void)
    canfilterconfig.SlaveStartFilterBank = 13; // tells where to start giving the slave filters
 
    HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);         //sets up the filter according the info in canfilterconfig
+
+   //frame0
+   canfilterconfig.FilterBank = 1;                       //Current filter bank to use
+   canfilterconfig.FilterIdHigh = 0x08850225;
+   canfilterconfig.FilterIdLow = 0x0000;
+
+   HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);         //sets up the filter according the info in canfilterconfig
+
+   //frame1
+   canfilterconfig.FilterBank = 2;                       //Current filter bank to use
+   canfilterconfig.FilterIdHigh = 0x08950225;
+   canfilterconfig.FilterIdLow = 0x0000;
+
+   HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);         //sets up the filter according the info in canfilterconfig
+
+   //frame2
+   canfilterconfig.FilterBank = 3;                       //Current filter bank to use
+   canfilterconfig.FilterIdHigh = 0x08A50225;
+   canfilterconfig.FilterIdLow = 0x0000;
+
+   HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);         //sets up the filter according the info in canfilterconfig
+
 
   /* USER CODE END CAN_Init 2 */
 
@@ -311,6 +443,89 @@ static void MX_I2C2_Init(void)
   /* USER CODE BEGIN I2C2_Init 2 */
 
   /* USER CODE END I2C2_Init 2 */
+
+}
+
+/**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 8000-1;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 200-1;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
+
+}
+
+/**
+  * @brief TIM6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM6_Init(void)
+{
+
+  /* USER CODE BEGIN TIM6_Init 0 */
+
+  /* USER CODE END TIM6_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 8000-1;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 65535;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
+
+  /* USER CODE END TIM6_Init 2 */
 
 }
 
@@ -352,8 +567,8 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-//Interrupt where code will go when it recieves a CAN message.
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //recieve data in this function
+//Interrupt where code will go when it receives a CAN message.
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //receive data in this function
 {
   //gets the CAN message with info in RxHeader and data in RxData
 	if(HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
@@ -362,8 +577,43 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //recieve data i
 	}
 
   //sets a flag to let the main loop know a message has been received
-	Parse_Data_Flag = 1; 
+	switch(RxHeader.ExtId){
+		case (0x40100000): //0x401 velocity message
+			Parse_Data_Flag = 1;
+			break;
+		case (0x08850225): //frame 0
+			parse_frame0 = 1;
+			break;
+		case (0x08950225): //frame 1
+			parse_frame1 = 1;
+			break;
+		case (0x08A50225): //frame 2
+			parse_frame2 = 1;
+			break;
+		default:
+			break;
+	}
 
+}
+
+// Callback: timer has rolled over
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  // Check which version of the timer triggered this callback and toggle LED
+  if (htim == &htim3 )
+  {
+	  SendMessageTimerInterrupt = 1;
+
+	  count0++;
+	  if(count0 == 5) //send 50B message every second (Interrupt triggers every 0.2 s)
+	  {
+		  SendSlowMessage = 1;
+		  count0 = 0;
+	  }
+  }
+  if else(htim == &htim6){
+	  UpdateSpeedInterrupt = 1;
+  }
 }
 /* USER CODE END 4 */
 
