@@ -45,8 +45,9 @@ CAN_HandleTypeDef hcan;
 
 I2C_HandleTypeDef hi2c2;
 
-TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim6;
+TIM_HandleTypeDef htim7;
 
 /* USER CODE BEGIN PV */
 
@@ -57,8 +58,9 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN_Init(void);
 static void MX_I2C2_Init(void);
-static void MX_TIM3_Init(void);
 static void MX_TIM6_Init(void);
+static void MX_TIM1_Init(void);
+static void MX_TIM7_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -69,7 +71,6 @@ static void MX_TIM6_Init(void);
 CAN_TxHeaderTypeDef TxHeader; //struct with outgoing message information (type and length, etc.)
 CAN_RxHeaderTypeDef RxHeader; //struct with incoming message information
 uint32_t TxMailbox[3]; //3 transmit mailboxes
-//CAN_FilterTypeDef fltr;
 
 uint8_t TxData[8]; //buffer for transmit message
 uint8_t RxData[8]; //buffer for receive message
@@ -79,6 +80,7 @@ CAN_message_t msg0; //where all the info and data for the message will be put
 
 int txIDList[] = {0x501, 0x502, 0x503, 0x50B}; //array for the messages to be sent 
 
+//Flags Initialization
 bool SendMessageTimerInterrupt = 0;
 bool SendSlowMessage = 0;
 bool UpdateSpeedInterrupt = 0;
@@ -88,24 +90,14 @@ bool parse_frame0 = 0;
 bool parse_frame1 = 0;
 bool parse_frame2 = 0;
 
+//Variables for HALL speed calculations
+uint32_t oldTime = 0;
+uint32_t currentTime = 0;
+float rpm = 0;
+
 float parsed_voltage = 0;
 
-int32_t velocity; //FOR TESTING
-uint32_t acceleration; //FOR TESTING 
-uint64_t t_start; //FOR TESTING
-uint64_t t_end; //FOR TESTING
-uint64_t t_elapsed[256]; //FOR TESTING
-uint32_t count_t = 0; //FOR TESTING
-float count = 0; //FOR TESTING
-int test = 0; //FOR TESTING
-
-uint32_t count0 = 0; //for testing
-uint32_t count1 = 1; //for testing
-uint32_t count2 = 2; //for testing
-
-
-
-
+uint8_t countSlowTimerInterrupt = 0; //counter to send the slower messages
 
 /* USER CODE END 0 */
 
@@ -140,14 +132,16 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN_Init();
   MX_I2C2_Init();
-  MX_TIM3_Init();
   MX_TIM6_Init();
+  MX_TIM1_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
   HAL_CAN_Start(&hcan); //starts CAN
   HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING); //FIFO0 message pending interrupt (interrupt callback func will be called when this interrupt is triggered)
 
-  HAL_TIM_Base_Start_IT(&htim3); //timer for sending messages
-  HAL_TIM_Base_Start_IT(&htim6); //timer for updating speed
+  HAL_TIM_Base_Start_IT(&htim6); //timer for sending messages
+  HAL_TIM_Base_Start_IT(&htim1); //timer for updating speed coming from HALL sensor
+  HAL_TIM_Base_Start_IT(&htim7); //WATCHDOG timer to reset rpm to 0 when motor stops spinning
 
   TxHeader.DLC = 8;
   TxHeader.IDE = CAN_ID_EXT; //type of id being sent ext or simple
@@ -163,83 +157,68 @@ int main(void)
   //BOOT LED
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
-  while (1) { 
-	  //////////////////TEST MESSAGE GENERATION//////////////////////
-	  //count_t++;
-	  //if(count_t == 500000){
-	  //  velocity = 0x7;
-	  //  acceleration = 0x3f000000;
-	  //  velocity = 100;
-	  //  acceleration = acceleration/2.0*sin(count)  + acceleration/2.0 ;
-	/*	TxHeader.IDE = CAN_ID_EXT; //type of id being sent ext or simple
-		TxHeader.ExtId = 0x08F89540; //request frame ExtId
-	    Send_Test_Message(TxData, 7, 7); //request all frames
-	    HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
-	    count_t = 0;
-	  }
-	  */
-	  ///////////////////////////////////////////////////////////////
-
-
+  while (1) 
+  { 
     //////////////////////////////////////
     // PARSE MESSAGES COMING FROM MOTOR CONTROLLER  
     //////////////////////////////////////
     if(Parse_Data_Flag == 1 ){ //Parse_Data_Flag set in interrupt
 
-      CAN_Decode_Velocity_Message(RxData, &msg0); 
-
+      CAN_Decode_Velocity_Message(RxData, &msg0); //Decode the Incoming 0x401 Messages to get data for driving the car
       Parse_Data_Flag = 0; 
       send_data_flag = 1; 
     }
     
-    if(parse_frame0 == 1){ //TODO parse the frame based on info we want (need to make design decisions since info doesnt translate 1:1)
+    if(parse_frame0 == 1){ //Parse the frame based on info we want
     	Decode_Frame0(RxData,&msg0);
     	parse_frame0 = 0; //reset flag
     }
 
-    if(parse_frame1 == 1){ //TODO parse the frame based on info we want (need to make design decisions since info doesnt translate 1:1)
-    	count1++; //TEST Variable
+    if(parse_frame1 == 1){ //Parse the frame based on info we want (currently this frame doesnt have info we care)
     	parse_frame1 = 0; //reset flag
 
     }
 
-    if(parse_frame2 == 1){ //TODO parse the frame based on info we want (need to make design decisions since info doesnt translate 1:1)
-    	count2++; //TEST Variable
-    	parse_frame2 = 0; //reset flag
+    if(parse_frame2 == 1){ //Parse the frame based on info we want
     	Decode_Frame2(RxData,&msg0);
+    	parse_frame2 = 0; //reset flag
     }
 
     //////////////////////////////////////
     // SEND SIGNALS TO MOTOR CONTROLLER  
     //////////////////////////////////////
 
-    if( (send_data_flag == 1 ) && (Parse_Data_Flag == 0) ){
+    if( (send_data_flag == 1 ) && (Parse_Data_Flag == 0) )
+    {
+    	 //send acceleration current to motor
+         if(msg0.regen == REGEN_TRUE)
+        	 Send_Voltage(msg0.acceleration, DAC_REGEN_ADDR, &hi2c2);
+         else{
+        	 parsed_voltage = msg0.acceleration;
+        	 Send_Voltage(parsed_voltage, DAC_ADDR, &hi2c2);
+         }
 
-      if(msg0.regen == REGEN_TRUE)
-        Send_Voltage(msg0.acceleration, DAC_REGEN_ADDR, &hi2c2);
-      else{
-        parsed_voltage = msg0.acceleration;
-    	  Send_Voltage(parsed_voltage, DAC_ADDR, &hi2c2);
-      }
-      //send direction
-      if(msg0.direction == REVERSE_FALSE)
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
-      else 
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
-      //send power/eco
-      if(msg0.power_or_eco == ECO_ON)
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
-      else 
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+         //send direction
+         if(msg0.direction == REVERSE_FALSE)
+        	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
+         else
+        	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
 
-	    send_data_flag = 0; 
-      
+         //send power/eco
+         if(msg0.power_or_eco == ECO_ON)
+        	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+         else
+        	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+
+	     send_data_flag = 0;
     }
 
     //////////////////////////////////////
     // SEND MESSEGE TO MCB
     //////////////////////////////////////
-    if(SendMessageTimerInterrupt == 1){
+
+    if(SendMessageTimerInterrupt == 1)
+    {
     	SendMessageTimerInterrupt = 0;
 
 
@@ -250,50 +229,62 @@ int main(void)
     	HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
 
 
-      //txData 0x501
-      TxHeader.StdId = txIDList[0];
-      TxHeader.IDE = CAN_ID_STD; //type of id being sent ext or simple
-      get501(getTxData, msg0);
-      for(int i = 0; i < 8; i++){
-        TxData[i] = getTxData[i];
-      }
-      HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+    	//txData 0x501
+    	TxHeader.StdId = txIDList[0];
+    	TxHeader.IDE = CAN_ID_STD; //type of id being sent ext or simple
+    	get501(getTxData, msg0);
+    	for(int i = 0; i < 8; i++){
+    		TxData[i] = getTxData[i];
+    	}
+    	HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
       
-      //txData 0x502
-      TxHeader.StdId = txIDList[1];
-      TxHeader.IDE = CAN_ID_STD; //type of id being sent ext or simple
-      get502(getTxData, msg0);
-      for(int i = 0; i < 8; i++){
-        TxData[i] = getTxData[i];
-      }
-      HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+    	//txData 0x502
+    	TxHeader.StdId = txIDList[1];
+    	TxHeader.IDE = CAN_ID_STD; //type of id being sent ext or simple
+    	get502(getTxData, msg0);
+    	for(int i = 0; i < 8; i++){
+    		TxData[i] = getTxData[i];
+    	}
+    	HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
       
-      //need to wait for mailbox to clear before sending msg
-      while(HAL_CAN_GetTxMailboxesFreeLevel(&hcan) < 1 ){};
+    	//need to wait for mailbox to clear before sending msg
+    	while(HAL_CAN_GetTxMailboxesFreeLevel(&hcan) < 1 ){};
 
-      //txData 0x503
-      TxHeader.StdId = txIDList[2];
-      TxHeader.IDE = CAN_ID_STD; //type of id being sent ext or simple
-      get503(getTxData, msg0);
-      for(int i = 0; i < 8; i++){
-        TxData[i] = getTxData[i];
-      }
-      HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
+    	//txData 0x503
+    	TxHeader.StdId = txIDList[2];
+    	TxHeader.IDE = CAN_ID_STD; //type of id being sent ext or simple
+    	get503(getTxData, msg0);
+    	for(int i = 0; i < 8; i++){
+    		TxData[i] = getTxData[i];
+    	}
+    	HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
       
-      //need to wait for mailbox to clear before sending msg
-      while(HAL_CAN_GetTxMailboxesFreeLevel(&hcan) < 1 ){}; //very sketch this was added by BEN :) - P.S Mischa dont kill me
+    	//need to wait for mailbox to clear before sending msg
+    	while(HAL_CAN_GetTxMailboxesFreeLevel(&hcan) < 1 ){}; //very sketch this was added by BEN :) - P.S Mischa dont kill me
 
-      if(SendSlowMessage == 1){
-      //txData 0x50B
-    	  TxHeader.StdId = txIDList[3];
-    	  TxHeader.IDE = CAN_ID_STD; //type of id being sent ext or simple
-    	  get50B(getTxData, msg0);
-    	  for(int i = 0; i < 8; i++){
-    		  TxData[i] = getTxData[i];
-    	  }
+    	if(SendSlowMessage == 1){
+    		//txData 0x50B
+    		TxHeader.StdId = txIDList[3];
+    		TxHeader.IDE = CAN_ID_STD; //type of id being sent ext or simple
+    		get50B(getTxData, msg0);
+    		for(int i = 0; i < 8; i++){
+    			TxData[i] = getTxData[i];
+    		}
     	  HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
     	  SendSlowMessage = 0;
       }
+    }
+    ///////////////////////////////
+    //// HALL SPEED Convertion ////
+    ///////////////////////////////
+
+    if(UpdateSpeedInterrupt == 1){
+      UpdateSpeedInterrupt = 0; //reset flag
+
+      rpm = 60.0 / ((currentTime - oldTime) * 0.001); //get RPM
+
+      msg0.motorVelocity = rpm;
+      msg0.vehicleVelocity = (WHEEL_RADIUS * 2.0 * M_PI * rpm) / 60.0 ;  //linear speed = radius x angular speed = r*2*π*(RPM)/60
     }
   }
     /* USER CODE END WHILE */
@@ -447,47 +438,51 @@ static void MX_I2C2_Init(void)
 }
 
 /**
-  * @brief TIM3 Initialization Function
+  * @brief TIM1 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_TIM3_Init(void)
+static void MX_TIM1_Init(void)
 {
 
-  /* USER CODE BEGIN TIM3_Init 0 */
+  /* USER CODE BEGIN TIM1_Init 0 */
 
-  /* USER CODE END TIM3_Init 0 */
+  /* USER CODE END TIM1_Init 0 */
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
-  /* USER CODE BEGIN TIM3_Init 1 */
+  /* USER CODE BEGIN TIM1_Init 1 */
 
-  /* USER CODE END TIM3_Init 1 */
-  htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 8000-1;
-  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 200-1;
-  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  /* USER CODE END TIM1_Init 1 */
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 0;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 47;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.RepetitionCounter = 0;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
   }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_ETRMODE2;
+  sClockSourceConfig.ClockPolarity = TIM_CLOCKPOLARITY_NONINVERTED;
+  sClockSourceConfig.ClockPrescaler = TIM_CLOCKPRESCALER_DIV1;
+  sClockSourceConfig.ClockFilter = 15;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
   {
     Error_Handler();
   }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN TIM3_Init 2 */
+  /* USER CODE BEGIN TIM1_Init 2 */
 
-  /* USER CODE END TIM3_Init 2 */
+  /* USER CODE END TIM1_Init 2 */
 
 }
 
@@ -511,7 +506,7 @@ static void MX_TIM6_Init(void)
   htim6.Instance = TIM6;
   htim6.Init.Prescaler = 8000-1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 65535;
+  htim6.Init.Period = 200-1;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
@@ -526,6 +521,44 @@ static void MX_TIM6_Init(void)
   /* USER CODE BEGIN TIM6_Init 2 */
 
   /* USER CODE END TIM6_Init 2 */
+
+}
+
+/**
+  * @brief TIM7 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM7_Init(void)
+{
+
+  /* USER CODE BEGIN TIM7_Init 0 */
+
+  /* USER CODE END TIM7_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM7_Init 1 */
+
+  /* USER CODE END TIM7_Init 1 */
+  htim7.Instance = TIM7;
+  htim7.Init.Prescaler = 8000-1;
+  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim7.Init.Period = 1000-1;
+  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim7, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM7_Init 2 */
+
+  /* USER CODE END TIM7_Init 2 */
 
 }
 
@@ -578,9 +611,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //receive data i
 
   //sets a flag to let the main loop know a message has been received
 	switch(RxHeader.ExtId){
-		case (0x40100000): //0x401 velocity message
-			Parse_Data_Flag = 1;
-			break;
 		case (0x08850225): //frame 0
 			parse_frame0 = 1;
 			break;
@@ -594,25 +624,37 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //receive data i
 			break;
 	}
 
+	if(RxHeader.StdId == 0x401) //0x401 velocity message
+		Parse_Data_Flag = 1;
+
 }
 
 // Callback: timer has rolled over
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   // Check which version of the timer triggered this callback and toggle LED
-  if (htim == &htim3 )
+  if (htim == &htim6 )
   {
 	  SendMessageTimerInterrupt = 1;
 
-	  count0++;
-	  if(count0 == 5) //send 50B message every second (Interrupt triggers every 0.2 s)
+	  countSlowTimerInterrupt++;
+	  if(countSlowTimerInterrupt == 5) //send 50B message every second (Interrupt triggers every 0.2 s)
 	  {
 		  SendSlowMessage = 1;
-		  count0 = 0;
+		  countSlowTimerInterrupt = 0;
 	  }
   }
-  if else(htim == &htim6){
+
+  if(htim == &htim1){
+	  oldTime = currentTime;
+	  currentTime = HAL_GetTick();
 	  UpdateSpeedInterrupt = 1;
+
+	  TIM7 -> CNT = 0; //reset WATCHDOG timer to 0
+  }
+
+  if(htim == &htim7){
+	  rpm = 0; //if we enter WATCHDOG timer interrupt we must have stopped spinning the motor
   }
 }
 /* USER CODE END 4 */

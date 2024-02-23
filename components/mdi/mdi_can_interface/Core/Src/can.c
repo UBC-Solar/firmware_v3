@@ -9,8 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
-
 /**
  * Takes the CAN message and decodes the data to know in which mode of operation the motor controller should be in and separates the message data into
  * the acceleration and velocity components
@@ -53,40 +51,34 @@
 		CAN_msg->regen = REGEN_FALSE; 
 	}
 	return; 
-
-
  } //end of decode_CAN_velocity_msg 
 
  void Decode_Frame0 (uint8_t RxData[], CAN_message_t* CAN_msg){
 
 	 //10 bit number
-	 uint16_t BatteryVoltage = ((uint32_t)(RxData[1] & 0x03) << 1*8) |
+	 uint32_t BatteryVoltage = ((uint32_t)(RxData[1] & 0x03) << 1*8) |
 			 	 	 	 	 	  ((uint32_t) RxData[0] << 0) ;
+
+	 CAN_msg -> busVoltage = (float) BatteryVoltage / 2.0; //according to datasheet 0.5 V / LSB
+
 	 //9 bit number
-	 int16_t BatteryCurrent = ((uint32_t)(RxData[2] & 0x07) << 2*8)|
-			 	 	 	 	 	 ((uint32_t)(RxData[1] & 0xFC) << 1*8) ;
-	 //Align Bits
-	 BatteryCurrent = BatteryCurrent >> 2;
+	 uint32_t BatteryCurrent = ((uint32_t)(RxData[2] & 0x07) << 6)|
+			 	 	 	 	 	 ((uint32_t)(RxData[1] & 0xFC) >> 2) ;
 
 	 //Sign the Current
 	 if(RxData[2] & 0x08)
-		 BatteryCurrent = ((uint16_t) BatteryCurrent) * -1;
+		 CAN_msg -> busCurrent = (float) BatteryCurrent * -1.0; //datasheet 1A per LSB
 	 else
-		 BatteryCurrent = ((uint16_t) BatteryCurrent) * 1;
+		 CAN_msg -> busCurrent = (float) BatteryCurrent * 1.0;
 
 	 //5 bit number
-	 uint16_t FET_Temperature = ((uint32_t)(RxData[4] & 0x07) << 1*8)|
-	 			 	            ((uint32_t)(RxData[3] & 0xC0) << 0*8) ;
-	 //Align Bits
-	 FET_Temperature = FET_Temperature >> 6;
+	 uint32_t FET_Temperature = ((uint32_t)(RxData[4] & 0x07) << 2) |
+	 			 	            ((uint32_t)(RxData[3] & 0xC0) >> 6) ;
 
-	 //Fill Struct
-	 CAN_msg -> busVoltage = BatteryVoltage;
-	 CAN_msg -> busCurrent = BatteryCurrent;
-	 CAN_msg -> controllerHeatsinkTemp = FET_Temperature;
+	 CAN_msg -> controllerHeatsinkTemp = (float) FET_Temperature * 5.0; //datasheet 5 Celsius per LSB
 
 
- }
+}
 
  void Decode_Frame2 (uint8_t RxData[], CAN_message_t* CAN_msg){
 
@@ -96,7 +88,7 @@
 	 CAN_msg->motorCurrentFlag = CurrentLimit;
 	 CAN_msg->softwareOverCurrent = OverCurrent;
 
- }
+}
 
  uint8_t getBit(uint8_t msb, uint8_t two, uint8_t three, uint8_t four, uint8_t five, uint8_t six, uint8_t seven, uint8_t lsb){
   	uint8_t byte = (msb * 128 + two * 64 + three * 32 + four * 16 + five * 8 + six * 4 + seven * 2 + lsb * 1);
@@ -104,14 +96,14 @@
   		byte = 0;
   	}
   	 return byte;
-  }
+ }
 
   void split_32_bit_number(uint32_t number, uint8_t *bytes) {
       bytes[0] = (number >> 24) & 0xFF;
       bytes[1] = (number >> 16) & 0xFF;
       bytes[2] = (number >> 8) & 0xFF;
       bytes[3] = number & 0xFF;
-  }
+ }
 
  void get501(uint8_t* message501, CAN_message_t CanMessage){
 
@@ -158,7 +150,7 @@
  	  message501[7] = getBit(message64[56], message64[57], message64[58], message64[59],
  					  message64[60], message64[61], message64[62], message64[63]);
 
- }
+}
 
  void get502(uint8_t* message502, CAN_message_t CanMessage){
 
@@ -176,7 +168,7 @@
  	message502[6] = busCurrentSplit[2];
  	message502[7] = busCurrentSplit[3];
 
- }
+}
 
  void get503(uint8_t* message503, CAN_message_t CanMessage){
 
@@ -194,7 +186,7 @@
  	message503[6] = vehicleVelocitytSplit[2];
  	message503[7] = vehicleVelocitytSplit[3];
 
- }
+}
 
  void get50B(uint8_t* message50B, CAN_message_t CanMessage){
 
@@ -211,5 +203,4 @@
  	message50B[5] = controllerHeatsinkTempSplit[1];
  	message50B[6] = controllerHeatsinkTempSplit[2];
  	message50B[7] = controllerHeatsinkTempSplit[3];
-
- }
+}

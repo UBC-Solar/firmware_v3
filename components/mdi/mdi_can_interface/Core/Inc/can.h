@@ -28,6 +28,8 @@
 
 #define UINT10_MAX 0x3FF
 
+#define WHEEL_RADIUS 0.283 //units in m
+
 
 //Limit voltage out into the motor 
 #define MAX_VOLTAGE_OUT 0x3C1 //Corresponds to 4.7V (0.938*10'b1_111_111_111)
@@ -54,16 +56,17 @@ typedef struct
 	uint8_t DCBusOverVoltage;
 
 	//0x502
-	uint32_t busVoltage;
-	uint32_t busCurrent;
+	float busVoltage;
+	float busCurrent;
 
 	//0x503
-	uint8_t motorVelocity;
-	uint8_t vehicleVelocity;
+	float motorVelocity;
+	float vehicleVelocity;
+	uint32_t  CAN_Velocity;
 
-	//0x504
-	uint8_t motorTemp;
-	uint8_t controllerHeatsinkTemp;
+	//0x50B
+	float motorTemp;
+	float controllerHeatsinkTemp;
 
 } CAN_message_t;
 
