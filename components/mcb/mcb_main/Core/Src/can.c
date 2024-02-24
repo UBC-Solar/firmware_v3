@@ -44,6 +44,17 @@ CAN_TxHeaderTypeDef DID_next_page_header = {
     .RTR = CAN_RTR_DATA,
     .DLC = CAN_DATA_LENGTH};
 
+/**
+ * 	CAN message header for Drive state (0x403).
+ */
+
+CAN_TxHeaderTypeDef drive_state_header = {
+    .StdId = MOTOR_DRIVE_STATE,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
+
 uint32_t can_mailbox;
 
 CAN_RxHeaderTypeDef can_rx_header;    /**< Stores the header information for CAN messages read from the RX (receive) buffer */
