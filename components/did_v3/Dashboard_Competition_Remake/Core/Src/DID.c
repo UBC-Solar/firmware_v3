@@ -17,16 +17,16 @@ uint8_t recent_faults[15];  // See BS Master BOM (0x622 Bits 0-12, 17, 18)
 /*
  * Initialize cyclic data
  */
-CREATE_CYCLIC_DATA_FLOAT( data_simulation_speed, 1200 );
-CREATE_CYCLIC_DATA_U8( data_battery_SOC, 1200 );
-CREATE_CYCLIC_DATA_FLOAT( data_target_velocity, 1200 );
-CREATE_CYCLIC_DATA_FLOAT( data_vehicle_velocity, 1200 );
-CREATE_CYCLIC_DATA_U8( data_MCB_drive_state, 1200 );
-CREATE_CYCLIC_DATA_FLOAT( data_motor_current, 1200 );
-CREATE_CYCLIC_DATA_FLOAT( data_array_current, 1200 );
-CREATE_CYCLIC_DATA_U16( data_pack_current, 1200 );
-CREATE_CYCLIC_DATA_U16( data_pack_voltage, 1200 );
-CREATE_CYCLIC_DATA_S8( data_pack_temperature, 1200 );
+CREATE_CYCLIC_DATA_FLOAT( data_simulation_speed, MAX_CYCLE_TIME_SIMULATION_SPEED );
+CREATE_CYCLIC_DATA_U8( data_battery_SOC, MAX_CYCLE_TIME_BATTERY_SOC );
+CREATE_CYCLIC_DATA_FLOAT( data_target_velocity, MAX_CYCLE_TIME_MOTOR_COMMAND );
+CREATE_CYCLIC_DATA_FLOAT( data_vehicle_velocity, MAX_CYCLE_TIME_VEHICLE_VELOCITY );
+CREATE_CYCLIC_DATA_U8( data_MCB_drive_state, MAX_CYCLE_TIME_MCB_DRIVE_STATE );
+CREATE_CYCLIC_DATA_FLOAT( data_motor_current, MAX_CYCLE_TIME_MOTOR_CURRENT );
+CREATE_CYCLIC_DATA_FLOAT( data_array_current, MAX_CYCLE_TIME_ARRAY_CURRENT );
+CREATE_CYCLIC_DATA_U16( data_pack_current, MAX_CYCLE_TIME_PACK_CURRENT );
+CREATE_CYCLIC_DATA_U16( data_pack_voltage, MAX_CYCLE_TIME_PACK_VOLTAGE );
+CREATE_CYCLIC_DATA_S8( data_pack_temperature, MAX_CYCLE_TIME_PACK_TEMPERATURE );
 
 /*
  *  Function declarations
@@ -59,10 +59,10 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID )
 		// Simulation target speed
 		case CAN_ID_SIMULATION_SPEED:
 			FloatBytes temp_simulation_speed;
-			temp_simulation_speed.bytes[0] = CAN_rx_data[4];
-			temp_simulation_speed.bytes[1] = CAN_rx_data[5];
-			temp_simulation_speed.bytes[2] = CAN_rx_data[6];
-			temp_simulation_speed.bytes[3] = CAN_rx_data[7];
+			temp_simulation_speed.bytes[0] = CAN_rx_data[0];
+			temp_simulation_speed.bytes[1] = CAN_rx_data[1];
+			temp_simulation_speed.bytes[2] = CAN_rx_data[2];
+			temp_simulation_speed.bytes[3] = CAN_rx_data[3];
 
 			SET_CYCLIC_DATA( data_simulation_speed, temp_simulation_speed.float_value );
 			break;
