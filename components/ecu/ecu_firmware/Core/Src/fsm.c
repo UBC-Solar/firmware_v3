@@ -516,8 +516,6 @@ void ECU_monitor()
 void fault()
 {
 
-    printf("fault\r\n");
-
     /*************************
     Put Pack in Safe State
     **************************/

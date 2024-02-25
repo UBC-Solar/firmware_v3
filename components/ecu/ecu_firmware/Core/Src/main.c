@@ -245,8 +245,8 @@ static void MX_ADC1_Init(void)
   /** Configure Analog WatchDog 1
   */
   AnalogWDGConfig.WatchdogMode = ADC_ANALOGWATCHDOG_SINGLE_REG;
-  AnalogWDGConfig.HighThreshold = 2727;
-  AnalogWDGConfig.LowThreshold = 2060;
+  AnalogWDGConfig.HighThreshold = 2710;
+  AnalogWDGConfig.LowThreshold = 2071;
   AnalogWDGConfig.Channel = ADC_CHANNEL_14;
   AnalogWDGConfig.ITMode = ENABLE;
   if (HAL_ADC_AnalogWDGConfig(&hadc1, &AnalogWDGConfig) != HAL_OK)
@@ -318,6 +318,10 @@ static void MX_ADC1_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN ADC1_Init 2 */
+
+  if (HAL_ADCEx_Calibration_Start(&hadc1) != HAL_OK){
+    Error_Handler();
+  }
 
   /* USER CODE END ADC1_Init 2 */
 
