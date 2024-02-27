@@ -428,7 +428,13 @@ BTM_Status_t BTM_getVoltagesRaw(BTM_RawVoltages_t *voltageData)
 	uint32_t cell_num = 0;
 	BTM_Status_t status = {BTM_OK, 0};
 
+	status = BTM_sendCmdAndPoll(CMD_MUTE);
+	if (status.error != BTM_OK) return status;
+
 	status = BTM_sendCmdAndPoll(CMD_ADCV);
+	if (status.error != BTM_OK) return status;
+
+	status = BTM_sendCmdAndPoll(CMD_UNMUTE);
 	if (status.error != BTM_OK) return status;
 
 	status = BTM_readRegisterGroup(CMD_RDCVA, ADC_data[0]);
