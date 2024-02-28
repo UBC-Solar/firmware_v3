@@ -165,7 +165,7 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID )
 			S8Byte temp_pack_temperature;
 			temp_pack_temperature.byte = CAN_rx_data[3];
 
-			SET_CYCLIC_DATA( data_pack_temperature, temp_pack_temperature.S8_value )
+			SET_CYCLIC_DATA( data_pack_temperature, temp_pack_temperature.S8_value );
 			break;
 
 		

@@ -22,32 +22,32 @@ Header file containing all constants and function declarations to the LCD
 /* See Display_Horizontal_Character_Numbering.jpg in Brightside/BS Software/BS DID/ for how numbering works */
 
 /* Page 0 */
-// SOC
-#define SOC_XPOS 0
-#define SOC_YPOS 0
-#define SOC_DATA_XPOS 15
-#define SOC_DATA_YPOS 0
-#define SOC_UNIT_XPOS 38
-#define SOC_UNIT_YPOS 0
-// Cruise Control Set
-#define CRUISE_XPOS 0
-#define CRUISE_YPOS 3
-#define CRUISE_DATA_XPOS 15
-#define CRUISE_DATA_YPOS 3
-#define CRUISE_UNIT_XPOS 35
-#define CRUISE_UNIT_YPOS 3
-// Vehicle Velocity (Motor Speed)
+// SPEED
 #define SPEED_XPOS 0
-#define SPEED_YPOS 6
+#define SPEED_YPOS 0
 #define SPEED_DATA_XPOS 15
-#define SPEED_DATA_YPOS 6
-#define SPEED_UNIT_XPOS 35
-#define SPEED_UNIT_YPOS 6
+#define SPEED_DATA_YPOS 0
+#define SPEED_UNIT_XPOS 38
+#define SPEED_UNIT_YPOS 0
+// Battery state of charge
+#define SOC_XPOS 0
+#define SOC_YPOS 3
+#define SOC_DATA_XPOS 15
+#define SOC_DATA_YPOS 3
+#define SOC_UNIT_XPOS 35
+#define SOC_UNIT_YPOS 3
 // MCB Drive State
 #define STATE_XPOS 0
-#define STATE_YPOS 9
-#define STATE_DATA_XPOS 20
-#define STATE_DATA_YPOS 9
+#define STATE_YPOS 6
+#define STATE_DATA_XPOS 15
+#define STATE_DATA_YPOS 6
+// Target Cruise Speed
+#define CRUISE_XPOS 0
+#define CRUISE_YPOS 9
+#define CRUISE_DATA_XPOS 20
+#define CRUISE_DATA_YPOS 9
+#define CRUISE_UNIT_XPOS 20
+#define CRUISE_UNIT_YPOS 9
 // Simulation Target Speed
 #define TARGET_XPOS 0
 #define TARGET_YPOS 12
