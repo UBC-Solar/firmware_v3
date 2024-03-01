@@ -73,13 +73,13 @@ typedef struct
 
 void Send_Voltage(float parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef *hi2c2);
 
-void CAN_Decode_Velocity_Message(uint8_t RxData[], CAN_message_t* CAN_msg); 
+void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg);
 
 void Send_Test_Message(uint8_t* TxData, int32_t velocity, uint32_t acceleration);
 
-void Decode_Frame0(uint8_t RxData[], CAN_message_t* CAN_msg);
+void Decode_Frame0(uint8_t localRxData[], CAN_message_t* CAN_msg);
 
-void Decode_Frame2(uint8_t RxData[], CAN_message_t* CAN_msg);
+void Decode_Frame2(uint8_t localRxData[], CAN_message_t* CAN_msg);
 
 uint8_t getBit(uint8_t msb, uint8_t two, uint8_t three, uint8_t four, uint8_t five, uint8_t six, uint8_t seven, uint8_t lsb);
 
@@ -92,6 +92,8 @@ void get502(uint8_t* message502, CAN_message_t CanMessage);
 void get503(uint8_t* message503, CAN_message_t CanMessage);
 
 void get50B(uint8_t* message50B, CAN_message_t CanMessage);
+
+void CopyRxData(uint8_t* globalRxData, uint8_t* localRxData);
 
 
 

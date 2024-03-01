@@ -76,6 +76,13 @@ uint8_t TxData[8]; //buffer for transmit message
 uint8_t RxData[8]; //buffer for receive message
 uint8_t getTxData[8];
 
+uint8_t localRxDataFrame0[8];
+uint8_t localRxDataFrame1[8];
+uint8_t localRxDataFrame2[8];
+uint8_t localRxDataMessage401[8];
+
+
+
 CAN_message_t msg0; //where all the info and data for the message will be put
 
 int txIDList[] = {0x501, 0x502, 0x503, 0x50B}; //array for the messages to be sent 
@@ -108,6 +115,7 @@ uint8_t countSlowTimerInterrupt = 0; //counter to send the slower messages
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+	uint8_t RxDataLocal[8];
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -164,22 +172,26 @@ int main(void)
     //////////////////////////////////////
     if(Parse_Data_Flag == 1 ){ //Parse_Data_Flag set in interrupt
 
-      CAN_Decode_Velocity_Message(RxData, &msg0); //Decode the Incoming 0x401 Messages to get data for driving the car
+      CopyRxData(localRxDataMessage401,RxDataLocal);
+      CAN_Decode_Velocity_Message(RxDataLocal, &msg0); //Decode the Incoming 0x401 Messages to get data for driving the car
       Parse_Data_Flag = 0; 
       send_data_flag = 1; 
     }
     
     if(parse_frame0 == 1){ //Parse the frame based on info we want
-    	Decode_Frame0(RxData,&msg0);
+    	CopyRxData(localRxDataFrame0,RxDataLocal);
+    	Decode_Frame0(RxDataLocal,&msg0);
     	parse_frame0 = 0; //reset flag
     }
 
     if(parse_frame1 == 1){ //Parse the frame based on info we want (currently this frame doesnt have info we care)
+    	CopyRxData(localRxDataFrame1,RxDataLocal);
     	parse_frame1 = 0; //reset flag
 
     }
 
     if(parse_frame2 == 1){ //Parse the frame based on info we want
+    	CopyRxData(localRxDataFrame2,RxDataLocal);
     	Decode_Frame2(RxData,&msg0);
     	parse_frame2 = 0; //reset flag
     }
@@ -225,7 +237,8 @@ int main(void)
     	//send request for data from MC
     	TxHeader.IDE = CAN_ID_EXT; //type of id being sent ext or simple
     	TxHeader.ExtId = 0x08F89540; //request frame ExtId
-    	Send_Test_Message(TxData, 7, 7); //request all frames
+    	//Send_Test_Message(TxData, 7, 7); //request all frames
+    	Send_Test_Message(TxData, 5, 5); //request frame 0 and 2
     	HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
 
 
@@ -603,6 +616,7 @@ static void MX_GPIO_Init(void)
 //Interrupt where code will go when it receives a CAN message.
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //receive data in this function
 {
+
   //gets the CAN message with info in RxHeader and data in RxData
 	if(HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
 	{
@@ -610,22 +624,31 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) //receive data i
 	}
 
   //sets a flag to let the main loop know a message has been received
-	switch(RxHeader.ExtId){
-		case (0x08850225): //frame 0
-			parse_frame0 = 1;
-			break;
-		case (0x08950225): //frame 1
-			parse_frame1 = 1;
-			break;
-		case (0x08A50225): //frame 2
-			parse_frame2 = 1;
-			break;
-		default:
-			break;
+	if(RxHeader.IDE == 4){ //we received and ExtId
+		switch(RxHeader.ExtId){
+			case (0x08850225): //frame 0
+					parse_frame0 = 1;
+				CopyRxData(RxData, localRxDataFrame0);
+				break;
+			case (0x08950225): //frame 1
+					parse_frame1 = 1;
+				CopyRxData(RxData, localRxDataFrame1);
+				break;
+			case (0x08A50225): //frame 2
+				parse_frame2 = 1;
+				CopyRxData(RxData, localRxDataFrame2);
+				break;
+			default:
+				break;
+		}
+	}
+	else{
+		if(RxHeader.StdId == 0x401){ //0x401 velocity message
+			Parse_Data_Flag = 1;
+			CopyRxData(RxData, localRxDataMessage401);
+		}
 	}
 
-	if(RxHeader.StdId == 0x401) //0x401 velocity message
-		Parse_Data_Flag = 1;
 
 }
 
@@ -655,6 +678,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
   if(htim == &htim7){
 	  rpm = 0; //if we enter WATCHDOG timer interrupt we must have stopped spinning the motor
+	  msg0.motorVelocity = 0;
+	  msg0.vehicleVelocity = 0;  //linear speed = radius x angular speed = r*2*π*(RPM)/60
   }
 }
 /* USER CODE END 4 */

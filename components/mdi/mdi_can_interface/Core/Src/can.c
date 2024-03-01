@@ -17,7 +17,7 @@
  * @param CAN_msg struct that holds the velocity, acceleration and current state of operation of the motor controller 
  * @retval Modifies CAN_msg struct with the appropriate modes of operation and the values for velocity and acceleration
  */
- void CAN_Decode_Velocity_Message(uint8_t RxData[], CAN_message_t* CAN_msg){
+ void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg){
 
 	union { //union struct to convert the input stream of 32-bits into IEEE float
 		uint32_t concatenated_bits;
@@ -25,16 +25,16 @@
 	}u;
 
 	CAN_msg->velocity =  	
-		( ((int32_t) RxData[3]) << 3*8) | 
-		( ((int32_t) RxData[2]) << 2*8) | 
-		( ((int32_t) RxData[1]) << 1*8) | 
-		( ((int32_t) RxData[0]) << 0); 
+		( ((int32_t) localRxData[3]) << 3*8) |
+		( ((int32_t) localRxData[2]) << 2*8) |
+		( ((int32_t) localRxData[1]) << 1*8) |
+		( ((int32_t) localRxData[0]) << 0);
 
 	u.concatenated_bits =
-		( ((uint32_t) RxData[7]) << 3*8) |
-		( ((uint32_t) RxData[6]) << 2*8) |
-		( ((uint32_t) RxData[5]) << 1*8) |
-		( ((uint32_t) RxData[4]) << 0);
+		( ((uint32_t) localRxData[4]) << 3*8) |
+		( ((uint32_t) localRxData[5]) << 2*8) |
+		( ((uint32_t) localRxData[6]) << 1*8) |
+		( ((uint32_t) localRxData[7]) << 0);
 	
 	CAN_msg -> acceleration = u.float_velocity;
 
@@ -53,37 +53,37 @@
 	return; 
  } //end of decode_CAN_velocity_msg 
 
- void Decode_Frame0 (uint8_t RxData[], CAN_message_t* CAN_msg){
+ void Decode_Frame0 (uint8_t localRxData[], CAN_message_t* CAN_msg){
 
 	 //10 bit number
-	 uint32_t BatteryVoltage = ((uint32_t)(RxData[1] & 0x03) << 1*8) |
-			 	 	 	 	 	  ((uint32_t) RxData[0] << 0) ;
+	 uint32_t BatteryVoltage = ((uint32_t)(localRxData[1] & 0x03) << 1*8) |
+			 	 	 	 	 	  ((uint32_t) localRxData[0] << 0) ;
 
 	 CAN_msg -> busVoltage = (float) BatteryVoltage / 2.0; //according to datasheet 0.5 V / LSB
 
 	 //9 bit number
-	 uint32_t BatteryCurrent = ((uint32_t)(RxData[2] & 0x07) << 6)|
-			 	 	 	 	 	 ((uint32_t)(RxData[1] & 0xFC) >> 2) ;
+	 uint32_t BatteryCurrent = ((uint32_t)(localRxData[2] & 0x07) << 6)|
+			 	 	 	 	 	 ((uint32_t)(localRxData[1] & 0xFC) >> 2) ;
 
 	 //Sign the Current
-	 if(RxData[2] & 0x08)
+	 if(localRxData[2] & 0x08)
 		 CAN_msg -> busCurrent = (float) BatteryCurrent * -1.0; //datasheet 1A per LSB
 	 else
 		 CAN_msg -> busCurrent = (float) BatteryCurrent * 1.0;
 
 	 //5 bit number
-	 uint32_t FET_Temperature = ((uint32_t)(RxData[4] & 0x07) << 2) |
-	 			 	            ((uint32_t)(RxData[3] & 0xC0) >> 6) ;
+	 uint32_t FET_Temperature = ((uint32_t)(localRxData[4] & 0x07) << 2) |
+	 			 	            ((uint32_t)(localRxData[3] & 0xC0) >> 6) ;
 
 	 CAN_msg -> controllerHeatsinkTemp = (float) FET_Temperature * 5.0; //datasheet 5 Celsius per LSB
 
 
 }
 
- void Decode_Frame2 (uint8_t RxData[], CAN_message_t* CAN_msg){
+ void Decode_Frame2 (uint8_t localRxData[], CAN_message_t* CAN_msg){
 
-	 bool CurrentLimit = RxData[2] & 0x02;
-	 bool OverCurrent =  RxData[2] & 0x10;
+	 bool CurrentLimit = localRxData[2] & 0x02;
+	 bool OverCurrent =  localRxData[2] & 0x10;
 
 	 CAN_msg->motorCurrentFlag = CurrentLimit;
 	 CAN_msg->softwareOverCurrent = OverCurrent;
@@ -204,3 +204,11 @@
  	message50B[6] = controllerHeatsinkTempSplit[2];
  	message50B[7] = controllerHeatsinkTempSplit[3];
 }
+
+ void CopyRxData(uint8_t* globalRxData, uint8_t* localRxData){
+	 uint8_t i = 0;
+	 for(i = 0 ; i < 8; i++){
+		 localRxData[i] = globalRxData[i];
+	 }
+	 return;
+ }
