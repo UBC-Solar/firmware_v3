@@ -4,63 +4,52 @@
  *
  *  @date 2020/07/10
  *  @author Andrew Hanlon (a2k-hanlon)
+ *  @note see https://docs.google.com/spreadsheets/d/1xxisHuuusQCDnes3OIaucntGGlHj25iUrbfAIXvNhaM/edit#gid=0
+
  */
 
 #ifndef INC_ANALYSIS_H_
 #define INC_ANALYSIS_H_
 
 #include "ltc6813_btm.h"
+#include "pack.h"
+#include <stdbool.h>
 
 /*============================================================================*/
 /* CONFIGURABLE PARAMETERS */
 
-// Integer values in 10th's of mV
-#define OV_FAULT_VOLTAGE        42100U // 4.2100 V
-#define HLIM_TRIP_VOLTAGE       42000U // 4.2000 V
-#define HIGH_WARNING_VOLTAGE    41500U // 4.1500 V
+// Voltage values in 10th's of mV
 
-#define LOW_WARNING_VOLTAGE     27500U // 2.7500 V
-#define LLIM_TRIP_VOLTAGE       27100U // 2.7100 V
-#define UV_FAULT_VOLTAGE        27000U // 2.7000 V
+// Faults
+#define FLT_OV_THRESHOLD 42100U             // 4.2100 V
+#define FLT_UV_THRESHOLD 27000U             // 2.7000 V
+#define FLT_SHORT_THRESHOLD 5000U           // 0.5000 V
+#define FLT_TEMP_RANGE_LOW_THRESHOLD 0.0    // degrees C
+#define FLT_TEMP_RANGE_HIGH_THRESHOLD 150.0 // degrees C
+#define FLT_OT_THRESHOLD 65.0               // degrees C
 
-#define SHORT_FAULT_VOLTAGE     05000U // 0.5000 V
+// Trips
+#define TRIP_HLIM_THRESHOLD 42000U    // 4.2000 V
+#define TRIP_LLIM_THRESHOLD 27100U    // 2.7100 V
+#define TRIP_CHARGE_OT_THRESHOLD 45.0 // degrees C
 
-// A temperature beyond the limit temps will be regarded as a bad read (fault)
-#define LOW_READ_LIMIT_TEMP     0.0  // degrees C
-#define HIGH_READ_LIMIT_TEMP    150.0// degrees C
-#define LOW_WARNING_TEMP        10.0 // degrees C
-#define HIGH_WARNING_TEMP       45.0 // degrees C
-#define CHARGE_OT_TEMP          45.0 // degrees C
-#define OT_FAULT_TEMP           65.0 // degrees C
+// Warnings
+#define WARN_HIGH_V_THRESHOLD 41500U // 4.1500 V
+#define WARN_LOW_V_THRESHOLD 27500U  // 2.7500 V
+#define WARN_LOW_T_THRESHOLD 10.0    // degrees C
+#define WARN_HIGH_T_THRESHOLD 55.0   // degrees C
 
-/*============================================================================*/
-/* PUBLIC CONSTANTS */
-
-// BMS Status Code Bitmasks
-#define BMS_FAULT_COMM          0x0001
-#define BMS_FAULT_ST            0x0002
-#define BMS_FAULT_OT            0x0004
-#define BMS_FAULT_UV            0x0008
-#define BMS_FAULT_OV            0x0010
-#define BMS_FAULT_NO_VOLT       0x0020
-#define BMS_FAULT_TEMP_RANGE    0x0040
-
-#define BMS_TRIP_BAL            0x0100
-#define BMS_TRIP_LLIM           0x0200
-#define BMS_TRIP_HLIM           0x0400
-#define BMS_TRIP_CHARGE_OT      0x0800
-#define BMS_WARNING_LOW_V       0x1000
-#define BMS_WARNING_HIGH_V      0x2000
-#define BMS_WARNING_LOW_T       0x4000
-#define BMS_WARNING_HIGH_T      0x8000
-
-#define MASK_BMS_FAULT          0x007F // Covers all faults
-#define MASK_BMS_SYSTEM_FAULT   0x0003 // Covers COMM and ST faults
+// Hysteresis prevents spurious flip-flopping of status bits
+// derived from measurements if a measurement is right around
+// a threshold and not very steady
+#define VOLTAGE_THRESHOLD_HYSTERESIS 100U // 0.01 V
+#define TEMPERATURE_THRESHOLD_HYSTERESIS 2.0 // degrees C
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
-void ANA_analyzeModules(BTM_PackData_t * pack);
-int ANA_mergeModuleStatusCodes(BTM_PackData_t * pack);
-float ANA_findHighestModuleTemp(BTM_PackData_t * pack);
+
+void ANA_analyzePack(Pack_t *pack);
+void ANA_writeBalStatus(Pack_Module_t *module, bool discharge_active);
+float ANA_findHighestModuleTemp(Pack_t *pack);
 
 #endif /* INC_ANALYSIS_H_ */

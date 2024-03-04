@@ -21,6 +21,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -117,6 +118,11 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* hcan)
 
     __HAL_AFIO_REMAP_CAN1_2();
 
+    /* CAN1 interrupt Init */
+    HAL_NVIC_SetPriority(USB_HP_CAN1_TX_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(USB_HP_CAN1_TX_IRQn);
+    HAL_NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
   /* USER CODE BEGIN CAN1_MspInit 1 */
 
   /* USER CODE END CAN1_MspInit 1 */
@@ -146,6 +152,9 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* hcan)
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8|GPIO_PIN_9);
 
+    /* CAN1 interrupt DeInit */
+    HAL_NVIC_DisableIRQ(USB_HP_CAN1_TX_IRQn);
+    HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn);
   /* USER CODE BEGIN CAN1_MspDeInit 1 */
 
   /* USER CODE END CAN1_MspDeInit 1 */

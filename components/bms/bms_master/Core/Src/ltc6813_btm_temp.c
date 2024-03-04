@@ -2,28 +2,28 @@
  *  @file ltc6813_btm_temp.c
  *  @brief Driver for LTC6813-1 temperature monitoring
  *
- *  This file was originally renamed from LTC6813_BTM_Thermistor.c,
- *  which was modified from thermistor.c
- *
  *  @date 2020/08/18
  *  @author abooodeee
  */
 
 #include "ltc6813_btm_temp.h"
-#include "stm32f1xx_hal.h"
 #include <math.h>
-#include "pack.h"
 
+/*============================================================================*/
+/* DEFINITIONS */
 
 #define GPIO_5_TOGGLE 0x80 // For bitwise operations with CFGRA byte 0
 #define MUX_CHANNELS 2
 #define NUM_GPIOS 8
 
+#define DELAY_TIME_MUX_SWITCH_TO_MEASURE_MS 1
 // Imperically, need at least ~500us according to bench test
 // (that's with just 2 thermistor inputs in use, may need more with full set)
 // If this is longer than 4ms this routine may stop working since the
 // LTC6813 isoSPI port might go to sleep
-#define DELAY_TIME_MUX_SWITCH_TO_MEASURE_MS 1
+
+/*============================================================================*/
+/* PRIVATE FUNCTION PROTOTYPES */
 
 // Private function prototypes:
 BTM_Status_t readThermistorVoltage(
@@ -40,25 +40,19 @@ BTM_Status_t readThermistorVoltage(
 
 void volts2temp(uint16_t ADC[], uint16_t REF2[], float temp_celsius[]);
 
-/*
-Function name: BTM_TEMP_measureState
-Purpose: Algorithm for reading thermistors across multiple muxes
-input:
-Pointer to predefined pack data structure.
-Internal functions pull readings from hardware registers
-Output:
-Voltages of thermistors stored in the given pack data structure
-ie. pack.stack[].module[].temperature, as well as
-actual temperature in degrees celsius
-ie. pack.stack[].GPIO[].channel[].temperature_C.
-Returns:
-BTM_Status_t Status from communication functions.
-Note: nothing new written to pack if return value != BTM_OK
-Internal functions:
-readThermistorVoltage()
-volts2temp()
-*/
-BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
+
+/*============================================================================*/
+/* PUBLIC FUNCTION DEFINITIONS */
+
+/**
+ * @brief Algorithm for reading thermistors across multiple multiplexers
+ *
+ * @attention Only writes to temperatureData if return value = BTM_OK
+ *
+ * @param[out] temperatureData Structure to save collected temperature data to
+ * @returns Status from communication functions
+ */
+BTM_Status_t BTM_TEMP_getTemperaturesRaw(BTM_TEMP_RawTemperatures_t *temperatureData)
 {
     uint16_t GPIO1_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
     uint16_t GPIO2_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
@@ -69,30 +63,24 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
     uint16_t GPIO8_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
     uint16_t GPIO9_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
     uint16_t REF2_voltage[MUX_CHANNELS][BTM_NUM_DEVICES] = {0};
-    float temp_celsius[NUM_GPIOS][MUX_CHANNELS][BTM_NUM_DEVICES];
-    BTM_Status_t status = {BTM_OK, 0};
-    uint8_t cfgra_to_write[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE];
-    // For data copy to pack data:
-    int module_num = 0;
 
-    // Refer to the LTC6813 datasheet pages 60 and 65 for format and content of config_val
-    for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++) {
-        for(int reg_num = 0; reg_num < BTM_REG_GROUP_SIZE; reg_num++) {
-            cfgra_to_write[ic_num][reg_num] =  pack->stack[ic_num].cfgra[reg_num];
-        }
-        cfgra_to_write[ic_num][0] &= ~GPIO_5_TOGGLE; // GPIO 5 = 0
-        // update the stored configuration register
-        pack->stack[ic_num].cfgra[0] = cfgra_to_write[ic_num][0];
+    float temp_celsius[NUM_GPIOS][MUX_CHANNELS][BTM_NUM_DEVICES];
+
+    BTM_Status_t status = {BTM_OK, 0};
+
+    // Refer to the LTC6813 datasheet pages 60 and 65 for format and content of configuration registers
+    for(uint32_t device_num = 0; device_num < BTM_NUM_DEVICES; device_num++)
+    {
+        BTM_data.cfgra[device_num][0] &= ~GPIO_5_TOGGLE; // GPIO 5 = 0
     }
 
-    BTM_writeRegisterGroup(CMD_WRCFGA, cfgra_to_write);
+    BTM_writeRegisterGroup(CMD_WRCFGA, BTM_data.cfgra);
 
     // Delay slightly to allow thermistor input voltages to settle after mux switch
     HAL_Delay(DELAY_TIME_MUX_SWITCH_TO_MEASURE_MS);
 
     // perform readings for channel 0
-    status = readThermistorVoltage
-    (
+    status = readThermistorVoltage(
         GPIO1_voltage[0],
         GPIO2_voltage[0],
         GPIO3_voltage[0],
@@ -118,19 +106,17 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
     volts2temp(GPIO9_voltage[0], REF2_voltage[0], temp_celsius[7][0]);
 
     // Switch to the other side of the muxes
-    for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++) {
-        cfgra_to_write[ic_num][0] |= GPIO_5_TOGGLE; // GPIO 5 = 1
-        // update the stored configuration register
-        pack->stack[ic_num].cfgra[0] = cfgra_to_write[ic_num][0];
+    for (uint32_t device_num = 0; device_num < BTM_NUM_DEVICES; device_num++)
+    {
+        BTM_data.cfgra[device_num][0] |= GPIO_5_TOGGLE; // GPIO 5 = 0
     }
 
-    BTM_writeRegisterGroup(CMD_WRCFGA, cfgra_to_write);
+    BTM_writeRegisterGroup(CMD_WRCFGA, BTM_data.cfgra);
 
     // Delay slightly to allow thermistor input voltages to settle after mux switch
     HAL_Delay(DELAY_TIME_MUX_SWITCH_TO_MEASURE_MS);
 
-    status = readThermistorVoltage
-    (
+    status = readThermistorVoltage(
         GPIO1_voltage[1],
         GPIO2_voltage[1],
         GPIO3_voltage[1],
@@ -155,24 +141,57 @@ BTM_Status_t BTM_TEMP_measureState(BTM_PackData_t* pack)
     volts2temp(GPIO9_voltage[1], REF2_voltage[1], temp_celsius[7][1]);
 
     // Copy gathered temperature data to pack data structure
-    for(int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
+    for (uint32_t device_num = 0; device_num < BTM_NUM_DEVICES; device_num++)
     {
-        for(int gpio_num = 0; gpio_num < NUM_GPIOS; gpio_num++) {
-            for(int mux_channel = 0; mux_channel < MUX_CHANNELS; mux_channel++) {
-                pack->stack[ic_num].module[module_num].temperature =
-                    temp_celsius[gpio_num][mux_channel][ic_num];
-                // Skip disabled module(s)
-                do {
-                    module_num++;
-                } while (pack->stack[ic_num].module[module_num].enable == MODULE_DISABLED);
-
+        for (uint32_t gpio_num = 0; gpio_num < NUM_GPIOS; gpio_num++)
+        {
+            for (uint32_t mux_channel = 0; mux_channel < MUX_CHANNELS; mux_channel++)
+            {
+                temperatureData->device[device_num].temperature[MUX_CHANNELS * gpio_num + mux_channel] =
+                    temp_celsius[gpio_num][mux_channel][device_num];
             }
         }
-		module_num = 0;
     }
 
     return status;
 }
+
+/**
+ * @brief Measure battery temperatures using LTC6813s and store results to pack data
+ *
+ * @attention If function returns BTM_OK, valid data is returned. If function
+ *  returns something else, the pack data is not updated.
+ *
+ * @param[out] pack Pack data structure to update with measured temperatures
+ * @returns BTM_OK if all the received PECs are correct,
+ *          BTM_ERROR_PEC if any PEC doesn't match, or
+ *          BTM_ERROR_TIMEOUT if a timeout occurs while polling.
+ */
+BTM_Status_t BTM_TEMP_getTemperatures(Pack_t *pack)
+{
+    BTM_TEMP_RawTemperatures_t rawTemperatureData;
+    uint32_t device_num;
+    uint32_t measurement_num;
+
+    BTM_Status_t status = BTM_TEMP_getTemperaturesRaw(&rawTemperatureData);
+
+    if (status.error == BTM_OK)
+    {
+        for (uint32_t module_num = 0; module_num < PACK_NUM_BATTERY_MODULES; module_num++)
+        {
+            // Use direct mapping of temperature readings channels to battery modules
+            // since there are as many modules as there are temperature inputs
+            device_num = module_num / BTM_TEMP_NUM_THERMISTOR_INPUTS_PER_DEVICE;
+            measurement_num = module_num % BTM_TEMP_NUM_THERMISTOR_INPUTS_PER_DEVICE;
+            pack->module[module_num].temperature = rawTemperatureData.device[device_num].temperature[measurement_num];
+        }
+    }
+
+    return status;
+}
+
+/*============================================================================*/
+/* PRIVATE FUNCTION DEFINITIONS */
 
 /*
 Function name: readThermistorVoltage
@@ -292,30 +311,9 @@ void volts2temp(uint16_t ADC[], uint16_t REF2[], float temp_celsius[])
     {
         Vs = BTM_regValToVoltage(REF2[board]);
         Vout = BTM_regValToVoltage(ADC[board]);
-        R_therm = R_balance * ((Vs / Vout) - 1);
+        R_therm = R_balance * (Vout/(Vs-Vout));
         temp_kelvin = (beta * room_temp)
             / (beta + (room_temp * logf(R_therm / R_room_temp)));
         temp_celsius[board] = temp_kelvin - 273.15;
     }
-
-}
-
-
-/**
- * @brief  A "translate" function to translate the temperature data from the driver pack struct to the general pack struct. 
- * 
- * @param[in] pack general pack struct.
- * @return  Returns BTM_OK if all the received PECs are correct,
- *          BTM_ERROR_PEC if any PEC doesn't match, or BTM_ERROR_TIMEOUT
- *	        if a timeout occurs while polling.
- */   
-BTM_Status_t translate_btm_temp(PackData_t * pack)
-{
-    BTM_PackData_t rawPack;
-    BTM_Status_t status = BTM_TEMP_measureState(&rawPack); 
-    for(int index = 0; index < PACK_NUM_BATTERY_MODULES; index++){
-        pack->module[index].temperature = rawPack.stack[module_mapping[index].stackNum].module[module_mapping[index].cellNum].temperature; 
-    }
-
-    return status;
 }

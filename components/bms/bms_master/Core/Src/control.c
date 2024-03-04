@@ -19,60 +19,58 @@
 
 #include "control.h"
 
-void CONT_init()
-{
-    CONT_BAL_state = CONT_INACTIVE;
-    CONT_COM_state = CONT_INACTIVE;
-    CONT_FLT_state = CONT_INACTIVE;
-    CONT_HLIM_state = CONT_INACTIVE;
-    CONT_LLIM_state = CONT_INACTIVE;
-    CONT_OT_state = CONT_INACTIVE;
+typedef struct {
+    TIM_HandleTypeDef *timer_handle;
+    uint32_t timer_pwm_channel;
+    unsigned int FAN_PWM_percent;
+} CONT_data_t;
 
-    CONT_BAL_switch(CONT_INACTIVE);
-    CONT_COM_switch(CONT_INACTIVE);
-    CONT_FLT_switch(CONT_INACTIVE);
-    CONT_HLIM_switch(CONT_INACTIVE);
-    CONT_LLIM_switch(CONT_INACTIVE);
-    CONT_OT_switch(CONT_INACTIVE);
+static CONT_data_t CONT_data;
+
+void CONT_init(TIM_HandleTypeDef *timer_handle, uint32_t timer_pwm_channel)
+{
+    CONT_data.timer_handle = timer_handle;
+    CONT_data.timer_pwm_channel = timer_pwm_channel;
+
+    CONT_BAL_switch(false);
+    CONT_COM_switch(false);
+    CONT_FLT_switch(false);          // ECU expects it to be HIGH on startup
+    CONT_HLIM_switch(false);
+    CONT_LLIM_switch(false);
+    CONT_OT_switch(false);
 
     CONT_FAN_PWM_set(0);
-    HAL_TIM_PWM_Start(CONT_timer_handle, CONT_TIM_CHANNEL);
+    HAL_TIM_PWM_Start(CONT_data.timer_handle, CONT_data.timer_pwm_channel);
 }
 
-void CONT_BAL_switch(CONT_signal_state_t new_state)
+void CONT_BAL_switch(bool new_state)
 {
     HAL_GPIO_WritePin(CONT_BAL_PORT, CONT_BAL_PIN, new_state ^ CONT_BAL_POLARITY);
-    CONT_BAL_state = new_state;
 }
 
-void CONT_COM_switch(CONT_signal_state_t new_state)
+void CONT_COM_switch(bool new_state)
 {
     HAL_GPIO_WritePin(CONT_COM_PORT, CONT_COM_PIN, new_state ^ CONT_COM_POLARITY);
-    CONT_COM_state = new_state;
 }
 
-void CONT_FLT_switch(CONT_signal_state_t new_state)
+void CONT_FLT_switch(bool new_state)
 {
     HAL_GPIO_WritePin(CONT_FLT_PORT, CONT_FLT_PIN, new_state ^ CONT_FLT_POLARITY);
-    CONT_FLT_state = new_state;
 }
 
-void CONT_HLIM_switch(CONT_signal_state_t new_state)
+void CONT_HLIM_switch(bool new_state)
 {
     HAL_GPIO_WritePin(CONT_HLIM_PORT, CONT_HLIM_PIN, new_state ^ CONT_HLIM_POLARITY);
-    CONT_HLIM_state = new_state;
 }
 
-void CONT_LLIM_switch(CONT_signal_state_t new_state)
+void CONT_LLIM_switch(bool new_state)
 {
     HAL_GPIO_WritePin(CONT_LLIM_PORT, CONT_LLIM_PIN, new_state ^ CONT_LLIM_POLARITY);
-    CONT_LLIM_state = new_state;
 }
 
-void CONT_OT_switch(CONT_signal_state_t new_state)
+void CONT_OT_switch(bool new_state)
 {
     HAL_GPIO_WritePin(CONT_OT_PORT, CONT_OT_PIN, new_state ^ CONT_OT_POLARITY);
-    CONT_OT_state = new_state;
 }
 
 /**
@@ -87,9 +85,9 @@ void CONT_OT_switch(CONT_signal_state_t new_state)
  */
 void CONT_FAN_PWM_set(unsigned int pwm_val)
 {
-    CONT_FAN_PWM_percent = pwm_val;
+    CONT_data.FAN_PWM_percent = pwm_val;
     pwm_val = (pwm_val * PWM_DIVISIONS) / 100;
-    __HAL_TIM_SET_COMPARE(CONT_timer_handle, CONT_TIM_CHANNEL, pwm_val);
+    __HAL_TIM_SET_COMPARE(CONT_data.timer_handle, CONT_data.timer_pwm_channel, pwm_val);
 }
 
 /**
@@ -107,23 +105,28 @@ void CONT_FAN_PWM_set(unsigned int pwm_val)
  * @param[in] temp Temperature to use in calculation
  * @return The duty cycle percentage for fan PWM
  */
-unsigned int CONT_fanPwmFromTemp(float temp) {
+unsigned int CONT_fanPwmFromTemp(float temp)
+{
     int new_fan_PWM = FAN_RAMP_SLOPE * temp + MIN_FAN_PWM;
     // Limit range to [MIN_FAN_PWM, 100]
-    if (new_fan_PWM < MIN_FAN_PWM) new_fan_PWM = MIN_FAN_PWM;
-    if (new_fan_PWM > 100) new_fan_PWM = 100;
+    if (new_fan_PWM < MIN_FAN_PWM)
+        new_fan_PWM = MIN_FAN_PWM;
+    if (new_fan_PWM > 100)
+        new_fan_PWM = 100;
 
-    if (CONT_FAN_PWM_percent != 0) // If fans are on...
+    if (CONT_data.FAN_PWM_percent != 0) // If fans are on...
     {
         // Don't turn fans off unless temp is low enough
-        if (temp < FAN_OFF_TEMP - TEMP_HYSTERESIS) {
+        if (temp < FAN_OFF_TEMP - TEMP_HYSTERESIS)
+        {
             new_fan_PWM = 0;
         }
     }
     else // If fans are off...
     {
         // Don't turn fans on unless temp is high enough
-        if(temp < FAN_OFF_TEMP) {
+        if (temp < FAN_OFF_TEMP)
+        {
             new_fan_PWM = 0;
         }
     }

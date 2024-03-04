@@ -49,48 +49,4 @@ void test_checkLTCtemp2(){
 	TEST_ASSERT_EQUAL(readRegisterGroup_status.device_num, outStatus.device_num);
 }
 
-void test_shiftDchStatus0(){
-	BTM_module_bal_status_t dch_off = {DISCHARGE_OFF};
-    BTM_module_bal_status_t dch_on = {DISCHARGE_ON};
-	BTM_module_bal_status_t dch_set[BTM_NUM_MODULES] = {dch_on, dch_off, dch_off,
-                                                        dch_off, dch_off, dch_off,
-                                                        dch_on, dch_off, dch_off,
-                                                        dch_off, dch_off, dch_off,
-                                                        dch_on, dch_off, dch_off,
-                                                        dch_off, dch_off, dch_off};
-	BTM_module_bal_status_t dch_out[BTM_NUM_MODULES] = {dch_off, dch_on, dch_off,
-                                                        dch_off, dch_off, dch_off,
-                                                        dch_off, dch_on, dch_off,
-                                                        dch_off, dch_off, dch_off,
-                                                        dch_off, dch_on, dch_off,
-                                                        dch_off, dch_off, dch_off};
-	shiftDchStatus(dch_set);
-	for (int i = 0; i < BTM_NUM_MODULES; i++){
-		TEST_ASSERT_EQUAL(dch_out[i], dch_set[i]);
-	}
-}
-
-void test_shiftDchStatus1(){
-	BTM_module_bal_status_t dch_off = {DISCHARGE_OFF};
-    BTM_module_bal_status_t dch_on = {DISCHARGE_ON};
-	BTM_module_bal_status_t dch_set[BTM_NUM_MODULES] = {dch_on, dch_off, dch_off,
-                                                        dch_off, dch_off, dch_off,
-                                                        dch_on, dch_off, dch_off,
-                                                        dch_off, dch_off, dch_off,
-                                                        dch_on, dch_off, dch_off,
-                                                        dch_off, dch_off, dch_off};
-	BTM_module_bal_status_t dch_out[BTM_NUM_MODULES] = {dch_on, dch_off, dch_off,
-                                                        dch_off, dch_off, dch_off,
-                                                        dch_on, dch_off, dch_off,
-                                                        dch_off, dch_off, dch_off,
-                                                        dch_on, dch_off, dch_off,
-                                                        dch_off, dch_off, dch_off};
-	for (int i = 0; i < BTM_NUM_MODULES; i++){
-		shiftDchStatus(dch_set);
-	}
-	for (int i = 0; i < BTM_NUM_MODULES; i++){
-		TEST_ASSERT_EQUAL(dch_out[i], dch_set[i]);
-	}
-}
-
 #endif // TEST
