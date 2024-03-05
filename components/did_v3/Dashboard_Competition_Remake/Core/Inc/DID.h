@@ -71,6 +71,7 @@
 #define FALSE 0
 
 #define MS_TO_KM(ms) (ms * 3.6)
+#define MS_TO_MPH(ms) (ms * 2.23694)
 /*
  *  Typedefs
  */

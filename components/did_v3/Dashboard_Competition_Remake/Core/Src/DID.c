@@ -65,7 +65,7 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID )
 			temp_simulation_speed.bytes[2] = CAN_rx_data[2];
 			temp_simulation_speed.bytes[3] = CAN_rx_data[3];
 
-			temp_simulation_speed.float_value = round(MS_TO_KM(temp_simulation_speed.float_value));
+			temp_simulation_speed.float_value = round(MS_TO_MPH(temp_simulation_speed.float_value));
 
 			SET_CYCLIC_DATA( data_simulation_speed, temp_simulation_speed.float_value );
 			break;
@@ -88,7 +88,7 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID )
 			temp_target_velocity.bytes[2] = CAN_rx_data[2];
 			temp_target_velocity.bytes[3] = CAN_rx_data[3];
 
-			temp_target_velocity.float_value = round(MS_TO_KM(temp_target_velocity.float_value));
+			temp_target_velocity.float_value = round(MS_TO_MPH(temp_target_velocity.float_value));
 
 			SET_CYCLIC_DATA( data_target_velocity, temp_target_velocity.float_value );
 			break;
@@ -103,7 +103,7 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID )
 			temp_vehicle_velocity.bytes[2] = CAN_rx_data[6];
 			temp_vehicle_velocity.bytes[3] = CAN_rx_data[7];
 
-			temp_vehicle_velocity.float_value = round(MS_TO_KM(temp_vehicle_velocity.float_value));
+			temp_vehicle_velocity.float_value = round(MS_TO_MPH(temp_vehicle_velocity.float_value));
 
 			SET_CYCLIC_DATA( data_vehicle_velocity, temp_vehicle_velocity.float_value );
 			break;
