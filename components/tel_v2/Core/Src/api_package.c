@@ -47,7 +47,7 @@ uint16_t apiPackage(uint8_t raw_outbox[], uint8_t end_position, uint8_t unsized_
       unsized_packet[outbox_position] = raw_outbox[i];
       lengthValue++;
 
-      if(raw_outbox != 'n')
+      if(raw_outbox[i] != 'n')
 	{
 	  outbox_position++;
       }
@@ -72,7 +72,7 @@ uint16_t apiPackage(uint8_t raw_outbox[], uint8_t end_position, uint8_t unsized_
 
   totalBytes = totalBytes & 0xFF;
 
-  unsized_Packet[outbox_position] = 0xFF - totalBytes; //set checksum
+  unsized_packet[outbox_position] = 0xFF - totalBytes; //set checksum
 
   return outbox_position; //used to scale sized array.
 

@@ -22,6 +22,7 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
+#include "api_package.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -384,7 +385,7 @@ void transmit_CAN_task(void *argument)
 
     for(int j = 0; j <sizeof(can_buffer); j++){
 
-	can_outbox(outbox_position + j) = can_buffer[j];
+	can_outbox[outbox_position + j] = can_buffer[j];
     }
     /* Set position for next Message*/
     outbox_position += sizeof(can_buffer);
@@ -516,7 +517,7 @@ void transmit_IMU_task(void *argument)
 	    imu_buffer[IMU_MESSAGE_LEN - 1] = '\n';
 
 	    for (uint16_t j = 0; j <sizeof(imu_buffer); j++ ){
-		imu_outbox[outbox_position + j] = imu_buffer(j);
+		imu_outbox[outbox_position + j] = imu_buffer[j];
 	    }
 	    outbox_position += sizeof(imu_buffer);
 
