@@ -4,7 +4,7 @@ Welcome to Brightside's main control board codebase!
 
 ## Overview
 
-The function of Brightside's main control board (MCB) is to take driver inputs from the steering wheel, dashboard, and pedal, and then produce the appropriate outputs. These outputs are typically in the form of CAN messages. Often, these CAN messages are read by Brightside's Tritium motor controller.
+The function of Brightside's main control board (MCB) is to take driver inputs from the steering wheel, dashboard, and pedal, and then produce the appropriate outputs. These outputs are typically in the form of CAN messages. Often, these CAN messages are read by Brightside's Mitsuba motor controller - we are using the Tritium motor controller as a backup.
 
 Some examples of the kind of functionality the MCB provides (not exhaustive) are provided below:
 
@@ -23,3 +23,34 @@ The microprocessor that this code is designed for is the ARM-based STM32F103RCT6
 - Firmware now uses FreeRTOS for improved time determinism and real-time performance
 - Interrupts have been configured for most if not all button and switch inputs
 - Bare-metal register write/reads have been replaced by HAL library API calls
+- New features (regen braking, cruise control)
+- Abstraction and Software components implemented
+
+### Implementation of RTOS
+- RTOS allows for an easy way of separating code that needs to run at different speeds
+- Different tasks:
+  - Handling the state machine.
+  - Handling CAN inputs.
+  - Heartbeat/LED flashing
+this is a non-exhaustive list.
+
+### Regenerative braking 
+- One-pedal driving.
+- Regen is braking is dynamically enabled/disabled depending on inputs from BMS, MDU or the switches on the MCB.
+
+### Cruise control
+- Driver can enable cruise control by pressing a button on the steering wheel which sets the cruise speed to the velocity of the car.
+- Cruise control can be increase/decreased by pressing buttons on the steering wheel.
+- Cruise control is automatically disabled on brake press.
+
+### Abstraction and SWCs
+- Abstraction increases readability and maintainability of code.
+- Implemented complex system level code behind simplified interface.
+- Modular pieces of software that encapsulate specific functionality are separated into .c & .h files.
+No function is greater than 1.5 pages long.
+
+
+
+
+
+
