@@ -57,6 +57,13 @@
 
 #define GPS_RCV_BUFFER_SIZE 512
 
+#define CAN_PACKET_LENGTH 11
+#define IMU_PACKET_LENGTH 10
+#define GPS_PACKET_LENGTH 1
+
+#define CAN_BYTE 0x00
+#define IMU_BYTE 0x01
+#define GPS_BYTE 0x10
 
 union FloatBytes {
     float float_value;
@@ -313,13 +320,18 @@ void transmit_CAN_task(void *argument)
   static CAN_msg_t can_message;	/* Can message */
   osStatus_t queue_status;	/* CAN Message Queue Status */
 
-  /* Infinite loop */
-  while (1) {
 
-    /* Check if there are messages in the queue */
-    if (osMessageQueueGetCount(canMessageQueueHandle) == 0) {
-      osThreadYield();
-    }
+  /* Check if there are messages in the queue */
+  if (osMessageQueueGetCount(canMessageQueueHandle) == 0) {
+        osThreadYield();
+      }
+  else{
+
+    uint8_t can_outbox[300];
+    uint8_t outbox_position = 0;
+
+
+   for (int can_outbox_size = 0; can_outbox_size < 10; can_outbox_size++) {
 
     /* Retrieve CAN message from queue */
     queue_status = osMessageQueueGet(canMessageQueueHandle, &can_message, NULL, osWaitForever);
@@ -369,15 +381,34 @@ void transmit_CAN_task(void *argument)
     /* CARRIAGE RETURN: 1 ASCII character */
     can_buffer[CAN_BUFFER_LEN - 1] = '\n';
 
-    /* Transmit over Radio */
-    HAL_UART_Transmit(&huart1, can_buffer, sizeof(can_buffer), 1000);
 
-    /* TODO: Log to SDLogger */
+    for(int j = 0; j <sizeof(can_buffer); j++){
+
+	can_outbox(outbox_position + j) = can_buffer[j];
+    }
+    /* Set position for next Message*/
+    outbox_position += sizeof(can_buffer);
+  }
+
+   uint8_t unsized_packet[300];
+   uint16_t packetEndpoint = apiPackage(can_outbox, outbox_position, unsized_packet, CAN_BYTE);
+   uint8_t sized_packet[packetEndpoint];
+
+   for (int i = 0; i < packetEndpoint; i++)
+     {
+  	sized_packet[i] = unsized_packet[i];
+     }
+
+
+
+      /* Transmit over Radio */
+      HAL_UART_Transmit(&huart1, sized_packet, sizeof(sized_packet), 1000);
+}
+
+  /* TODO: Log to SDLogger */
 //    FIL *can_file_ptr = sd_open("CAN_Messages.txt");
 //    sd_append(can_file_ptr, can_buffer);    // Append can message to the SD card
 //    sd_close(can_file_ptr);
-
-  }
 
   /* USER CODE END transmit_CAN_task */
 }
@@ -436,61 +467,78 @@ void transmit_IMU_task(void *argument)
   osStatus_t imu_queue_status;	/* IMU Queue Status */
   IMU_msg_t imu_message;	/* IMU Message */
 
-  /* Infinite loop */
-  while(1)
-  {
-    /* Check if there are messages in the queue */
-    if (osMessageQueueGetCount(imuMessageQueueHandle) == 0) {
-	osThreadYield();
+  /*Check amount of messages in queue */
+  if (osMessageQueueGetCount(imuMessageQueueHandle) == 0){
+      osDelay(500);
+  }
+  else{
+
+    uint8_t imu_outbox[200];
+    uint8_t outbox_position = 0;
+
+    for (uint8_t i = 0; i < IMU_PACKET_LENGTH; i++){
+	/* Get IMU Message from Queue */
+	    imu_queue_status = osMessageQueueGet(imuMessageQueueHandle, &imu_message, NULL, osWaitForever);
+
+	    /* Yield thread if status not ok */
+	    if (imu_queue_status != osOK){
+	      osThreadYield();
+	    }
+
+	    /* Initialize a IMU buffer */
+	    uint8_t imu_buffer[IMU_MESSAGE_LEN] = {0};
+
+	    /* Get current epoch Time Stamp */
+	    time_t current_timestamp = get_current_timestamp();
+
+	    /* TIMESTAMP: 8 Bytes */
+	    for (uint8_t j=0; j<IMU_MESSAGE_LEN - 9; j++) {
+	      /* Put each byte in position 'i' */
+	      imu_buffer[j] = TIMESTAMP_BYTE(j, current_timestamp);
+	    }
+
+	    /* IMU ID */
+	    imu_buffer[IMU_MESSAGE_LEN - 9] = '@';
+
+	    /* IMU Data from queue */
+	    imu_buffer[IMU_MESSAGE_LEN - 8] = imu_message.imu_type;
+	    imu_buffer[IMU_MESSAGE_LEN - 7] = imu_message.dimension;
+
+	    /* Copy data */
+	    for (uint8_t j = 0; j < 4; j++) {
+		imu_buffer[j + IMU_MESSAGE_LEN - 6] = imu_message.data[j];
+	    }
+
+	    /* NEW LINE */
+	    imu_buffer[IMU_MESSAGE_LEN - 2] = '\r';
+
+	    /* CARRIAGE RETURN */
+	    imu_buffer[IMU_MESSAGE_LEN - 1] = '\n';
+
+	    for (uint16_t j = 0; j <sizeof(imu_buffer); j++ ){
+		imu_outbox[outbox_position + j] = imu_buffer(j);
+	    }
+	    outbox_position += sizeof(imu_buffer);
+
+    }
+    uint8_t unsized_packet[300];
+    uint16_t packetEndpoint = apiPackage(imu_outbox, outbox_position, unsized_packet, IMU_BYTE);
+
+    uint8_t sized_packet[packetEndpoint];
+
+    for (int i = 0; i < packetEndpoint; i++){
+	sized_packet[i] = unsized_packet[i];
     }
 
-    /* Get IMU Message from Queue */
-    imu_queue_status = osMessageQueueGet(imuMessageQueueHandle, &imu_message, NULL, osWaitForever);
-
-    /* Yield thread if status not ok */
-    if (imu_queue_status != osOK){
-      osThreadYield();
-    }
-
-    /* Initialize a IMU buffer */
-    uint8_t imu_buffer[IMU_MESSAGE_LEN] = {0};
-
-    /* Get current epoch Time Stamp */
-    time_t current_timestamp = get_current_timestamp();
-
-    /* TIMESTAMP: 8 Bytes */
-    for (uint8_t i=0; i<IMU_MESSAGE_LEN - 9; i++) {
-      /* Put each byte in position 'i' */
-      imu_buffer[i] = TIMESTAMP_BYTE(i, current_timestamp);
-    }
-
-    /* IMU ID */
-    imu_buffer[IMU_MESSAGE_LEN - 9] = '@';
-
-    /* IMU Data from queue */
-    imu_buffer[IMU_MESSAGE_LEN - 8] = imu_message.imu_type;
-    imu_buffer[IMU_MESSAGE_LEN - 7] = imu_message.dimension;
-
-    /* Copy data */
-    for (int i = 0; i < 4; i++) {
-	imu_buffer[i + IMU_MESSAGE_LEN - 6] = imu_message.data[i];
-    }
-
-    /* NEW LINE */
-    imu_buffer[IMU_MESSAGE_LEN - 2] = '\r';
-
-    /* CARRIAGE RETURN */
-    imu_buffer[IMU_MESSAGE_LEN - 1] = '\n';
-
-    /* Transmit over Radio */
-    HAL_UART_Transmit(&huart1, imu_buffer, sizeof(imu_buffer), 1000);
+    HAL_UART_Transmit(&huart1, sized_packet, sizeof(sized_packet), 1000);
+  }
 
     /* TODO: Log to SDLogger */
 //    FIL *imu_file_ptr = sd_open("IMU_Messages.txt");
 //    sd_append(imu_file_ptr, imu_buffer);    // Append imu message to the SD card
 //    sd_close(imu_file_ptr);
 
-  }
+
 
   /* USER CODE END transmit_IMU_task */
 }
@@ -588,7 +636,17 @@ void transmit_GPS_task(void *argument)
     gps_buffer[GPS_MESSAGE_LEN - 1] = '\n'; // Line feed
 
     /* Transmit the NMEA message over UART to radio */
-    HAL_UART_Transmit(&huart1, gps_buffer, sizeof(gps_buffer), 1000);
+
+    uint16_t end_position = sizeof(gps_buffer);
+    uint8_t unsized_packet[300];
+    uint16_t packetEndpoint = apiPackage(gps_buffer, end_position, unsized_packet, GPS_BYTE);
+    uint8_t sized_packet[packetEndpoint];
+
+    for (uint16_t i =0; i< packetEndpoint; i++){
+	sized_packet[i] = unsized_packet[i];
+    }
+
+    HAL_UART_Transmit(&huart1, sized_packet, sizeof(sized_packet), 1000);
 
     /* TODO: Log to SDLogger */
 //    FIL *gps_file_ptr = sd_open("GPS_Messages.txt");
