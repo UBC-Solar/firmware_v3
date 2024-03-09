@@ -12,7 +12,7 @@ float velocityOfCar = 0.0;		// Current velocity of the car will be stored here.
 InputFlags input_flags;
 DriveState state = PARK;
 MotorCommand motorCommand;
-uint16_t throttle_ADC;
+float g_throttle = 0.0;
 /*
  *	Main state machine task
  */
@@ -21,33 +21,42 @@ void TaskMCBStateMachine()
 	for(;;)
 	{
 		taskENTER_CRITICAL();
-		throttle_ADC = ReadADC(&hadc1);
 		UpdateInputFlags(&input_flags);
+
+		uint16_t throttle_ADC = ReadADC(&hadc1);
+		if (throttle_ADC > THROTTLE_ADC_MAX_VALUE || throttle_ADC < THROTTLE_ADC_MIN_VALUE)
+		{
+			g_throttle = 0.0;
+		}
+		else
+		{
+			g_throttle = NormalizeADCValue(throttle_ADC);
+		}
 
 		switch(state)
 		{
-		case DRIVE:
-			motorCommand = DoStateDRIVE(input_flags);
-			TransitionDRIVEstate(input_flags, &state);
-		break;
+			case DRIVE:
+				motorCommand = DoStateDRIVE(input_flags);
+				TransitionDRIVEstate(input_flags, &state);
+			break;
 
-		case REVERSE:
-			motorCommand = DoStateREVERSE(input_flags);
-			TransitionREVERSEstate(input_flags, &state);
-		break;
+			case REVERSE:
+				motorCommand = DoStateREVERSE(input_flags);
+				TransitionREVERSEstate(input_flags, &state);
+			break;
 
-		case PARK:
-			motorCommand = DoStatePARK(input_flags);
-			TransitionPARKstate(input_flags, &state);
-		break;
+			case PARK:
+				motorCommand = DoStatePARK(input_flags);
+				TransitionPARKstate(input_flags, &state);
+			break;
 
-		case CRUISE:
-			motorCommand = DoStateCRUISE(input_flags);
-			TransitionCRUISEstate(input_flags, &state);
-		break;
+			case CRUISE:
+				motorCommand = DoStateCRUISE(input_flags);
+				TransitionCRUISEstate(input_flags, &state);
+			break;
 
-		default:
-			motorCommand = GetMotorCommand(0.0, 0.0);
+			default:
+				motorCommand = GetMotorCommand(0.0, 0.0);
 		}
 
 		SendCANMotorCommand(motorCommand);
@@ -60,8 +69,6 @@ void TaskMCBStateMachine()
 
 MotorCommand DoStateDRIVE( InputFlags input_flags )
 {
-	float throttle = NormalizeADCValue(ReadADC(&hadc1));
-
 	// Check if mech brake is pressed
 	if ( input_flags.mech_brake_pressed )
 		return GetMotorCommand(0.0, 0.0);
@@ -69,26 +76,26 @@ MotorCommand DoStateDRIVE( InputFlags input_flags )
 	// Check if regen is enabled
 	if ( input_flags.regen_enabled && input_flags.battery_SOC_under_threshold && input_flags.battery_temp_under_threshold )
 	{
-		if( throttle == 0.0 )
-			return GetMotorCommand(throttle, 0.0);
-		if( throttle > 0.0 )
-			return GetMotorCommand(throttle, 100.0);
+		if( g_throttle == 0.0 )
+			return GetMotorCommand(g_throttle, 0.0);
+		if( g_throttle > 0.0 )
+			return GetMotorCommand(g_throttle, 100.0);
 	}
 
 	// Regen disabled
 	#ifdef MITSUBA
-		if( throttle == 0.0 )
-			return GetMotorCommand(throttle, 0.0);
-		if( throttle < P1 )
+		if( g_throttle == 0.0 )
+			return GetMotorCommand(g_throttle, 0.0);
+		if( g_throttle < P1 )
 			return GetMotorCommand(P1, 100.0);
-		if( throttle > P1)
-			return GetMotorCommand(throttle, 100.0);
+		if( g_throttle > P1)
+			return GetMotorCommand(g_throttle, 100.0);
 	#endif
 	#ifdef TRITIUM
-		if( throttle == 0.0 )
+		if( g_throttle == 0.0 )
 			return GetMotorCommand( 0.0, 100.0 );
-		if( throttle > 0.0 )
-			return GetMotorCommand( throttle, 100.0 );
+		if( g_throttle > 0.0 )
+			return GetMotorCommand( g_throttle, 100.0 );
 	#endif
 
 	return GetMotorCommand(0.0,0.0);
@@ -107,26 +114,24 @@ void TransitionDRIVEstate( InputFlags input_flags, DriveState * state)
 
 MotorCommand DoStateREVERSE(InputFlags input_flags)
 {
-	float throttle = NormalizeADCValue(ReadADC(&hadc1));
-
 	// Check if mech brake is pressed
 	if ( input_flags.mech_brake_pressed )
 		return GetMotorCommand(0.0, 0.0);
 
 	// Regen disabled
 	#ifdef MITSUBA
-		if( throttle == 0.0 )
-			return GetMotorCommand(throttle, 0.0);
-		if( throttle < P1 )
+		if( g_throttle == 0.0 )
+			return GetMotorCommand(g_throttle, 0.0);
+		if( g_throttle < P1 )
 			return GetMotorCommand(P1, -100.0);
-		if( throttle > P1)
-			return GetMotorCommand(throttle, -100.0);
+		if( g_throttle > P1)
+			return GetMotorCommand(g_throttle, -100.0);
 	#endif
 	#ifdef TRITIUM
-		if( throttle == 0.0 )
+		if( g_throttle == 0.0 )
 			return GetMotorCommand( 0.0, -100.0 );
-		if( throttle > 0.0 )
-			return GetMotorCommand( throttle, -100.0 );
+		if( g_throttle > 0.0 )
+			return GetMotorCommand( g_throttle, -100.0 );
 	#endif
 
 	return GetMotorCommand(0.0,0.0);

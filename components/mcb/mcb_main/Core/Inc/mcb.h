@@ -25,6 +25,9 @@
 #define ADC_DEADZONE 500			  // Deadzone value for ADC
 #define ADC_MAX 4096				  // Max possible value for ADC
 
+#define THROTTLE_ADC_MIN_VALUE 200 
+#define THROTTLE_ADC_MAX_VALUE 3896
+
 #define VELOCITY_THRESHOLD 0.5     	  // Max velocity allowed during a drive state change (m/s)
 #define CRUISE_INCREMENT_VAL 1 		  // Increment value for cruise up/down buttons
 #define CRUISE_MAX 30 				  // Max cruise speed in m/s
