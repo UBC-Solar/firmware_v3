@@ -332,7 +332,7 @@ void transmit_CAN_task(void *argument)
     uint8_t outbox_position = 0;
 
 
-   for (int can_outbox_size = 0; can_outbox_size < 10; can_outbox_size++) {
+   for (int can_outbox_size = 0; can_outbox_size < CAN_PACKET_LENGTH; can_outbox_size++) {
 
     /* Retrieve CAN message from queue */
     queue_status = osMessageQueueGet(canMessageQueueHandle, &can_message, NULL, osWaitForever);
@@ -639,7 +639,7 @@ void transmit_GPS_task(void *argument)
     /* Transmit the NMEA message over UART to radio */
 
     uint16_t end_position = sizeof(gps_buffer);
-    uint8_t unsized_packet[300];
+    uint8_t unsized_packet[500];
     uint16_t packetEndpoint = apiPackage(gps_buffer, end_position, unsized_packet, GPS_BYTE);
     uint8_t sized_packet[packetEndpoint];
 

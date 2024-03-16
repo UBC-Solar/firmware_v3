@@ -61,20 +61,20 @@ uint16_t apiPackage(uint8_t raw_outbox[], uint8_t end_position, uint8_t unsized_
 	}
   }
 
-  unsized_packet[2] = outbox_position - 4; //Length second byte
+  unsized_packet[2] = outbox_position - 5; //Length second byte (ignore start delimiter, length fields, checksum, and one empty byte (4 bytes)
   uint16_t totalBytes = 0; //used to calculate checksum
 
   //add up all bytes to calculate checksum
-  for(int i =4; i< outbox_position; i++){
+  for(int i =3; i< outbox_position-2; i++){
       totalBytes += unsized_packet[i];
 
   }
 
-  totalBytes = totalBytes & 0xFF;
+  uint8_t checksum = 0xFF -(totalBytes & 0xFF);
 
-  unsized_packet[outbox_position] = 0xFF - totalBytes; //set checksum
+  unsized_packet[outbox_position-2] = checksum; //set checksum
 
-  return outbox_position; //used to scale sized array.
+  return outbox_position-1; //used to scale sized array.
 
 
 
