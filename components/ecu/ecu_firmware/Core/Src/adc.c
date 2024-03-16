@@ -15,24 +15,10 @@
 
 
 /*============================================================================*/
-/* GLOBAL VARIABLES */
-
-// Peripheral handles
-static ADC_HandleTypeDef *ADC3_hadc;
-static TIM_HandleTypeDef *ADC3_htim;
-
-//global variables to store ADC readings
-static int ADC3_supp_batt_volt;               //stores supplemental battery voltage readings in ADC3
-static int ADC3_motor_current;                //stores current readings, flowing form the motor to the battery, in ADC3
-static int ADC3_array_current;                //stores current readings, flowing from solar arrays to the battery, in ADC3
-static volatile int ADC3_DMA_in_process_flag; //flag that indicates the DMA interrupt if ADC3 has been called and is in process
-static volatile int ADC3_DMA_fault_flag;      //flag that indicates the DMA interrupt if ADC3 has been called and is at fault
-
-static volatile uint16_t adc3_buf[ADC3_BUF_LENGTH] = {0};
-
+/* PRIVATE FUNCTION PROTOTYPES */
 
 /*============================================================================*/
-/* PRIVATE FUNCTIONS */
+/* PUBLIC FUNCTIONS */
 
 /**
  * @brief calculates the relevant value for the given ADC channel based on raw value. 
@@ -190,50 +176,5 @@ int ADC1_getBusyStatus()
   return ADC1_DMA_in_process_flag;
 }
 
-
 /*============================================================================*/
-/* PUBLIC CALLBACK FUNCTIONS */
-
-void ADC3_ConversionCompleteCallback(ADC_BufferHalf_t bufferHalf)
-{
-  if (!ADC3_getBusyStatus()) // make sure DMA processing stops when processing ADC3 readings
-  {
-    ADC3_setBusyStatus(1); // indicates DMA right now is in process
-    static float result[ADC3_NUM_ANALOG_CHANNELS] = {0.0}; //stores supplemental battery voltage, motor and array currents
-
-    // Average 1st half of the buffer
-    ADC3_processRawReadings(bufferHalf, adc3_buf, result);
-
-    // convert averaged raw readings into corresponding voltage and current values
-    ADC3_setSuppBattVoltage(result[0]);
-    ADC3_setMotorCurrent(result[1]);
-    ADC3_setArrayCurrent(result[2]);
-
-    ADC3_setBusyStatus(0); //indicates now the DMA is not in process
-  }
-  else // fault status when previous DMA processing is not finished beforehand
-  {
-    ADC3_setFaultStatus(1); 
-    HAL_TIM_Base_Stop(ADC3_htim); //stop TIM8: the trigger timer for ADC3
-  }
-}
-
-void ADC3_ErrorCallback(void)
-{
-  //stop and reset DMA when there is an error
-  //reference: http://www.disca.upv.es/aperles/arm_cortex_m3/llibre/st/STM32F439xx_User_Manual/stm32f4xx__hal__adc_8c_source.html#l01675
-  if (ADC3_hadc->State == HAL_ADC_STATE_ERROR_DMA)
-  {
-    //stop and reset DMA
-    //reference: http://www.disca.upv.es/aperles/arm_cortex_m3/llibre/st/STM32F439xx_User_Manual/group__adc__exported__functions__group2.html#gadea1a55c5199d5cb4cfc1fdcd32be1b2
-    HAL_TIM_Base_Stop(ADC3_htim); //stop TIM8: the trigger timer for ADC3   
-    HAL_ADC_Stop_DMA(ADC3_hadc);
-    HAL_ADC_Start_DMA(ADC3_hadc, (uint32_t *) adc3_buf, ADC3_BUF_LENGTH);
-    HAL_TIM_Base_Start(ADC3_htim);
-  }
-  else
-  {
-    /* In case of ADC error, call main error handler */
-    Error_Handler();
-  }
-}
+/* PRIVATE FUNCTIONS */
