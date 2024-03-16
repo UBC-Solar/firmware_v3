@@ -117,7 +117,7 @@ void TaskGetCANMessage();
 void SendCANMotorCommand(MotorCommand motorCommand);
 float NormalizeADCValue(uint16_t value);
 void SendCANDIDNextPage();
-void SendCANDIDDriveState(DriveState state);
+void SendCANDIDDriveState();
 
 void GetSwitchState(InputFlags * input_flags);
 

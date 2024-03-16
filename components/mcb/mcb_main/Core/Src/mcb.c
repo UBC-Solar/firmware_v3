@@ -290,7 +290,7 @@ void SendCANDIDNextPage()
 /*
  * 	Sends a CAN message to the DID that contains the drive state of the MCB to display to the driver
  */
-void SendCANDIDDriveState(DriveState state)
+void SendCANDIDDriveState()
 {
 	uint8_t data_send[CAN_DATA_LENGTH] = {0};
 	data_send[0] = state;
