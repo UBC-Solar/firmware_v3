@@ -45,7 +45,7 @@ void Send_Voltage(float parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef* hi2
 		//parsed_voltage is a percentage, multiply by 10 bit max number, and we should get expected value
 		dac_data = UINT10_MAX * parsed_voltage;
 
-		if(parsed_voltage > 1023) parsed_voltage = 1023; //not required if we are already initializing the max to 1023 but just in case for now
+//		if(parsed_voltage > 1023) parsed_voltage = 1023; //not required if we are already initializing the max to 1023 but just in case for now
     	//dac_data = parsed_voltage << 2;
 
 		dac_data = dac_data << 2;

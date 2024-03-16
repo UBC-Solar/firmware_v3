@@ -24,17 +24,19 @@
 		float float_velocity;
 	}u;
 
-	CAN_msg->velocity =  	
+	u.concatenated_bits =
 		( ((int32_t) localRxData[3]) << 3*8) |
 		( ((int32_t) localRxData[2]) << 2*8) |
 		( ((int32_t) localRxData[1]) << 1*8) |
 		( ((int32_t) localRxData[0]) << 0);
 
+	CAN_msg -> velocity = u.float_velocity;
+
 	u.concatenated_bits =
-		( ((uint32_t) localRxData[4]) << 3*8) |
-		( ((uint32_t) localRxData[5]) << 2*8) |
-		( ((uint32_t) localRxData[6]) << 1*8) |
-		( ((uint32_t) localRxData[7]) << 0);
+		( ((uint32_t) localRxData[7]) << 3*8) |
+		( ((uint32_t) localRxData[6]) << 2*8) |
+		( ((uint32_t) localRxData[5]) << 1*8) |
+		( ((uint32_t) localRxData[4]) << 0);
 	
 	CAN_msg -> acceleration = u.float_velocity;
 

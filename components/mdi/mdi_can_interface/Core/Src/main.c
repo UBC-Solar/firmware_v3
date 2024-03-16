@@ -168,12 +168,12 @@ int main(void)
   while (1) 
   { 
     //////////////////////////////////////
-    // PARSE MESSAGES COMING FROM MOTOR CONTROLLER  
+    // PARSE MESSAGES COMING FROM MOTOR CONTROLLER  and
     //////////////////////////////////////
     if(Parse_Data_Flag == 1 ){ //Parse_Data_Flag set in interrupt
 
-      CopyRxData(localRxDataMessage401,RxDataLocal);
-      CAN_Decode_Velocity_Message(RxDataLocal, &msg0); //Decode the Incoming 0x401 Messages to get data for driving the car
+      //CopyRxData(localRxDataMessage401,RxDataLocal);
+      CAN_Decode_Velocity_Message(localRxDataMessage401, &msg0); //Decode the Incoming 0x401 Messages to get data for driving the car
       Parse_Data_Flag = 0; 
       send_data_flag = 1; 
     }
@@ -679,7 +679,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if(htim == &htim7){
 	  rpm = 0; //if we enter WATCHDOG timer interrupt we must have stopped spinning the motor
 	  msg0.motorVelocity = 0;
-	  msg0.vehicleVelocity = 0;  //linear speed = radius x angular speed = r*2*π*(RPM)/60
+	  msg0.vehicleVelocity = 0;  
   }
 }
 /* USER CODE END 4 */
