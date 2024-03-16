@@ -26,8 +26,8 @@
 
 #define DELAY_GET_CAN_MESSAGES 10	  // Delay for getting CAN messages task
 
-#define ADC_DEADZONE 500			  // Deadzone value for ADC
-#define ADC_MAX 4096				  // Max possible value for ADC
+#define ADC_MAX 2880		  // Max possible value for ADC
+#define ADC_MIN 1200      // Min possible value for ADC
 
 #define THROTTLE_ADC_MIN_VALUE 200 
 #define THROTTLE_ADC_MAX_VALUE 3896
@@ -115,10 +115,9 @@ void drive_state_machine_handler();
 void TaskGetCANMessage();
 
 void SendCANMotorCommand(MotorCommand motorCommand);
-float NormalizeADCValue(uint16_t value);
 void SendCANDIDNextPage();
 void SendCANDIDDriveState();
-
+float normalize_adc_value(uint16_t value);
 void GetSwitchState(InputFlags * input_flags);
 
 MotorCommand GetMotorCommand(float throttle, float velocity);

@@ -10,7 +10,7 @@
 float cruiseVelocity = 0.0;		// Velocity for cruise control
 float velocityOfCar = 0.0;		// Current velocity of the car will be stored here.
 InputFlags input_flags;
-DriveState state = PARK;
+DriveState state = DRIVE;
 MotorCommand motorCommand;
 float g_throttle = 0.0;
 /*
@@ -21,14 +21,8 @@ void drive_state_machine_handler()
 	UpdateInputFlags(&input_flags);
 
 	uint16_t throttle_ADC = ReadADC(&hadc1);
-	if (throttle_ADC > THROTTLE_ADC_MAX_VALUE || throttle_ADC < THROTTLE_ADC_MIN_VALUE)
-	{
-		g_throttle = 0.0;
-	}
-	else
-	{
-		g_throttle = NormalizeADCValue(throttle_ADC);
-	}
+
+	g_throttle = normalize_adc_value(throttle_ADC);
 
 	switch(state)
 	{
@@ -272,9 +266,14 @@ void SendCANMotorCommand(MotorCommand motorCommand)
 /*
  *  Function used for normalizing(0-1) and accounting for deadzone of ADC inputs.
  */
-float NormalizeADCValue(uint16_t value)
+float normalize_adc_value(uint16_t value)
 {
-	return (value - ADC_DEADZONE >= 0 ? ((float)(value - ADC_DEADZONE))/(ADC_MAX - ADC_DEADZONE) : 0.0);
+	if(value > ADC_MAX || value < ADC_MIN)
+	{
+		return 0.0;
+	}
+	float normalized_value = (float)((float)(value - ADC_MIN) / (float)(ADC_MAX - ADC_MIN));
+	return normalized_value;
 }
 
 /*
