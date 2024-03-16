@@ -222,46 +222,51 @@ void TIM4_IRQHandler(void)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+  switch (GPIO_Pin)
+  {
+    #ifdef CRUISE_ENABLED   // Ignore cruise control pins if CRUISE_ENABLED is disabled
+    case CRUISE_TOGGLE_Pin:
+      if(state == DRIVE || state == CRUISE)
+      {
+        input_flags.cruise_enabled = !input_flags.cruise_enabled;
+        cruiseVelocity = velocityOfCar;
+      }
+      break;
 
-	if(GPIO_Pin == CRUISE_TOGGLE_Pin)
-	{
-		if(state == DRIVE || state == CRUISE)
-		{
-			input_flags.cruise_enabled = !input_flags.cruise_enabled;
-			cruiseVelocity = velocityOfCar;
-		}
-	}
-	else if(GPIO_Pin == CRUISE_UP_Pin)
-	{
-		if(state == CRUISE)
-		{
-			if(cruiseVelocity + CRUISE_INCREMENT_VAL < CRUISE_MAX)
-				cruiseVelocity += CRUISE_INCREMENT_VAL;
-			else
-				cruiseVelocity = CRUISE_MAX;
-		}
-	}
-	else if(GPIO_Pin == CRUISE_DWN_Pin)
-	{
-		if(state == CRUISE)
-		{
-			if(cruiseVelocity - CRUISE_INCREMENT_VAL > CRUISE_MIN)
-				cruiseVelocity -= CRUISE_INCREMENT_VAL;
-			else
-				cruiseVelocity = CRUISE_MIN;
-		}
-	}
-	else if (GPIO_Pin == BRK_IN_Pin)
-	{
-		MotorCommand motorCommand;
-		motorCommand.velocity = 0.0;
-		motorCommand.throttle = 0.0;
-		SendCANMotorCommand(motorCommand);
-		input_flags.cruise_enabled = false;
-	}
-	else if (GPIO_Pin == NEXT_SCREEN_Pin)
-	{
-		SendCANDIDNextPage();
-	}
+    case CRUISE_UP_Pin:
+      if(state == CRUISE)
+      {
+        if(cruiseVelocity + CRUISE_INCREMENT_VAL < CRUISE_MAX)
+          cruiseVelocity += CRUISE_INCREMENT_VAL;
+        else
+          cruiseVelocity = CRUISE_MAX;
+      }
+      break;
+
+    case CRUISE_DWN_Pin:
+      if(state == CRUISE)
+      {
+        if(cruiseVelocity - CRUISE_INCREMENT_VAL > CRUISE_MIN)
+          cruiseVelocity -= CRUISE_INCREMENT_VAL;
+        else
+          cruiseVelocity = CRUISE_MIN;
+      }
+      break;
+    #endif
+    case BRK_IN_Pin:
+      MotorCommand motorCommand;
+      motorCommand.velocity = 0.0;
+      motorCommand.throttle = 0.0;
+      SendCANMotorCommand(motorCommand);
+      input_flags.cruise_enabled = false;
+      break;
+
+    case NEXT_SCREEN_Pin:
+      SendCANDIDNextPage();
+      break;
+
+    default:
+      // Do nothing
+  }
 }
 /* USER CODE END 1 */

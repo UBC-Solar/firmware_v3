@@ -14,6 +14,9 @@
 #include "task.h"
 #include "cmsis_os.h"
 
+// Build configuration macros
+// #define CRUISE_ENABLED
+
 #define CAN_DATA_LENGTH 8			  // Length of a CAN message in bytes
 
 #define P1 0.3						  // TODO find proper value for this
