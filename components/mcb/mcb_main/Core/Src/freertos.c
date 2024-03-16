@@ -68,17 +68,24 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for MCBStateMachine */
-osThreadId_t MCBStateMachineHandle;
-const osThreadAttr_t MCBStateMachine_attributes = {
-  .name = "MCBStateMachine",
+/* Definitions for drive_state_machine */
+osThreadId_t drive_state_machineHandle;
+const osThreadAttr_t drive_state_machine_attributes = {
+  .name = "drive_state_machine",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityAboveNormal,
 };
 /* Definitions for GetCANMessage */
 osThreadId_t GetCANMessageHandle;
 const osThreadAttr_t GetCANMessage_attributes = {
   .name = "GetCANMessage",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for generic_100ms */
+osThreadId_t generic_100msHandle;
+const osThreadAttr_t generic_100ms_attributes = {
+  .name = "generic_100ms",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
@@ -89,8 +96,9 @@ const osThreadAttr_t GetCANMessage_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-void mcbStateMachine(void *argument);
+void task_drive_state_machine(void *argument);
 void getCANMessage(void *argument);
+void task_generic_100ms(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -123,11 +131,14 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* creation of MCBStateMachine */
-  MCBStateMachineHandle = osThreadNew(mcbStateMachine, NULL, &MCBStateMachine_attributes);
+  /* creation of drive_state_machine */
+  drive_state_machineHandle = osThreadNew(task_drive_state_machine, NULL, &drive_state_machine_attributes);
 
   /* creation of GetCANMessage */
   GetCANMessageHandle = osThreadNew(getCANMessage, NULL, &GetCANMessage_attributes);
+
+  /* creation of generic_100ms */
+  generic_100msHandle = osThreadNew(task_generic_100ms, NULL, &generic_100ms_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -155,23 +166,31 @@ void StartDefaultTask(void *argument)
 	 HAL_GPIO_TogglePin(LED_OUT1_GPIO_Port, LED_OUT1_Pin);
 	 HAL_GPIO_TogglePin(LED_OUT2_GPIO_Port, LED_OUT2_Pin);
 	 osDelay(100);
-
   }
   /* USER CODE END StartDefaultTask */
 }
 
-/* USER CODE BEGIN Header_mcbStateMachine */
+/* USER CODE BEGIN Header_task_drive_state_machine */
 /**
-* @brief Function implementing the MCBStateMachine thread.
+* @brief Function implementing the drive_state_machine thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_mcbStateMachine */
-void mcbStateMachine(void *argument)
+/* USER CODE END Header_task_drive_state_machine */
+void task_drive_state_machine(void *argument)
 {
-  /* USER CODE BEGIN mcbStateMachine */
-	TaskMCBStateMachine();
-  /* USER CODE END mcbStateMachine */
+  /* USER CODE BEGIN task_drive_state_machine */
+  /* Infinite loop */
+  for(;;)
+  {
+    taskENTER_CRITICAL();
+
+    drive_state_machine_handler();
+
+    taskEXIT_CRITICAL();
+	  osDelay(DELAY_MCB_STATE_MACHINE);
+  }
+  /* USER CODE END task_drive_state_machine */
 }
 
 /* USER CODE BEGIN Header_getCANMessage */
@@ -186,6 +205,27 @@ void getCANMessage(void *argument)
   /* USER CODE BEGIN getCANMessage */
 	TaskGetCANMessage();
   /* USER CODE END getCANMessage */
+}
+
+/* USER CODE BEGIN Header_task_generic_100ms */
+/**
+* @brief Function implementing the generic_100ms thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_task_generic_100ms */
+void task_generic_100ms(void *argument)
+{
+  /* USER CODE BEGIN task_generic_100ms */
+  /* Infinite loop */
+  for(;;)
+  {
+    // Sends MCB drive state
+    SendCANDIDDriveState();
+
+    osDelay(100);
+  }
+  /* USER CODE END task_generic_100ms */
 }
 
 /* Private application code --------------------------------------------------*/

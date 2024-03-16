@@ -16,54 +16,47 @@ float g_throttle = 0.0;
 /*
  *	Main state machine task
  */
-void TaskMCBStateMachine()
+void drive_state_machine_handler()
 {
-	for(;;)
+	UpdateInputFlags(&input_flags);
+
+	uint16_t throttle_ADC = ReadADC(&hadc1);
+	if (throttle_ADC > THROTTLE_ADC_MAX_VALUE || throttle_ADC < THROTTLE_ADC_MIN_VALUE)
 	{
-		taskENTER_CRITICAL();
-		UpdateInputFlags(&input_flags);
-
-		uint16_t throttle_ADC = ReadADC(&hadc1);
-		if (throttle_ADC > THROTTLE_ADC_MAX_VALUE || throttle_ADC < THROTTLE_ADC_MIN_VALUE)
-		{
-			g_throttle = 0.0;
-		}
-		else
-		{
-			g_throttle = NormalizeADCValue(throttle_ADC);
-		}
-
-		switch(state)
-		{
-			case DRIVE:
-				motorCommand = DoStateDRIVE(input_flags);
-				TransitionDRIVEstate(input_flags, &state);
-			break;
-
-			case REVERSE:
-				motorCommand = DoStateREVERSE(input_flags);
-				TransitionREVERSEstate(input_flags, &state);
-			break;
-
-			case PARK:
-				motorCommand = DoStatePARK(input_flags);
-				TransitionPARKstate(input_flags, &state);
-			break;
-
-			case CRUISE:
-				motorCommand = DoStateCRUISE(input_flags);
-				TransitionCRUISEstate(input_flags, &state);
-			break;
-
-			default:
-				motorCommand = GetMotorCommand(0.0, 0.0);
-		}
-
-		SendCANMotorCommand(motorCommand);
-
-		taskEXIT_CRITICAL();
-		osDelay(DELAY_MCB_STATE_MACHINE);
+		g_throttle = 0.0;
 	}
+	else
+	{
+		g_throttle = NormalizeADCValue(throttle_ADC);
+	}
+
+	switch(state)
+	{
+		case DRIVE:
+			motorCommand = DoStateDRIVE(input_flags);
+			TransitionDRIVEstate(input_flags, &state);
+		break;
+
+		case REVERSE:
+			motorCommand = DoStateREVERSE(input_flags);
+			TransitionREVERSEstate(input_flags, &state);
+		break;
+
+		case PARK:
+			motorCommand = DoStatePARK(input_flags);
+			TransitionPARKstate(input_flags, &state);
+		break;
+
+		case CRUISE:
+			motorCommand = DoStateCRUISE(input_flags);
+			TransitionCRUISEstate(input_flags, &state);
+		break;
+
+		default:
+			motorCommand = GetMotorCommand(0.0, 0.0);
+	}
+
+	SendCANMotorCommand(motorCommand);
 }
 
 
@@ -299,15 +292,9 @@ void SendCANDIDNextPage()
  */
 void SendCANDIDDriveState(DriveState state)
 {
-	static DriveState lastState = PARK;
-	// Only send message if state has changed
-	if ( lastState != state )
-	{
-		uint8_t data_send[CAN_DATA_LENGTH] = {0};
-		data_send[1] = state;
-		HAL_CAN_AddTxMessage(&hcan, &drive_state_header, data_send, &can_mailbox);
-		lastState = state;
-	}
+	uint8_t data_send[CAN_DATA_LENGTH] = {0};
+	data_send[0] = state;
+	HAL_CAN_AddTxMessage(&hcan, &drive_state_header, data_send, &can_mailbox);
 }
 
 void GetSwitchState(InputFlags * input_flags)

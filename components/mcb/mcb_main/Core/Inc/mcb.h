@@ -16,6 +16,7 @@
 
 // Build configuration macros
 // #define CRUISE_ENABLED
+// #define REGEN_ENABLED
 
 #define CAN_DATA_LENGTH 8			  // Length of a CAN message in bytes
 
@@ -110,7 +111,7 @@ extern uint8_t gBatterySOC;
 /*
  *  Functions
  */
-void TaskMCBStateMachine();
+void drive_state_machine_handler();
 void TaskGetCANMessage();
 
 void SendCANMotorCommand(MotorCommand motorCommand);
