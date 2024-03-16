@@ -18,7 +18,8 @@ uint8_t bit_address[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 /*Take unpackaged CAN, IMU, or GPS arrays and package them into API Frame*/
 
 uint16_t apiPackage(uint8_t raw_outbox[], uint8_t end_position, uint8_t unsized_packet[], uint8_t MessageType){
-  uint16_t outbox_position = 19; //standard position after static API frame data
+
+
 
   //setup API frame
   unsized_packet[0] = START_DELIMITER;
@@ -38,20 +39,21 @@ uint16_t apiPackage(uint8_t raw_outbox[], uint8_t end_position, uint8_t unsized_
 
 
   uint8_t lengthValue = 0; //Keep track of the length of each sub message. This value will then be entered before each message in API Frame
-  uint8_t lengthPosition = 18;
-
+  uint16_t lengthPosition = 18; //position of each length value (before each message)
+  uint16_t outbox_position = 19; //standard position after static API frame data
 
   //get individual messages, and package them in length value format
   for (int i = 0; i <= end_position; i++){
 
-      unsized_packet[outbox_position] = raw_outbox[i];
+      unsized_packet[outbox_position] = raw_outbox[i]; //add
       lengthValue++;
 
       if(raw_outbox[i] != 'n')
 	{
 	  outbox_position++;
       }
-      //end of message is reached: Length value is filled before message.
+
+      //end of message is reached. Total length of message is then inserted before message.
       else
 	{
 	  unsized_packet[lengthPosition] = lengthValue;
@@ -61,8 +63,8 @@ uint16_t apiPackage(uint8_t raw_outbox[], uint8_t end_position, uint8_t unsized_
 	}
   }
 
-  unsized_packet[2] = outbox_position - 5; //Length second byte (ignore start delimiter, length fields, checksum, and one empty byte (4 bytes)
-  uint16_t totalBytes = 0; //used to calculate checksum
+   unsized_packet[2] = outbox_position - 5; //Length second byte (ignore start delimiter, length fields, checksum, and one empty byte (5 bytes)
+   uint16_t totalBytes = 0; //used to calculate checksum
 
   //add up all bytes to calculate checksum
   for(int i =3; i< outbox_position-2; i++){
@@ -71,10 +73,9 @@ uint16_t apiPackage(uint8_t raw_outbox[], uint8_t end_position, uint8_t unsized_
   }
 
   uint8_t checksum = 0xFF -(totalBytes & 0xFF);
-
   unsized_packet[outbox_position-2] = checksum; //set checksum
 
-  return outbox_position-1; //used to scale sized array.
+  return outbox_position-1; //used to size packet to not include any empty positions in the array.
 
 
 

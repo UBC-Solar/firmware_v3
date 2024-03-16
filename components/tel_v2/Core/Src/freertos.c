@@ -149,7 +149,6 @@ osMessageQueueId_t gpsMessageQueueHandle;
 const osMessageQueueAttr_t gpsMessageQueue_attributes = {
   .name = "gpsMessageQueue"
 };
-
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 
@@ -165,6 +164,7 @@ void read_IMU_task(void *argument);
 void transmit_IMU_task(void *argument);
 void read_GPS_task(void *argument);
 void transmit_GPS_task(void *argument);
+
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -199,6 +199,8 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of gpsMessageQueue */
   gpsMessageQueueHandle = osMessageQueueNew (10, sizeof(uint16_t), &gpsMessageQueue_attributes);
+
+
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
