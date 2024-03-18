@@ -10,7 +10,7 @@
 float cruiseVelocity = 0.0;		// Velocity for cruise control
 float velocityOfCar = 0.0;		// Current velocity of the car will be stored here.
 InputFlags input_flags;
-DriveState state = DRIVE;
+DriveState state = PARK;
 MotorCommand motorCommand;
 float g_throttle = 0.0;
 /*
