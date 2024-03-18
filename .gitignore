@@ -8,4 +8,6 @@ components/mcb/mcb_main/Mitsuba - Debug/
 components/mcb/mcb_main/Tritium - Release/
 components/mcb/mcb_main/Tritium - Debug/
 components/mcb/mcb_main/Drivers/
-
+components/ecu/ecu_firmware/build
+components/ecu/ecu_firmware/Drivers
+components/ecu/ecu_firmware/.vscode
