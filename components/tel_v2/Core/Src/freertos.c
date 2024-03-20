@@ -58,7 +58,7 @@
 
 #define GPS_RCV_BUFFER_SIZE 512
 
-#define CAN_PACKET_LENGTH 11
+#define CAN_PACKET_LENGTH 10
 #define IMU_PACKET_LENGTH 10
 #define GPS_PACKET_LENGTH 1
 
@@ -332,17 +332,19 @@ void transmit_CAN_task(void *argument)
 
     uint8_t can_outbox[300];
     uint8_t outbox_position = 0;
+    int queueSize = osMessageQueueGetCount(canMessageQueueHandle);
+    uint8_t PacketSize = 0;
 
 
-   for (int can_outbox_size = 0; can_outbox_size < CAN_PACKET_LENGTH; can_outbox_size++) {
+   for (int can_outbox_size = 0; can_outbox_size < ((queueSize > CAN_PACKET_LENGTH)?(CAN_PACKET_LENGTH): (queueSize)); can_outbox_size++) {
 
     /* Retrieve CAN message from queue */
     queue_status = osMessageQueueGet(canMessageQueueHandle, &can_message, NULL, osWaitForever);
 
     /* Yield if nothing on queue */
-    if (queue_status != osOK){
-      osThreadYield();
-    }
+//    if (queue_status != osOK){
+//      osThreadYield();
+//    }
 
     /* Initialize a CAN buffer */
     uint8_t can_buffer[CAN_BUFFER_LEN] = {0};
@@ -385,9 +387,9 @@ void transmit_CAN_task(void *argument)
     can_buffer[CAN_BUFFER_LEN - 1] = '\n';
 
 
-    for(int j = 0; j <sizeof(can_buffer); j++){
+    for(int i = 0; i <sizeof(can_buffer); i++){
 
-	can_outbox[outbox_position + j] = can_buffer[j];
+	can_outbox[outbox_position + i] = can_buffer[i];
     }
     /* Set position for next Message*/
     outbox_position += sizeof(can_buffer);
@@ -478,16 +480,18 @@ void transmit_IMU_task(void *argument)
 
     uint8_t imu_outbox[200];
     uint8_t outbox_position = 0;
+    uint8_t queueSize = osMessageQueueGetCount(imuMessageQueueHandle);
 
-    for (uint8_t i = 0; i < IMU_PACKET_LENGTH; i++){
+
+    for (uint8_t i = 0; i < ((queueSize > IMU_PACKET_LENGTH)?(IMU_PACKET_LENGTH):(queueSize)); i++){
 	/* Get IMU Message from Queue */
 	    imu_queue_status = osMessageQueueGet(imuMessageQueueHandle, &imu_message, NULL, osWaitForever);
 
 	    /* Yield thread if status not ok */
-	    if (imu_queue_status != osOK){
-	      osThreadYield();
+	   /* if (imu_queue_status != osOK){
+	      osDelay(500);
 	    }
-
+*/
 	    /* Initialize a IMU buffer */
 	    uint8_t imu_buffer[IMU_MESSAGE_LEN] = {0};
 
@@ -641,7 +645,7 @@ void transmit_GPS_task(void *argument)
     /* Transmit the NMEA message over UART to radio */
 
     uint16_t end_position = sizeof(gps_buffer);
-    uint8_t unsized_packet[500];
+    uint8_t unsized_packet[400];
     uint16_t packetEndpoint = apiPackage(gps_buffer, end_position, unsized_packet, GPS_BYTE);
     uint8_t sized_packet[packetEndpoint];
 
