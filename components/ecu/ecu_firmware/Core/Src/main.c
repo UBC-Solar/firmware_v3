@@ -81,11 +81,10 @@ static void MX_IWDG_Init(void);
 /*============================================================================*/
 /* ADC INTERRUPT CALLBACKS */
 
-// void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
-// {
-//   //FSM_ADC_LevelOutOfWindowCallback();
-//   printf("analog watchdog disabled\r\n");
-// }
+void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
+{
+  FSM_ADC_LevelOutOfWindowCallback();
+}
 
 /* USER CODE END 0 */
 
@@ -151,9 +150,7 @@ int main(void)
 
     FSM_run();
 
-    HAL_Delay(370);
-
-    HAL_IWDG_Refresh (&hiwdg);//Programmed in IOC to have refreshed in 105ms due to possible CAN message delays.
+    HAL_IWDG_Refresh (&hiwdg);//Programmed in IOC to have refreshed in 450ms due to possible CAN message delays.
 	  	  	  	  	  	  	  	 //if not refreshed, board will be sent to watchdog error handler and board will be reset.
 
     /* USER CODE END WHILE */
@@ -256,8 +253,8 @@ static void MX_ADC1_Init(void)
   /** Configure Analog WatchDog 1
   */
   AnalogWDGConfig.WatchdogMode = ADC_ANALOGWATCHDOG_SINGLE_REG;
-  AnalogWDGConfig.HighThreshold = 2727;
-  AnalogWDGConfig.LowThreshold = 2060;
+  AnalogWDGConfig.HighThreshold = 2710;
+  AnalogWDGConfig.LowThreshold = 2071;
   AnalogWDGConfig.Channel = ADC_CHANNEL_14;
   AnalogWDGConfig.ITMode = ENABLE;
   if (HAL_ADC_AnalogWDGConfig(&hadc1, &AnalogWDGConfig) != HAL_OK)

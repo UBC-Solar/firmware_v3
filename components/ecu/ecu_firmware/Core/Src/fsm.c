@@ -44,9 +44,6 @@ static bool last_LLIM_status;
  */
 void FSM_Init()
 {
-    // ticks.last_generic_tick = HAL_GetTick();
-    // ticks.last_tick_fault_led = HAL_GetTick();
-    // ticks.neg_tick = HAL_GetTick();
 
     uint32_t reset_flags = RCC->CSR;
 
@@ -106,8 +103,7 @@ void FSM_reset()
     // Read supplemental battery
     check_supp_voltage();
 
-    //FSM_state = WAIT_FOR_BMS_POWERUP;
-        FSM_state = HV_CONNECT;
+    FSM_state = WAIT_FOR_BMS_POWERUP;
 
     ticks.last_generic_tick = HAL_GetTick();
     printf("end of FSM reset \r\n");
@@ -193,10 +189,10 @@ void HV_Connect()
     if( last_tick_reached == true )
     {
         HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, CONTACTOR_CLOSED);
-        //HAL_Delay(SHORT_INTERVAL);
-        if( timer_check(SHORT_INTERVAL, &(ticks.neg_tick) ) && other_last_tick_reached == false) {
-            //HAL_GPIO_WritePin(POS_CTRL_GPIO_Port, POS_CTRL_Pin, CONTACTOR_CLOSED);
-            HAL_GPIO_WritePin(MDU_FAN_CTRL_GPIO_Port, MDU_FAN_CTRL_Pin, CONTACTOR_CLOSED);
+        
+        if( timer_check(SHORT_INTERVAL, &(ticks.neg_tick) ) && other_last_tick_reached == false) 
+        {
+            HAL_GPIO_WritePin(POS_CTRL_GPIO_Port, POS_CTRL_Pin, CONTACTOR_CLOSED);
             other_last_tick_reached = true;
             ticks.pos_tick = HAL_GetTick();
         }
@@ -293,7 +289,6 @@ void check_LLIM()
         FSM_state = WAIT_FOR_PC;
     }
 
-    FSM_state = WAIT_FOR_PC; //SHOULDNT BE HERE LOL
     printf("end of check LLIM\r\n");
 
     return;
@@ -514,20 +509,20 @@ void ECU_monitor()
     /*************************
     BMS and ESTOP Fault Checking
     **************************/
-    // if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH ||
-    //     HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH ||
-    //     HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH)
-    // {
-    //     FSM_state = FAULT;
-    //     return;
-    // }
+    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH ||
+        HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH ||
+        HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH)
+    {
+        FSM_state = FAULT;
+        return;
+    }
     
-    // if(HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT){
-    //     ecu_data.status.bits.estop = true;
+    if(HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT){
+        ecu_data.status.bits.estop = true;
         
-    //     FSM_state = FAULT;
-    //     return;
-    // }
+        FSM_state = FAULT;
+        return;
+    }
 
     /*************************
     Check Battery Capacity
@@ -558,19 +553,21 @@ void ECU_monitor()
     /*************************
     Send CAN Messages
     **************************/
-    // Retrieve received messages
-    // CAN_CheckRxMessages(CAN_RX_FIFO0);
+    //Retrieve received messages
+    ticks.last_generic_tick = HAL_GetTick(); //shouldnt be here
+    CAN_CheckRxMessages(CAN_RX_FIFO0);
 
-    // // Only send charger message if it is connected
-    // if (CAN_CheckRxChargerMessage())
-    // {
-    //     CAN_SendMessage1806E5F4();
-    // }
+    // Only send charger message if it is connected
+    if (CAN_CheckRxChargerMessage())
+    {
+        CAN_SendMessage1806E5F4();
+    }
 
-    // if (timer_check(MESSAGE_INTERVAL_0X450, &(ticks.last_generic_tick) ))
-    // {
-    //     CAN_SendMessage450();
-    // }
+    if (timer_check(MESSAGE_INTERVAL_0X450, &(ticks.last_generic_tick) ))
+    {
+        CAN_SendMessage450();
+        printf("CAN 450 sent \r\n");
+    }
 
     /*************************
     Check SUPP Voltage
@@ -610,7 +607,7 @@ void fault()
 
     if (timer_check(MESSAGE_INTERVAL_0X450, &(ticks.last_generic_tick) ))
     {
-        //CAN_SendMessage450();
+        CAN_SendMessage450();
     }
 
     // blink fault light at 2Hz minimum (see regs)
@@ -627,11 +624,11 @@ void fault()
 
 void FSM_ADC_LevelOutOfWindowCallback()
 {
-    // ecu_data.status.bits.fault_charge_overcurrent = true;
-    // ecu_data.status.bits.fault_discharge_overcurrent = true;
+    ecu_data.status.bits.fault_charge_overcurrent = true;
+    ecu_data.status.bits.fault_discharge_overcurrent = true;
 
-    // FSM_state = FAULT;
-    // FSM_run(); // Immediately transition to fault state
+    FSM_state = FAULT;
+    FSM_run(); // Immediately transition to fault state
 }
 
 /*============================================================================*/
