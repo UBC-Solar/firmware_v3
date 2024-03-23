@@ -151,7 +151,7 @@ int main(void)
 
     FSM_run();
 
-    //HAL_Delay(10); // shouldnt be here
+    HAL_Delay(370);
 
     HAL_IWDG_Refresh (&hiwdg);//Programmed in IOC to have refreshed in 105ms due to possible CAN message delays.
 	  	  	  	  	  	  	  	 //if not refreshed, board will be sent to watchdog error handler and board will be reset.
@@ -388,7 +388,7 @@ static void MX_IWDG_Init(void)
   /* USER CODE END IWDG_Init 1 */
   hiwdg.Instance = IWDG;
   hiwdg.Init.Prescaler = IWDG_PRESCALER_8;
-  hiwdg.Init.Reload = 420;
+  hiwdg.Init.Reload = 1799;
   if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
   {
     Error_Handler();
