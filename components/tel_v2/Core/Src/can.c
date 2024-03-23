@@ -24,6 +24,15 @@
 
 HAL_StatusTypeDef can_start;
 
+CAN_TxHeaderTypeDef rtc_timestamp_header = {
+    .StdId = RTC_TIMESTAMP,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
+
+uint32_t can_mailbox;
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
