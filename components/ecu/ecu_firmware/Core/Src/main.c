@@ -81,10 +81,11 @@ static void MX_IWDG_Init(void);
 /*============================================================================*/
 /* ADC INTERRUPT CALLBACKS */
 
-void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
-{
-  FSM_ADC_LevelOutOfWindowCallback();
-}
+// void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
+// {
+//   //FSM_ADC_LevelOutOfWindowCallback();
+//   printf("analog watchdog disabled\r\n");
+// }
 
 /* USER CODE END 0 */
 
@@ -149,6 +150,9 @@ int main(void)
   {
 
     FSM_run();
+
+    //HAL_Delay(10); // shouldnt be here
+
     HAL_IWDG_Refresh (&hiwdg);//Programmed in IOC to have refreshed in 105ms due to possible CAN message delays.
 	  	  	  	  	  	  	  	 //if not refreshed, board will be sent to watchdog error handler and board will be reset.
 
