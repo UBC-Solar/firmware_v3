@@ -116,7 +116,7 @@ const osThreadAttr_t transmitIMUTask_attributes = {
 osThreadId_t readGPSTaskHandle;
 const osThreadAttr_t readGPSTask_attributes = {
   .name = "readGPSTask",
-  .stack_size = 128 * 4,
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for transmitGPSTask */
@@ -243,7 +243,7 @@ void startDefaultTask(void *argument)
   {
 
     HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-    osDelay(1000);
+    osDelay(100);
   }
   /* USER CODE END startDefaultTask */
 }
