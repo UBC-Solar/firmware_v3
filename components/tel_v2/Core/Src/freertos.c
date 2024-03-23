@@ -50,6 +50,7 @@
 #define KERNEL_LED_DELAY 200		// 200 milliseconds
 #define READ_IMU_DELAY 	 100		// 100 milliseconds
 #define READ_GPS_DELAY   5 * 60 * 1000  // 5 minutes
+#define TRANSMIT_RTC_DELAY 5000 // 5000 milliseconds
 
 #define CAN_BUFFER_LEN  22
 #define IMU_MESSAGE_LEN 17
@@ -126,6 +127,13 @@ const osThreadAttr_t transmitGPSTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for transmitRTCTask */
+osThreadId_t transmitRTCTaskHandle;
+const osThreadAttr_t transmitRTCTask_attributes = {
+  .name = "transmitRTCTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 /* Definitions for canMessageQueue */
 osMessageQueueId_t canMessageQueueHandle;
 const osMessageQueueAttr_t canMessageQueue_attributes = {
@@ -157,6 +165,7 @@ void read_IMU_task(void *argument);
 void transmit_IMU_task(void *argument);
 void read_GPS_task(void *argument);
 void transmit_GPS_task(void *argument);
+void transmit_RTC_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -217,6 +226,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of transmitGPSTask */
   transmitGPSTaskHandle = osThreadNew(transmit_GPS_task, NULL, &transmitGPSTask_attributes);
+
+  /* creation of transmitRTCTask */
+  transmitRTCTaskHandle = osThreadNew(transmit_RTC_task, NULL, &transmitRTCTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -598,6 +610,36 @@ void transmit_GPS_task(void *argument)
   }
 
   /* USER CODE END transmit_GPS_task */
+}
+
+/* USER CODE BEGIN Header_transmit_RTC_task */
+/**
+* @brief Function implementing the transmitRTCTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_transmit_RTC_task */
+void transmit_RTC_task(void *argument)
+{
+  /* USER CODE BEGIN transmit_RTC_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    // Get rtc timestamp
+    time_t timestamp = get_current_timestamp();
+    uint8_t data_send[8];
+
+    // Populate data_send array
+    for (int i = 0; i < 8; i++) {
+        data_send[i] = (timestamp >> (8 * i)) & 0xFF;
+    }
+    
+    // Transmit message on CAN
+    HAL_CAN_AddTxMessage(&hcan, &rtc_timestamp_header, data_send, &can_mailbox);
+    
+    osDelay(TRANSMIT_RTC_DELAY);
+  }
+  /* USER CODE END transmit_RTC_task */
 }
 
 /* Private application code --------------------------------------------------*/

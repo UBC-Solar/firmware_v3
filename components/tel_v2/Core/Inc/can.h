@@ -40,6 +40,14 @@ extern CAN_HandleTypeDef hcan;
 
 #define CAN_READY (uint32_t) 0x0001
 
+#define RTC_TIMESTAMP 0x751
+
+#define CAN_DATA_LENGTH 8
+
+extern CAN_TxHeaderTypeDef rtc_timestamp_header;
+
+extern uint32_t can_mailbox;
+
 /* USER CODE END Private defines */
 
 void MX_CAN_Init(void);
