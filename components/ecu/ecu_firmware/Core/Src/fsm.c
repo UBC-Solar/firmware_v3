@@ -44,20 +44,14 @@ static bool last_LLIM_status;
  */
 void FSM_Init()
 {
-
     uint32_t reset_flags = RCC->CSR;
 
     if (reset_flags & RCC_CSR_IWDGRSTF) {
-        // This watchdog
-        printf("Fault LOL\r\n");
+        //IWDG triggered
         ecu_data.status.bits.reset_from_watchdog = 1; //CAN_message now knows watchdog event has occured
         FSM_state = FAULT;
-
-        //RCC_CSR_IWDGRSTF == 1;
-       
     }
     else {
-        printf("Reset");
         FSM_state = FSM_RESET;
     }
 
@@ -174,40 +168,36 @@ void BMS_ready()
  */
 void HV_Connect()
 {
-    static bool last_tick_reached = false; //change name later
-    static bool other_last_tick_reached = false; //change name later
+    static bool first_delay_tick = false;
+    static bool second_delay_tick = false; 
     
     printf("beginning of HV connect\r\n");
-    if (timer_check(SHORT_INTERVAL, &(ticks.last_generic_tick) ) && last_tick_reached == false )
+    if (timer_check(SHORT_INTERVAL, &(ticks.last_generic_tick) ) && first_delay_tick == false)
     {
-        last_tick_reached = true;
+        first_delay_tick = true;
         printf("last tick = true \r\n");
         ticks.neg_tick = HAL_GetTick(); 
-        
     }
 
-    if( last_tick_reached == true )
+    if(first_delay_tick == true)
     {
         HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, CONTACTOR_CLOSED);
-        
-        if( timer_check(SHORT_INTERVAL, &(ticks.neg_tick) ) && other_last_tick_reached == false) 
+
+        if(timer_check(SHORT_INTERVAL, &(ticks.neg_tick) ) && second_delay_tick == false) 
         {
             HAL_GPIO_WritePin(POS_CTRL_GPIO_Port, POS_CTRL_Pin, CONTACTOR_CLOSED);
-            other_last_tick_reached = true;
+            second_delay_tick = true;
             ticks.pos_tick = HAL_GetTick();
         }
 
-        if( other_last_tick_reached == true )
+        if(second_delay_tick == true)
         {
-
-            if( timer_check(SHORT_INTERVAL, &(ticks.pos_tick) )) 
+            if( timer_check(SHORT_INTERVAL, &(ticks.pos_tick))) 
             {
                 ticks.last_generic_tick = HAL_GetTick();
                 FSM_state = SWAP_DCDC;
             }
-
         }
-        
     }
 
     return;
@@ -251,14 +241,12 @@ void swap_DCDC()
  */
 void disable_MDU_DCH()
 {
-    
     if (timer_check(SHORT_INTERVAL, &(ticks.last_generic_tick) ))
     {
         HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, LOW);
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = CHECK_LLIM;
     }
-
     printf("end of MDU dch\r\n");
 
     return;
@@ -311,7 +299,6 @@ void PC_wait()
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = LLIM_CLOSED;
     }
-
     printf("end of PC wait\r\n");
 
     return;
@@ -492,7 +479,6 @@ void AMB_on()
  */
 void ECU_monitor()
 {
-    printf("monitor\r\n");
     if(ecu_data.adc_data.ADC_batt_current >= DOC_WARNING_THRESHOLD){
         ecu_data.status.bits.warning_pack_overdischarge_current = true;
         ecu_data.status.bits.warning_pack_overcharge_current = false;
