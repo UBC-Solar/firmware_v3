@@ -554,7 +554,6 @@ void ECU_monitor()
     Send CAN Messages
     **************************/
     //Retrieve received messages
-    ticks.last_generic_tick = HAL_GetTick(); //shouldnt be here
     CAN_CheckRxMessages(CAN_RX_FIFO0);
 
     // Only send charger message if it is connected
@@ -566,7 +565,6 @@ void ECU_monitor()
     if (timer_check(MESSAGE_INTERVAL_0X450, &(ticks.last_generic_tick) ))
     {
         CAN_SendMessage450();
-        printf("CAN 450 sent \r\n");
     }
 
     /*************************
