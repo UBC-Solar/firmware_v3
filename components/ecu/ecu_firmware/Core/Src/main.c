@@ -80,7 +80,7 @@ void averageAndSaveValues_ADC1(int adc_half);
 
 void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
 { // Analog watchdog 
-  FSM_ADC_LevelOutOfWindowCallback();
+  // FSM_ADC_LevelOutOfWindowCallback();
 }
 
 /* USER CODE END 0 */
@@ -135,15 +135,15 @@ int main(void)
   int last_blink_time = 0;
   int current_time = 0;
 
-  /* USER CODE END 2 */
+  // /* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
+  // /* Infinite loop */
+  // /* USER CODE BEGIN WHILE */
 
   while (1)
   {
 
-    FSM_run();
+    // FSM_run();
 
     /* USER CODE END WHILE */
 
