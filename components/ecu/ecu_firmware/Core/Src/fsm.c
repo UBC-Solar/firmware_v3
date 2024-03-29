@@ -64,10 +64,7 @@ void FSM_reset()
 {
     printf("start of FSM reset\r\n");
     //  Turn fans off
-    HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(FAN4_CTRL_GPIO_Port, FAN4_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, LOW);
     HAL_GPIO_WritePin(MDU_FAN_CTRL_GPIO_Port, MDU_FAN_CTRL_Pin, LOW);
 
     // Open all contactors
@@ -82,7 +79,7 @@ void FSM_reset()
 
     FSM_state = WAIT_FOR_BMS_POWERUP;
     last_generic_tick = HAL_GetTick();
-    printf("end of FSM reset \r\n");
+
     return;
 }
 
@@ -135,7 +132,7 @@ void BMS_ready()
         last_generic_tick = HAL_GetTick();
         FSM_state = HV_CONNECT;
     }
-    printf("end of BMS ready\r\n");
+
     return;
 }
 
@@ -159,6 +156,7 @@ void HV_Connect()
 
         FSM_state = SWAP_DCDC;
     }
+
     return;
 }
 
@@ -171,13 +169,10 @@ void HV_Connect()
  */
 void swap_DCDC()
 {
+    printf("beginning of swap\r\n");
+    
     HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, HIGH);
-
-    HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, HIGH);
-    HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, HIGH);
-    HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, HIGH);
-    HAL_GPIO_WritePin(FAN4_CTRL_GPIO_Port, FAN4_CTRL_Pin, HIGH);
-
+    HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, HIGH);
     HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, HIGH);
 
     printf("end of SWAP\r\n");
@@ -246,7 +241,6 @@ void check_LLIM()
  */
 void PC_wait()
 {
-    printf("start of PC state\r\n");
     if (timer_check(MDU_PC_INTERVAL, &last_generic_tick))
     {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
@@ -273,6 +267,7 @@ void LLIM_closed()
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
         FSM_state = CHECK_HLIM;
     }
+
     return;
 }
 
@@ -289,7 +284,6 @@ void LLIM_closed()
  */
 void check_HLIM()
 {
-    printf("start of check HLIM\r\n");
     if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN)
     {
         last_HLIM_status = CONTACTOR_OPEN;
@@ -383,7 +377,7 @@ void MDU_on()
 {
     if (timer_check(LVS_INTERVAL, &last_generic_tick))
     {
-        HAL_GPIO_WritePin(MDI_CTRL_GPIO_Port, MDI_CTRL_Pin, HIGH);
+        HAL_GPIO_WritePin(MDU_CTRL_GPIO_Port, MDU_CTRL_Pin, HIGH);
         FSM_state = AMB_ON;
     }
 
@@ -426,11 +420,11 @@ void ECU_monitor()
 {
 
     // Current Status Checks
-    if(ecu_data.adc_data.ADC_batt_current >= DOC_WARNING_THRESHOLD){
+    if(ecu_data.adc_data.ADC_pack_current >= DOC_WARNING_THRESHOLD){
         ecu_data.status.bits.warning_pack_overdischarge_current = true;
         ecu_data.status.bits.warning_pack_overcharge_current = false;
     }
-    else if(ecu_data.adc_data.ADC_batt_current <= COC_WARNING_THRESHOLD){
+    else if(ecu_data.adc_data.ADC_pack_current <= COC_WARNING_THRESHOLD){
         ecu_data.status.bits.warning_pack_overdischarge_current = false;
         ecu_data.status.bits.warning_pack_overcharge_current = true;
     }
@@ -450,9 +444,8 @@ void ECU_monitor()
         return;
     }
     
-    if(HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT){
+    if(HAL_GPIO_ReadPin(ESTOP_STATUS_GPIO_Port, ESTOP_STATUS_Pin) == ESTOP_ACTIVE_FAULT){
         ecu_data.status.bits.estop = true;
-        
         FSM_state = FAULT;
         return;
     }
@@ -525,7 +518,7 @@ void fault()
     HAL_GPIO_WritePin(POS_CTRL_GPIO_Port, POS_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
-    HAL_GPIO_WritePin(MDI_CTRL_GPIO_Port, MDI_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(MDU_CTRL_GPIO_Port, MDU_CTRL_Pin, LOW);
 
     /****************************
     Preform Perpetual Fault Tasks
@@ -533,7 +526,6 @@ void fault()
     check_supp_voltage();
 
     // send CAN status message
-
     if (timer_check(MESSAGE_INTERVAL_0X450, &last_generic_tick))
     {
         CAN_SendMessage450();

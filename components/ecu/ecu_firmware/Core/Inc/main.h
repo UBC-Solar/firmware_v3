@@ -47,8 +47,7 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-void averageAndSaveValues_ADC1(int adc_half);
-void averageAndSaveValues_ADC3(int adc_half);
+
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
@@ -59,42 +58,42 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define SUPP_LOW_Pin GPIO_PIN_13
-#define SUPP_LOW_GPIO_Port GPIOC
-#define GPIO_BMS_Pin GPIO_PIN_0
+#define GPIO_BMS_Pin GPIO_PIN_13
 #define GPIO_BMS_GPIO_Port GPIOC
-#define MDU_FAN_CTRL_Pin GPIO_PIN_1
+#define SUPP_LOW_Pin GPIO_PIN_0
+#define SUPP_LOW_GPIO_Port GPIOC
+#define PACK_FANS_CTRL_Pin GPIO_PIN_1
+#define PACK_FANS_CTRL_GPIO_Port GPIOC
+#define MDU_FAN_CTRL_Pin GPIO_PIN_2
 #define MDU_FAN_CTRL_GPIO_Port GPIOC
-#define FAN1_CTRL_Pin GPIO_PIN_2
-#define FAN1_CTRL_GPIO_Port GPIOC
-#define FAN2_CTRL_Pin GPIO_PIN_3
-#define FAN2_CTRL_GPIO_Port GPIOC
-#define FAN4_CTRL_Pin GPIO_PIN_0
-#define FAN4_CTRL_GPIO_Port GPIOA
-#define FAN3_CTRL_Pin GPIO_PIN_1
-#define FAN3_CTRL_GPIO_Port GPIOA
+#define OC_REF_SENSE_Pin GPIO_PIN_3
+#define OC_REF_SENSE_GPIO_Port GPIOC
+#define OC_LATCH_SET_Pin GPIO_PIN_1
+#define OC_LATCH_SET_GPIO_Port GPIOA
 #define LED_OUT_Pin GPIO_PIN_2
 #define LED_OUT_GPIO_Port GPIOA
 #define FLT_OUT_Pin GPIO_PIN_3
 #define FLT_OUT_GPIO_Port GPIOA
-#define ESTOP_5V_Pin GPIO_PIN_4
-#define ESTOP_5V_GPIO_Port GPIOA
-#define SPAR_CURR_SNS_OFFSET_Pin GPIO_PIN_5
-#define SPAR_CURR_SNS_OFFSET_GPIO_Port GPIOA
+#define ESTOP_STATUS_Pin GPIO_PIN_4
+#define ESTOP_STATUS_GPIO_Port GPIOA
+#define OD_REF_SENSE_Pin GPIO_PIN_5
+#define OD_REF_SENSE_GPIO_Port GPIOA
 #define SUPP_SENSE_Pin GPIO_PIN_6
 #define SUPP_SENSE_GPIO_Port GPIOA
-#define BATT_CURR_SNS_OFFSET_Pin GPIO_PIN_7
-#define BATT_CURR_SNS_OFFSET_GPIO_Port GPIOA
-#define BATT_CURR_SNS_Pin GPIO_PIN_4
-#define BATT_CURR_SNS_GPIO_Port GPIOC
-#define SPAR_CURR_SNS_Pin GPIO_PIN_5
-#define SPAR_CURR_SNS_GPIO_Port GPIOC
-#define LVS_CURR_SNS_OFFSET_Pin GPIO_PIN_0
-#define LVS_CURR_SNS_OFFSET_GPIO_Port GPIOB
-#define LVS_CURR_SNS_Pin GPIO_PIN_1
-#define LVS_CURR_SNS_GPIO_Port GPIOB
-#define DOC_COC_Pin GPIO_PIN_10
-#define DOC_COC_GPIO_Port GPIOB
+#define PACK_CURRENT_OFFSET_SENSE_Pin GPIO_PIN_7
+#define PACK_CURRENT_OFFSET_SENSE_GPIO_Port GPIOA
+#define PACK_CURRENT_SENSE_Pin GPIO_PIN_4
+#define PACK_CURRENT_SENSE_GPIO_Port GPIOC
+#define T_AMBIENT_SENSE_Pin GPIO_PIN_5
+#define T_AMBIENT_SENSE_GPIO_Port GPIOC
+#define LVS_CURRENT_OFFSET_SENSE_Pin GPIO_PIN_0
+#define LVS_CURRENT_OFFSET_SENSE_GPIO_Port GPIOB
+#define LVS_CURRENT_SENSE_Pin GPIO_PIN_1
+#define LVS_CURRENT_SENSE_GPIO_Port GPIOB
+#define BOOT1_Pin GPIO_PIN_2
+#define BOOT1_GPIO_Port GPIOB
+#define SPAR1_CTRL_Pin GPIO_PIN_10
+#define SPAR1_CTRL_GPIO_Port GPIOB
 #define TEL_CTRL_Pin GPIO_PIN_11
 #define TEL_CTRL_GPIO_Port GPIOB
 #define DID_CTRL_Pin GPIO_PIN_12
@@ -103,10 +102,12 @@ void Error_Handler(void);
 #define AMB_CTRL_GPIO_Port GPIOB
 #define MCB_CTRL_Pin GPIO_PIN_14
 #define MCB_CTRL_GPIO_Port GPIOB
-#define MDI_CTRL_Pin GPIO_PIN_15
-#define MDI_CTRL_GPIO_Port GPIOB
+#define MDU_CTRL_Pin GPIO_PIN_15
+#define MDU_CTRL_GPIO_Port GPIOB
 #define DCH_RST_Pin GPIO_PIN_6
 #define DCH_RST_GPIO_Port GPIOC
+#define DOC_COC_LED_Pin GPIO_PIN_7
+#define DOC_COC_LED_GPIO_Port GPIOC
 #define LLIM_CTRL_Pin GPIO_PIN_8
 #define LLIM_CTRL_GPIO_Port GPIOC
 #define PC_CTRL_Pin GPIO_PIN_9
@@ -117,24 +118,28 @@ void Error_Handler(void);
 #define NEG_CTRL_GPIO_Port GPIOA
 #define SWAP_CTRL_Pin GPIO_PIN_10
 #define SWAP_CTRL_GPIO_Port GPIOA
-#define POS_CTRL_Pin GPIO_PIN_11
+#define ESTOP_LED_Pin GPIO_PIN_11
+#define ESTOP_LED_GPIO_Port GPIOA
+#define POS_CTRL_Pin GPIO_PIN_12
 #define POS_CTRL_GPIO_Port GPIOA
-#define OC_LATCH_Pin GPIO_PIN_12
-#define OC_LATCH_GPIO_Port GPIOA
-#define OT_BMS_Pin GPIO_PIN_15
-#define OT_BMS_GPIO_Port GPIOA
-#define COM_BMS_Pin GPIO_PIN_10
-#define COM_BMS_GPIO_Port GPIOC
+#define DOC_COC_Pin GPIO_PIN_15
+#define DOC_COC_GPIO_Port GPIOA
 #define HLIM_BMS_Pin GPIO_PIN_11
 #define HLIM_BMS_GPIO_Port GPIOC
 #define LLIM_BMS_Pin GPIO_PIN_3
 #define LLIM_BMS_GPIO_Port GPIOB
 #define FLT_BMS_Pin GPIO_PIN_4
 #define FLT_BMS_GPIO_Port GPIOB
+#define COM_BMS_Pin GPIO_PIN_5
+#define COM_BMS_GPIO_Port GPIOB
 #define BAL_BMS_Pin GPIO_PIN_6
 #define BAL_BMS_GPIO_Port GPIOB
+#define OT_BMS_Pin GPIO_PIN_7
+#define OT_BMS_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
+
+#define DEBUG_LED_BLINK_INTERVAL 500 // ms
 
 /* USER CODE END Private defines */
 

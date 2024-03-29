@@ -89,7 +89,7 @@ void CAN_SendMessage450()
     txMessage.tx_header.DLC = 6U;
     HAL_StatusTypeDef status;
 
-    int16_t batt_current_rescaled = (int16_t)((ecu_data.adc_data.ADC_batt_current * (int16_t)MESSAGE_450_BATT_CURRENT_SCALE_FACTOR) / (int16_t)BATT_CURRENT_LSB_PER_V); // must cast scale_factor and BATT_CURRENT_LSB_PER_V as int16_t or else conversion will not work
+    int16_t batt_current_rescaled = (int16_t)((ecu_data.adc_data.ADC_pack_current * (int16_t)MESSAGE_450_BATT_CURRENT_SCALE_FACTOR) / (int16_t)BATT_CURRENT_LSB_PER_V); // must cast scale_factor and BATT_CURRENT_LSB_PER_V as int16_t or else conversion will not work
     uint8_t lvs_current_rescaled = (uint8_t)((ecu_data.adc_data.ADC_lvs_current * MESSAGE_450_LVS_CURRENT_SCALE_FACTOR) / LVS_CURRENT_LSB_PER_V);
 
     txMessage.data[0] = (uint8_t)batt_current_rescaled;
