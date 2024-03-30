@@ -2,7 +2,6 @@
 RemoteSystemsTempFiles
 .vscode
 /.metadata/
-libraries/github/githash.h
 components/amb/.settings/language.settings.xml
 components/ecu/ecu_firmware/build
 components/ecu/ecu_firmware/Drivers
