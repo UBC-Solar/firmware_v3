@@ -22,7 +22,7 @@ def write_headerfile(file_path: str, hash: str):
     #define __GITHASH_H__
 
     // GITHASH is always 8 chars long and contains the 7 char git hash
-    // and either a space or start depending on if the commit is dirty
+    // and either a space or star depending on if the commit is dirty
     const char[] githash = "{}"
 
     #endif
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     if(dirty):
         hash = short_hash+special_dirty_character
     else:
-        hash = short_hash
+        hash = short_hash+special_clean_character
     
     # Get path to header file (libraries)
     header_path = get_headerfile_location()
