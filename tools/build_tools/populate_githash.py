@@ -23,40 +23,38 @@ def write_headerfile(file_path: str, hash: str):
 
     // GITHASH is always 8 chars long and contains the 7 char git hash
     // and either a space or star depending on if the commit is dirty
-    const char[] githash = "{}"
+    static const char githash[] = "{}";
 
-    #endif
+    #endif // __GITHASH_H__
     """
     
     with open(file_path, 'w') as file:
         file.write(content.format(hash))
         file.close()   
 
-if __name__ == "__main__":
+repo_path = "./"
+special_dirty_character = "*"
+special_clean_character = " "
 
-    repo_path = "./"
-    special_dirty_character = "*"
-    special_clean_character = " "
+hash = ""
+header_path = ""
 
-    hash = ""
-    header_path = ""
+# Format hash
+short_hash = get_git_revision_short_hash()
+dirty = is_repo_changed(repo_path)
+
+if(dirty):
+    hash = short_hash+special_dirty_character
+else:
+    hash = short_hash+special_clean_character
+
+# Get path to header file (libraries)
+header_path = get_headerfile_location()
     
-    # Format hash
-    short_hash = get_git_revision_short_hash()
-    dirty = is_repo_changed(repo_path)
-    
-    if(dirty):
-        hash = short_hash+special_dirty_character
-    else:
-        hash = short_hash+special_clean_character
-    
-    # Get path to header file (libraries)
-    header_path = get_headerfile_location()
-        
-    # Write hash to headerfile
-    write_headerfile(header_path, hash)
-    
-    
+# Write hash to headerfile
+write_headerfile(header_path, hash)
+
+print("===SUCCESSFULLY WROTE GITHASH===")
     
     
     
