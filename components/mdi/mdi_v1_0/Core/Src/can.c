@@ -56,6 +56,13 @@ void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg)
 	return;
 } //end of decode_CAN_velocity_msg
 
+/**
+	* Sends Test message for debugging. Should mimic the message that we would recieve in car
+	* 
+	* @param TxData pointer to the data that we want to transmit
+	* @param velocity 32bit velocity 
+	* @param acceleration 32bit acceleration
+*/
 void Send_Test_Message(uint8_t* TxData, int32_t velocity, uint32_t acceleration)
 {
 	TxData[0] = velocity >> 0 ;
