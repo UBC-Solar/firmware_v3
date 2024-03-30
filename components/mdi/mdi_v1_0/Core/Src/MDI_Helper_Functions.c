@@ -57,7 +57,7 @@ uint8_t getBit(uint8_t msb, uint8_t two, uint8_t three, uint8_t four, uint8_t fi
   	
     if(byte == 255 && msb == 0){
         byte = 0;
-  	}
+    }
   	return byte;
 }
 

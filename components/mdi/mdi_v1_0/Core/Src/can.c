@@ -58,19 +58,15 @@ void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg)
 
 void Send_Test_Message(uint8_t* TxData, int32_t velocity, uint32_t acceleration)
 {
-
-    TxData[0] = velocity >> 0 ;
-    TxData[1] = velocity >> 8 ;
-    TxData[2] = velocity >> 16;
-    TxData[3] = velocity >> 24;
-
-    TxData[4] = acceleration >> 0 ;
-    TxData[5] = acceleration >> 8 ;
-    TxData[6] = acceleration >> 16;
-    TxData[7] = acceleration >> 24;
-
- 	HAL_Delay(20);
-
+	TxData[0] = velocity >> 0 ;
+	TxData[1] = velocity >> 8 ;
+	TxData[2] = velocity >> 16;
+	TxData[3] = velocity >> 24;
+	TxData[4] = acceleration >> 0 ;
+	TxData[5] = acceleration >> 8 ;
+	TxData[6] = acceleration >> 16;
+	TxData[7] = acceleration >> 24;
+	HAL_Delay(20);
 } //end of Send_Test_Message
 
 /**
@@ -184,7 +180,7 @@ void get502(uint8_t* message502, CAN_message_t CanMessage)
  	message502[4] = busCurrentSplit[0];
  	message502[5] = busCurrentSplit[1];
  	message502[6] = busCurrentSplit[2];
- 	message502[7] = busCurrentSplit[3];
+	message502[7] = busCurrentSplit[3];
 
 }
 
@@ -203,7 +199,7 @@ void get503(uint8_t* message503, CAN_message_t CanMessage)
  	message503[4] = vehicleVelocitytSplit[0];
  	message503[5] = vehicleVelocitytSplit[1];
  	message503[6] = vehicleVelocitytSplit[2];
-    message503[7] = vehicleVelocitytSplit[3];
+	message503[7] = vehicleVelocitytSplit[3];
 }
 
  void get50B(uint8_t* message50B, CAN_message_t CanMessage)
@@ -221,7 +217,7 @@ void get503(uint8_t* message503, CAN_message_t CanMessage)
  	message50B[4] = controllerHeatsinkTempSplit[0];
  	message50B[5] = controllerHeatsinkTempSplit[1];
  	message50B[6] = controllerHeatsinkTempSplit[2];
- 	message50B[7] = controllerHeatsinkTempSplit[3];
+	message50B[7] = controllerHeatsinkTempSplit[3];
 }
 
 void CopyRxData(uint8_t* globalRxData, uint8_t* localRxData)
