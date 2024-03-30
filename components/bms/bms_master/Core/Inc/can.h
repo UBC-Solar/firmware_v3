@@ -18,6 +18,8 @@
 #include "analysis.h"
 #include "soc.h"
 
+#include "../../../../../libraries/github/githash.h"
+
 /*============================================================================*/
 /* STRUCTURES */
 
