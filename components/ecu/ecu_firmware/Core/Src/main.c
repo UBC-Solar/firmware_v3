@@ -124,6 +124,8 @@ int main(void)
 
   DebugIO_Init(&huart5);
 
+  HAL_GPIO_WritePin(OC_LATCH_SET_GPIO_Port, OC_LATCH_SET_Pin, HIGH); // Set latch to memory state
+
   CAN_Init(&hcan);
 
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, ADC1_BUF_LENGTH);
