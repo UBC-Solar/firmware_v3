@@ -18,15 +18,14 @@
 */
 uint16_t Parse_Acceleration(uint32_t pedal_data)
 {
-
     uint16_t output;
- 	uint16_t MAX_OUT = 0.90 * (float) UINT10_MAX;
+    uint16_t MAX_OUT = 0.90 * (float) UINT10_MAX;
 
     output = ((float)pedal_data / (float) UINT32_MAX ) * (float)UINT10_MAX;
 
     if (output >  MAX_OUT){ //cap the output voltage to our voltage limit
         output =  MAX_OUT;
- 	}
+    }
     return output;
 }
 
@@ -40,14 +39,14 @@ uint16_t Parse_Acceleration(uint32_t pedal_data)
 */
 void Send_Voltage(float parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef* hi2c1)
 {
- 	uint8_t DAC_msg_buffer[2];
- 	uint16_t dac_data = 0;
- 	//parsed_voltage is a percentage, multiply by 10 bit max number, and we should get expected value
- 	dac_data = UINT10_MAX * parsed_voltage;
+    uint8_t DAC_msg_buffer[2];
+    uint16_t dac_data = 0;
+    //parsed_voltage is a percentage, multiply by 10 bit max number, and we should get expected value
+    dac_data = UINT10_MAX * parsed_voltage;
 
     if(dac_data > 1023) dac_data = UINT10_MAX; //shouldnt be needed if the input parsed voltage is always a float between 0-1
-
- 	dac_data = dac_data << 2;
+    
+    dac_data = dac_data << 2;
     DAC_msg_buffer[0] = dac_data >> 8;
     DAC_msg_buffer[1] = dac_data;
     HAL_I2C_Master_Transmit(hi2c1, DAC_ADDR, DAC_msg_buffer, BUFFER_SIZE, HAL_MAX_DELAY);
@@ -57,7 +56,7 @@ uint8_t getBit(uint8_t msb, uint8_t two, uint8_t three, uint8_t four, uint8_t fi
                uint8_t byte = (msb * 128 + two * 64 + three * 32 + four * 16 + five * 8 + six * 4 + seven * 2 + lsb * 1);
   	
     if(byte == 255 && msb == 0){
-  		byte = 0;
+        byte = 0;
   	}
   	return byte;
 }
