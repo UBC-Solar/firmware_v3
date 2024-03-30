@@ -17,7 +17,8 @@
 * @param CAN_msg struct that holds the velocity, acceleration and current state of operation of the motor controller
 * @retval Modifies CAN_msg struct with the appropriate modes of operation and the values for velocity and acceleration
 */
-void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg){
+void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg)
+{
 
 	union { //union struct to convert the input stream of 32-bits into IEEE float
 		uint32_t concatenated_bits;
@@ -78,7 +79,8 @@ void Send_Test_Message(uint8_t* TxData, int32_t velocity, uint32_t acceleration)
 * @param RxData array of 8 bit wide elements that contains the Frame0 CAN message sent by the controller
 * @param CAN_msg struct that holds the velocity, acceleration and current state of operation of the motor controller as well as output message data.
 */
-void Decode_Frame0 (uint8_t localRxData[], CAN_message_t* CAN_msg){
+void Decode_Frame0 (uint8_t localRxData[], CAN_message_t* CAN_msg)
+{
 
 	//10 bit number
 	uint32_t BatteryVoltage = ((uint32_t)(localRxData[1] & 0x03) << 1*8) |
@@ -109,7 +111,8 @@ void Decode_Frame0 (uint8_t localRxData[], CAN_message_t* CAN_msg){
 * @param RxData array of 8 bit wide elements that contains the Frame2 CAN message sent by the controller
 * @param CAN_msg struct that holds the velocity, acceleration and current state of operation of the motor controller as well as output message data.
 */
-void Decode_Frame2 (uint8_t localRxData[], CAN_message_t* CAN_msg){
+void Decode_Frame2 (uint8_t localRxData[], CAN_message_t* CAN_msg)
+{
 
 	bool CurrentLimit = localRxData[2] & 0x02;
 	bool OverCurrent =  localRxData[2] & 0x10;
@@ -119,7 +122,8 @@ void Decode_Frame2 (uint8_t localRxData[], CAN_message_t* CAN_msg){
 
 }
 
-void get501(uint8_t* message501, CAN_message_t CanMessage){
+void get501(uint8_t* message501, CAN_message_t CanMessage)
+{
 
  	uint8_t message64[64];
 
@@ -165,7 +169,8 @@ void get501(uint8_t* message501, CAN_message_t CanMessage){
  					  message64[60], message64[61], message64[62], message64[63]);
 }
 
-void get502(uint8_t* message502, CAN_message_t CanMessage){
+void get502(uint8_t* message502, CAN_message_t CanMessage)
+{
 
 	uint8_t busVoltageSplit[4];
  	split_32_bit_number(CanMessage.busVoltage, busVoltageSplit);
@@ -183,7 +188,8 @@ void get502(uint8_t* message502, CAN_message_t CanMessage){
 
 }
 
-void get503(uint8_t* message503, CAN_message_t CanMessage){
+void get503(uint8_t* message503, CAN_message_t CanMessage)
+{
 
  	uint8_t motorVelocitySplit[4];
  	split_32_bit_number(CanMessage.motorVelocity, motorVelocitySplit);
@@ -200,7 +206,8 @@ void get503(uint8_t* message503, CAN_message_t CanMessage){
     message503[7] = vehicleVelocitytSplit[3];
 }
 
- void get50B(uint8_t* message50B, CAN_message_t CanMessage){
+ void get50B(uint8_t* message50B, CAN_message_t CanMessage)
+ {
 
  	uint8_t motorTempSplit[4];
  	split_32_bit_number(CanMessage.motorTemp, motorTempSplit);
@@ -217,7 +224,8 @@ void get503(uint8_t* message503, CAN_message_t CanMessage){
  	message50B[7] = controllerHeatsinkTempSplit[3];
 }
 
-void CopyRxData(uint8_t* globalRxData, uint8_t* localRxData){
+void CopyRxData(uint8_t* globalRxData, uint8_t* localRxData)
+{
 	uint8_t i = 0;
 	for(i = 0 ; i < 8; i++){
 		localRxData[i] = globalRxData[i];
