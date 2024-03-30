@@ -82,8 +82,6 @@ uint8_t localRxDataFrame1[8];
 uint8_t localRxDataFrame2[8];
 uint8_t localRxDataMessage401[8];
 
-
-
 CAN_message_t msg0; //where all the info and data for the message will be put
 
 int txIDList[] = {0x501, 0x502, 0x503, 0x50B}; //array for the messages to be sent 
@@ -114,7 +112,7 @@ uint8_t countSlowTimerInterrupt = 0; //counter to send the slower messages
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	uint8_t RxDataLocal[8];
+  uint8_t RxDataLocal[8];
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -204,27 +202,27 @@ int main(void)
 
     if( (send_data_flag == 1 ) && (Parse_Data_Flag == 0) )
     {
-    	 //send acceleration current to motor
-         if(msg0.regen == REGEN_TRUE)
-        	 Send_Voltage(msg0.acceleration, DAC_REGEN_ADDR, &hi2c2);
-         else{
-        	 parsed_voltage = msg0.acceleration;
-        	 Send_Voltage(parsed_voltage, DAC_ACC_ADDR, &hi2c2);
-         }
+      //send acceleration current to motor
+      if(msg0.regen == REGEN_TRUE)
+        Send_Voltage(msg0.acceleration, DAC_REGEN_ADDR, &hi2c2);
+      else{
+        parsed_voltage = msg0.acceleration;
+        Send_Voltage(parsed_voltage, DAC_ACC_ADDR, &hi2c2);
+      }
 
-         //send direction
-         if(msg0.direction == REVERSE_FALSE)
-        	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
-         else
-        	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
+      //send direction
+      if(msg0.direction == REVERSE_FALSE)
+    	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
+      else
+    	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
 
-         //send power/eco
-         if(msg0.power_or_eco == ECO_ON)
-        	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
-         else
-        	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+      //send power/eco
+      if(msg0.power_or_eco == ECO_ON)
+    	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+      else
+    	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
 
-	     send_data_flag = 0;
+	      send_data_flag = 0;
     }
 
     /////////////////////////////
@@ -241,7 +239,6 @@ int main(void)
     	//Send_Test_Message(TxData, 7, 7); //request all frames
     	Send_Test_Message(TxData, 5, 5); //request frame 0 and 2
     	HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
-
 
     	//txData 0x501
     	TxHeader.StdId = txIDList[0];
@@ -378,45 +375,39 @@ static void MX_CAN_Init(void)
   /* USER CODE BEGIN CAN_Init 2 */
 
   //Code for setting up filters
-   CAN_FilterTypeDef canfilterconfig; //struct that contains all the info for filters
-
-   canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;  //ENABLE
-   canfilterconfig.FilterBank = 0;                       //Current filter bank to use
-   canfilterconfig.FilterFIFOAssignment = CAN_RX_FIFO0;   //Using Fifo0 interrupt
-   canfilterconfig.FilterIdHigh = 0x401<<5;               //Assuming we are only filtering for 0x401 message
-   canfilterconfig.FilterIdLow = 0x0000;
-   canfilterconfig.FilterMaskIdHigh = 0; //changed from 0x1<<13
-   canfilterconfig.FilterMaskIdLow = 0x0000;
-   canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;    //Masking mode
-   canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;   
-   canfilterconfig.SlaveStartFilterBank = 13; // tells where to start giving the slave filters
-
-   HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);         //sets up the filter according the info in canfilterconfig
-
-   //frame0
-   canfilterconfig.FilterBank = 1;                       //Current filter bank to use
-   canfilterconfig.FilterIdHigh = 0x08850225;
-   canfilterconfig.FilterIdLow = 0x0000;
-
-   HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);         //sets up the filter according the info in canfilterconfig
-
-   //frame1
-   canfilterconfig.FilterBank = 2;                       //Current filter bank to use
-   canfilterconfig.FilterIdHigh = 0x08950225;
-   canfilterconfig.FilterIdLow = 0x0000;
-
-   HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);         //sets up the filter according the info in canfilterconfig
-
-   //frame2
-   canfilterconfig.FilterBank = 3;                       //Current filter bank to use
-   canfilterconfig.FilterIdHigh = 0x08A50225;
-   canfilterconfig.FilterIdLow = 0x0000;
-
-   HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);         //sets up the filter according the info in canfilterconfig
+  CAN_FilterTypeDef canfilterconfig; //struct that contains all the info for filters
+  canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;  //ENABLE
+  canfilterconfig.FilterBank = 0;                       //Current filter bank to use
+  canfilterconfig.FilterFIFOAssignment = CAN_RX_FIFO0;   //Using Fifo0 interrupt
+  canfilterconfig.FilterIdHigh = 0x401<<5;               //Assuming we are only filtering for 0x401 message
+  canfilterconfig.FilterIdLow = 0x0000;
+  canfilterconfig.FilterMaskIdHigh = 0; //changed from 0x1<<13
+  canfilterconfig.FilterMaskIdLow = 0x0000;
+  canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;    //Masking mode
+  canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;   
+  canfilterconfig.SlaveStartFilterBank = 13; // tells where to start giving the slave filters
+  HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);         //sets up the filter according the info in canfilterconfig
+  
+  //frame0
+  canfilterconfig.FilterBank = 1;                       //Current filter bank to use
+  canfilterconfig.FilterIdHigh = 0x08850225;
+  canfilterconfig.FilterIdLow = 0x0000;
+  HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);         //sets up the filter according the info in canfilterconfig
+  
+  //frame1
+  canfilterconfig.FilterBank = 2;                       //Current filter bank to use
+  canfilterconfig.FilterIdHigh = 0x08950225;
+  canfilterconfig.FilterIdLow = 0x0000;
+  HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);         //sets up the filter according the info in canfilterconfig
+  
+  //frame2
+  canfilterconfig.FilterBank = 3;                       //Current filter bank to use
+  canfilterconfig.FilterIdHigh = 0x08A50225;
+  canfilterconfig.FilterIdLow = 0x0000;
+  HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);         //sets up the filter according the info in canfilterconfig
 
 
   /* USER CODE END CAN_Init 2 */
-
 }
 
 /**
