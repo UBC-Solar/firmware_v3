@@ -33,7 +33,7 @@ jobs:
         run: pio run
         working-directory: components/bms/bms_master
 
-      - name: Get branch name and commit hash
+      - name: Get Branch Name and Commit Hash
         run: |
           echo "commit_hash=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
