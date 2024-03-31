@@ -1,6 +1,7 @@
 .DS_Store
 RemoteSystemsTempFiles
 .vscode
+libraries/github/githash.h
 /.metadata/
 tools/build_tools/builds
 components/amb/.settings/language.settings.xml

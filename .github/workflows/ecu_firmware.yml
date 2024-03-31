@@ -24,9 +24,17 @@ jobs:
           key: ${{ runner.os }}-pio
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.10'
+      
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
+      
       - name: Build PlatformIO Project
         run: pio run
         working-directory: components/ecu/ecu_firmware
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-ecu-${{ env.commit_hash }}
+          path: build

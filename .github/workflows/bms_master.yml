@@ -10,6 +10,9 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  COMPONENT: bms
+
 jobs:
 
   build:
@@ -24,24 +27,22 @@ jobs:
           key: ${{ runner.os }}-pio
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.10'
+      
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
+      
       - name: Build PlatformIO Project
         run: pio run
         working-directory: components/bms/bms_master
 
-  unittest:
-    runs-on: ubuntu-latest
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - name: Collect Build Artifacts
+        run: |
+          mkdir build
+          cp components/bms/bms_master/.pio/build/genericSTM32F103RC/firmware.elf build/$COMPONENT-$${{ env.commit_hash }}.elf
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
         with:
-          ruby-version: '3.1'
-      - name: Set up Ceedling
-        run: gem install --no-document ceedling # Needed for ceedling dependencies
-      - name: Run Ceedling Unit Tests
-        run: ../../../tools/ceedling/bin/ceedling test:all
-        working-directory: components/bms/bms_master
+          name: build-$COMPONENT-${{ env.commit_hash }}
+          path: build

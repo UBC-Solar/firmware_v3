@@ -12,6 +12,8 @@
 #include "main.h"
 #include "common.h"
 
+#include "../../../../../libraries/github/githash.h"
+
 /*============================================================================*/
 /* DEFINITIONS */
 
