@@ -33,10 +33,15 @@ jobs:
         run: pio run
         working-directory: components/bms/bms_master
 
+      - name: Get branch name and commit hash
+        run: |
+          echo "commit_hash=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+
       - name: Collect Build Artifacts
         run: |
           mkdir build
-          cp components/bms/bms_master/.pio/build/genericSTM32F103RC/firmware.elf build/bms-$${{ env.commit_hash }}.elf
+          cp components/bms/bms_master/.pio/build/genericSTM32F103RC/firmware.elf build/bms-${{ env.commit_hash }}.elf
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v3
