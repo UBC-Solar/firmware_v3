@@ -10,9 +10,6 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-env:
-  COMPONENT: bms
-
 jobs:
 
   build:
@@ -39,10 +36,10 @@ jobs:
       - name: Collect Build Artifacts
         run: |
           mkdir build
-          cp components/bms/bms_master/.pio/build/genericSTM32F103RC/firmware.elf build/${{ COMPONENT }}-$${{ env.commit_hash }}.elf
+          cp components/bms/bms_master/.pio/build/genericSTM32F103RC/firmware.elf build/bms-$${{ env.commit_hash }}.elf
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: build-${{ COMPONENT }}-${{ env.commit_hash }}
+          name: build-bms-${{ env.commit_hash }}
           path: build
