@@ -29,6 +29,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
 
 /* USER CODE END Includes */
 
@@ -128,12 +129,42 @@ int main(void)
   initIMU();
 
   // Initialize SD card
+  FATFS fs;
+  FIL fil;
+  FRESULT fresult;
+
+  /* mount SD card */
+  fresult = f_mount(&fs, "", 0);
+  if(fresult != FR_OK) {
+    printf("error in mounting SD CARD...\n\r");
+  }
+  else {
+    printf("SD Card mounted successfully...\n\r");
+  }
+
+  /* Create file name randomly */
+  char fileName[40];
+  sprintf(fileName, "testfile.txt");
+
+  fresult = f_open(&fil, fileName, FA_CREATE_ALWAYS | FA_WRITE);
+  if (fresult != 0) {
+      printf("error in opening the file\n\r");
+  }
+  else {
+      printf("File opened successfully\n\r");
+  }
+
+  fresult = f_puts("testing write to SD card\n\r", &fil);
+  if (fresult != 0) {
+      printf("error in writing the file\n\r");
+  }
+  else {
+      printf("File written successfully\n\r");
+  }
+
 
 
   /* USER CODE END 2 */
-
-  /* Init scheduler */
-  osKernelInitialize();
 
   /* Call init function for freertos objects (in freertos.c) */
   MX_FREERTOS_Init();

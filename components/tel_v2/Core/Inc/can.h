@@ -30,7 +30,7 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 
-#include "cmsis_os2.h"
+#include "cmsis_os.h"
 
 /* USER CODE END Includes */
 
@@ -62,7 +62,7 @@ typedef struct {
 void CanFilterSetup(void);
 void Can_Init(void);
 
-extern osThreadId_t readCANTaskHandle;
+extern osThreadId readCANTaskHandle;
 
 /* USER CODE END Prototypes */
 

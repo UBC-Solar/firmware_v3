@@ -193,7 +193,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   assert_param(status == HAL_OK);
 
   /* Set the Flag to CAN_READY */
-  osThreadFlagsSet(readCANTaskHandle, CAN_READY);
+  osSignalSet(readCANTaskHandle, CAN_READY);
 
   /* To avoid warning of unused variable */
   (void) status;

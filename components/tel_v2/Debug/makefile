@@ -11,7 +11,7 @@ RM := rm -rf
 -include sources.mk
 -include Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/subdir.mk
 -include Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/subdir.mk
--include Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/subdir.mk
+-include Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/subdir.mk
 -include Middlewares/Third_Party/FreeRTOS/Source/subdir.mk
 -include Middlewares/Third_Party/FatFs/src/option/subdir.mk
 -include Middlewares/Third_Party/FatFs/src/subdir.mk
@@ -72,7 +72,7 @@ main-build: tel_v2.elf secondary-outputs
 
 # Tool invocations
 tel_v2.elf tel_v2.map: $(OBJS) $(USER_OBJS) C:\Users\ishan\OneDrive\School\UBC\UBC\ Solar\firmware_v3\components\tel_v2\STM32F103RCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "tel_v2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\ishan\OneDrive\School\UBC\UBC Solar\firmware_v3\components\tel_v2\STM32F103RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="tel_v2.map" -Wl,--gc-sections -static -L"C:\Users\ishan\OneDrive\School\UBC\UBC Solar\firmware_v3\libraries\sdCardLib" --specs=nano.specs -mfloat-abi=soft -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "tel_v2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\ishan\OneDrive\School\UBC\UBC Solar\firmware_v3\components\tel_v2\STM32F103RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="tel_v2.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
