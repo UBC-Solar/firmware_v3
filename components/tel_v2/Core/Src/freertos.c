@@ -49,7 +49,7 @@
 
 #define KERNEL_LED_DELAY 200		// 200 milliseconds
 #define READ_IMU_DELAY 	 100		// 100 milliseconds
-#define READ_GPS_DELAY   5 * 60 * 1000  // 5 minutes
+#define READ_GPS_DELAY   5 * 1000  // 5 seconds (change to 5 minutes later)
 #define TRANSMIT_RTC_DELAY 5000 // 5000 milliseconds
 
 #define CAN_BUFFER_LEN  22
@@ -124,7 +124,7 @@ const osThreadAttr_t readGPSTask_attributes = {
 osThreadId_t transmitGPSTaskHandle;
 const osThreadAttr_t transmitGPSTask_attributes = {
   .name = "transmitGPSTask",
-  .stack_size = 128 * 4,
+  .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for transmitRTCTask */
@@ -255,7 +255,8 @@ void startDefaultTask(void *argument)
   {
 
     HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-    osDelay(100);
+    printf("Default task toggle pin\n\r");
+    osDelay(1000);
   }
   /* USER CODE END startDefaultTask */
 }
@@ -519,6 +520,7 @@ void read_GPS_task(void *argument)
   /* USER CODE BEGIN read_GPS_task */
   /* Infinite loop */
   while(1) {
+    printf("Reading GPS for transmission\n\r");
 
     /* Initialize a receive buffer */
     uint8_t receive_buffer[GPS_RCV_BUFFER_SIZE];
@@ -527,7 +529,10 @@ void read_GPS_task(void *argument)
     GPS parsed_GPS_data;
 
     /* Read in an NMEA message into the buffer */
-    readNMEA(&receive_buffer);
+    if(HAL_I2C_IsDeviceReady(&hi2c1, GPS_DEVICE_ADDRESS, 1, HAL_MAX_DELAY) == HAL_OK) {
+	HAL_I2C_Master_Receive(&hi2c1, GPS_DEVICE_ADDRESS, receive_buffer, sizeof(receive_buffer), HAL_MAX_DELAY);
+	printf("Got New GPS Data\n\r");
+    }
 
     /* Parse the buffer data --> gets stored in parsed_GPS_data */
     nmea_parse(&parsed_GPS_data, &receive_buffer);
@@ -562,18 +567,13 @@ void transmit_GPS_task(void *argument)
 
     /* Check if there are messages in the queue */
     if (osMessageQueueGetCount(gpsMessageQueueHandle) == 0) {
-      osThreadYield(); // Yield to other tasks if the queue is empty
+      printf("GPS queue empty, yielding thread\n\r");
+      osDelay(READ_GPS_DELAY / 2);
     }
 
+    printf("Getting a GPS message from the Queue for Transmission\n\r");
     /* Get a message from the queue */
     nmea_queue_status = osMessageQueueGet(gpsMessageQueueHandle, &gps_message, NULL, osWaitForever);
-
-    /* Check if the queue status is OK */
-    if (nmea_queue_status != osOK){
-      /* If message retrieval failed, yield and continue the loop */
-      osThreadYield();
-      continue; // Skip the rest of this loop iteration
-    }
 
     /* Initialize an NMEA buffer */
     uint8_t gps_buffer[GPS_MESSAGE_LEN] = {0};
@@ -625,6 +625,7 @@ void transmit_RTC_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
+    printf("Sending RTC timestmap\n\r");
     // Get rtc timestamp
     time_t timestamp = get_current_timestamp();
     uint8_t data_send[8];

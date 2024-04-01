@@ -243,28 +243,4 @@ void initIMU(void)
 }
 
 
-
-
-
-/* GPS -----------------------------------------------------------------------*/
-
-//void parseBuffer(uint8_t *buffer){
-//  GPS myData;
-//  nmea_parse(&myData, buffer);
-//
-//  printf("Fix: %d\r\n", myData.fix);
-//  printf("Time: %s\r\n", myData.lastMeasure);
-//  printf("Latitude: %f%c\r\n", myData.latitude, myData.latSide);
-//  printf("Longitude: %f%c\r\n", myData.longitude, myData.lonSide);
-//  printf("Altitude: %f\r\n", myData.altitude);
-//  printf("Sat Count: %d\r\n", myData.satelliteCount);
-//
-//}
-
-void readNMEA(uint8_t *buffer){
-  if(HAL_I2C_IsDeviceReady(&hi2c1, GPS_DEVICE_ADDRESS, 1, HAL_MAX_DELAY) == HAL_OK) {
-      HAL_I2C_Master_Receive(&hi2c1, GPS_DEVICE_ADDRESS, buffer, sizeof(buffer), HAL_MAX_DELAY);
-  }
-}
-
 /* USER CODE END 1 */

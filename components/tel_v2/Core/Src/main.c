@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "can.h"
+#include "fatfs.h"
 #include "i2c.h"
 #include "rtc.h"
 #include "spi.h"
@@ -113,7 +114,10 @@ int main(void)
   MX_I2C2_Init();
   MX_USART1_UART_Init();
   MX_RTC_Init();
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
+
+  DebugIO_Init(&huart5);
 
   /* Sync the RTC with GPS if GPIO is set to high*/
   if (HAL_GPIO_ReadPin(RTC_SYNC_GPIO_Port, RTC_SYNC_Pin) == GPIO_PIN_SET) {
