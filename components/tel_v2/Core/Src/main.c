@@ -148,7 +148,7 @@ int main(void)
 
   fresult = f_open(&fil, fileName, FA_CREATE_ALWAYS | FA_WRITE);
   if (fresult != 0) {
-      printf("error in opening the file\n\r");
+      printf("error in opening the file, got status %d\n\r", fresult);
   }
   else {
       printf("File opened successfully\n\r");
@@ -156,7 +156,7 @@ int main(void)
 
   fresult = f_puts("testing write to SD card\n\r", &fil);
   if (fresult != 0) {
-      printf("error in writing the file\n\r");
+      printf("error in writing the file, got status %d\n\r", fresult);
   }
   else {
       printf("File written successfully\n\r");
