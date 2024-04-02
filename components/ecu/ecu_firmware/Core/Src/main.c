@@ -46,10 +46,12 @@
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
+
 CAN_HandleTypeDef hcan;
+
 IWDG_HandleTypeDef hiwdg;
+
 TIM_HandleTypeDef htim3;
-TIM_HandleTypeDef htim8;
 
 UART_HandleTypeDef huart5;
 
@@ -65,7 +67,6 @@ static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_CAN_Init(void);
 static void MX_UART5_Init(void);
-static void MX_TIM8_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_IWDG_Init(void);
 /* USER CODE BEGIN PFP */
@@ -118,7 +119,6 @@ int main(void)
   MX_ADC1_Init();
   MX_CAN_Init();
   MX_UART5_Init();
-  MX_TIM8_Init();
   MX_TIM3_Init();
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
@@ -249,8 +249,6 @@ static void MX_ADC1_Init(void)
   /** Configure Analog WatchDog 1
   */
   AnalogWDGConfig.WatchdogMode = ADC_ANALOGWATCHDOG_SINGLE_REG;
-  AnalogWDGConfig.HighThreshold = 2710;
-  AnalogWDGConfig.LowThreshold = 2071;
   AnalogWDGConfig.HighThreshold = 2710;
   AnalogWDGConfig.LowThreshold = 2071;
   AnalogWDGConfig.Channel = ADC_CHANNEL_14;
@@ -440,52 +438,6 @@ static void MX_TIM3_Init(void)
   /* USER CODE BEGIN TIM3_Init 2 */
 
   /* USER CODE END TIM3_Init 2 */
-
-}
-
-/**
-  * @brief TIM8 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM8_Init(void)
-{
-
-  /* USER CODE BEGIN TIM8_Init 0 */
-
-  /* USER CODE END TIM8_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM8_Init 1 */
-
-  /* USER CODE END TIM8_Init 1 */
-  htim8.Instance = TIM8;
-  htim8.Init.Prescaler = 0;
-  htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim8.Init.Period = 65535;
-  htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim8.Init.RepetitionCounter = 0;
-  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim8, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim8, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM8_Init 2 */
-
-  /* USER CODE END TIM8_Init 2 */
 
 }
 

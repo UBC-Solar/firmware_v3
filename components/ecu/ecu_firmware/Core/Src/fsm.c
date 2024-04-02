@@ -176,7 +176,6 @@ void HV_Connect()
     if (timer_check(SHORT_INTERVAL, &(ticks.last_generic_tick) ) && first_delay_tick == false)
     {
         first_delay_tick = true;
-        printf("last tick = true \r\n");
         ticks.neg_tick = HAL_GetTick(); 
     }
 
@@ -224,8 +223,6 @@ void swap_DCDC()
     HAL_GPIO_WritePin(FAN4_CTRL_GPIO_Port, FAN4_CTRL_Pin, HIGH);
 
     HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, HIGH);
-
-    printf("end of SWAP\r\n");
 
     ticks.last_generic_tick = HAL_GetTick();
     FSM_state = DISABLE_MDU_DCH;
@@ -292,7 +289,6 @@ void check_LLIM()
  */
 void PC_wait()
 {
-    printf("start of PC state\r\n");
     if (timer_check(MDU_PC_INTERVAL, &(ticks.last_generic_tick) ))
     {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
@@ -337,7 +333,6 @@ void LLIM_closed()
  */
 void check_HLIM()
 {
-    printf("start of check HLIM\r\n");
     if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN)
     {
         last_HLIM_status = CONTACTOR_OPEN;
@@ -455,8 +450,6 @@ void MDU_on()
  */
 void AMB_on()
 {
-
-    printf("start of AMB on\r\n");
 
     if (timer_check(LVS_INTERVAL, &(ticks.last_generic_tick) ))
     {
