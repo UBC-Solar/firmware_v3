@@ -48,6 +48,7 @@ void FSM_Init()
 
     if (reset_flags & RCC_CSR_IWDGRSTF) {
         //IWDG triggered
+        printf("watchdog-triggered software reset \r\n");
         ecu_data.status.bits.reset_from_watchdog = 1; //CAN_message now knows watchdog event has occured
         FSM_state = FAULT;
     }
@@ -532,7 +533,7 @@ void ECU_monitor()
     }
     else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_LLIM_status == CONTACTOR_CLOSED)
     {
-        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
+        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_OPEN);
         last_LLIM_status = CONTACTOR_OPEN;
     }
 
