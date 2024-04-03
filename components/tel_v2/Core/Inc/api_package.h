@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 
- uint16_t apiPackage(uint8_t raw_outbox[], uint8_t end_position, uint8_t unsized_packet[], uint8_t MessageType);
+ uint16_t apiPackage(uint8_t raw_outbox[], uint8_t end_position, uint8_t unsized_packet[],uint8_t MessageCount, uint8_t MessageType);
 
 #ifdef __cplusplus
 }

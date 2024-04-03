@@ -334,9 +334,9 @@ void transmit_CAN_task(void *argument)
     uint8_t outbox_position = 0;
     uint8_t messageCount = 0;
     int queueSize = osMessageQueueGetCount(canMessageQueueHandle);
-    //uint8_t PacketSize = 0;
 
 
+    //loops through either CAN_PACKET_LENGTH times or queueSize times depending on which one is smaller.
    for (int can_outbox_size = 0; can_outbox_size < ((queueSize > CAN_PACKET_LENGTH)?(CAN_PACKET_LENGTH): (queueSize)); can_outbox_size++) {
 
     /* Retrieve CAN message from queue */
@@ -387,26 +387,28 @@ void transmit_CAN_task(void *argument)
     /* CARRIAGE RETURN: 1 ASCII character */
     can_buffer[CAN_BUFFER_LEN - 1] = '\n';
 
-
+    //add each message to an outbox
     for(int i = 0; i <sizeof(can_buffer); i++){
 
 	can_outbox[outbox_position + i] = can_buffer[i];
     }
     /* Set position for next Message*/
     outbox_position += sizeof(can_buffer);
+
+    //track number of messages in the outbox
     messageCount++;
   }
 
+   /* Packet outbox into an API Frame.*/
    uint8_t unsized_packet[300];
    uint16_t packetEndpoint = apiPackage(can_outbox, outbox_position, unsized_packet, messageCount, CAN_BYTE);
    uint8_t sized_packet[packetEndpoint];
 
+   /*Size API Frame to avoid transmitting NULL values.*/
    for (int i = 0; i < packetEndpoint; i++)
      {
   	sized_packet[i] = unsized_packet[i];
      }
-
-
 
       /* Transmit over Radio */
       HAL_UART_Transmit(&huart1, sized_packet, sizeof(sized_packet), 1000);
@@ -476,16 +478,17 @@ void transmit_IMU_task(void *argument)
 
   /*Check amount of messages in queue */
   if (osMessageQueueGetCount(imuMessageQueueHandle) == 0){
-      osDelay(500);
+      osDelay(500); //time task out for half a second if there are no messages in the queue
   }
   else{
-
     uint8_t imu_outbox[200];
     uint8_t outbox_position = 0;
     uint8_t queueSize = osMessageQueueGetCount(imuMessageQueueHandle);
+    uint8_t MessageCount = 0;
 
-
+    //loop through and add IMU message to IMU outbox buffer.
     for (uint8_t i = 0; i < ((queueSize > IMU_PACKET_LENGTH)?(IMU_PACKET_LENGTH):(queueSize)); i++){
+
 	/* Get IMU Message from Queue */
 	    imu_queue_status = osMessageQueueGet(imuMessageQueueHandle, &imu_message, NULL, osWaitForever);
 
@@ -524,14 +527,18 @@ void transmit_IMU_task(void *argument)
 	    /* CARRIAGE RETURN */
 	    imu_buffer[IMU_MESSAGE_LEN - 1] = '\n';
 
+	    //add message to imu_outbox
 	    for (uint16_t j = 0; j <sizeof(imu_buffer); j++ ){
 		imu_outbox[outbox_position + j] = imu_buffer[j];
 	    }
 	    outbox_position += sizeof(imu_buffer);
+	    MessageCount++;
 
     }
+
+    //Package imu_outbox into API frame.
     uint8_t unsized_packet[300];
-    uint16_t packetEndpoint = apiPackage(imu_outbox, outbox_position, unsized_packet, IMU_BYTE);
+    uint16_t packetEndpoint = apiPackage(imu_outbox, outbox_position, unsized_packet, MessageCount, IMU_BYTE);
 
     uint8_t sized_packet[packetEndpoint];
 
@@ -539,6 +546,7 @@ void transmit_IMU_task(void *argument)
 	sized_packet[i] = unsized_packet[i];
     }
 
+    //transmit IMU API frame.
     HAL_UART_Transmit(&huart1, sized_packet, sizeof(sized_packet), 1000);
   }
 
@@ -648,9 +656,12 @@ void transmit_GPS_task(void *argument)
 
     uint16_t end_position = sizeof(gps_buffer);
     uint8_t unsized_packet[400];
-    uint16_t packetEndpoint = apiPackage(gps_buffer, end_position, unsized_packet, GPS_BYTE);
-    uint8_t sized_packet[packetEndpoint];
 
+    //package GPS buffer into GPS api frame
+    uint16_t packetEndpoint = apiPackage(gps_buffer, end_position, unsized_packet, 1, GPS_BYTE);
+
+    //size API frame to avoid transmitting NULL bytes
+    uint8_t sized_packet[packetEndpoint];
     for (uint16_t i =0; i< packetEndpoint; i++){
 	sized_packet[i] = unsized_packet[i];
     }

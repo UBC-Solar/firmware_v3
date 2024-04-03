@@ -25,6 +25,7 @@ uint16_t apiPackage(uint8_t raw_outbox[], uint8_t end_position, uint8_t unsized_
   unsized_packet[3] = FRAME_TYPE;
   unsized_packet[4] = FRAME_ID;
 
+  //add 64 bit address
   for(int i = 0; i < 8; i++){
       unsized_packet[i+5] = bit_address[i];
   }
@@ -34,11 +35,11 @@ uint16_t apiPackage(uint8_t raw_outbox[], uint8_t end_position, uint8_t unsized_
   unsized_packet[15] = BROADCAST_RADIUS;
   unsized_packet[16] = OPTIONS;
   unsized_packet[17] = MessageType; //Type of messages in API frame (CAN, IMU, or GPS)
-  unsized_packet[18] = MessageCount; //#number of messages within an API Frame
+  unsized_packet[18] = MessageCount; //number of messages within an API Frame (ie value of 9 might indicate 9 CAN messages in the Frame)
 
   uint16_t outbox_position = 19; //standard position after static API frame data
 
-  //get individual messages, and package them in length value format
+  //add all individual messages into api frame
   for (int i = 0; i <= end_position; i++){
 
       unsized_packet[outbox_position++] = raw_outbox[i]; //add
