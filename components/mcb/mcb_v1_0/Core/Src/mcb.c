@@ -13,6 +13,7 @@ InputFlags input_flags;
 DriveState state = PARK;
 MotorCommand motorCommand;
 float g_throttle = 0.0;
+uint16_t g_throttle_ADC = 0;
 /*
  *	Main state machine task
  */
@@ -20,9 +21,9 @@ void drive_state_machine_handler()
 {
 	UpdateInputFlags(&input_flags);
 
-	uint16_t throttle_ADC = ReadADC(&hadc1);
+	uint16_t g_throttle_ADC = ReadADC(&hadc1);
 
-	g_throttle = normalize_adc_value(throttle_ADC);
+	g_throttle = normalize_adc_value(g_throttle_ADC);
 
 	switch(state)
 	{
@@ -53,6 +54,39 @@ void drive_state_machine_handler()
 	SendCANMotorCommand(motorCommand);
 }
 
+/*
+ * Sends MCB diagnostics over CAN
+ * Bits 0-15: pedal ADC reading
+ * Bit 16: pedal ADC out of range
+ * Bit 17: regen on
+ * Bit 18: cruise on
+ */
+void send_mcb_diagnostics()
+{
+	uint8_t data_send[CAN_DATA_LENGTH] = {0};
+
+	data_send[0] = g_throttle_ADC & 0xFF;
+	data_send[1] = (g_throttle_ADC >> 8) & 0xFF;
+
+	if (input_flags.throttle_ADC_out_of_range == true)	
+	{
+		SETBIT(data_send[2], 0);
+	}
+
+	if (input_flags.regen_enabled == true)
+	{
+		SETBIT(data_send[2], 1);
+	}
+
+	if (input_flags.cruise_enabled == true)
+	{
+		SETBIT(data_send[2], 2);
+	}
+
+	HAL_CAN_AddTxMessage(&hcan, &mcb_diagnostics, data_send, &can_mailbox);
+
+	return;
+}
 
 MotorCommand DoStateDRIVE( InputFlags input_flags )
 {
@@ -270,9 +304,12 @@ float normalize_adc_value(uint16_t value)
 {
 	if(value > ADC_MAX || value < ADC_MIN)
 	{
+		input_flags.throttle_ADC_out_of_range = true;
 		return 0.0;
 	}
 	float normalized_value = (float)((float)(value - ADC_MIN) / (float)(ADC_MAX - ADC_MIN));
+	input_flags.throttle_ADC_out_of_range = false;
+
 	return normalized_value;
 }
 

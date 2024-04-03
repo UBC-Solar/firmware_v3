@@ -39,6 +39,7 @@ extern CAN_HandleTypeDef hcan;
 #define DRIVER_INTERFACE_ADDRESS     0x400
 #define MOTOR_DRIVE_COMMAND_ADDRESS  0x401
 #define MOTOR_DRIVE_STATE  			 0x403
+#define MCB_DIAGNOSTICS_ADDRESS 0x404
 
 #define GET_VELOCITY_HEADER			 0x503
 #define BATTERY_MESSAGE_HEADER		 0x622
@@ -52,6 +53,7 @@ extern CAN_HandleTypeDef hcan;
 extern CAN_TxHeaderTypeDef drive_command_header;
 extern CAN_TxHeaderTypeDef DID_next_page_header;
 extern CAN_TxHeaderTypeDef drive_state_header;
+extern CAN_TxHeaderTypeDef mcb_diagnostics;
 extern uint32_t can_mailbox;
 extern CAN_RxHeaderTypeDef can_rx_header;
 /* USER CODE END Private defines */
