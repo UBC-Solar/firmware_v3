@@ -332,8 +332,9 @@ void transmit_CAN_task(void *argument)
 
     uint8_t can_outbox[300];
     uint8_t outbox_position = 0;
+    uint8_t messageCount = 0;
     int queueSize = osMessageQueueGetCount(canMessageQueueHandle);
-    uint8_t PacketSize = 0;
+    //uint8_t PacketSize = 0;
 
 
    for (int can_outbox_size = 0; can_outbox_size < ((queueSize > CAN_PACKET_LENGTH)?(CAN_PACKET_LENGTH): (queueSize)); can_outbox_size++) {
@@ -393,10 +394,11 @@ void transmit_CAN_task(void *argument)
     }
     /* Set position for next Message*/
     outbox_position += sizeof(can_buffer);
+    messageCount++;
   }
 
    uint8_t unsized_packet[300];
-   uint16_t packetEndpoint = apiPackage(can_outbox, outbox_position, unsized_packet, CAN_BYTE);
+   uint16_t packetEndpoint = apiPackage(can_outbox, outbox_position, unsized_packet, messageCount, CAN_BYTE);
    uint8_t sized_packet[packetEndpoint];
 
    for (int i = 0; i < packetEndpoint; i++)
