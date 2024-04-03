@@ -76,6 +76,7 @@ typedef struct InputFlags {
   volatile bool switch_pos_drive;
   volatile bool switch_pos_reverse;
   volatile bool switch_pos_park;
+  volatile bool throttle_ADC_out_of_range;
 } InputFlags;
 
 /*
@@ -117,6 +118,7 @@ void TaskGetCANMessage();
 void SendCANMotorCommand(MotorCommand motorCommand);
 void SendCANDIDNextPage();
 void SendCANDIDDriveState();
+void send_mcb_diagnostics();
 float normalize_adc_value(uint16_t value);
 void GetSwitchState(InputFlags * input_flags);
 
