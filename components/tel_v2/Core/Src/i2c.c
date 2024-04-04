@@ -204,6 +204,8 @@ float gyro(enum GyroType type)
   gyro = (OUT_H_G << 8) | (OUT_L_G);
   gyro = (float) gyro / 8.75; /* See data sheet pg10 */
 
+  printf("Got gryo: %u\n\r", gyro * 0.02);
+
   return (float) gyro * 0.02;
 }
 
@@ -224,22 +226,74 @@ float accel(enum AccelType type)
   accel = (OUT_H_A << 8) | (OUT_L_A);
   accel = (float) accel * 0.061; /* See data sheet pg10 */
 
+  printf("Got accel: %u\n\r", accel);
+
   return (float) accel;
 }
 
 
+
+/*
+ * Documentation: https://controllerstech.com/how-to-interface-mpu6050-gy-521-with-stm32/
+ */
 void initIMU(void)
 {
   uint8_t data;
 
-  data = 0x80; // 0b10000000
-  HAL_I2C_Mem_Write(&hi2c1, IMU_DEVICE_ADDRESS, 0x10, 1, &data, 1, 100);
+  printf("Initializing IMU...\n\r");
 
-  data = 0x80; // 0b10000000
-  HAL_I2C_Mem_Write(&hi2c1, IMU_DEVICE_ADDRESS, 0x11, 1, &data, 1, 100);
+  /*
+   * We need to check if the sensor is responding by reading the “WHO_AM_I (0x75)” Register.
+   * If the sensor responds with 0x68, this means it’s available and good to go.
+   */
+  while(1) {
+    if(HAL_I2C_IsDeviceReady(&hi2c2, IMU_DEVICE_ADDRESS, 1, HAL_MAX_DELAY) == HAL_OK) {
+	HAL_I2C_Mem_Read (&hi2c2, IMU_DEVICE_ADDRESS, WHO_AM_I_REG, 1, &data, 1, 1000);
+	printf("Read a value from WHOAMI register: %x\n\r", data);
+	break; // Break when initialized
+    }
+  }
 
-  data = 0x04; // 0b00000100
-  HAL_I2C_Mem_Write(&hi2c1, IMU_DEVICE_ADDRESS, 0x12, 1, &data, 1, 100);
+  /*
+   * Next we will wake the sensor up and in order to do that we will write to the
+   * “PWR_MGMT_1 (0x6B)” Register. See below the register content.
+   * On writing (0x00) to the PWR_MGMT_1 Register, sensor wakes up and the Clock sets up to 8 MHz.
+   */
+  data = 0;
+  HAL_I2C_Mem_Write(&hi2c2, IMU_DEVICE_ADDRESS, PWR_MGMT_1_REG, 1, &data, 1, 1000);
+
+  /*
+   * Now we have to set the Data output Rate or Sample Rate. This can be done by writing into
+   * “SMPLRT_DIV (0x19)” Register. This register specifies the divider from the gyroscope output
+   * rate used to generate the Sample Rate for the MPU6050.
+   * As the formula says Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV).
+   * Where Gyroscope Output Rate is 8KHz, To get the sample rate of 1KHz,
+   * we need to use the SMPLRT_DIV as ‘7’.
+   */
+  data = 0x07;
+  HAL_I2C_Mem_Write(&hi2c2, IMU_DEVICE_ADDRESS, SMPLRT_DIV_REG, 1, &data, 1, 1000);
+
+  /*
+   * Now configure the Accelerometer and Gyroscope registers and to do so, we need to modify
+   * “GYRO_CONFIG (0x1B)” and “ACCEL_CONFIG (0x1C)”Registers.
+   * Writing (0x00) to both of these registers would set the Full scale range of ± 2g in ACCEL_CONFIG
+   * Register and a Full scale range of ± 250 °/s in GYRO_CONFIG Register along with Self-test disabled.
+   */
+  data = 0x00;
+  HAL_I2C_Mem_Write(&hi2c2, IMU_DEVICE_ADDRESS, GYRO_CONFIG_REG, 1, &data, 1, 1000);
+  data = 0x00;
+  HAL_I2C_Mem_Write(&hi2c2, IMU_DEVICE_ADDRESS, ACCEL_CONFIG_REG, 1, &data, 1, 1000);
+
+  /*
+   * This completes the initialization of the MPU6050 and Now we will see How to Read the Data from the
+   * sensor and how to convert it in the respective formats. Let us start with the Acceleration values first.
+   */
+
+
+
+  printf("IMU Initialized\n\r");
+
+
 }
 
 

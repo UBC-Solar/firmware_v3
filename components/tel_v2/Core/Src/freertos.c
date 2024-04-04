@@ -371,19 +371,51 @@ void transmit_CAN_task(void const * argument)
 void read_IMU_task(void const * argument)
 {
   /* USER CODE BEGIN read_IMU_task */
-
   union FloatBytes gy_x, gy_y, gy_z, ax_x, ax_y, ax_z;
 
   /* Infinite loop */
   while(1)
   {
-    /* Get Data */
-    gy_x.float_value = gyro(GYRO_X);
-    gy_y.float_value = gyro(GYRO_Y);
-    gy_z.float_value = gyro(GYRO_Z);
-    ax_x.float_value = accel(ACCEL_X);
-    ax_y.float_value = accel(ACCEL_Y);
-    ax_z.float_value = accel(ACCEL_Z);
+    /* Read ACCEL 6 Bytes */
+    printf("reading ACCEL values from IMU\n\r");
+
+    uint8_t accel_data[6];
+
+    HAL_I2C_Mem_Read(&hi2c2, IMU_DEVICE_ADDRESS, ACCEL_XOUT_H_REG, 1, accel_data, NUM_ACCEL_BYTES, 1000);
+    uint16_t Accel_X_RAW = (uint16_t)(accel_data[0] << 8 | accel_data [1]);
+    uint16_t Accel_Y_RAW = (uint16_t)(accel_data[2] << 8 | accel_data [3]);
+    uint16_t Accel_Z_RAW = (uint16_t)(accel_data[4] << 8 | accel_data [5]);
+    /*
+     * Convert the RAW values into acceleration in 'g' we have to divide according to the Full scale value
+     * set in FS_SEL. Have configured FS_SEL = 0. So I am dividing by 16384.0
+     * For more details check ACCEL_CONFIG Register.
+     */
+    ax_x.float_value = Accel_X_RAW / 16384.0;  // get the float g
+    ax_y.float_value = Accel_Y_RAW / 16384.0;
+    ax_z.float_value = Accel_Z_RAW / 16384.0;
+
+    printf("A_x: %.2f, A_y: %.2f, A_z: %.2f\n\r", ax_x.float_value, ax_y.float_value, ax_z.float_value);
+
+    /* Read ACCEL 6 Bytes */
+    printf("reading GYRO values from IMU\n\r");
+
+    uint8_t gyro_data[6];
+
+    HAL_I2C_Mem_Read(&hi2c2, IMU_DEVICE_ADDRESS, GYRO_XOUT_H_REG, 1, gyro_data, NUM_GYRO_BYTES, 1000);
+    uint16_t Gyro_X_RAW = (uint16_t)(gyro_data[0] << 8 | gyro_data [1]);
+    uint16_t Gyro_Y_RAW = (uint16_t)(gyro_data[2] << 8 | gyro_data [3]);
+    uint16_t Gyro_Z_RAW = (uint16_t)(gyro_data[4] << 8 | gyro_data [5]);
+    /*
+     * Convert the RAW values into dps (degrees/s) we have to divide according to the
+     * Full scale value set in FS_SEL. Have configured FS_SEL = 0.
+     * So I am dividing by 131.0. For more details check GYRO_CONFIG Register
+     */
+    gy_x.float_value = Gyro_X_RAW / 131.0;  // get the float g
+    gy_y.float_value = Gyro_Y_RAW / 131.0;
+    gy_z.float_value = Gyro_Z_RAW / 131.0;
+
+    printf("G_x: %.2f, G_y: %.2f, G_z: %.2f\n\r", gy_x.float_value, gy_y.float_value, gy_z.float_value);
+
 
     /* Add to IMU Queue */
     add_to_IMU_queue("G", "X", gy_x);
@@ -394,7 +426,7 @@ void read_IMU_task(void const * argument)
     add_to_IMU_queue("A", "Z", ax_z);
 
     /* Delay */
-    osDelay(READ_IMU_DELAY);
+    osDelay(READ_IMU_DELAY * 10);
 
   }
 
@@ -422,6 +454,7 @@ void transmit_IMU_task(void const * argument)
 //    if (osMessageQueueGetCount(imuMessageQueueHandle) == 0) {
 //	osThreadYield();
 //    }
+    printf("Getting message from IMU Queue and sending over radio\n\r");
 
     /* Get IMU Message from Queue */
     rcv_message = osMessageGet(imuMessageQueueHandle, osWaitForever);

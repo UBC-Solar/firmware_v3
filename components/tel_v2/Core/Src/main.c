@@ -30,6 +30,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include "sd_logger.h"
+#include "debug_io.h"
 
 /* USER CODE END Includes */
 
@@ -77,6 +79,12 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+// Initialize SD card
+FATFS fs;
+FIL fil;
+FRESULT fresult;
+char buffer_sdLib[1024]; // to store data in buffer
 
 /* USER CODE END 0 */
 
@@ -128,41 +136,14 @@ int main(void)
   Can_Init();
   initIMU();
 
-  // Initialize SD card
-  FATFS fs;
-  FIL fil;
-  FRESULT fresult;
 
   /* mount SD card */
-  fresult = f_mount(&fs, "", 0);
-  if(fresult != FR_OK) {
-    printf("error in mounting SD CARD...\n\r");
-  }
-  else {
-    printf("SD Card mounted successfully...\n\r");
-  }
-
-  /* Create file name randomly */
-  char fileName[40];
-  sprintf(fileName, "testfile.txt");
-
-  fresult = f_open(&fil, fileName, FA_CREATE_ALWAYS | FA_WRITE);
-  if (fresult != 0) {
-      printf("error in opening the file, got status %d\n\r", fresult);
-  }
-  else {
-      printf("File opened successfully\n\r");
-  }
-
-  fresult = f_puts("testing write to SD card\n\r", &fil);
-  if (fresult != 0) {
-      printf("error in writing the file, got status %d\n\r", fresult);
-  }
-  else {
-      printf("File written successfully\n\r");
-  }
-
-
+  printf("Testing SD card write\n\r");
+  sd_open("testfile.txt");
+  char SD_message[40];
+  sprintf(SD_message, "test message");
+  sd_append(&fil, SD_message);
+//  sd_close(&fil);
 
   /* USER CODE END 2 */
 

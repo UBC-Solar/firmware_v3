@@ -7,6 +7,7 @@
 "./Core/Src/main.o"
 "./Core/Src/nmea_parse.o"
 "./Core/Src/rtc.o"
+"./Core/Src/sd_logger.o"
 "./Core/Src/spi.o"
 "./Core/Src/stm32f1xx_hal_msp.o"
 "./Core/Src/stm32f1xx_hal_timebase_tim.o"
