@@ -223,6 +223,9 @@ void task_generic_100ms(void *argument)
     // Sends MCB drive state
     SendCANDIDDriveState();
 
+    // Sends MCB diagnostics
+    send_mcb_diagnostics();
+
     osDelay(100);
   }
   /* USER CODE END task_generic_100ms */

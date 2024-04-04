@@ -18,10 +18,19 @@ bool timer_check(uint32_t interval, uint32_t *last_tick);
 void check_supp_voltage(void);
 
 /*============================================================================*/
-/* PRIVATE VARIABLES */
+/* PRIVATE TYPE DEFS */
+typedef struct{
 
-static uint32_t last_generic_tick;
-static uint32_t last_tick_fault_led;
+    uint32_t last_generic_tick;
+    uint32_t last_tick_fault_led;
+    uint32_t neg_tick;
+    uint32_t pos_tick;
+    
+} hv_ticks_t;
+
+/*============================================================================*/
+/* PRIVATE VARIABLES */
+static hv_ticks_t ticks;
 static volatile FSM_state_t FSM_state;
 static bool LVS_ALREADY_ON = false;
 static bool last_HLIM_status;
@@ -35,9 +44,18 @@ static bool last_LLIM_status;
  */
 void FSM_Init()
 {
-    last_generic_tick = HAL_GetTick();
-    last_tick_fault_led = HAL_GetTick();
-    FSM_state = FSM_RESET;
+    uint32_t reset_flags = RCC->CSR;
+
+    if (reset_flags & RCC_CSR_IWDGRSTF) {
+        //IWDG triggered
+        printf("watchdog-triggered software reset \r\n");
+        ecu_data.status.bits.reset_from_watchdog = 1; //CAN_message now knows watchdog event has occured
+        FSM_state = FAULT;
+    }
+    else {
+        FSM_state = FSM_RESET;
+    }
+
     return;
 }
 
@@ -78,8 +96,9 @@ void FSM_reset()
     check_supp_voltage();
 
     FSM_state = WAIT_FOR_BMS_POWERUP;
-    last_generic_tick = HAL_GetTick();
 
+    ticks.last_generic_tick = HAL_GetTick();
+    printf("end of FSM reset \r\n");
     return;
 }
 
@@ -97,15 +116,16 @@ void FSM_reset()
 void BMS_powerup()
 {
     printf("start of BMS_powerup\r\n");
-    if (timer_check(BMS_STARTUP_INTERVAL, &last_generic_tick))
+    if (timer_check(BMS_STARTUP_INTERVAL, & (ticks.last_generic_tick) ))
     {
         FSM_state = FAULT;
     }
     else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH)
     {
-        last_generic_tick = HAL_GetTick();
+        ticks.last_generic_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_BMS_READY;
     }
+
     return;
 }
 
@@ -123,15 +143,16 @@ void BMS_powerup()
 void BMS_ready()
 {
     printf("beginning of BMS ready\r\n");
-    if (timer_check(BMS_STARTUP_INTERVAL, &last_generic_tick))
+    if (timer_check(BMS_STARTUP_INTERVAL, &(ticks.last_generic_tick) ))
     {
         FSM_state = FAULT;
     }
     else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == LOW)
     {
-        last_generic_tick = HAL_GetTick();
+        ticks.last_generic_tick = HAL_GetTick();
         FSM_state = HV_CONNECT;
     }
+    printf("end of BMS ready\r\n");
 
     return;
 }
@@ -145,16 +166,35 @@ void BMS_ready()
  */
 void HV_Connect()
 {
+    static bool first_delay_tick = false;
+    static bool second_delay_tick = false; 
+    
     printf("beginning of HV connect\r\n");
-    if (timer_check(SHORT_INTERVAL, &last_generic_tick))
+    if (timer_check(SHORT_INTERVAL, &(ticks.last_generic_tick) ) && first_delay_tick == false)
+    {
+        first_delay_tick = true;
+        ticks.neg_tick = HAL_GetTick(); 
+    }
+
+    if(first_delay_tick == true)
     {
         HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, CONTACTOR_CLOSED);
-        HAL_Delay(SHORT_INTERVAL);
 
-        HAL_GPIO_WritePin(POS_CTRL_GPIO_Port, POS_CTRL_Pin, CONTACTOR_CLOSED);
-        HAL_Delay(SHORT_INTERVAL);
+        if(timer_check(SHORT_INTERVAL, &(ticks.neg_tick) ) && second_delay_tick == false) 
+        {
+            HAL_GPIO_WritePin(POS_CTRL_GPIO_Port, POS_CTRL_Pin, CONTACTOR_CLOSED);
+            second_delay_tick = true;
+            ticks.pos_tick = HAL_GetTick();
+        }
 
-        FSM_state = SWAP_DCDC;
+        if(second_delay_tick == true)
+        {
+            if( timer_check(SHORT_INTERVAL, &(ticks.pos_tick))) 
+            {
+                ticks.last_generic_tick = HAL_GetTick();
+                FSM_state = SWAP_DCDC;
+            }
+        }
     }
 
     return;
@@ -169,15 +209,16 @@ void HV_Connect()
  */
 void swap_DCDC()
 {
-    printf("beginning of swap\r\n");
+    
+    printf("swap DCDC\r\n");
     
     HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, HIGH);
     HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, HIGH);
     HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, HIGH);
 
-    printf("end of SWAP\r\n");
-
+    ticks.last_generic_tick = HAL_GetTick();
     FSM_state = DISABLE_MDU_DCH;
+
     return;
 }
 
@@ -190,13 +231,12 @@ void swap_DCDC()
  */
 void disable_MDU_DCH()
 {
-    
-    if (timer_check(SHORT_INTERVAL, &last_generic_tick))
+    if (timer_check(SHORT_INTERVAL, &(ticks.last_generic_tick) ))
     {
         HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, LOW);
+        ticks.last_generic_tick = HAL_GetTick();
         FSM_state = CHECK_LLIM;
     }
-
     printf("end of MDU dch\r\n");
 
     return;
@@ -223,7 +263,7 @@ void check_LLIM()
     else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE)
     {
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
-        last_generic_tick = HAL_GetTick();
+        ticks.last_generic_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_PC;
     }
 
@@ -241,13 +281,13 @@ void check_LLIM()
  */
 void PC_wait()
 {
-    if (timer_check(MDU_PC_INTERVAL, &last_generic_tick))
+    if (timer_check(MDU_PC_INTERVAL, &(ticks.last_generic_tick) ))
     {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
         last_LLIM_status = CONTACTOR_CLOSED;
+        ticks.last_generic_tick = HAL_GetTick();
         FSM_state = LLIM_CLOSED;
     }
-
     printf("end of PC wait\r\n");
 
     return;
@@ -262,9 +302,10 @@ void PC_wait()
  */
 void LLIM_closed()
 {
-    if (timer_check(SHORT_INTERVAL, &last_generic_tick))
+    if (timer_check(SHORT_INTERVAL, &(ticks.last_generic_tick) ))
     {
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
+        ticks.last_generic_tick = HAL_GetTick();
         FSM_state = CHECK_HLIM;
     }
 
@@ -296,15 +337,16 @@ void check_HLIM()
 
     if (LVS_ALREADY_ON == true)
     {
+        ticks.last_generic_tick = HAL_GetTick();
         FSM_state = MONITORING;
     }
     else
     {
+        ticks.last_generic_tick = HAL_GetTick();
         FSM_state = TELEM_ON;
     }
 
     printf("end of check HLIM\r\n");
-
     return;
 }
 
@@ -316,14 +358,14 @@ void check_HLIM()
  */
 void TELEM_on()
 {
-    if (timer_check(LVS_INTERVAL, &last_generic_tick))
+    if (timer_check(LVS_INTERVAL, &(ticks.last_generic_tick) ))
     {
         HAL_GPIO_WritePin(TEL_CTRL_GPIO_Port, TEL_CTRL_Pin, HIGH);
+        ticks.last_generic_tick = HAL_GetTick();
         FSM_state = DASH_ON;
     }
 
     printf("end of TELEM on\r\n");
-
     return;
 }
 
@@ -336,14 +378,14 @@ void TELEM_on()
  */
 void DASH_on()
 {
-    if (timer_check(LVS_INTERVAL, &last_generic_tick))
+    if (timer_check(LVS_INTERVAL, &(ticks.last_generic_tick) ))
     {
         HAL_GPIO_WritePin(DID_CTRL_GPIO_Port, DID_CTRL_Pin, HIGH);
+        ticks.last_generic_tick = HAL_GetTick();
         FSM_state = MCB_ON;
     }
 
     printf("end of DASH on\r\n");
-
     return;
 }
 
@@ -356,9 +398,10 @@ void DASH_on()
  */
 void MCB_on()
 {
-    if (timer_check(LVS_INTERVAL, &last_generic_tick))
+    if (timer_check(LVS_INTERVAL, &(ticks.last_generic_tick) ))
     {
         HAL_GPIO_WritePin(MCB_CTRL_GPIO_Port, MCB_CTRL_Pin, HIGH);
+        ticks.last_generic_tick = HAL_GetTick();
         FSM_state = MDU_ON;
     }
 
@@ -375,14 +418,14 @@ void MCB_on()
  */
 void MDU_on()
 {
-    if (timer_check(LVS_INTERVAL, &last_generic_tick))
+    if (timer_check(LVS_INTERVAL, &(ticks.last_generic_tick) ))
     {
         HAL_GPIO_WritePin(MDU_CTRL_GPIO_Port, MDU_CTRL_Pin, HIGH);
+        ticks.last_generic_tick = HAL_GetTick();
         FSM_state = AMB_ON;
     }
 
     printf("end of MDU on\r\n");
-
     return;
 }
 
@@ -395,17 +438,15 @@ void MDU_on()
 void AMB_on()
 {
 
-    printf("start of AMB on\r\n");
-
-    if (timer_check(LVS_INTERVAL, &last_generic_tick))
+    if (timer_check(LVS_INTERVAL, &(ticks.last_generic_tick) ))
     {
         HAL_GPIO_WritePin(AMB_CTRL_GPIO_Port, AMB_CTRL_Pin, HIGH);
         LVS_ALREADY_ON = true;
+        ticks.last_generic_tick = HAL_GetTick();
         FSM_state = MONITORING;
     }
 
     printf("end of AMB on \r\n");
-
     return;
 }
 
@@ -419,6 +460,7 @@ void AMB_on()
 void ECU_monitor()
 {
 
+    printf("Monitoring Start\r\n");
     // Current Status Checks
     if(ecu_data.adc_data.ADC_pack_current >= DOC_WARNING_THRESHOLD){
         ecu_data.status.bits.warning_pack_overdischarge_current = true;
@@ -466,7 +508,7 @@ void ECU_monitor()
     else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_LLIM_status == CONTACTOR_OPEN)
     {
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
-        last_generic_tick = HAL_GetTick();
+        ticks.last_generic_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_PC;
         return;
     }
@@ -479,7 +521,7 @@ void ECU_monitor()
     /*************************
     Send CAN Messages
     **************************/
-    // Retrieve received messages
+    //Retrieve received messages
     CAN_CheckRxMessages(CAN_RX_FIFO0);
 
     // Only send charger message if it is connected
@@ -488,7 +530,7 @@ void ECU_monitor()
         CAN_SendMessage1806E5F4();
     }
 
-    if (timer_check(MESSAGE_INTERVAL_0X450, &last_generic_tick))
+    if (timer_check(MESSAGE_INTERVAL_0X450, &(ticks.last_generic_tick) ))
     {
         CAN_SendMessage450();
     }
@@ -508,7 +550,7 @@ void ECU_monitor()
  */
 void fault()
 {
-
+    printf("Fault Start\r\n");
     /*************************
     Put Pack in Safe State
     **************************/
@@ -526,13 +568,15 @@ void fault()
     check_supp_voltage();
 
     // send CAN status message
-    if (timer_check(MESSAGE_INTERVAL_0X450, &last_generic_tick))
+
+    if (timer_check(MESSAGE_INTERVAL_0X450, &(ticks.last_generic_tick) ))
     {
+        printf("can message sending");
         CAN_SendMessage450();
     }
 
     // blink fault light at 2Hz minimum (see regs)
-    if (timer_check(FLT_BLINK_INTERVAL, &last_tick_fault_led))
+    if (timer_check(FLT_BLINK_INTERVAL, &(ticks.last_tick_fault_led) ))
     {
         HAL_GPIO_TogglePin(FLT_OUT_GPIO_Port, FLT_OUT_Pin);
     }

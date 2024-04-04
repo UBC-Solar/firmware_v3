@@ -1,6 +1,6 @@
 .DS_Store
 RemoteSystemsTempFiles
-.vscode
+.vscode/
 /.metadata/
 components/amb/.settings/language.settings.xml
 components/ecu/ecu_firmware/build
