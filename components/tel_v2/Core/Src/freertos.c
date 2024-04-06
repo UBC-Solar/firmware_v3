@@ -346,11 +346,13 @@ void transmit_CAN_task(void *argument)
     can_buffer[CAN_BUFFER_LEN - 14] = '#';
 
     /* CAN ID: 4 ASCII characters */
-    uint8_t id_h = 0xFFUL & (can_message.header.StdId >> 8);
-    uint8_t id_l = 0xFFUL & (can_message.header.StdId);
+    uint16_t id_h = 0xFFFFUL & (can_message.header.ExtId >> 16);
+    uint16_t id_l = 0xFFFFUL & (can_message.header.ExtId);
 
-    can_buffer[CAN_BUFFER_LEN - 13] = id_h;
-    can_buffer[CAN_BUFFER_LEN - 12] = id_l;
+    can_buffer[CAN_BUFFER_LEN - 16] = (id_h >> 8) & 0xFF;
+    can_buffer[CAN_BUFFER_LEN - 15] = id_h & 0xFF;
+    can_buffer[CAN_BUFFER_LEN - 14] = (id_l >> 8) & 0xFF;
+    can_buffer[CAN_BUFFER_LEN - 13] = id_l & 0xFF;
 
 
     /* CAN DATA: 16 ASCII characters */
