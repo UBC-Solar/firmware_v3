@@ -243,8 +243,8 @@ void CAN_SendMessage623(Pack_t *pack)
     uint8_t max_volt_rescaled = (uint8_t) ((max_module_voltage * MESSAGE_623_MODULE_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
 
     // Store in message 623 data array
-    txMessage.data[0] = (uint8_t) (total_pack_voltage >> 8); // casting shifted 16 bit integer into 8 bit integer get rids of upper 8 bits, leaves lower 8 bits
-    txMessage.data[1] = (uint8_t) total_pack_voltage;        // casting 16 bit integer into 8 bit integer gets rid of upper 8 bits, leaves lower 8 bits
+    txMessage.data[0] = (uint8_t)total_pack_voltage; // casting shifted 16 bit integer into 8 bit integer get rids of upper 8 bits, leaves lower 8 bits
+    txMessage.data[1] = (uint8_t)(total_pack_voltage>>8);        // casting 16 bit integer into 8 bit integer gets rid of upper 8 bits, leaves lower 8 bits
     txMessage.data[2] = min_volt_rescaled;
     txMessage.data[3] = min_module; // add one because of indexing from zero
     txMessage.data[4] = max_volt_rescaled;
@@ -463,7 +463,7 @@ bool CAN_GetMessage0x450Data(uint32_t *rx_timestamp, ECU_Data_t *ecu_data)
         ecu_data->adc_data.supp_batt_volt = ((uint8_t)(CAN_data.rx_message_0x450.data[3])) << 8 | (uint16_t)(CAN_data.rx_message_0x450.data[2]);
         ecu_data->adc_data.lvs_current = (int8_t) CAN_data.rx_message_0x450.data[4];        
         ecu_data->status.raw = CAN_data.rx_message_0x450.data[5];
-        *rx_timestamp = CAN_data.rx_message_0x450.timestamp;
+        *rx_timestamp = HAL_GetTick();
 
     }
     

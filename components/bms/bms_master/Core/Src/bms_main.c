@@ -196,7 +196,10 @@ void BMS_MAIN_updatePackData(Pack_t *pack)
         else if (new_ecu_can_message_received)
         {
             pack_current_unscaled = ecu_data.adc_data.batt_current / 65.535;
-            SOC_allModulesEst(pack, pack_current_unscaled, ecu_can_rx_timestamp);
+            float displayed_current = ecu_data.adc_data.batt_current / 65.535;
+            printf("Current: %lf \r\n",  displayed_current);
+            printf("Ecu timestamp: %ld \r\n", ecu_can_rx_timestamp);
+            SOC_allModulesEst(pack, displayed_current, ecu_can_rx_timestamp);
         }
 
         // write pack status code

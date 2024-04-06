@@ -10,6 +10,7 @@
 
 #include "soc.h"
 #include <math.h>
+#include <stdio.h>
 
 #ifdef TEST
 #include <stdio.h> // for debugging
@@ -134,7 +135,7 @@ void SOC_allModulesInit(Pack_t *pack)
  * @param current_reading current readings of our hall-effect sensors for the battery pack [A]; positive (+) current means the battery pack is charging and negative (-) current means the battery pack is discharging
  * @param total_time_elasped total time elapsed [ms]
  */
-float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, int32_t current_reading, uint32_t total_time_elasped)
+float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, float current_reading, uint32_t total_time_elasped)
 {
   //initialize constants
   float cell_voltage = cell_voltage_100uV * 0.0001; //convert cell voltage readings into V
@@ -192,7 +193,7 @@ float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, int32_t current
  * @param current_reading current readings of our hall-effect sensors for the battery pack [A]; positive (+) current means the battery pack is charging and negative (-) current means the battery pack is discharging
  * @param total_time_elasped total time elapsed [ms]
  */
-void SOC_allModulesEst(Pack_t *pack, int32_t current_reading, uint32_t total_time_elasped)
+void SOC_allModulesEst(Pack_t *pack, float current_reading, uint32_t total_time_elasped)
 {
   float cell_voltage_reading = 0.0;
   float last_module_SOC = 0.0;
@@ -202,6 +203,8 @@ void SOC_allModulesEst(Pack_t *pack, int32_t current_reading, uint32_t total_tim
     cell_voltage_reading = pack->module[module_num].voltage;
     last_module_SOC = pack->module[module_num].state_of_charge;
     pack->module[module_num].state_of_charge = SOC_moduleEst(last_module_SOC, cell_voltage_reading, current_reading, total_time_elasped);
+    printf("Time: %ld \r\n", total_time_elasped);
+    printf("Last time: %ld \r\n", SOC_last_FSM_time);
   }
 
   SOC_last_CAN_current_reading = current_reading; //update current globally
@@ -224,6 +227,14 @@ STATIC_TESTABLE float calculateDeltaDOD(float present_current, float present_tim
 
   delta_DOD = - ( (present_current + past_current) / 2.0 * (present_time - past_time) / 1000.0 ) // divide time by 1, 000 to convert to s
               / SOC_MODULE_RATED_CAPACITY * 100.0; //equation 5 in Analog Devices' SoC estimation document
+              
+
+  printf("Delta DOD: %lf \r\n", delta_DOD);
+  printf("Present current: %lf \r\n", present_current);
+  printf("Past current: %lf \r\n", past_current);
+  printf("Present time: %lf \r\n", present_time);
+  printf("Past time: %lf \r\n", past_time);
+
 
   return delta_DOD;
 }

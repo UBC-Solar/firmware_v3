@@ -36,8 +36,8 @@ float SOC_moduleInit(float cell_voltage);
 void SOC_allModulesInit(Pack_t *pack);
 
 //functions require calling each time when CAN transmits a new current to update our SOC estimation
-float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, int32_t current_reading, uint32_t total_time_elasped);
-void SOC_allModulesEst(Pack_t *pack, int32_t current_reading, uint32_t total_time_elasped);
+float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, float current_reading, uint32_t total_time_elasped);
+void SOC_allModulesEst(Pack_t *pack, float current_reading, uint32_t total_time_elasped);
 
 // functions for getting SOC-related parameters
 float SOC_getDOD(float capacity);
