@@ -197,8 +197,8 @@ void BMS_MAIN_updatePackData(Pack_t *pack)
         {
             pack_current_unscaled = ecu_data.adc_data.batt_current / 65.535;
             float displayed_current = ecu_data.adc_data.batt_current / 65.535;
-            printf("Current: %lf \r\n",  displayed_current);
-            printf("Ecu timestamp: %ld \r\n", ecu_can_rx_timestamp);
+            // printf("Current: %lf \r\n",  displayed_current);
+            // printf("Ecu timestamp: %ld \r\n", ecu_can_rx_timestamp);
             SOC_allModulesEst(pack, displayed_current, ecu_can_rx_timestamp);
         }
 

@@ -146,7 +146,7 @@ float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, float current_r
 
   //When Module is DISCHARGING --> Ib < 0
 
-  if (current_reading < 0) //discharge
+  if (current_reading > 0) //discharge
   {
     if(cell_voltage > SOC_CELL_MIN_VOLTAGE) //when module is not fully discharged yet --> Vb > Vmin
     {
@@ -168,14 +168,16 @@ float SOC_moduleEst(float last_SOC, uint32_t cell_voltage_100uV, float current_r
 
   //when Module is CHARGING --> Ib > 0
      
-  else if(current_reading >= 0) //charge
+  else if(current_reading <= 0) //charge
   {
     if(cell_voltage < SOC_CELL_MAX_VOLTAGE) //when module is not fully charged yet
     {
       delta_DOD = calculateDeltaDOD(current_reading, total_time_elasped,
                   SOC_last_CAN_current_reading, SOC_last_FSM_time);
       last_DOD = last_DOD + SOC_CELL_CHARGE_EFFICIENCY * delta_DOD;
+      printf("Last DOD: %lf \r\n", last_DOD);
       last_SOC = 100.0 - last_DOD;
+      printf("Last SOC: %lf \r\n", last_SOC);
     }
     else //when module is fully charged
     {
@@ -203,8 +205,8 @@ void SOC_allModulesEst(Pack_t *pack, float current_reading, uint32_t total_time_
     cell_voltage_reading = pack->module[module_num].voltage;
     last_module_SOC = pack->module[module_num].state_of_charge;
     pack->module[module_num].state_of_charge = SOC_moduleEst(last_module_SOC, cell_voltage_reading, current_reading, total_time_elasped);
-    printf("Time: %ld \r\n", total_time_elasped);
-    printf("Last time: %d \r\n", SOC_last_FSM_time);
+    // printf("Time: %ld \r\n", total_time_elasped);
+    // printf("Last time: %d \r\n", SOC_last_FSM_time);
   }
 
   SOC_last_CAN_current_reading = current_reading; //update current globally
@@ -230,10 +232,10 @@ STATIC_TESTABLE float calculateDeltaDOD(float present_current, float present_tim
               
 
   printf("Delta DOD: %lf \r\n", delta_DOD);
-  printf("Present current: %lf \r\n", present_current);
-  printf("Past current: %lf \r\n", past_current);
-  printf("Present time: %lf \r\n", present_time);
-  printf("Past time: %lf \r\n", past_time);
+  // printf("Present current: %lf \r\n", present_current);
+  // printf("Past current: %lf \r\n", past_current);
+  // printf("Present time: %lf \r\n", present_time);
+  // printf("Past time: %lf \r\n", past_time);
 
 
   return delta_DOD;

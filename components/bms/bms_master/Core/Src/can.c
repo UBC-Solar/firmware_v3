@@ -12,6 +12,7 @@
 #include "main.h"
 #include <float.h>
 #include <string.h>
+#include <stdio.h>
 
 /*============================================================================*/
 /* DEFINITIONS */
@@ -265,6 +266,7 @@ void CAN_SendMessage624(Pack_t *pack)
     txMessage.tx_header.DLC = 7;
 
     float soc = Pack_GetPackStateOfCharge(pack);
+    printf("CAN Soc: %lf \r\n", soc);
     float capacity = SOC_getCapacity(soc);
     float dod = SOC_getDOD(capacity);
 
