@@ -460,7 +460,8 @@ void transmit_IMU_task(void const * argument)
     rcv_message = osMessageGet(imuMessageQueueHandle, osWaitForever);
     if (rcv_message.status != osOK) {
 	printf("yielding transmit IMU thread\n\r");
-	osThreadYield();
+	osDelay(READ_IMU_DELAY / 2);
+	continue;
     }
 
     imu_message = (IMU_msg_t *) rcv_message.value.p;
