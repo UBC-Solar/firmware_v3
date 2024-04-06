@@ -204,7 +204,7 @@ void SOC_allModulesEst(Pack_t *pack, float current_reading, uint32_t total_time_
     last_module_SOC = pack->module[module_num].state_of_charge;
     pack->module[module_num].state_of_charge = SOC_moduleEst(last_module_SOC, cell_voltage_reading, current_reading, total_time_elasped);
     printf("Time: %ld \r\n", total_time_elasped);
-    printf("Last time: %ld \r\n", SOC_last_FSM_time);
+    printf("Last time: %d \r\n", SOC_last_FSM_time);
   }
 
   SOC_last_CAN_current_reading = current_reading; //update current globally
