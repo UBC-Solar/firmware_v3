@@ -170,6 +170,8 @@ void HV_Connect()
     static bool second_delay_tick = false; 
     
     printf("beginning of HV connect\r\n");
+    
+    // delay before closing contactors
     if (timer_check(SHORT_INTERVAL, &(ticks.last_generic_tick) ) && first_delay_tick == false)
     {
         first_delay_tick = true;
@@ -178,10 +180,12 @@ void HV_Connect()
 
     if(first_delay_tick == true)
     {
+        // close NEG and delay
         HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, CONTACTOR_CLOSED);
 
         if(timer_check(SHORT_INTERVAL, &(ticks.neg_tick) ) && second_delay_tick == false) 
         {
+            // close POS
             HAL_GPIO_WritePin(POS_CTRL_GPIO_Port, POS_CTRL_Pin, CONTACTOR_CLOSED);
             second_delay_tick = true;
             ticks.pos_tick = HAL_GetTick();
@@ -189,6 +193,7 @@ void HV_Connect()
 
         if(second_delay_tick == true)
         {
+            // delay to allow everything to settle
             if( timer_check(SHORT_INTERVAL, &(ticks.pos_tick))) 
             {
                 ticks.last_generic_tick = HAL_GetTick();
@@ -488,6 +493,7 @@ void ECU_monitor()
     
     if(HAL_GPIO_ReadPin(ESTOP_STATUS_GPIO_Port, ESTOP_STATUS_Pin) == ESTOP_ACTIVE_FAULT){
         ecu_data.status.bits.estop = true;
+        HAL_GPIO_WritePin(ESTOP_LED_GPIO_Port, ESTOP_LED_Pin, HIGH);
         FSM_state = FAULT;
         return;
     }
@@ -571,7 +577,6 @@ void fault()
 
     if (timer_check(MESSAGE_INTERVAL_0X450, &(ticks.last_generic_tick) ))
     {
-        printf("can message sending");
         CAN_SendMessage450();
     }
 
@@ -591,6 +596,8 @@ void FSM_ADC_LevelOutOfWindowCallback()
 {
     ecu_data.status.bits.fault_charge_overcurrent = true;
     ecu_data.status.bits.fault_discharge_overcurrent = true;
+
+    HAL_GPIO_WritePin(DOC_COC_LED_GPIO_Port, DOC_COC_LED_Pin, HIGH);
 
     FSM_state = FAULT;
     FSM_run(); // Immediately transition to fault state

@@ -82,7 +82,7 @@ void averageAndSaveValues_ADC1(int adc_half);
 /* ADC INTERRUPT CALLBACKS */
 void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
 { // Analog watchdog 
-  // FSM_ADC_LevelOutOfWindowCallback();
+  FSM_ADC_LevelOutOfWindowCallback();
 }
 
 /* USER CODE END 0 */
@@ -149,7 +149,7 @@ int main(void)
 
     FSM_run();
 
-    HAL_IWDG_Refresh (&hiwdg);//Programmed in IOC to have refreshed in 450ms due to possible CAN message delays.
+    HAL_IWDG_Refresh (&hiwdg);//Programmed in IOC to have refreshed in 150ms due to possible CAN message delays.
 	  	  	  	  	  	  	  	 //if not refreshed, board will be sent to watchdog error handler and board will be reset.
 
     /* USER CODE END WHILE */
