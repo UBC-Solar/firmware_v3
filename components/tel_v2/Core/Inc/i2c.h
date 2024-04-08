@@ -95,10 +95,6 @@ typedef struct {
 
 
 void initIMU(void);
-float gyro(enum GyroType type);
-float accel(enum AccelType type);
-
-
 
 /* GPS -----------------------------------------------------------------------*/
 typedef struct{

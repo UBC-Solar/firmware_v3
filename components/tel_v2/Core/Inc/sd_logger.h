@@ -1,23 +1,38 @@
-/*
- * sd_logger.h
- *
- *  Created on: Apr 2, 2024
- *      Author: ishan
- */
-
-#ifndef INC_SD_LOGGER_H_
-#define INC_SD_LOGGER_H_
-
 #include "fatfs.h"
+#include "fatfs_sd.h"
 
-extern FATFS fs;
-extern FIL fil;
-extern FRESULT fresult;
-extern char buffer_sdLib[1024]; // to store data in buffer
+#ifndef SDCARD_H
+#define SDCARD_H
 
-void bufclear_sdLib(void);
-void sd_open(char *filename);
+
+/**
+ * @brief Mounts FATFS file system onto the SD Card.
+ * @return success value of the result
+ */
+FRESULT sd_mount();
+
+/**
+ * @brief This function opens a file on the SD card.
+ * @param filename: A pointer to a filename string.
+ * @return Returns a pointer to the fatfs FIL object. If an error occurs, it returns NULL.
+ */
+FIL* sd_open(char *filename);
+
+
+/**
+ * @brief This function appends a string to a file on the SD card.
+ * @param file: A pointer to the file object.
+ * @param string: A pointer to the character array of data to be appended.
+ * @return None
+ */
 void sd_append(FIL *file, char *string);
+
+
+/**
+ * @brief This function closes a file on the SD card.
+ * @param file: A pointer to the file object.
+ * @return None
+ */
 void sd_close(FIL *file);
 
-#endif /* INC_SD_LOGGER_H_ */
+#endif

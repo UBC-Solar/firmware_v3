@@ -95,6 +95,8 @@ osMessageQId gpsMessageQueueHandle;
 
 void add_to_IMU_queue(char* type, char* dimension, union FloatBytes data);
 void add_to_GPS_queue(GPS *gps_data);
+void check_IMU_result(union FloatBytes ax_x, union FloatBytes ax_y, union FloatBytes ax_z,
+		      union FloatBytes gy_x, union FloatBytes gy_y, union FloatBytes gy_z);
 
 /* USER CODE END FunctionPrototypes */
 
@@ -371,11 +373,12 @@ void transmit_CAN_task(void const * argument)
 void read_IMU_task(void const * argument)
 {
   /* USER CODE BEGIN read_IMU_task */
-  union FloatBytes gy_x, gy_y, gy_z, ax_x, ax_y, ax_z;
 
   /* Infinite loop */
   while(1)
   {
+    union FloatBytes gy_x, gy_y, gy_z, ax_x, ax_y, ax_z;
+
     /* Read ACCEL 6 Bytes */
     printf("reading ACCEL values from IMU\n\r");
 
@@ -416,6 +419,7 @@ void read_IMU_task(void const * argument)
 
     printf("G_x: %.2f, G_y: %.2f, G_z: %.2f\n\r", gy_x.float_value, gy_y.float_value, gy_z.float_value);
 
+    check_IMU_result(ax_x, ax_y, ax_z, gy_x, gy_y, gy_z);
 
     /* Add to IMU Queue */
     add_to_IMU_queue("G", "X", gy_x);
@@ -692,6 +696,18 @@ void add_to_GPS_queue(GPS *gps_data) {
   }
 }
 
+/*
+ * Performs IMU Data Check
+ */
+void check_IMU_result(union FloatBytes ax_x, union FloatBytes ax_y, union FloatBytes ax_z,
+		      union FloatBytes gy_x, union FloatBytes gy_y, union FloatBytes gy_z)
+{
+  if (ax_x.float_value == 0.0f && ax_y.float_value == 0.0f && ax_z.float_value == 0.0f &&
+      gy_x.float_value == 0.0f && gy_y.float_value == 0.0f && gy_z.float_value == 0.0f) {
+      // This means there was a disconnect in one of the IMU cables and it needs to be re-initialized
+      initIMU();
+  }
+}
 
 /* USER CODE END Application */
 

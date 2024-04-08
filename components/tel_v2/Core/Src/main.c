@@ -80,12 +80,6 @@ void MX_FREERTOS_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-// Initialize SD card
-FATFS fs;
-FIL fil;
-FRESULT fresult;
-char buffer_sdLib[1024]; // to store data in buffer
-
 /* USER CODE END 0 */
 
 /**
@@ -137,14 +131,17 @@ int main(void)
   initIMU();
 
 
+  FRESULT fresult;
   /* mount SD card */
   printf("Testing SD card write\n\r");
-  sd_open("testfile.txt");
-  char SD_message[40];
-  sprintf(SD_message, "test message");
-  sd_append(&fil, SD_message);
-//  sd_close(&fil);
-
+  fresult = sd_mount();
+  if (fresult == FR_OK) {
+      printf("SD Mounted Successfully\n\r");
+  }
+  FIL* fil;
+  fil = sd_open("testfile.txt");
+  sd_append(fil, "Hello from Ishan");
+  printf("Completed write\n\r");
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */

@@ -1,18 +1,21 @@
-#include <stdio.h>
-#include "sd_logger.h"
+#include "fatfs.h"
+#include "fatfs_sd.h"
+#include "string.h"
+#include "stdio.h"
+#include "time.h"
+#include "stdlib.h"
+#include "main.h"
 
-/**
- * @brief This function clears a buffer to ensure that strings are actually written to the file.
- * @param None
- * @return None
- */
-void bufclear_sdLib(void)
-{
-    for (int i = 0; i < 1024; i++)
-    {
-        buffer_sdLib[i] = '\0';
-    }
+
+FATFS fs_sdLib; 					// file system
+FRESULT fresult_sdLib; 				// to store the result
+
+FRESULT sd_mount() {
+    /* mount SD card */
+    fresult_sdLib = f_mount(&fs_sdLib, "", 0);
+    return fresult_sdLib;
 }
+
 
 
 /**
@@ -20,32 +23,33 @@ void bufclear_sdLib(void)
  * @param filename: A pointer to a filename string.
  * @return Returns a pointer to the fatfs FIL object. If an error occurs, it returns NULL.
  */
-void sd_open(char *filename)
-{
-    /* mount SD card */
-    fresult = f_mount(&fs, "", 0);
-    if(fresult != FR_OK)
+FIL* sd_open(char *filename) {
+	static FIL fil;
+
+    fresult_sdLib = f_mount(&fs_sdLib, "", 0);
+    if(fresult_sdLib != FR_OK)
     {
-        printf("error in mounting SD CARD...\n");
-        return;
+	printf("Bad mount\n\r");
+        return NULL;
     }
+    printf("double mount ok\n\r");
 
     /* Open the file */
-    fresult = f_open(&fil, filename, FA_WRITE | FA_CREATE_ALWAYS);
-//    if(fresult == FR_OK) {
-//        /* Seek to end of the file to append data */
-//	fresult = f_lseek(&fil, f_size(&fil));
-//        if(fresult != FR_OK)
-//        {
-//            printf("Seek to end of file failed..\n\r");
-//            f_close(&fil);
-//            return;
-//        }
-//        printf("Seek successful\n\r");
-//    }
-
-    printf("returning file pointer %x\n\r", (void*) &fil);
-    return;
+    fresult_sdLib = f_open(&fil, filename, FA_WRITE | FA_OPEN_ALWAYS);
+    printf("Got file pointer %x\n\r", &fil);
+    if(fresult_sdLib == FR_OK) {
+        /* Seek to end of the file to append data */
+	printf("Opened file\n\r");
+        fresult_sdLib = f_lseek(&fil, f_size(&fil));
+        if(fresult_sdLib != FR_OK)
+        {
+            printf("Bad seek\n\r");
+            f_close(&fil);
+            return NULL;
+        }
+        printf("Opened file ok\n\r");
+    }
+    return &fil;
 }
 
 
@@ -55,19 +59,24 @@ void sd_open(char *filename)
  * @param string: A pointer to the character array of data to be appended.
  * @return None
  */
-void sd_append(FIL *file, char *string)
-{
-    printf("Appending %s\n\r to file pointer %x\n\r", string, file);
+void sd_append(FIL *file, char *string) {
     if(file != NULL) {
         /* Write the string to the file */
-	fresult = f_puts(string, file);
-        if(fresult == EOF)
+	printf("Writing to file\n\r");
+        fresult_sdLib = f_puts(string, file);
+        fresult_sdLib = f_puts("\n", file);
+        if(fresult_sdLib == EOF)
         {
-            printf("error in writing to file...\n");
+            printf("Got EOF\n\r");
+            return;
         }
-        /* Clear the buffer */
-        bufclear_sdLib();
-        printf("sd append successful\n\r");
+        printf("Done write\n\r");
+        fresult_sdLib = f_sync(file);
+        if (fresult_sdLib != FR_OK) {
+            printf("Bad fsync - got %d\n\r", fresult_sdLib);
+            return;
+        }
+        printf("Done fsync\n\r");
     }
 }
 
@@ -77,14 +86,13 @@ void sd_append(FIL *file, char *string)
  * @param file: A pointer to the file object.
  * @return None
  */
-void sd_close(FIL *file)
-{
+void sd_close(FIL *file) {
     if(file != NULL) {
         /* Close the file */
-	fresult = f_close(file);
-        if(fresult != FR_OK)
+        fresult_sdLib = f_close(file);
+        if(fresult_sdLib != FR_OK)
         {
-            printf("error in closing file...\n");
+        	return;
         }
     }
 }

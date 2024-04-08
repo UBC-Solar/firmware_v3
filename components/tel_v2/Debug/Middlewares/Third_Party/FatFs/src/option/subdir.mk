@@ -5,12 +5,15 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../Middlewares/Third_Party/FatFs/src/option/ccsbcs.c \
 ../Middlewares/Third_Party/FatFs/src/option/syscall.c 
 
 OBJS += \
+./Middlewares/Third_Party/FatFs/src/option/ccsbcs.o \
 ./Middlewares/Third_Party/FatFs/src/option/syscall.o 
 
 C_DEPS += \
+./Middlewares/Third_Party/FatFs/src/option/ccsbcs.d \
 ./Middlewares/Third_Party/FatFs/src/option/syscall.d 
 
 
@@ -21,7 +24,7 @@ Middlewares/Third_Party/FatFs/src/option/%.o Middlewares/Third_Party/FatFs/src/o
 clean: clean-Middlewares-2f-Third_Party-2f-FatFs-2f-src-2f-option
 
 clean-Middlewares-2f-Third_Party-2f-FatFs-2f-src-2f-option:
-	-$(RM) ./Middlewares/Third_Party/FatFs/src/option/syscall.cyclo ./Middlewares/Third_Party/FatFs/src/option/syscall.d ./Middlewares/Third_Party/FatFs/src/option/syscall.o ./Middlewares/Third_Party/FatFs/src/option/syscall.su
+	-$(RM) ./Middlewares/Third_Party/FatFs/src/option/ccsbcs.cyclo ./Middlewares/Third_Party/FatFs/src/option/ccsbcs.d ./Middlewares/Third_Party/FatFs/src/option/ccsbcs.o ./Middlewares/Third_Party/FatFs/src/option/ccsbcs.su ./Middlewares/Third_Party/FatFs/src/option/syscall.cyclo ./Middlewares/Third_Party/FatFs/src/option/syscall.d ./Middlewares/Third_Party/FatFs/src/option/syscall.o ./Middlewares/Third_Party/FatFs/src/option/syscall.su
 
 .PHONY: clean-Middlewares-2f-Third_Party-2f-FatFs-2f-src-2f-option
 
