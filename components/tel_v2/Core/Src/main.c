@@ -68,6 +68,9 @@ uint8_t current_can_data[8];
 /* HAL Status */
 HAL_StatusTypeDef rx_status;
 
+/* Log File */
+FIL* logfile;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -132,16 +135,28 @@ int main(void)
 
 
   FRESULT fresult;
+  char startup_message[60];
+  char filename[25];
+  RTC_DateTypeDef curr_date;
+  RTC_TimeTypeDef curr_time;
+
+  HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
+  HAL_RTC_GetTime(&hrtc, &curr_time, RTC_FORMAT_BIN);
+
+  /* Year - Month - Date  Format */
+  sprintf(startup_message, "TEL start up on 20%u %u %u at %u:%u:%u", curr_date.Year,
+	  curr_date.Month, curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
+
   /* mount SD card */
-  printf("Testing SD card write\n\r");
   fresult = sd_mount();
-  if (fresult == FR_OK) {
-      printf("SD Mounted Successfully\n\r");
-  }
-  FIL* fil;
-  fil = sd_open("testfile.txt");
-  sd_append(fil, "Hello from Ishan");
-  printf("Completed write\n\r");
+  if (fresult == FR_OK) printf("SD Mounted Successfully\n\r");
+  else printf("SD NOT Mounted\n\r");
+
+  sprintf(filename, "TEL-20%u-%u-%uT%u-%u-%u", curr_date.Year, curr_date.Month,
+	  curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
+  logfile = sd_open(filename);
+  sd_append(logfile, startup_message);
+
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */

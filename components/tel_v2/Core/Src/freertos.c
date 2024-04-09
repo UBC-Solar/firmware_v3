@@ -36,6 +36,7 @@
 #include "nmea_parse.h"
 #include "rtc.h"
 #include "fatfs_sd.h"
+#include "sd_logger.h"
 
 /* USER CODE END Includes */
 
@@ -76,6 +77,8 @@ union FloatBytes {
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+
+extern FIL* logfile;
 
 /* USER CODE END Variables */
 osThreadId StartDefaultTaskHandle;
@@ -353,11 +356,8 @@ void transmit_CAN_task(void const * argument)
     /* Transmit over Radio */
     HAL_UART_Transmit(&huart1, can_buffer, sizeof(can_buffer), 1000);
 
-    /* TODO: Log to SDLogger */
-//    FIL *can_file_ptr = sd_open("CAN_Messages.txt");
-//    sd_append(can_file_ptr, can_buffer);    // Append can message to the SD card
-//    sd_close(can_file_ptr);
-
+    /* Log to SDLogger */
+    sd_append(logfile, can_buffer);
   }
 
   /* USER CODE END transmit_CAN_task */
@@ -503,10 +503,8 @@ void transmit_IMU_task(void const * argument)
     /* Transmit over Radio */
     HAL_UART_Transmit(&huart1, imu_buffer, sizeof(imu_buffer), 1000);
 
-    /* TODO: Log to SDLogger */
-//    FIL *imu_file_ptr = sd_open("IMU_Messages.txt");
-//    sd_append(imu_file_ptr, imu_buffer);    // Append imu message to the SD card
-//    sd_close(imu_file_ptr);
+    /* Log to SDLogger */
+    sd_append(logfile, imu_buffer);
 
   }
 
@@ -608,10 +606,8 @@ void transmit_GPS_task(void const * argument)
     /* Transmit the NMEA message over UART to radio */
     HAL_UART_Transmit(&huart1, gps_buffer, sizeof(gps_buffer), 1000);
 
-    /* TODO: Log to SDLogger */
-//    FIL *gps_file_ptr = sd_open("GPS_Messages.txt");
-//    sd_append(gps_file_ptr, gps_buffer);    // Append gps message to the SD card
-//    sd_close(gps_file_ptr);
+    /* Log to SDLogger */
+    sd_append(logfile, gps_buffer);
 
   }
 

@@ -29,25 +29,19 @@ FIL* sd_open(char *filename) {
     fresult_sdLib = f_mount(&fs_sdLib, "", 0);
     if(fresult_sdLib != FR_OK)
     {
-	printf("Bad mount\n\r");
         return NULL;
     }
-    printf("double mount ok\n\r");
 
     /* Open the file */
     fresult_sdLib = f_open(&fil, filename, FA_WRITE | FA_OPEN_ALWAYS);
-    printf("Got file pointer %x\n\r", &fil);
     if(fresult_sdLib == FR_OK) {
         /* Seek to end of the file to append data */
-	printf("Opened file\n\r");
         fresult_sdLib = f_lseek(&fil, f_size(&fil));
         if(fresult_sdLib != FR_OK)
         {
-            printf("Bad seek\n\r");
             f_close(&fil);
             return NULL;
         }
-        printf("Opened file ok\n\r");
     }
     return &fil;
 }
@@ -62,21 +56,16 @@ FIL* sd_open(char *filename) {
 void sd_append(FIL *file, char *string) {
     if(file != NULL) {
         /* Write the string to the file */
-	printf("Writing to file\n\r");
         fresult_sdLib = f_puts(string, file);
         fresult_sdLib = f_puts("\n", file);
         if(fresult_sdLib == EOF)
         {
-            printf("Got EOF\n\r");
             return;
         }
-        printf("Done write\n\r");
         fresult_sdLib = f_sync(file);
         if (fresult_sdLib != FR_OK) {
-            printf("Bad fsync - got %d\n\r", fresult_sdLib);
             return;
         }
-        printf("Done fsync\n\r");
     }
 }
 
