@@ -2,6 +2,8 @@
 
 #define IMU_MESSAGE_LEN 17
 
+#define TIMESTAMP_BYTE(i, timestamp) ((timestamp >> (i * 8)) & 0xFF);
+
 typedef struct {
   uint8_t imu_type;
   uint8_t dimension;
