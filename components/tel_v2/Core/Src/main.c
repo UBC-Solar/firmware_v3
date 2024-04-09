@@ -59,12 +59,6 @@
 CAN_FilterTypeDef CAN_filter0;
 CAN_FilterTypeDef CAN_filter1;
 
-/* CAN Rx Header */
-CAN_RxHeaderTypeDef can_rx_header;
-
-/* Can Data */
-uint8_t current_can_data[8];
-
 /* HAL Status */
 HAL_StatusTypeDef rx_status;
 
