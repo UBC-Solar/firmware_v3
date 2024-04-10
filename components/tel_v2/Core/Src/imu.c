@@ -1,8 +1,9 @@
 #include <time.h>
 #include "imu.h"
 #include "usart.h"
+#include "sd_logger.h"
 
-
+extern FIL* logfile;
 
 /**
  * @brief Transmits IMU data over UART.
@@ -40,4 +41,7 @@ void transmit_imu_data(time_t current_timestamp, uint8_t* imu_data, uint8_t imu_
     imu_buffer[16] = '\n';
 
     HAL_UART_Transmit(&huart1, imu_buffer, sizeof(imu_buffer), 1000);
+
+    sd_append(logfile, imu_buffer);
+
 }

@@ -273,10 +273,11 @@ void read_CAN_task(void const * argument)
       radio_buffer[CAN_BUFFER_LEN - 1] = '\n';
 
       /* Transmit over Radio */
-      HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), 1000
+      HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), 1000);
 
       /* Log to SDLogger */
       sd_append(logfile, radio_buffer);
+    }
   }
 
   /* USER CODE END read_CAN_task */
@@ -347,8 +348,6 @@ void read_IMU_task(void const * argument)
     transmit_imu_data(current_timestamp, gy_x.bytes, 'G', 'X');
     transmit_imu_data(current_timestamp, gy_y.bytes, 'G', 'Y');
     transmit_imu_data(current_timestamp, gy_z.bytes, 'G', 'Z');
-
-    //sd_append(logfile, imu_buffer);
 
     /* Delay */
     osDelay(READ_IMU_DELAY * 10);
