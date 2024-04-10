@@ -275,8 +275,8 @@ void read_CAN_task(void const * argument)
       /* Transmit over Radio */
       HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), 1000);
 
-      /* Log to SDLogger */
-      sd_append(logfile, radio_buffer);
+      /* Convert radio_buffer to hex_string so it can be logged. MUST NOT USE strlen */
+      sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
     }
   }
 
@@ -414,8 +414,8 @@ void read_GPS_task(void const * argument)
     /* Transmit the NMEA message over UART to radio */
     HAL_UART_Transmit(&huart1, gps_buffer, sizeof(gps_buffer), 1000);
 
-    /* Log to SDLogger */
-    sd_append(logfile, gps_buffer);
+    /* Convert gps_buffer to hex_string so it can be logged. MUST NOT USE strlen */
+    sd_append_as_hexnums(logfile, gps_buffer, GPS_MESSAGE_LEN);
 
     /* Delay */
     osDelay(READ_GPS_DELAY);

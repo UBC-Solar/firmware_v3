@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include "sd_logger.h"
 #include "debug_io.h"
+#include <string.h>
 
 /* USER CODE END Includes */
 
@@ -130,7 +131,7 @@ int main(void)
 
   FRESULT fresult;
   char startup_message[60];
-  char filename[25];
+  char filename[30];
   RTC_DateTypeDef curr_date;
   RTC_TimeTypeDef curr_time;
 
@@ -146,7 +147,7 @@ int main(void)
   if (fresult == FR_OK) printf("SD Mounted Successfully\n\r");
   else printf("SD NOT Mounted\n\r");
 
-  sprintf(filename, "TEL-20%u-%u-%uT%u-%u-%u", curr_date.Year, curr_date.Month,
+  sprintf(filename, "TEL-20%u-%u-%uT%u-%u-%u.txt", curr_date.Year, curr_date.Month,
 	  curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
   logfile = sd_open(filename);
   sd_append(logfile, startup_message);

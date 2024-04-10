@@ -15,13 +15,13 @@ extern FIL* logfile;
  * @param imu_type The type of IMU.
  * @param dimension The dimension of the IMU data.
  */
-void transmit_imu_data(time_t current_timestamp, uint8_t* imu_data, uint8_t imu_type, uint8_t dimension)
+void transmit_imu_data(time_t current_timestamp, uint8_t* imu_data, char imu_type, char dimension)
 {
-    uint8_t imu_buffer[IMU_MESSAGE_LEN] = {0};
+    char imu_buffer[IMU_MESSAGE_LEN];
 
     /* Timestamp */
     for (uint8_t i = 0; i < 8; i++) {
-      imu_buffer[i] = TIMESTAMP_BYTE(i, current_timestamp);
+      imu_buffer[i] = (char) TIMESTAMP_BYTE(i, current_timestamp);
     }
 
     /* IMU ID */
@@ -42,6 +42,6 @@ void transmit_imu_data(time_t current_timestamp, uint8_t* imu_data, uint8_t imu_
 
     HAL_UART_Transmit(&huart1, imu_buffer, sizeof(imu_buffer), 1000);
 
-    sd_append(logfile, imu_buffer);
-
+    /* Convert imu_buffer to hex_string so it can be logged. MUST NOT USE strlen */
+    sd_append_as_hexnums(logfile, imu_buffer, IMU_MESSAGE_LEN);
 }
