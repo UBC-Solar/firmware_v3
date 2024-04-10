@@ -37,6 +37,7 @@
 #include "rtc.h"
 #include "fatfs_sd.h"
 #include "imu.h"
+#include "sd_logger.h"
 
 /* USER CODE END Includes */
 
@@ -77,6 +78,8 @@ union FloatBytes {
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+
+extern FIL* logfile;
 
 /* USER CODE END Variables */
 osThreadId StartDefaultTaskHandle;
@@ -270,16 +273,10 @@ void read_CAN_task(void const * argument)
       radio_buffer[CAN_BUFFER_LEN - 1] = '\n';
 
       /* Transmit over Radio */
-      HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), 1000);
+      HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), 1000
 
-      /* TODO: Log to SDLogger */
-      // FIL *can_file_ptr = sd_open("CAN_Messages.txt");
-      // sd_append(can_file_ptr, can_buffer);    // Append can message to the SD card
-      // sd_close(can_file_ptr);
-    }
-
-    /* Enable interrupts */
-    taskEXIT_CRITICAL();
+      /* Log to SDLogger */
+      sd_append(logfile, radio_buffer);
   }
 
   /* USER CODE END read_CAN_task */
@@ -351,10 +348,7 @@ void read_IMU_task(void const * argument)
     transmit_imu_data(current_timestamp, gy_y.bytes, 'G', 'Y');
     transmit_imu_data(current_timestamp, gy_z.bytes, 'G', 'Z');
 
-    /* TODO: Log to SDLogger */
-    // FIL *imu_file_ptr = sd_open("IMU_Messages.txt");
-    // sd_append(imu_file_ptr, imu_buffer);    // Append imu message to the SD card
-    // sd_close(imu_file_ptr);
+    //sd_append(logfile, imu_buffer);
 
     /* Delay */
     osDelay(READ_IMU_DELAY * 10);
@@ -421,10 +415,8 @@ void read_GPS_task(void const * argument)
     /* Transmit the NMEA message over UART to radio */
     HAL_UART_Transmit(&huart1, gps_buffer, sizeof(gps_buffer), 1000);
 
-    /* TODO: Log to SDLogger */
-    // FIL *gps_file_ptr = sd_open("GPS_Messages.txt");
-    // sd_append(gps_file_ptr, gps_buffer);    // Append gps message to the SD card
-    // sd_close(gps_file_ptr);
+    /* Log to SDLogger */
+    sd_append(logfile, gps_buffer);
 
     /* Delay */
     osDelay(READ_GPS_DELAY);
