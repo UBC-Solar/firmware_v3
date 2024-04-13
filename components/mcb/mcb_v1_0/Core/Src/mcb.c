@@ -83,6 +83,11 @@ void send_mcb_diagnostics()
 		SETBIT(data_send[2], 2);
 	}
 
+	if (input_flags.mech_brake_pressed == true)
+	{
+		SETBIT(data_send[2], 3);
+	}
+
 	HAL_CAN_AddTxMessage(&hcan, &mcb_diagnostics, data_send, &can_mailbox);
 
 	return;
