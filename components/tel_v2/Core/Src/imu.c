@@ -18,40 +18,31 @@ extern FIL* logfile;
 void transmit_imu_data(time_t current_timestamp, uint8_t* imu_data, char imu_type, char dimension)
 {
     char imu_buffer[IMU_MESSAGE_LEN];
-    char sd_imu_buffer[IMU_MESSAGE_LEN];
 
     /* Timestamp */
     for (uint8_t i = 0; i < 8; i++) {
-      imu_buffer[i] = (char) TIMESTAMP_BYTE(i, current_timestamp);
-      sd_imu_buffer[7 - i] = (char) TIMESTAMP_BYTE(i, current_timestamp);
+      imu_buffer[7 - i] = (char) TIMESTAMP_BYTE(i, current_timestamp);
     }
 
     /* IMU ID */
     imu_buffer[8] = '@';
-    sd_imu_buffer[8] = '@';
 
     /* IMU type and dimension */
     imu_buffer[9] = imu_type;
-    sd_imu_buffer[9] = imu_type;
 
-    sd_imu_buffer[10] = dimension;
     imu_buffer[10] = dimension;
 
     /* IMU data */
     for (int i = 0; i < 4; i++) {
-	    imu_buffer[11 + i] = imu_data[i];
-	    sd_imu_buffer[14 - i] = imu_data[i];
+	    imu_buffer[14 - i] = imu_data[i];
     }
 
     /* New line and carriage return */
     imu_buffer[15] = '\r';
     imu_buffer[16] = '\n';
 
-    sd_imu_buffer[15] = '\r';
-    sd_imu_buffer[16] = '\n';
-
     HAL_UART_Transmit(&huart1, imu_buffer, sizeof(imu_buffer), 1000);
 
     /* Convert imu_buffer to hex_string so it can be logged. MUST NOT USE strlen */
-    sd_append_as_hexnums(logfile, sd_imu_buffer, IMU_MESSAGE_LEN);
+    sd_append_as_hexnums(logfile, imu_buffer, IMU_MESSAGE_LEN);
 }
