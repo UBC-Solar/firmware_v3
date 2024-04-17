@@ -54,4 +54,6 @@ dkms.conf
 # Cyclomatic Complexity Analysis Results
 *.cyclo
 
+# Build folders
 Debug/
+Release/

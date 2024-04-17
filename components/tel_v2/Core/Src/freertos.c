@@ -147,7 +147,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of StartDefaultTask */
-  osThreadDef(StartDefaultTask, startDefaultTask, osPriorityNormal, 0, 128);
+  osThreadDef(StartDefaultTask, startDefaultTask, osPriorityLow, 0, 128);
   StartDefaultTaskHandle = osThreadCreate(osThread(StartDefaultTask), NULL);
 
   /* definition and creation of readCANTask */
