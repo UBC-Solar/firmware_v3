@@ -66,6 +66,11 @@ union FloatBytes {
     uint8_t bytes[4];
 } FloatBytes;
 
+typedef union DoubleBytes {
+	double double_value;			/**< Double value member of the union. */
+	uint64_t double_as_int;			/**< 64 bit in member of union. */
+} DoubleBytes;
+
 /* Use this MACRO to split the time stamp into individual bytes */
 #define TIMESTAMP_BYTE(i, timestamp) ((timestamp >> (i * 8)) & 0xFF);
 
@@ -235,10 +240,11 @@ void read_CAN_task(void const * argument)
       // 23: '\n'
 
       /* TIMESTAMP */
-      time_t current_timestamp = get_current_timestamp();
+      union DoubleBytes current_timestamp;
+      current_timestamp.double_value = get_current_timestamp();
       
       for (uint8_t i = 0; i < 8; i++) {
-        radio_buffer[i] = TIMESTAMP_BYTE(i, current_timestamp);
+        radio_buffer[7 - i] = TIMESTAMP_BYTE(i, current_timestamp.double_as_int);
       }
 
       /* CAN MESSAGE IDENTIFIER */
@@ -247,20 +253,20 @@ void read_CAN_task(void const * argument)
       /* CAN ID */ // TODO: Check if this is correct. Are the 0 bytes in the STD in the correct spot?
       if (can_rx_header.IDE == CAN_ID_STD)
       {
-        radio_buffer[9]  = 0xFF & (can_rx_header.StdId);
-        radio_buffer[10] = 0xFF & (can_rx_header.StdId >> 8); 
+        radio_buffer[10]  = 0xFF & (can_rx_header.StdId);
+        radio_buffer[9] = 0xFF & (can_rx_header.StdId >> 8); 
       }
       else if (can_rx_header.IDE == CAN_ID_EXT)
       {
-        radio_buffer[9]  = 0xFF & (can_rx_header.ExtId);
-        radio_buffer[10] = 0xFF & (can_rx_header.ExtId >> 8);
-        radio_buffer[11] = 0xFF & (can_rx_header.ExtId >> 16);
-        radio_buffer[12] = 0xFF & (can_rx_header.ExtId >> 24);
+        radio_buffer[12]  = 0xFF & (can_rx_header.ExtId);
+        radio_buffer[11] = 0xFF & (can_rx_header.ExtId >> 8);
+        radio_buffer[10] = 0xFF & (can_rx_header.ExtId >> 16);
+        radio_buffer[9] = 0xFF & (can_rx_header.ExtId >> 24);
       }
 
       /* CAN DATA */
       for (uint8_t i = 0; i < 8; i++) {
-        radio_buffer[13 + i] = can_data[i];
+        radio_buffer[13 + (7 - i)] = can_data[i];
       }
 
       /* CAN DATA LENGTH */
@@ -340,15 +346,16 @@ void read_IMU_task(void const * argument)
     check_IMU_result(ax_x, ax_y, ax_z, gy_x, gy_y, gy_z);
 
     /* Get current epoch Time Stamp */
-    time_t current_timestamp = get_current_timestamp();
+    union DoubleBytes current_timestamp;
+    current_timestamp.double_value = get_current_timestamp();
 
     /* Transmit IMU data */
-    transmit_imu_data(current_timestamp, ax_x.bytes, 'A', 'X');
-    transmit_imu_data(current_timestamp, ax_y.bytes, 'A', 'Y');
-    transmit_imu_data(current_timestamp, ax_z.bytes, 'A', 'Z');
-    transmit_imu_data(current_timestamp, gy_x.bytes, 'G', 'X');
-    transmit_imu_data(current_timestamp, gy_y.bytes, 'G', 'Y');
-    transmit_imu_data(current_timestamp, gy_z.bytes, 'G', 'Z');
+    transmit_imu_data(current_timestamp.double_as_int, ax_x.bytes, 'A', 'X');
+    transmit_imu_data(current_timestamp.double_as_int, ax_y.bytes, 'A', 'Y');
+    transmit_imu_data(current_timestamp.double_as_int, ax_z.bytes, 'A', 'Z');
+    transmit_imu_data(current_timestamp.double_as_int, gy_x.bytes, 'G', 'X');
+    transmit_imu_data(current_timestamp.double_as_int, gy_y.bytes, 'G', 'Y');
+    transmit_imu_data(current_timestamp.double_as_int, gy_z.bytes, 'G', 'Z');
 
     /* Delay */
     osDelay(READ_IMU_DELAY * 10);
@@ -396,11 +403,12 @@ void read_GPS_task(void const * argument)
     gps_message.data[sizeof(gps_message.data) - 1] = '\0';
 
     /* Get current epoch Time Stamp */
-    time_t current_timestamp = get_current_timestamp();
+    union DoubleBytes current_timestamp;
+    current_timestamp.double_value = get_current_timestamp();
 
     /* TIMESTAMP: 8 Bytes */
     for (uint8_t i = 0; i < 8; i++) {
-      gps_buffer[i] = TIMESTAMP_BYTE(i, current_timestamp);
+      gps_buffer[7 - i] = TIMESTAMP_BYTE(i, current_timestamp.double_as_int);
     }
 
     /*
@@ -440,7 +448,7 @@ void transmit_RTC_task(void const * argument)
   {
     printf("Sending RTC timestmap\n\r");
     // Get rtc timestamp
-    time_t timestamp = get_current_timestamp();
+    time_t timestamp = (time_t) get_current_timestamp();
     uint8_t data_send[8];
 
     // Populate data_send array

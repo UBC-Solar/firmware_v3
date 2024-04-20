@@ -11,4 +11,4 @@ typedef struct {
 } IMU_msg_t;
 
 
-void transmit_imu_data(time_t current_timestamp, uint8_t* imu_data, char imu_type, char dimension);
+void transmit_imu_data(uint64_t current_timestamp, uint8_t* imu_data, char imu_type, char dimension);

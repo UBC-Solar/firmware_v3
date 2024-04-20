@@ -2,7 +2,6 @@
 /**
   ******************************************************************************
   * @file    rtc.c
-  * @brief   This file provides code for the configuration
   *          of the RTC instances.
   ******************************************************************************
   * @attention
@@ -203,7 +202,7 @@ void Sync_RTC_With_GPS()
 
 
 
-time_t get_current_timestamp()
+double get_current_timestamp()
 {
   /* Initialize Time and Date objects */
   RTC_TimeTypeDef sTime;
@@ -211,16 +210,14 @@ time_t get_current_timestamp()
 
   HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
   HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-
-  /* Convert to Epoch Time */
-  time_t epochTime = convertToEpochTime(&sTime, &sDate);
+  double epochTime = convertToEpochTime(&sTime, &sDate);
 
   /* Return the resulting epoch time */
   return epochTime;
 }
 
 /* Used to get current time stamp */
-time_t convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate)
+double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate)
 {
     /* Initialize tm struct - from time.h library */
     struct tm t;
@@ -253,7 +250,10 @@ time_t convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate)
     }
 
     /* Convert to epoch time - Function from time.h library */
-    return mktime(&t);
+    long int epoch_secs = (long int) mktime(&t);
+
+    /* Convert to double and add milliseconds with GetTick() */
+    return (double) epoch_secs + (double)(HAL_GetTick() % 1000) / 1000.0;
 }
 
 /* Function to return the last day of a month */
