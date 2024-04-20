@@ -227,11 +227,14 @@ STATIC_TESTABLE float calculateDeltaDOD(float present_current, float present_tim
 {
   float delta_DOD = 0.0; //signed value
 
-  delta_DOD = - ( (present_current + past_current) / 2.0 * (present_time - past_time) / 1000.0 ) // divide time by 1, 000 to convert to s
-              / SOC_MODULE_RATED_CAPACITY * 100.0; //equation 5 in Analog Devices' SoC estimation document
+  // delta_DOD = - ( (present_current + past_current) / 2.0 * ((present_time - past_time) / 1000.0 )) // divide time by 1, 000 to convert to s
+  //             / SOC_MODULE_RATED_CAPACITY * 100.0; //equation 5 in Analog Devices' SoC estimation document
+
+  delta_DOD =  ( (present_current + past_current) / 2.0 * ((present_time - past_time) / 1000.0 )) // divide time by 1, 000 to convert to s
+              / SOC_MODULE_RATED_CAPACITY; //equation 5 in Analog Devices' SoC estimation document            
               
 
-  printf("Delta DOD: %lf \r\n", delta_DOD);
+  // printf("Delta DOD: %lf \r\n", delta_DOD);
   // printf("Present current: %lf \r\n", present_current);
   // printf("Past current: %lf \r\n", past_current);
   // printf("Present time: %lf \r\n", present_time);
@@ -252,14 +255,19 @@ STATIC_TESTABLE int indexOfNearestCellVoltage(float cell_voltage)
   int result_index = 0;
   float cell_voltage_difference = 100.0; //first assign it to a large arbitrary value
   float cell_voltage_difference_tmp;
+  float cell_voltage_initial = cell_voltage*0.0001;
 
   //loop through the cellVoltage_SOC_table lookup table (LUT) to find the index (in the first row) closest to cell_voltage
   //the for loop implementation works because the cellVoltage_SOC_table LUT is sorted in decreasing order
 
   for(int j = 0; j < 41; j ++)
   {
-    cell_voltage_difference_tmp = fabs(cell_voltage_SOC_table[0][j] - cell_voltage);
+    cell_voltage_difference_tmp = fabs(cell_voltage_SOC_table[0][j] - cell_voltage_initial);
     
+    printf("Cell voltage initial: %lf \r\n", cell_voltage_initial);
+    
+    printf("Cell voltage difference %lf \r\n", cell_voltage_difference_tmp);
+
     if(cell_voltage_difference_tmp > cell_voltage_difference)
     {
       break;
