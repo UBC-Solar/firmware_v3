@@ -289,7 +289,6 @@ void read_CAN_task(void const * argument)
   /* USER CODE END read_CAN_task */
 }
 
-
 /* USER CODE BEGIN Header_read_IMU_task */
 /**
 * @brief Function implementing the readIMUTask thread.
