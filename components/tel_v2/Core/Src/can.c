@@ -40,6 +40,9 @@ CAN_TxHeaderTypeDef tel_diagnostics_header = {
 
 uint32_t can_mailbox;
 
+extern CAN_MSG_Rx_Queue;
+extern CAN_MSG_memory_pool;
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
@@ -206,8 +209,20 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   CAN_RxHeaderTypeDef can_rx_header;
   uint8_t can_data[8];
 
+
   /* Get CAN message */
-  HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can_rx_header, can_data);  // TODO: Put can_rx_header and can_data into a data structure able to be accessed in the freertos task
+//  while(HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0) != 0) {
+    HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can_rx_header, can_data);  // TODO: Put can_rx_header and can_data into a data structure able to be accessed in the freertos task
+  //  printf("%d\n\r", HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0));
+    /* Put CAN message in the Queue */
+    CAN_msg_t *new_CAN_msg;
+    new_CAN_msg = osPoolAlloc(CAN_MSG_memory_pool);
+    new_CAN_msg->header = can_rx_header;
+    for(int i = 0; i < 8; i++) {
+      new_CAN_msg->data[i] = can_data[i];
+    }
+    osMessagePut(CAN_MSG_Rx_Queue, new_CAN_msg, osWaitForever);
+//  }
 
   /* Set the Flag to CAN_READY */
   osSignalSet(readCANTaskHandle, CAN_READY);
