@@ -45,6 +45,7 @@ extern CAN_HandleTypeDef hcan;
 #define CAN_DATA_LENGTH 8
 
 extern CAN_TxHeaderTypeDef rtc_timestamp_header;
+extern CAN_TxHeaderTypeDef tel_diagnostics_header;
 
 extern uint32_t can_mailbox;
 

@@ -196,7 +196,7 @@ void initIMU(void)
 {
   uint8_t data;
 
-  printf("Initializing IMU...\n\r");
+  //printf("Initializing IMU...\n\r");
 
   /*
    * We need to check if the sensor is responding by reading the “WHO_AM_I (0x75)�? Register.
@@ -205,7 +205,7 @@ void initIMU(void)
   for(int i = 0; i < 5; i++) {
     if(HAL_I2C_IsDeviceReady(&hi2c2, IMU_DEVICE_ADDRESS, 1, HAL_MAX_DELAY) == HAL_OK) {
 	    HAL_I2C_Mem_Read (&hi2c2, IMU_DEVICE_ADDRESS, WHO_AM_I_REG, 1, &data, 1, 1000);
-	    printf("Read a value from WHOAMI register: %x\n\r", data);
+	    //printf("Read a value from WHOAMI register: %x\n\r", data);
 	    break; // Break when initialized
     }
   }
@@ -247,7 +247,7 @@ void initIMU(void)
 
 
 
-  printf("IMU Initialized\n\r");
+  //printf("IMU Initialized\n\r");
 
 
 }

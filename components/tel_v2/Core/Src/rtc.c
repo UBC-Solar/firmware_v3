@@ -20,11 +20,14 @@
 #include "rtc.h"
 
 /* USER CODE BEGIN 0 */
-#include "nmea_parse.h"
-#include "i2c.h"
+#include <stdbool.h>
 #include <time.h>
+#include "i2c.h"
+#include "main.h"
+#include "nmea_parse.h"
 
 #define GPS_RCV_BUFFER_SIZE 512
+#define GPS_SYNC_TIMEOUT 1000
 
 /* USER CODE END 0 */
 
@@ -124,7 +127,7 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 
 void Sync_RTC_With_GPS()
 {
-  printf("Syncing RTC with GPS...\n\r");
+  //printf("Syncing RTC with GPS...\n\r");
   /* Initialize a receive buffer */
   uint8_t receive_buffer[GPS_RCV_BUFFER_SIZE];
 
@@ -135,65 +138,70 @@ void Sync_RTC_With_GPS()
   /* Flag to track if the sync is complete */
   uint8_t RTC_Sync_Flag = 0;
 
-  while(RTC_Sync_Flag == 0) {
+  uint32_t gps_sync_start_time = HAL_GetTick();
+  while(RTC_Sync_Flag == 0 && HAL_GetTick() - gps_sync_start_time < GPS_SYNC_TIMEOUT) {
     /* Read in an NMEA message into the buffer */
     if(HAL_I2C_IsDeviceReady(&hi2c1, GPS_DEVICE_ADDRESS, 1, HAL_MAX_DELAY) == HAL_OK) {
-	HAL_I2C_Master_Receive(&hi2c1, GPS_DEVICE_ADDRESS, receive_buffer, sizeof(receive_buffer), HAL_MAX_DELAY);
-	printf("Got Data\n\r");
+	    HAL_I2C_Master_Receive(&hi2c1, GPS_DEVICE_ADDRESS, receive_buffer, sizeof(receive_buffer), HAL_MAX_DELAY);
+	    //printf("Got Data\n\r");
 
-	GPS myData;
-        nmea_parse(&myData, &receive_buffer);
+	    GPS myData;
+      nmea_parse(&myData, &receive_buffer);
 
-        printf("Fix: %d\r\n", myData.fix);
-	printf("Time: %s\r\n", myData.lastMeasure);
-	printf("Latitude: %f%c\r\n", myData.latitude, myData.latSide);
-	printf("Longitude: %f%c\r\n", myData.longitude, myData.lonSide);
-	printf("Altitude: %f\r\n", myData.altitude);
-	printf("Sat Count: %d\r\n", myData.satelliteCount);
-	printf("RMC Flag: %u\r\n", myData.RMC_Flag);
+      // printf("Fix: %d\r\n", myData.fix);
+	    // printf("Time: %s\r\n", myData.lastMeasure);
+	    // printf("Latitude: %f%c\r\n", myData.latitude, myData.latSide);
+	    // printf("Longitude: %f%c\r\n", myData.longitude, myData.lonSide);
+	    // printf("Altitude: %f\r\n", myData.altitude);
+	    // printf("Sat Count: %d\r\n", myData.satelliteCount);
+	    // printf("RMC Flag: %u\r\n", myData.RMC_Flag);
 
-        /*
-         * lastMeasure is a null-terminated string and has the format hhmmss.sss
-         * Make sure there's a valid fix and that there is an RMC message
-         */
-        if(myData.fix == 1 && myData.RMC_Flag == 1) {
-            printf("Setting the RTC now\n\r");
-          /* Copy the GPS time to GPSTime */
-          strncpy(GPSTime, myData.lastMeasure, 10);
-          GPSTime[10] = '\0'; // Ensure null termination
+      /*
+       * lastMeasure is a null-terminated string and has the format hhmmss.sss
+       * Make sure there's a valid fix and that there is an RMC message
+       */
+      if(myData.fix == 1 && myData.RMC_Flag == 1) {
+        //printf("Setting the RTC now\n\r");
+        /* Copy the GPS time to GPSTime */
+        strncpy(GPSTime, myData.lastMeasure, 10);
+        GPSTime[10] = '\0'; // Ensure null termination
 
-          /* Copy the GPS date to GPSDate */
-          strncpy(GPSDate, myData.date, 6);
-          GPSDate[6] = '\0'; // Ensure null termination
+        /* Copy the GPS date to GPSDate */
+        strncpy(GPSDate, myData.date, 6);
+        GPSDate[6] = '\0'; // Ensure null termination
 
-          /* Initialize Time and Date Objects */
-          RTC_TimeTypeDef sTime = {0};
-          RTC_DateTypeDef sDate = {0};
+        /* Initialize Time and Date Objects */
+        RTC_TimeTypeDef sTime = {0};
+        RTC_DateTypeDef sDate = {0};
 
-          /* Manually parsing the hours, minutes, and seconds */
-          sTime.Hours   = (GPSTime[0] - '0') * 10 + (GPSTime[1] - '0');
-          sTime.Minutes = (GPSTime[2] - '0') * 10 + (GPSTime[3] - '0');
-          sTime.Seconds = (GPSTime[4] - '0') * 10 + (GPSTime[5] - '0');
+        /* Manually parsing the hours, minutes, and seconds */
+        sTime.Hours   = (GPSTime[0] - '0') * 10 + (GPSTime[1] - '0');
+        sTime.Minutes = (GPSTime[2] - '0') * 10 + (GPSTime[3] - '0');
+        sTime.Seconds = (GPSTime[4] - '0') * 10 + (GPSTime[5] - '0');
 
-          /* Set the RTC time with these settings */
-          HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+        /* Set the RTC time with these settings */
+        HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
 
-          printf("Time -- H: %u, M: %u, S: %u\n\r", sTime.Hours, sTime.Minutes, sTime.Seconds);
+        //printf("Time -- H: %u, M: %u, S: %u\n\r", sTime.Hours, sTime.Minutes, sTime.Seconds);
 
-          /* Manually parsing the date, month, and year */
-          sDate.Date  = (GPSDate[0] - '0') * 10 + (GPSDate[1] - '0');
-          sDate.Month = (GPSDate[2] - '0') * 10 + (GPSDate[3] - '0');
-          sDate.Year  = (GPSDate[4] - '0') * 10 + (GPSDate[5] - '0');
+        /* Manually parsing the date, month, and year */
+        sDate.Date  = (GPSDate[0] - '0') * 10 + (GPSDate[1] - '0');
+        sDate.Month = (GPSDate[2] - '0') * 10 + (GPSDate[3] - '0');
+        sDate.Year  = (GPSDate[4] - '0') * 10 + (GPSDate[5] - '0');
 
-          /* Set the RTC Date with these settings */
-          HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+        /* Set the RTC Date with these settings */
+        HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-          printf("Date -- D: %u, M: %u, Y: %u\n\r", sDate.Date, sDate.Month, sDate.Year);
+        //printf("Date -- D: %u, M: %u, Y: %u\n\r", sDate.Date, sDate.Month, sDate.Year);
 
-          /* Set the flag to 1 indicating that the RTC has been sync'd */
-          RTC_Sync_Flag = 1;
-        }
+        /* Set the flag to 1 indicating that the RTC has been sync'd */
+        RTC_Sync_Flag = 1;
+      }
     }
+  }
+
+  if (RTC_Sync_Flag == 0) {
+    g_tel_diagnostics.gps_sync_fail = true;
   }
 
   /* Can turn on the TEL board LED here to indicate that the RTC is SYNC'd  */

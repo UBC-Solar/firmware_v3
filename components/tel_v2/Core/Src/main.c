@@ -29,10 +29,11 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdbool.h>
 #include <stdio.h>
-#include "sd_logger.h"
-#include "debug_io.h"
 #include <string.h>
+#include "debug_io.h"
+#include "sd_logger.h"
 
 /* USER CODE END Includes */
 
@@ -55,6 +56,10 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+
+/* Diagnostics */
+
+tel_diagnostics g_tel_diagnostics = {false, false, false, false, false};
 
 /* CAN Filters */
 CAN_FilterTypeDef CAN_filter0;
@@ -126,9 +131,10 @@ int main(void)
   RTC_DateTypeDef curr_date;
   RTC_TimeTypeDef curr_time;
   HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
-  /* Sync the RTC with GPS if date is Jan 1, 2020 */
+  /* Sync the RTC with GPS if date is Jan 1, 2000 */
   if ((curr_date.Month == RTC_MONTH_JANUARY && curr_date.Date == 1 && curr_date.Year == 0) || HAL_GPIO_ReadPin(RTC_SYNC_GPIO_Port, RTC_SYNC_Pin) == GPIO_PIN_SET) {
       Sync_RTC_With_GPS();
+      g_tel_diagnostics.rtc_reset = true;
   }
 
   FRESULT fresult;
@@ -144,8 +150,8 @@ int main(void)
 
   /* mount SD card */
   fresult = sd_mount();
-  if (fresult == FR_OK) printf("SD Mounted Successfully\n\r");
-  else printf("SD NOT Mounted\n\r");
+  // if (fresult == FR_OK) printf("SD Mounted Successfully\n\r");
+  // else printf("SD NOT Mounted\n\r");
 
   sprintf(filename, "TEL-20%u-%u-%uT%u-%u-%u.txt", curr_date.Year, curr_date.Month,
 	  curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);

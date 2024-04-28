@@ -31,11 +31,21 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+
+typedef struct tel_diagnostics{
+  volatile bool rtc_reset;
+  volatile bool gps_sync_fail;
+  volatile bool imu_fail;
+  volatile bool gps_fail;
+  volatile bool watchdog_reset;
+} tel_diagnostics;
+
+extern tel_diagnostics g_tel_diagnostics;
 
 extern CAN_FilterTypeDef CAN_filter0;
 extern CAN_FilterTypeDef CAN_filter1;

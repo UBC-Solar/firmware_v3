@@ -49,10 +49,11 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define KERNEL_LED_DELAY 200		// 200 milliseconds
-#define READ_IMU_DELAY 	 100		// 100 milliseconds
-#define READ_GPS_DELAY   5 * 1000  // 5 seconds (change to 5 minutes later)
-#define TRANSMIT_RTC_DELAY 5000 // 5000 milliseconds
+#define KERNEL_LED_DELAY   200	      // 200 milliseconds
+#define READ_IMU_DELAY     100	      // 100 milliseconds
+#define READ_GPS_DELAY     10 * 1000  // 10 seconds (change to 5 minutes later)
+#define TRANSMIT_RTC_DELAY 5000       // 5000 milliseconds
+#define DEFAULT_TASK_DELAY 500        // 500 milliseconds
 
 #define CAN_BUFFER_LEN  24
 
@@ -190,10 +191,9 @@ void startDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-
+    //printf("startDefaultTask()\n\r");
     HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-    printf("Default task toggle pin\n\r");
-    osDelay(1000);
+    osDelay(DEFAULT_TASK_DELAY);
   }
   /* USER CODE END startDefaultTask */
 }
@@ -210,80 +210,79 @@ void read_CAN_task(void const * argument)
   /* USER CODE BEGIN read_CAN_task */
   /* Infinite loop */
   while (1) {
-
+    //printf("read_CAN_task()\n\r");
     /* Wait for thread flags to be set in the CAN Rx FIFO0 Interrupt Callback */
     osSignalWait(CAN_READY, osWaitForever);
     
     /* Disable interrupts */
     taskENTER_CRITICAL();
-
-    /* Check if CAN rx FIFO0 is not empty */
-    if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0) {
+    // /* Check if CAN rx FIFO0 is not empty */
+    // if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0) {
   
-      /* Initialize data */
-      CAN_RxHeaderTypeDef can_rx_header;
-      uint8_t can_data[8];
-      uint8_t radio_buffer[CAN_BUFFER_LEN] = {0};
+    //   /* Initialize data */
+    //   CAN_RxHeaderTypeDef can_rx_header;
+    //   uint8_t can_data[8];
+    //   uint8_t radio_buffer[CAN_BUFFER_LEN] = {0};
 
-      /* Get CAN message */
-      if (HAL_OK != HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, can_data)) {
-	      Error_Handler(); // TODO: Should we go into an error handler?
-      }
+    //   /* Get CAN message */
+    //   if (HAL_OK != HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, can_data)) {
+	  //     Error_Handler(); // TODO: Should we go into an error handler?
+    //   }
 
-      // TODO: How are we parsing this data?
-      // 0-7: Timestamp
-      // 8: '#'
-      // 9-12: CAN ID
-      // 13-20: CAN Data
-      // 21: CAN Data Length
-      // 22: '\r'             // TODO: Do we need this? maybe just use \0 instead?
-      // 23: '\n'
+    //   // TODO: How are we parsing this data?
+    //   // 0-7: Timestamp
+    //   // 8: '#'
+    //   // 9-12: CAN ID
+    //   // 13-20: CAN Data
+    //   // 21: CAN Data Length
+    //   // 22: '\r'             // TODO: Do we need this? maybe just use \0 instead?
+    //   // 23: '\n'
 
-      /* TIMESTAMP */
-      union DoubleBytes current_timestamp;
-      current_timestamp.double_value = get_current_timestamp();
+    //   /* TIMESTAMP */
+    //   union DoubleBytes current_timestamp;
+    //   current_timestamp.double_value = get_current_timestamp();
       
-      for (uint8_t i = 0; i < 8; i++) {
-        radio_buffer[7 - i] = TIMESTAMP_BYTE(i, current_timestamp.double_as_int);
-      }
+    //   for (uint8_t i = 0; i < 8; i++) {
+    //     radio_buffer[7 - i] = TIMESTAMP_BYTE(i, current_timestamp.double_as_int);
+    //   }
 
-      /* CAN MESSAGE IDENTIFIER */
-      radio_buffer[8] = '#';
+    //   /* CAN MESSAGE IDENTIFIER */
+    //   radio_buffer[8] = '#';
 
-      /* CAN ID */ // TODO: Check if this is correct. Are the 0 bytes in the STD in the correct spot?
-      if (can_rx_header.IDE == CAN_ID_STD)
-      {
-        radio_buffer[10]  = 0xFF & (can_rx_header.StdId);
-        radio_buffer[9] = 0xFF & (can_rx_header.StdId >> 8); 
-      }
-      else if (can_rx_header.IDE == CAN_ID_EXT)
-      {
-        radio_buffer[12]  = 0xFF & (can_rx_header.ExtId);
-        radio_buffer[11] = 0xFF & (can_rx_header.ExtId >> 8);
-        radio_buffer[10] = 0xFF & (can_rx_header.ExtId >> 16);
-        radio_buffer[9] = 0xFF & (can_rx_header.ExtId >> 24);
-      }
+    //   /* CAN ID */ // TODO: Check if this is correct. Are the 0 bytes in the STD in the correct spot?
+    //   if (can_rx_header.IDE == CAN_ID_STD)
+    //   {
+    //     radio_buffer[10]  = 0xFF & (can_rx_header.StdId);
+    //     radio_buffer[9] = 0xFF & (can_rx_header.StdId >> 8); 
+    //   }
+    //   else if (can_rx_header.IDE == CAN_ID_EXT)
+    //   {
+    //     radio_buffer[12]  = 0xFF & (can_rx_header.ExtId);
+    //     radio_buffer[11] = 0xFF & (can_rx_header.ExtId >> 8);
+    //     radio_buffer[10] = 0xFF & (can_rx_header.ExtId >> 16);
+    //     radio_buffer[9] = 0xFF & (can_rx_header.ExtId >> 24);
+    //   }
 
-      /* CAN DATA */
-      for (uint8_t i = 0; i < 8; i++) {
-        radio_buffer[13 + (7 - i)] = can_data[i];
-      }
+    //   /* CAN DATA */
+    //   for (uint8_t i = 0; i < 8; i++) {
+    //     radio_buffer[13 + (7 - i)] = can_data[i];
+    //   }
 
-      /* CAN DATA LENGTH */
-      radio_buffer[21] = can_rx_header.DLC & 0xF;
+    //   /* CAN DATA LENGTH */
+    //   radio_buffer[21] = can_rx_header.DLC & 0xF;
 
-      /* CARRIAGE RETURN */
-      radio_buffer[CAN_BUFFER_LEN - 2] = '\r';
+    //   /* CARRIAGE RETURN */
+    //   radio_buffer[CAN_BUFFER_LEN - 2] = '\r';
 
-      /* NEW LINE */
-      radio_buffer[CAN_BUFFER_LEN - 1] = '\n';
+    //   /* NEW LINE */
+    //   radio_buffer[CAN_BUFFER_LEN - 1] = '\n';
 
-      /* Transmit over Radio */
-      HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), 1000);
+    //   /* Transmit over Radio */
+    //   HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), 1000);
 
-      /* Convert radio_buffer to hex_string so it can be logged. MUST NOT USE strlen */
-      sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
-    }
+    //   /* Convert radio_buffer to hex_string so it can be logged. MUST NOT USE strlen */
+    //   //sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
+    // }
   }
 
   /* USER CODE END read_CAN_task */
@@ -303,6 +302,7 @@ void read_IMU_task(void const * argument)
   /* Infinite loop */
   while(1)
   {
+    //printf("read_IMU_task()\n\r");
     /* Initialize a IMU buffer */
     uint8_t imu_buffer[IMU_MESSAGE_LEN] = {0};
 
@@ -342,7 +342,7 @@ void read_IMU_task(void const * argument)
     gy_z.float_value = Gyro_Z_RAW / 131.0;
 
     /* Verify IMU is connected */
-    check_IMU_result(ax_x, ax_y, ax_z, gy_x, gy_y, gy_z);
+    // check_IMU_result(ax_x, ax_y, ax_z, gy_x, gy_y, gy_z); // TODO set flag
 
     /* Get current epoch Time Stamp */
     union DoubleBytes current_timestamp;
@@ -376,6 +376,7 @@ void read_GPS_task(void const * argument)
   /* Infinite loop */
   while(1) {
     /* Initialize buffers */
+    //printf("read_GPS_task()\n\r");
     uint8_t receive_buffer[GPS_RCV_BUFFER_SIZE];
     GPS gps_data;
     GPS_msg_t gps_message;
@@ -445,7 +446,7 @@ void transmit_RTC_task(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    printf("Sending RTC timestmap\n\r");
+    //printf("transmit_RTC_task()\n\r");
     // Get rtc timestamp
     time_t timestamp = (time_t) get_current_timestamp();
     uint8_t data_send[8];
@@ -478,6 +479,29 @@ void check_IMU_result(union FloatBytes ax_x, union FloatBytes ax_y, union FloatB
       initIMU();
   }
 }
+
+/*
+ * Sends a tel diagnostics message over CAN
+ * Bits
+ * 0: RTC reset
+ * 1: GPS Sync successful
+ * 2: IMU Failure 
+ * 3: GPS Failure
+ * 4: Watchdog reset occured
+ */
+void send_tel_diagnostics()
+{
+  uint8_t data_send = 0x00;
+  data_send = 0x00; // TODO: Set bits based on diagnostics
+
+  SET_BIT(data_send, 0); // RTC reset
+  SET_BIT(data_send, 1); // GPS Sync successful
+  SET_BIT(data_send, 2); // IMU Failure
+  SET_BIT(data_send, 3); // GPS Failure
+  SET_BIT(data_send, 4); // Watchdog reset occured
+  HAL_CAN_AddTxMessage(&hcan, &tel_diagnostics_header, data_send, &can_mailbox);
+}
+
 
 /* USER CODE END Application */
 
