@@ -90,6 +90,8 @@ extern CAN_msg_t;
 
 CAN_msg_t msg_t;
 
+int drive_cmd_count; // Used for only logging this 10 times per second
+
 /* Define Memory Pool for the CAN_MSG queue data */
 osPoolDef (CAN_MSG_memory_pool, 32, CAN_msg_t);  // Declare memory pool
 osPoolId  CAN_MSG_memory_pool;                 // Memory pool ID
@@ -146,6 +148,8 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackTy
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
+
+  drive_cmd_count = 0;
 
   /* USER CODE END Init */
 
@@ -238,10 +242,17 @@ void read_CAN_task(void const * argument)
     osSignalWait(CAN_READY, osWaitForever);
     
 
+    /*
+     * Control Flow:
+     * Wait for Flag from Interrupt
+     * After flag occurs, read messages from queue repeatedly until it is empty
+     * Once empty, wait for flag again.
+     */
+
     /* Get CAN Message from Queue */
     while(1) {
-	uint8_t radio_buffer[CAN_BUFFER_LEN] = {0};
-	evt = osMessageGet(CAN_MSG_Rx_Queue, osWaitForever);
+      uint8_t radio_buffer[CAN_BUFFER_LEN] = {0};
+      evt = osMessageGet(CAN_MSG_Rx_Queue, osWaitForever);
       if (evt.status == osEventMessage) {
 	  HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
 	  rx_CAN_msg = evt.value.p; // Get pointer from the queue union
@@ -293,11 +304,21 @@ void read_CAN_task(void const * argument)
 	 /* NEW LINE */
 	 radio_buffer[CAN_BUFFER_LEN - 1] = '\n';
 
+
 	 /* Transmit over Radio */
 	 HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), 1000);
 
-	 /* Convert radio_buffer to hex_string so it can be logged. MUST NOT USE strlen */
-//	 sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
+	 /* Check for drive command */
+	 if (rx_CAN_msg->header.StdId == 0x401) {
+	     drive_cmd_count++; // Increment the count received
+	     if (drive_cmd_count == 10) { // Log every 10 of these messages
+		 sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
+	     }
+	 }
+	 else { // Always write non drive command msgs to SD logger
+	   /* Convert radio_buffer to hex_string so it can be logged. MUST NOT USE strlen */
+	   sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
+	 }
 
 	/* Free the memory allocated for this message */
 	osPoolFree(CAN_MSG_memory_pool, rx_CAN_msg);
