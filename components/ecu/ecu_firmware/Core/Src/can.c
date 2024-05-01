@@ -98,7 +98,7 @@ void CAN_SendMessage450()
     txMessage.data[3] = (uint8_t)(ecu_data.adc_data.ADC_supp_batt_volt >> 8);
     txMessage.data[4] = (uint8_t)lvs_current_rescaled;
     txMessage.data[5] = (uint8_t)ecu_data.status.raw;
-    txMessage.data[6] = (uint8_t)
+    txMessage.data[6] = (int8_t)ecu_data.adc_data.ADC_temp_ambient_sense;
 
     do
     {
