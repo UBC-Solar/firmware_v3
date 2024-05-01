@@ -76,6 +76,7 @@ void Error_Handler(void);
 #define FLT_OUT_GPIO_Port GPIOA
 #define ESTOP_STATUS_Pin GPIO_PIN_4
 #define ESTOP_STATUS_GPIO_Port GPIOA
+#define ESTOP_STATUS_EXTI_IRQn EXTI4_IRQn
 #define OD_REF_SENSE_Pin GPIO_PIN_5
 #define OD_REF_SENSE_GPIO_Port GPIOA
 #define SUPP_SENSE_Pin GPIO_PIN_6

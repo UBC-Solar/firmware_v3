@@ -490,13 +490,6 @@ void ECU_monitor()
         FSM_state = FAULT;
         return;
     }
-    
-    if(HAL_GPIO_ReadPin(ESTOP_STATUS_GPIO_Port, ESTOP_STATUS_Pin) == ESTOP_ACTIVE_FAULT){
-        ecu_data.status.bits.estop = true;
-        HAL_GPIO_WritePin(ESTOP_LED_GPIO_Port, ESTOP_LED_Pin, HIGH);
-        FSM_state = FAULT;
-        return;
-    }
 
     /*************************
     Check Battery Capacity
@@ -599,6 +592,15 @@ void FSM_ADC_LevelOutOfWindowCallback()
 
     HAL_GPIO_WritePin(DOC_COC_LED_GPIO_Port, DOC_COC_LED_Pin, HIGH);
 
+    FSM_state = FAULT;
+    FSM_run(); // Immediately transition to fault state
+}
+
+void FSM_ESTOPActivedCallback()
+{
+    ecu_data.status.bits.estop = true;
+    HAL_GPIO_WritePin(ESTOP_LED_GPIO_Port, ESTOP_LED_Pin, HIGH);
+    
     FSM_state = FAULT;
     FSM_run(); // Immediately transition to fault state
 }

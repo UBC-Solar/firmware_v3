@@ -85,6 +85,15 @@ void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
   FSM_ADC_LevelOutOfWindowCallback();
 }
 
+/*============================================================================*/
+/* GPIO INTERRUPT CALLBACKS */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if(GPIO_Pin == ESTOP_STATUS_Pin){
+    FSM_ESTOPActivedCallback();
+  }
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -126,23 +135,29 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   DebugIO_Init(&huart5);
-
+  
   HAL_GPIO_WritePin(OC_LATCH_SET_GPIO_Port, OC_LATCH_SET_Pin, HIGH); // Set latch to memory state
-
-  CAN_Init(&hcan);
 
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, ADC1_BUF_LENGTH);
   HAL_TIM_Base_Start(&htim3);
 
   FSM_Init();
 
+  // Check if car started with ESTOP started pressed (won't trigger interrupt if so)
+  if(HAL_GPIO_ReadPin(ESTOP_STATUS_GPIO_Port, ESTOP_STATUS_Pin) == ESTOP_ACTIVE_FAULT)
+  {
+      FSM_ESTOPActivedCallback();
+  }
+
+  CAN_Init(&hcan);
+
   HAL_GetTick();
   int last_blink_time = 0;
   int current_time = 0;
-  // /* USER CODE END 2 */
+  /* USER CODE END 2 */
 
-  // /* Infinite loop */
-  // /* USER CODE BEGIN WHILE */
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
 
   while (1)
   {
@@ -555,11 +570,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ESTOP_STATUS_Pin DOC_COC_Pin */
-  GPIO_InitStruct.Pin = ESTOP_STATUS_Pin|DOC_COC_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pin : ESTOP_STATUS_Pin */
+  GPIO_InitStruct.Pin = ESTOP_STATUS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(ESTOP_STATUS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : BOOT1_Pin LLIM_BMS_Pin FLT_BMS_Pin COM_BMS_Pin
                            BAL_BMS_Pin OT_BMS_Pin */
@@ -577,6 +592,16 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : DOC_COC_Pin */
+  GPIO_InitStruct.Pin = DOC_COC_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(DOC_COC_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
