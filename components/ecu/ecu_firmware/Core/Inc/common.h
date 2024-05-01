@@ -41,7 +41,7 @@ typedef struct{
     uint16_t ADC_oc_ref; // overcharge current threshold, mV
 
     uint16_t ADC_supp_batt_volt; // mV
-    int16_t ADC_temp_ambient_sense; // deg C
+    int8_t ADC_temp_ambient_sense; // deg C, -127 to 127
     
     uint16_t ADC_lvs_current; //stores current for the LVS system (mA), max value 30A,
     uint16_t ADC_lvs_current_sense_offset; //stores low voltage system current offset

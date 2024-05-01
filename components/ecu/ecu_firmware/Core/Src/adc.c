@@ -62,7 +62,7 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
     break;
 
   case T_AMBIENT_SENSE__ADC1_IN15: // Ambient controlboard temperature (deg C)
-    ecu_data.adc_data.ADC_temp_ambient_sense = (int16_t)0;
+    ecu_data.adc_data.ADC_temp_ambient_sense = (int8_t)volts2temp(adc_voltage);
     break;
 
   case OC_REF_SENSE__ADC1_IN13: // Overcharge current threshold (mV)
@@ -180,3 +180,29 @@ int ADC1_getBusyStatus()
 
 /*============================================================================*/
 /* PRIVATE FUNCTIONS */
+
+/**
+ * @brief Converts a raw thermistor voltage reading into a temperature in degrees celsius
+ *
+ * @param[in] adc_voltage the thermistor voltage reading to convert
+ * @return the signed temperature of the thermistor in degrees celcius
+ */
+float volts2temp(uint16_t adc_voltage)
+{
+  const float beta = 3435.0; // TODO: update depending on chosen thermistor
+  const float room_temp = 298.15; // 25 degC in kelvin
+  const float R_balance = 10000.0; // TODO: measure off-board 10k resistor with DMM before soldering on
+  const float R_room_temp = 10000.0; // resistance at room temperature (25C)
+  float Vs = 3.3; // 3V3 ideally, measure under realistic operating conditions
+  float R_therm = 0.0;
+  float temp_kelvin = 0.0;
+  float Vout = 0.0; // volts
+
+  Vout = adc_voltage / ADC_VOLTAGE_SCALING;
+
+  R_therm = R_balance * (Vout/(Vs-Vout));
+  temp_kelvin = (beta * room_temp) / (beta + (room_temp * logf(R_therm / R_room_temp)));
+  
+  return temp_kelvin - 273.15;
+
+}
