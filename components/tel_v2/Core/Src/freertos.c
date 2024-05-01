@@ -279,8 +279,8 @@ void read_CAN_task(void const * argument)
 	 /* CAN ID */ // TODO: Check if this is correct. Are the 0 bytes in the STD in the correct spot?
 	 if (rx_CAN_msg->header.IDE == CAN_ID_STD)
 	 {
-	   radio_buffer[10]  = 0xFF & (rx_CAN_msg->header.StdId);
-	   radio_buffer[9] = 0xFF & (rx_CAN_msg->header.StdId >> 8);
+	   radio_buffer[12]  = 0xFF & (rx_CAN_msg->header.StdId);
+	   radio_buffer[11] = 0xFF & (rx_CAN_msg->header.StdId >> 8);
 	 }
 	 else if (rx_CAN_msg->header.IDE == CAN_ID_EXT)
 	 {
