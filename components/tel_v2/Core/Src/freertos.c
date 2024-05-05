@@ -431,6 +431,11 @@ void read_GPS_task(void const * argument)
     /* Read in an NMEA message into the buffer */
     if(HAL_I2C_IsDeviceReady(&hi2c1, GPS_DEVICE_ADDRESS, 1, HAL_MAX_DELAY) == HAL_OK) {
 	    HAL_I2C_Master_Receive(&hi2c1, GPS_DEVICE_ADDRESS, receive_buffer, sizeof(receive_buffer), HAL_MAX_DELAY);
+      g_tel_diagnostics.gps_fail = false;
+    }
+    else
+    {
+      g_tel_diagnostics.gps_fail = true;
     }
 
     /* Parse the buffer data --> gets stored in gps_data; */

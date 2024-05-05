@@ -21,7 +21,7 @@
 #include "i2c.h"
 
 /* USER CODE BEGIN 0 */
-
+#include "main.h"
 
 /* USER CODE END 0 */
 
@@ -198,6 +198,8 @@ void initIMU(void)
 
   //printf("Initializing IMU...\n\r");
 
+  bool imu_init = false;
+
   /*
    * We need to check if the sensor is responding by reading the “WHO_AM_I (0x75)�? Register.
    * If the sensor responds with 0x68, this means it’s available and good to go.
@@ -205,11 +207,16 @@ void initIMU(void)
   for(int i = 0; i < 5; i++) {
     if(HAL_I2C_IsDeviceReady(&hi2c2, IMU_DEVICE_ADDRESS, 1, HAL_MAX_DELAY) == HAL_OK) {
 	    HAL_I2C_Mem_Read (&hi2c2, IMU_DEVICE_ADDRESS, WHO_AM_I_REG, 1, &data, 1, 1000);
-	    //printf("Read a value from WHOAMI register: %x\n\r", data);
+      imu_init = true;
 	    break; // Break when initialized
     }
   }
 
+  // If the IMU is not initialized, set the IMU fail flag
+  if (imu_init == false) {
+    g_tel_diagnostics.imu_fail = true;
+    return;
+  }
   /*
    * Next we will wake the sensor up and in order to do that we will write to the
    * “PWR_MGMT_1 (0x6B)�? Register. See below the register content.

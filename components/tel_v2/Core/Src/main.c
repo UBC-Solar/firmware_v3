@@ -59,12 +59,7 @@
 /* USER CODE BEGIN PV */
 
 /* Diagnostics */
-
 tel_diagnostics g_tel_diagnostics = {false, false, false, false, false};
-
-/* CAN Filters */
-CAN_FilterTypeDef CAN_filter0;
-CAN_FilterTypeDef CAN_filter1;
 
 /* HAL Status */
 HAL_StatusTypeDef rx_status;
@@ -159,6 +154,13 @@ int main(void)
 	  curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
   logfile = sd_open(filename);
   sd_append(logfile, startup_message);
+
+  // Check if iwwg was triggereds
+  if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET) 
+  {
+    g_tel_diagnostics.watchdog_reset = true;
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+  }
 
   /* USER CODE END 2 */
 
