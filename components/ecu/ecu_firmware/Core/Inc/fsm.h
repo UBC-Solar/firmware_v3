@@ -123,5 +123,6 @@ void FSM_run();
 
 // ADC
 void FSM_ADC_LevelOutOfWindowCallback();
+void FSM_ESTOPActivedCallback();
 
 #endif /* __FSM_H */

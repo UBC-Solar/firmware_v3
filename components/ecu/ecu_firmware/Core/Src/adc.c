@@ -5,18 +5,17 @@
  * These functions need to average out the ADC readings for accuracy.
  * 
  * @date 2021/10/30
- * @author Forbes Choy 
+ * @author Forbes Choy, Jack Kelly 
  */
 
 #include "adc.h"
 #include "stm32f1xx_hal.h"
 #include "common.h"
-
-
+#include <math.h>
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
-
+float volts2temp(uint16_t adc_voltage);
 /*============================================================================*/
 /* PUBLIC FUNCTIONS */
 
@@ -39,32 +38,36 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
 
   switch (adc_channel)
   {
-  case SPAR_CURR_SNS_OFFSET__ADC1_IN5: //Records array and motor current sensor voltage offset in mV
-    ecu_data.adc_data.ADC_spare_curr_offset = 0; //spare current sensor not implemented yet therefore value set to 0
+  case OD_REF_SENSE__ADC1_IN5: // Overdischarge current threshold (mV)
+    ecu_data.adc_data.ADC_od_ref = 0;
     break;
   
-  case SPAR_CURR_SNS__ADC1_IN15:
-    ecu_data.adc_data.ADC_spare_current = 0; //spare current sensor not implemented yet therefore value set to 0
-    break;
-
-  case SUPP_SENSE__ADC1_IN6: //Records supplementary battery voltage in mV
+  case SUPP_SENSE__ADC1_IN6: // Supplemental battery voltage (mV)
     ecu_data.adc_data.ADC_supp_batt_volt = (uint16_t)(adc_voltage/SUPP_VOLT_DIVIDER_SCALING);
     break;
 
-  case BATT_CURR_SNS_OFFSET__ADC1_IN7:
-    ecu_data.adc_data.ADC_batt_curr_offset = adc_voltage;
-    break;
-  
-  case BATT_CURR_SNS__ADC1_IN14: //Records battery current sensor in mA
-    ecu_data.adc_data.ADC_batt_current = (int32_t)(HASS100S_STD_DEV + HASS100S_INTERNAL_OFFSET + 100*(adc_voltage-ecu_data.adc_data.ADC_batt_curr_offset)/0.625); //see HASS100-S datasheet     
-    break;
-  
-  case LVS_CURR_SNS_OFFSET__ADC1_IN8:
-    ecu_data.adc_data.ADC_lvs_offset = adc_voltage;
+  case PACK_CURRENT_OFFSET_SENSE__ADC1_IN7: // Pack current sensor offset voltage (mV)
+    ecu_data.adc_data.ADC_pack_current_offset = adc_voltage;
     break;
 
-  case LVS_CURR_SNS__ADC1_IN9: //Records ECU low voltage current in mA
-    ecu_data.adc_data.ADC_lvs_current = (uint16_t)((adc_voltage-ecu_data.adc_data.ADC_batt_curr_offset)/25.25);
+  case LVS_CURRENT_OFFSET_SENSE__ADC1_IN8: // LVS current sensor offset voltage (mV)
+    ecu_data.adc_data.ADC_lvs_current_sense_offset = adc_voltage;
+    break;
+  
+  case LVS_CURRENT_SENSE__ADC1_IN9: // LVS current supplied to HVDCDC (mA)
+    ecu_data.adc_data.ADC_lvs_current = (uint16_t)((adc_voltage-ecu_data.adc_data.ADC_lvs_current_sense_offset)/25.25);
+    break;
+  
+  case PACK_CURRENT_SENSE__ADC1_IN14: // Pack current sense (mA)
+    ecu_data.adc_data.ADC_pack_current = (int32_t)(HASS100S_STD_DEV + HASS100S_INTERNAL_OFFSET + 100*(adc_voltage-ecu_data.adc_data.ADC_pack_current_offset)/0.625); //see HASS100-S datasheet     
+    break;
+
+  case T_AMBIENT_SENSE__ADC1_IN15: // Ambient controlboard temperature (deg C)
+    ecu_data.adc_data.ADC_temp_ambient_sense = (int8_t)volts2temp(adc_voltage);
+    break;
+
+  case OC_REF_SENSE__ADC1_IN13: // Overcharge current threshold (mV)
+    ecu_data.adc_data.ADC_oc_ref = 0;
     break;
 
   default:
@@ -98,7 +101,7 @@ void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float resul
   int sample_num = 0; //start index for averaging the ADC readings
   int limit = ADC1_BUF_LENGTH_PER_CHANNEL >> 1; // divide by 2; the end index of the averaging process
 
-  if(half == 1) //start and end indices if averaging the second half of the ADC3's DMA circular buffer
+  if(half == 1) //start and end indices if averaging the second half of the ADC1's DMA circular buffer
   {
     sample_num = ADC1_BUF_LENGTH_PER_CHANNEL >> 1; 
     limit = ADC1_BUF_LENGTH_PER_CHANNEL;
@@ -110,8 +113,8 @@ void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float resul
     
     for(int channel = 0; channel < ADC1_NUM_ANALOG_CHANNELS; channel++)
     {
-      //adc3_buf is organized as [supp batt x 200 ... motor curr x 200 ... array curr x 200]
-      //when sampling at 100Hz
+      // adc1_buf is organized as [supp batt x 200 ... motor curr x 200 ... array curr x 200]
+      // when sampling at 100Hz (not sure if that 100Hz number is correct)
       sum[channel] += (float)adc1_buf[ADC1_NUM_ANALOG_CHANNELS * sample_num + channel];
     }
   }
@@ -119,7 +122,7 @@ void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float resul
   //the division process of the averaging
   for(int channel = 0; channel < ADC1_NUM_ANALOG_CHANNELS; channel++)
   {
-    //averages for supplemental batery voltage, motor current, and array current
+    // averages across all ADC samples within respective ADC channel
     result[channel] = ((float) sum[channel]) / (ADC1_BUF_LENGTH_PER_CHANNEL >> 1);
   }
 }
@@ -178,3 +181,29 @@ int ADC1_getBusyStatus()
 
 /*============================================================================*/
 /* PRIVATE FUNCTIONS */
+
+/**
+ * @brief Converts a raw thermistor voltage reading into a temperature in degrees celsius
+ *
+ * @param[in] adc_voltage the thermistor voltage reading to convert
+ * @return the signed temperature of the thermistor in degrees celcius
+ */
+float volts2temp(uint16_t adc_voltage)
+{
+  const float beta = 3977.0; // TODO: update depending on chosen thermistor
+  const float room_temp = 298.15; // 25 degC in kelvin
+  const float R_balance = 10000.0; // TODO: measure off-board 10k resistor with DMM before soldering on
+  const float R_room_temp = 10000.0; // resistance at room temperature (25C)
+  float Vs = 3.3; // 3V3 ideally, measure under realistic operating conditions
+  float R_therm = 0.0;
+  float temp_kelvin = 0.0;
+  float Vout = 0.0; // volts
+
+  Vout = adc_voltage / ADC_VOLTAGE_SCALING;
+
+  R_therm = R_balance * (Vout/(Vs-Vout));
+  temp_kelvin = (beta * room_temp) / (beta + (room_temp * logf(R_therm / R_room_temp)));
+  
+  return temp_kelvin - 273.15;
+
+}

@@ -71,6 +71,8 @@ static void MX_TIM3_Init(void);
 static void MX_IWDG_Init(void);
 /* USER CODE BEGIN PFP */
 
+void averageAndSaveValues_ADC1(int adc_half);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -79,8 +81,17 @@ static void MX_IWDG_Init(void);
 /*============================================================================*/
 /* ADC INTERRUPT CALLBACKS */
 void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
-{
+{ // Analog watchdog 
   FSM_ADC_LevelOutOfWindowCallback();
+}
+
+/*============================================================================*/
+/* GPIO INTERRUPT CALLBACKS */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if(GPIO_Pin == ESTOP_STATUS_Pin){
+    FSM_ESTOPActivedCallback();
+  }
 }
 
 /* USER CODE END 0 */
@@ -124,18 +135,25 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   DebugIO_Init(&huart5);
-
-  CAN_Init(&hcan);
+  
+  HAL_GPIO_WritePin(OC_LATCH_SET_GPIO_Port, OC_LATCH_SET_Pin, HIGH); // Set latch to memory state
 
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, ADC1_BUF_LENGTH);
   HAL_TIM_Base_Start(&htim3);
 
   FSM_Init();
 
+  // Check if car started with ESTOP started pressed (won't trigger interrupt if so)
+  if(HAL_GPIO_ReadPin(ESTOP_STATUS_GPIO_Port, ESTOP_STATUS_Pin) == ESTOP_ACTIVE_FAULT)
+  {
+      FSM_ESTOPActivedCallback();
+  }
+
+  CAN_Init(&hcan);
+
   HAL_GetTick();
   int last_blink_time = 0;
   int current_time = 0;
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -146,7 +164,7 @@ int main(void)
 
     FSM_run();
 
-    HAL_IWDG_Refresh (&hiwdg);//Programmed in IOC to have refreshed in 450ms due to possible CAN message delays.
+    HAL_IWDG_Refresh (&hiwdg);//Programmed in IOC to have refreshed in 150ms due to possible CAN message delays.
 	  	  	  	  	  	  	  	 //if not refreshed, board will be sent to watchdog error handler and board will be reset.
 
     /* USER CODE END WHILE */
@@ -155,7 +173,7 @@ int main(void)
 
     current_time = HAL_GetTick();
 
-    if (current_time - last_blink_time >= 500)
+    if (current_time - last_blink_time >= DEBUG_LED_BLINK_INTERVAL)
     {
       HAL_GPIO_TogglePin(LED_OUT_GPIO_Port, LED_OUT_Pin);
 
@@ -240,7 +258,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T3_TRGO;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 7;
+  hadc1.Init.NbrOfConversion = 8;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();
@@ -317,6 +335,15 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_15;
   sConfig.Rank = ADC_REGULAR_RANK_7;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_13;
+  sConfig.Rank = ADC_REGULAR_RANK_8;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -508,67 +535,73 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, SUPP_LOW_Pin|GPIO_BMS_Pin|MDU_FAN_CTRL_Pin|FAN1_CTRL_Pin
-                          |FAN2_CTRL_Pin|DCH_RST_Pin|LLIM_CTRL_Pin|PC_CTRL_Pin
-                          |HLIM_BMS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, SUPP_LOW_Pin|PACK_FANS_CTRL_Pin|MDU_FAN_CTRL_Pin|DCH_RST_Pin
+                          |DOC_COC_LED_Pin|LLIM_CTRL_Pin|PC_CTRL_Pin|HLIM_BMS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, FAN4_CTRL_Pin|FAN3_CTRL_Pin|LED_OUT_Pin|FLT_OUT_Pin
-                          |HLIM_CTRL_Pin|NEG_CTRL_Pin|SWAP_CTRL_Pin|POS_CTRL_Pin
-                          |OC_LATCH_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, OC_LATCH_SET_Pin|LED_OUT_Pin|FLT_OUT_Pin|HLIM_CTRL_Pin
+                          |NEG_CTRL_Pin|SWAP_CTRL_Pin|ESTOP_LED_Pin|POS_CTRL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, TEL_CTRL_Pin|DID_CTRL_Pin|AMB_CTRL_Pin|MCB_CTRL_Pin
-                          |MDI_CTRL_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, SPAR1_CTRL_Pin|TEL_CTRL_Pin|DID_CTRL_Pin|AMB_CTRL_Pin
+                          |MCB_CTRL_Pin|MDU_CTRL_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : SUPP_LOW_Pin GPIO_BMS_Pin MDU_FAN_CTRL_Pin FAN1_CTRL_Pin
-                           FAN2_CTRL_Pin DCH_RST_Pin LLIM_CTRL_Pin PC_CTRL_Pin
-                           HLIM_BMS_Pin */
-  GPIO_InitStruct.Pin = SUPP_LOW_Pin|GPIO_BMS_Pin|MDU_FAN_CTRL_Pin|FAN1_CTRL_Pin
-                          |FAN2_CTRL_Pin|DCH_RST_Pin|LLIM_CTRL_Pin|PC_CTRL_Pin
-                          |HLIM_BMS_Pin;
+  /*Configure GPIO pin : GPIO_BMS_Pin */
+  GPIO_InitStruct.Pin = GPIO_BMS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIO_BMS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : SUPP_LOW_Pin PACK_FANS_CTRL_Pin MDU_FAN_CTRL_Pin DCH_RST_Pin
+                           DOC_COC_LED_Pin LLIM_CTRL_Pin PC_CTRL_Pin HLIM_BMS_Pin */
+  GPIO_InitStruct.Pin = SUPP_LOW_Pin|PACK_FANS_CTRL_Pin|MDU_FAN_CTRL_Pin|DCH_RST_Pin
+                          |DOC_COC_LED_Pin|LLIM_CTRL_Pin|PC_CTRL_Pin|HLIM_BMS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : FAN4_CTRL_Pin FAN3_CTRL_Pin LED_OUT_Pin FLT_OUT_Pin
-                           HLIM_CTRL_Pin NEG_CTRL_Pin SWAP_CTRL_Pin POS_CTRL_Pin
-                           OC_LATCH_Pin */
-  GPIO_InitStruct.Pin = FAN4_CTRL_Pin|FAN3_CTRL_Pin|LED_OUT_Pin|FLT_OUT_Pin
-                          |HLIM_CTRL_Pin|NEG_CTRL_Pin|SWAP_CTRL_Pin|POS_CTRL_Pin
-                          |OC_LATCH_Pin;
+  /*Configure GPIO pins : OC_LATCH_SET_Pin LED_OUT_Pin FLT_OUT_Pin HLIM_CTRL_Pin
+                           NEG_CTRL_Pin SWAP_CTRL_Pin ESTOP_LED_Pin POS_CTRL_Pin */
+  GPIO_InitStruct.Pin = OC_LATCH_SET_Pin|LED_OUT_Pin|FLT_OUT_Pin|HLIM_CTRL_Pin
+                          |NEG_CTRL_Pin|SWAP_CTRL_Pin|ESTOP_LED_Pin|POS_CTRL_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ESTOP_5V_Pin OT_BMS_Pin */
-  GPIO_InitStruct.Pin = ESTOP_5V_Pin|OT_BMS_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pin : ESTOP_STATUS_Pin */
+  GPIO_InitStruct.Pin = ESTOP_STATUS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(ESTOP_STATUS_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : DOC_COC_Pin LLIM_BMS_Pin FLT_BMS_Pin BAL_BMS_Pin */
-  GPIO_InitStruct.Pin = DOC_COC_Pin|LLIM_BMS_Pin|FLT_BMS_Pin|BAL_BMS_Pin;
+  /*Configure GPIO pins : BOOT1_Pin LLIM_BMS_Pin FLT_BMS_Pin COM_BMS_Pin
+                           BAL_BMS_Pin OT_BMS_Pin */
+  GPIO_InitStruct.Pin = BOOT1_Pin|LLIM_BMS_Pin|FLT_BMS_Pin|COM_BMS_Pin
+                          |BAL_BMS_Pin|OT_BMS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : TEL_CTRL_Pin DID_CTRL_Pin AMB_CTRL_Pin MCB_CTRL_Pin
-                           MDI_CTRL_Pin */
-  GPIO_InitStruct.Pin = TEL_CTRL_Pin|DID_CTRL_Pin|AMB_CTRL_Pin|MCB_CTRL_Pin
-                          |MDI_CTRL_Pin;
+  /*Configure GPIO pins : SPAR1_CTRL_Pin TEL_CTRL_Pin DID_CTRL_Pin AMB_CTRL_Pin
+                           MCB_CTRL_Pin MDU_CTRL_Pin */
+  GPIO_InitStruct.Pin = SPAR1_CTRL_Pin|TEL_CTRL_Pin|DID_CTRL_Pin|AMB_CTRL_Pin
+                          |MCB_CTRL_Pin|MDU_CTRL_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : COM_BMS_Pin */
-  GPIO_InitStruct.Pin = COM_BMS_Pin;
+  /*Configure GPIO pin : DOC_COC_Pin */
+  GPIO_InitStruct.Pin = DOC_COC_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(COM_BMS_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(DOC_COC_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -598,13 +631,15 @@ void averageAndSaveValues_ADC1(int adc_half)
 
     ADC1_processRawReadings(adc_half, adc1_buf, result);
 
-    ADC_setReading(result[0], SPAR_CURR_SNS_OFFSET__ADC1_IN5);
+    // For conversion order, see rank in CubeMX
+    ADC_setReading(result[0], OD_REF_SENSE__ADC1_IN5);
     ADC_setReading(result[1], SUPP_SENSE__ADC1_IN6);
-    ADC_setReading(result[2], BATT_CURR_SNS_OFFSET__ADC1_IN7);
-    ADC_setReading(result[3], LVS_CURR_SNS_OFFSET__ADC1_IN8);
-    ADC_setReading(result[4], LVS_CURR_SNS__ADC1_IN9);
-    ADC_setReading(result[5], BATT_CURR_SNS__ADC1_IN14);
-    ADC_setReading(result[6], SPAR_CURR_SNS__ADC1_IN15);
+    ADC_setReading(result[2], PACK_CURRENT_OFFSET_SENSE__ADC1_IN7);
+    ADC_setReading(result[3], LVS_CURRENT_OFFSET_SENSE__ADC1_IN8);
+    ADC_setReading(result[4], LVS_CURRENT_SENSE__ADC1_IN9);
+    ADC_setReading(result[5], PACK_CURRENT_SENSE__ADC1_IN14);
+    ADC_setReading(result[6], T_AMBIENT_SENSE__ADC1_IN15);
+    ADC_setReading(result[7], OC_REF_SENSE__ADC1_IN13);
 
     ADC1_setBusyStatus(0);
   }
