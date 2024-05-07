@@ -189,7 +189,7 @@ int ADC1_getBusyStatus()
  */
 float volts2temp(uint16_t adc_voltage)
 {
-  const float beta = 3435.0; // TODO: update depending on chosen thermistor
+  const float beta = 3977.0; // TODO: update depending on chosen thermistor
   const float room_temp = 298.15; // 25 degC in kelvin
   const float R_balance = 10000.0; // TODO: measure off-board 10k resistor with DMM before soldering on
   const float R_room_temp = 10000.0; // resistance at room temperature (25C)
