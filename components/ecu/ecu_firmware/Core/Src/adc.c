@@ -11,6 +11,7 @@
 #include "adc.h"
 #include "stm32f1xx_hal.h"
 #include "common.h"
+#include <math.h>
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
