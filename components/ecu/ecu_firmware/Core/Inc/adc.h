@@ -14,7 +14,7 @@
 #include <stdint.h>
 /*============================================================================*/
 /* CONFIGURATION */
-#define ADC1_NUM_ANALOG_CHANNELS 7
+#define ADC1_NUM_ANALOG_CHANNELS 8
 #define ADC1_BUF_LENGTH_PER_CHANNEL 200
 #define ADC1_BUF_LENGTH (ADC1_BUF_LENGTH_PER_CHANNEL * ADC1_NUM_ANALOG_CHANNELS)
 
@@ -42,13 +42,14 @@ static volatile int ADC1_DMA_fault_flag; //flag that indicates the DMA interrupt
 /*ADC INPUTS*/
 
 typedef enum {
-  SPAR_CURR_SNS_OFFSET__ADC1_IN5 = 0,
+  OD_REF_SENSE__ADC1_IN5 = 0,
   SUPP_SENSE__ADC1_IN6,
-  BATT_CURR_SNS_OFFSET__ADC1_IN7, 
-  LVS_CURR_SNS_OFFSET__ADC1_IN8,
-  LVS_CURR_SNS__ADC1_IN9,
-  BATT_CURR_SNS__ADC1_IN14,
-  SPAR_CURR_SNS__ADC1_IN15, 
+  PACK_CURRENT_OFFSET_SENSE__ADC1_IN7, 
+  LVS_CURRENT_OFFSET_SENSE__ADC1_IN8,
+  LVS_CURRENT_SENSE__ADC1_IN9,
+  PACK_CURRENT_SENSE__ADC1_IN14,
+  T_AMBIENT_SENSE__ADC1_IN15,
+  OC_REF_SENSE__ADC1_IN13
 }adc_channel_list;
 
 

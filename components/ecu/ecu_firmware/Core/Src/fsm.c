@@ -82,10 +82,7 @@ void FSM_reset()
 {
     printf("start of FSM reset\r\n");
     //  Turn fans off
-    HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(FAN4_CTRL_GPIO_Port, FAN4_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, LOW);
     HAL_GPIO_WritePin(MDU_FAN_CTRL_GPIO_Port, MDU_FAN_CTRL_Pin, LOW);
 
     // Open all contactors
@@ -173,6 +170,8 @@ void HV_Connect()
     static bool second_delay_tick = false; 
     
     printf("beginning of HV connect\r\n");
+    
+    // delay before closing contactors
     if (timer_check(SHORT_INTERVAL, &(ticks.last_generic_tick) ) && first_delay_tick == false)
     {
         first_delay_tick = true;
@@ -181,10 +180,12 @@ void HV_Connect()
 
     if(first_delay_tick == true)
     {
+        // close NEG and delay
         HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, CONTACTOR_CLOSED);
 
         if(timer_check(SHORT_INTERVAL, &(ticks.neg_tick) ) && second_delay_tick == false) 
         {
+            // close POS
             HAL_GPIO_WritePin(POS_CTRL_GPIO_Port, POS_CTRL_Pin, CONTACTOR_CLOSED);
             second_delay_tick = true;
             ticks.pos_tick = HAL_GetTick();
@@ -192,6 +193,7 @@ void HV_Connect()
 
         if(second_delay_tick == true)
         {
+            // delay to allow everything to settle
             if( timer_check(SHORT_INTERVAL, &(ticks.pos_tick))) 
             {
                 ticks.last_generic_tick = HAL_GetTick();
@@ -216,12 +218,7 @@ void swap_DCDC()
     printf("swap DCDC\r\n");
     
     HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, HIGH);
-
-    HAL_GPIO_WritePin(FAN1_CTRL_GPIO_Port, FAN1_CTRL_Pin, HIGH);
-    HAL_GPIO_WritePin(FAN2_CTRL_GPIO_Port, FAN2_CTRL_Pin, HIGH);
-    HAL_GPIO_WritePin(FAN3_CTRL_GPIO_Port, FAN3_CTRL_Pin, HIGH);
-    HAL_GPIO_WritePin(FAN4_CTRL_GPIO_Port, FAN4_CTRL_Pin, HIGH);
-
+    HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, HIGH);
     HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, HIGH);
 
     ticks.last_generic_tick = HAL_GetTick();
@@ -355,8 +352,6 @@ void check_HLIM()
     }
 
     printf("end of check HLIM\r\n");
-
-
     return;
 }
 
@@ -376,7 +371,6 @@ void TELEM_on()
     }
 
     printf("end of TELEM on\r\n");
-
     return;
 }
 
@@ -397,7 +391,6 @@ void DASH_on()
     }
 
     printf("end of DASH on\r\n");
-
     return;
 }
 
@@ -432,13 +425,12 @@ void MDU_on()
 {
     if (timer_check(LVS_INTERVAL, &(ticks.last_generic_tick) ))
     {
-        HAL_GPIO_WritePin(MDI_CTRL_GPIO_Port, MDI_CTRL_Pin, HIGH);
+        HAL_GPIO_WritePin(MDU_CTRL_GPIO_Port, MDU_CTRL_Pin, HIGH);
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = AMB_ON;
     }
 
     printf("end of MDU on\r\n");
-
     return;
 }
 
@@ -460,7 +452,6 @@ void AMB_on()
     }
 
     printf("end of AMB on \r\n");
-
     return;
 }
 
@@ -473,11 +464,14 @@ void AMB_on()
  */
 void ECU_monitor()
 {
-    if(ecu_data.adc_data.ADC_batt_current >= DOC_WARNING_THRESHOLD){
+
+    printf("Monitoring Start\r\n");
+    // Current Status Checks
+    if(ecu_data.adc_data.ADC_pack_current >= DOC_WARNING_THRESHOLD){
         ecu_data.status.bits.warning_pack_overdischarge_current = true;
         ecu_data.status.bits.warning_pack_overcharge_current = false;
     }
-    else if(ecu_data.adc_data.ADC_batt_current <= COC_WARNING_THRESHOLD){
+    else if(ecu_data.adc_data.ADC_pack_current <= COC_WARNING_THRESHOLD){
         ecu_data.status.bits.warning_pack_overdischarge_current = false;
         ecu_data.status.bits.warning_pack_overcharge_current = true;
     }
@@ -493,13 +487,6 @@ void ECU_monitor()
         HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH ||
         HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH)
     {
-        FSM_state = FAULT;
-        return;
-    }
-    
-    if(HAL_GPIO_ReadPin(ESTOP_5V_GPIO_Port, ESTOP_5V_Pin) == ESTOP_ACTIVE_FAULT){
-        ecu_data.status.bits.estop = true;
-        
         FSM_state = FAULT;
         return;
     }
@@ -562,7 +549,7 @@ void ECU_monitor()
  */
 void fault()
 {
-
+    printf("Fault Start\r\n");
     /*************************
     Put Pack in Safe State
     **************************/
@@ -572,7 +559,7 @@ void fault()
     HAL_GPIO_WritePin(POS_CTRL_GPIO_Port, POS_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
-    HAL_GPIO_WritePin(MDI_CTRL_GPIO_Port, MDI_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(MDU_CTRL_GPIO_Port, MDU_CTRL_Pin, LOW);
 
     /****************************
     Preform Perpetual Fault Tasks
@@ -603,6 +590,17 @@ void FSM_ADC_LevelOutOfWindowCallback()
     ecu_data.status.bits.fault_charge_overcurrent = true;
     ecu_data.status.bits.fault_discharge_overcurrent = true;
 
+    HAL_GPIO_WritePin(DOC_COC_LED_GPIO_Port, DOC_COC_LED_Pin, HIGH);
+
+    FSM_state = FAULT;
+    FSM_run(); // Immediately transition to fault state
+}
+
+void FSM_ESTOPActivedCallback()
+{
+    ecu_data.status.bits.estop = true;
+    HAL_GPIO_WritePin(ESTOP_LED_GPIO_Port, ESTOP_LED_Pin, HIGH);
+    
     FSM_state = FAULT;
     FSM_run(); // Immediately transition to fault state
 }

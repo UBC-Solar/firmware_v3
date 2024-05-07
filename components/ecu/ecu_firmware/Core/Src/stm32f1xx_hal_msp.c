@@ -100,10 +100,11 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     /* Peripheral clock enable */
     __HAL_RCC_ADC1_CLK_ENABLE();
 
-    __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
     /**ADC1 GPIO Configuration
+    PC3     ------> ADC1_IN13
     PA5     ------> ADC1_IN5
     PA6     ------> ADC1_IN6
     PA7     ------> ADC1_IN7
@@ -112,15 +113,15 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     PB0     ------> ADC1_IN8
     PB1     ------> ADC1_IN9
     */
-    GPIO_InitStruct.Pin = SPAR_CURR_SNS_OFFSET_Pin|SUPP_SENSE_Pin|BATT_CURR_SNS_OFFSET_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-    GPIO_InitStruct.Pin = BATT_CURR_SNS_Pin|SPAR_CURR_SNS_Pin;
+    GPIO_InitStruct.Pin = OC_REF_SENSE_Pin|PACK_CURRENT_SENSE_Pin|T_AMBIENT_SENSE_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = LVS_CURR_SNS_OFFSET_Pin|LVS_CURR_SNS_Pin;
+    GPIO_InitStruct.Pin = OD_REF_SENSE_Pin|SUPP_SENSE_Pin|PACK_CURRENT_OFFSET_SENSE_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = LVS_CURRENT_OFFSET_SENSE_Pin|LVS_CURRENT_SENSE_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
@@ -168,6 +169,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     __HAL_RCC_ADC1_CLK_DISABLE();
 
     /**ADC1 GPIO Configuration
+    PC3     ------> ADC1_IN13
     PA5     ------> ADC1_IN5
     PA6     ------> ADC1_IN6
     PA7     ------> ADC1_IN7
@@ -176,11 +178,11 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     PB0     ------> ADC1_IN8
     PB1     ------> ADC1_IN9
     */
-    HAL_GPIO_DeInit(GPIOA, SPAR_CURR_SNS_OFFSET_Pin|SUPP_SENSE_Pin|BATT_CURR_SNS_OFFSET_Pin);
+    HAL_GPIO_DeInit(GPIOC, OC_REF_SENSE_Pin|PACK_CURRENT_SENSE_Pin|T_AMBIENT_SENSE_Pin);
 
-    HAL_GPIO_DeInit(GPIOC, BATT_CURR_SNS_Pin|SPAR_CURR_SNS_Pin);
+    HAL_GPIO_DeInit(GPIOA, OD_REF_SENSE_Pin|SUPP_SENSE_Pin|PACK_CURRENT_OFFSET_SENSE_Pin);
 
-    HAL_GPIO_DeInit(GPIOB, LVS_CURR_SNS_OFFSET_Pin|LVS_CURR_SNS_Pin);
+    HAL_GPIO_DeInit(GPIOB, LVS_CURRENT_OFFSET_SENSE_Pin|LVS_CURRENT_SENSE_Pin);
 
     /* ADC1 DMA DeInit */
     HAL_DMA_DeInit(hadc->DMA_Handle);
