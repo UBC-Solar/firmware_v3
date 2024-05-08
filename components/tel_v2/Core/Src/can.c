@@ -151,11 +151,11 @@ void CanFilterSetup(void)
   // Use mask and list mode to filter IDs from the CAN ID BOM
 
   // Filter for 0x500 and 0x600 IDs
-  CAN_filter0.FilterIdHigh = (uint16_t) (0x501 << 5);
-  CAN_filter0.FilterMaskIdHigh = (uint16_t) (0x7F5 << 5);
+  CAN_filter0.FilterIdHigh = 0x0000;
+  CAN_filter0.FilterMaskIdHigh = 0x0000;
 
-  CAN_filter0.FilterIdLow = (uint16_t) (0x620 << 5);
-  CAN_filter0.FilterMaskIdLow = (uint16_t) (0x7F8 << 5);
+  CAN_filter0.FilterIdLow = 0x0000;
+  CAN_filter0.FilterMaskIdLow = 0x0000;
 
   CAN_filter0.FilterFIFOAssignment = CAN_FILTER_FIFO0;
   CAN_filter0.FilterBank = (uint32_t) 0;
@@ -163,22 +163,8 @@ void CanFilterSetup(void)
   CAN_filter0.FilterScale = CAN_FILTERSCALE_16BIT;
   CAN_filter0.FilterActivation = CAN_FILTER_ENABLE;
 
-  // Remaining IDs filtered with list mode
-  CAN_filter1.FilterIdHigh = (uint16_t) (0x502 << 5);
-  CAN_filter1.FilterMaskIdHigh = (uint16_t) (0x401 << 5);
-
-  CAN_filter1.FilterIdLow = (uint16_t) (0x401 << 5);
-  CAN_filter1.FilterMaskIdLow = (uint16_t) (0x401 << 5);
-
-  CAN_filter1.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-  CAN_filter1.FilterBank = (uint32_t) 1;
-  CAN_filter1.FilterMode = CAN_FILTERMODE_IDLIST;
-  CAN_filter1.FilterScale = CAN_FILTERSCALE_16BIT;
-  CAN_filter1.FilterActivation = CAN_FILTER_ENABLE;
-
   // Configure reception filters
   HAL_CAN_ConfigFilter(&hcan, &CAN_filter0);
-  HAL_CAN_ConfigFilter(&hcan, &CAN_filter1);
 
 }
 
