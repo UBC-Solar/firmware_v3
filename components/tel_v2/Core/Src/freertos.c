@@ -315,6 +315,7 @@ void read_CAN_task(void const * argument)
 	     drive_cmd_count++; // Increment the count received
 	     if (drive_cmd_count == 10) { // Log every 10 of these messages
 		 sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
+		 drive_cmd_count = 0; // Reset the counter
 	     }
 	 }
 	 else { // Always write non drive command msgs to SD logger
