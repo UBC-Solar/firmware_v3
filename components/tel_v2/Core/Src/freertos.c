@@ -72,77 +72,11 @@ union FloatBytes {
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
-/* Definitions for StartDefaultTask */
-osThreadId_t StartDefaultTaskHandle;
-const osThreadAttr_t StartDefaultTask_attributes = {
-  .name = "StartDefaultTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for readCANTask */
-osThreadId_t readCANTaskHandle;
-const osThreadAttr_t readCANTask_attributes = {
-  .name = "readCANTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for transmitCANTask */
-osThreadId_t transmitCANTaskHandle;
-const osThreadAttr_t transmitCANTask_attributes = {
-  .name = "transmitCANTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for readIMUTask */
-osThreadId_t readIMUTaskHandle;
-const osThreadAttr_t readIMUTask_attributes = {
-  .name = "readIMUTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for transmitIMUTask */
-osThreadId_t transmitIMUTaskHandle;
-const osThreadAttr_t transmitIMUTask_attributes = {
-  .name = "transmitIMUTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for readGPSTask */
-osThreadId_t readGPSTaskHandle;
-const osThreadAttr_t readGPSTask_attributes = {
-  .name = "readGPSTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for transmitGPSTask */
-osThreadId_t transmitGPSTaskHandle;
-const osThreadAttr_t transmitGPSTask_attributes = {
-  .name = "transmitGPSTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for kernelLEDTask */
-osThreadId_t kernelLEDTaskHandle;
-const osThreadAttr_t kernelLEDTask_attributes = {
-  .name = "kernelLEDTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for canMessageQueue */
-osMessageQueueId_t canMessageQueueHandle;
-const osMessageQueueAttr_t canMessageQueue_attributes = {
-  .name = "canMessageQueue"
-};
-/* Definitions for imuMessageQueue */
-osMessageQueueId_t imuMessageQueueHandle;
-const osMessageQueueAttr_t imuMessageQueue_attributes = {
-  .name = "imuMessageQueue"
-};
-/* Definitions for gpsMessageQueue */
-osMessageQueueId_t gpsMessageQueueHandle;
-const osMessageQueueAttr_t gpsMessageQueue_attributes = {
-  .name = "gpsMessageQueue"
-};
+osThreadId StartDefaultTaskHandle;
+osThreadId readCANTaskHandle;
+osThreadId readIMUTaskHandle;
+osThreadId readGPSTaskHandle;
+osThreadId transmitRTCTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -152,16 +86,29 @@ void add_to_GPS_queue(GPS *gps_data);
 
 /* USER CODE END FunctionPrototypes */
 
-void startDefaultTask(void *argument);
-void read_CAN_task(void *argument);
-void transmit_CAN_task(void *argument);
-void read_IMU_task(void *argument);
-void transmit_IMU_task(void *argument);
-void read_GPS_task(void *argument);
-void transmit_GPS_task(void *argument);
-void kernel_LED_task(void *argument);
+void startDefaultTask(void const * argument);
+void read_CAN_task(void const * argument);
+void read_IMU_task(void const * argument);
+void read_GPS_task(void const * argument);
+void transmit_RTC_task(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+
+/* GetIdleTaskMemory prototype (linked to static allocation support) */
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
+
+/* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
+static StaticTask_t xIdleTaskTCBBuffer;
+static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
+
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
+{
+  *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
+  *ppxIdleTaskStackBuffer = &xIdleStack[0];
+  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+  /* place for user code */
+}
+/* USER CODE END GET_IDLE_TASK_MEMORY */
 
 /**
   * @brief  FreeRTOS initialization
@@ -185,52 +132,34 @@ void MX_FREERTOS_Init(void) {
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
-  /* Create the queue(s) */
-  /* creation of canMessageQueue */
-  canMessageQueueHandle = osMessageQueueNew (10, sizeof(uint16_t), &canMessageQueue_attributes);
-
-  /* creation of imuMessageQueue */
-  imuMessageQueueHandle = osMessageQueueNew (10, sizeof(uint16_t), &imuMessageQueue_attributes);
-
-  /* creation of gpsMessageQueue */
-  gpsMessageQueueHandle = osMessageQueueNew (10, sizeof(uint16_t), &gpsMessageQueue_attributes);
-
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of StartDefaultTask */
-  StartDefaultTaskHandle = osThreadNew(startDefaultTask, NULL, &StartDefaultTask_attributes);
+  /* definition and creation of StartDefaultTask */
+  osThreadDef(StartDefaultTask, startDefaultTask, osPriorityLow, 0, 128);
+  StartDefaultTaskHandle = osThreadCreate(osThread(StartDefaultTask), NULL);
 
-  /* creation of readCANTask */
-  readCANTaskHandle = osThreadNew(read_CAN_task, NULL, &readCANTask_attributes);
+  /* definition and creation of readCANTask */
+  osThreadDef(readCANTask, read_CAN_task, osPriorityNormal, 0, 512);
+  readCANTaskHandle = osThreadCreate(osThread(readCANTask), NULL);
 
-  /* creation of transmitCANTask */
-  transmitCANTaskHandle = osThreadNew(transmit_CAN_task, NULL, &transmitCANTask_attributes);
+  /* definition and creation of readIMUTask */
+  osThreadDef(readIMUTask, read_IMU_task, osPriorityNormal, 0, 512);
+  readIMUTaskHandle = osThreadCreate(osThread(readIMUTask), NULL);
 
-  /* creation of readIMUTask */
-  readIMUTaskHandle = osThreadNew(read_IMU_task, NULL, &readIMUTask_attributes);
+  /* definition and creation of readGPSTask */
+  osThreadDef(readGPSTask, read_GPS_task, osPriorityNormal, 0, 1024);
+  readGPSTaskHandle = osThreadCreate(osThread(readGPSTask), NULL);
 
-  /* creation of transmitIMUTask */
-  transmitIMUTaskHandle = osThreadNew(transmit_IMU_task, NULL, &transmitIMUTask_attributes);
-
-  /* creation of readGPSTask */
-  readGPSTaskHandle = osThreadNew(read_GPS_task, NULL, &readGPSTask_attributes);
-
-  /* creation of transmitGPSTask */
-  transmitGPSTaskHandle = osThreadNew(transmit_GPS_task, NULL, &transmitGPSTask_attributes);
-
-  /* creation of kernelLEDTask */
-  kernelLEDTaskHandle = osThreadNew(kernel_LED_task, NULL, &kernelLEDTask_attributes);
+  /* definition and creation of transmitRTCTask */
+  osThreadDef(transmitRTCTask, transmit_RTC_task, osPriorityNormal, 0, 512);
+  transmitRTCTaskHandle = osThreadCreate(osThread(transmitRTCTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
-
-  /* USER CODE BEGIN RTOS_EVENTS */
-  /* add events, ... */
-  /* USER CODE END RTOS_EVENTS */
 
 }
 
@@ -241,7 +170,7 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_startDefaultTask */
-void startDefaultTask(void *argument)
+void startDefaultTask(void const * argument)
 {
   /* USER CODE BEGIN startDefaultTask */
   /* Infinite loop */
@@ -259,7 +188,7 @@ void startDefaultTask(void *argument)
 * @retval None
 */
 /* USER CODE END Header_read_CAN_task */
-void read_CAN_task(void *argument)
+void read_CAN_task(void const * argument)
 {
   /* USER CODE BEGIN read_CAN_task */
 
@@ -303,86 +232,6 @@ void read_CAN_task(void *argument)
   /* USER CODE END read_CAN_task */
 }
 
-/* USER CODE BEGIN Header_transmit_CAN_task */
-/**
-* @brief Function implementing the transmitCANTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_transmit_CAN_task */
-void transmit_CAN_task(void *argument)
-{
-  /* USER CODE BEGIN transmit_CAN_task */
-
-  static CAN_msg_t can_message;	/* Can message */
-  osStatus_t queue_status;	/* CAN Message Queue Status */
-
-  /* Infinite loop */
-  while (1) {
-
-    /* Check if there are messages in the queue */
-    if (osMessageQueueGetCount(canMessageQueueHandle) == 0) {
-      osThreadYield();
-    }
-
-    /* Retrieve CAN message from queue */
-    queue_status = osMessageQueueGet(canMessageQueueHandle, &can_message, NULL, osWaitForever);
-
-    /* Yield if nothing on queue */
-    if (queue_status != osOK){
-      osThreadYield();
-    }
-
-    /* Initialize a CAN buffer */
-    uint8_t can_buffer[CAN_BUFFER_LEN] = {0};
-
-    /* TIMESTAMP: 8 ASCII characters */
-    for (uint8_t i=0; i<CAN_BUFFER_LEN - 14; i++) {
-      /* send 'D' as placeholder */
-      can_buffer[i] = 'D';
-    }
-
-    /* CAN MESSAGE IDENTIFIER */
-    can_buffer[CAN_BUFFER_LEN - 14] = '#';
-
-    /* CAN ID: 4 ASCII characters */
-    uint8_t id_h = 0xFFUL & (can_message.header.StdId >> 8);
-    uint8_t id_l = 0xFFUL & (can_message.header.StdId);
-
-    can_buffer[CAN_BUFFER_LEN - 13] = id_h;
-    can_buffer[CAN_BUFFER_LEN - 12] = id_l;
-
-
-    /* CAN DATA: 16 ASCII characters */
-    for (uint8_t i=0; i<8; i++) {
-      /* Copy each byte */
-      can_buffer[i + CAN_BUFFER_LEN - 11]= can_message.data[i];
-    }
-
-
-    /* CAN DATA LENGTH: 1 ASCII character */
-    uint8_t length = "0123456789ABCDEF"[ can_message.header.DLC & 0xFUL];
-    can_buffer[CAN_BUFFER_LEN - 3] = length;
-
-    /* NEW LINE: 1 ASCII character */
-    can_buffer[CAN_BUFFER_LEN - 2] = '\r';
-
-    /* CARRIAGE RETURN: 1 ASCII character */
-    can_buffer[CAN_BUFFER_LEN - 1] = '\n';
-
-    /* Transmit over Radio */
-    HAL_UART_Transmit(&huart1, can_buffer, sizeof(can_buffer), 1000);
-
-    /* TODO: Log to SDLogger */
-    FIL *can_file_ptr = sd_open("CAN_Messages.txt");
-    sd_append(can_file_ptr, can_buffer);    // Append can message to the SD card
-    sd_close(can_file_ptr);
-
-  }
-
-  /* USER CODE END transmit_CAN_task */
-}
-
 /* USER CODE BEGIN Header_read_IMU_task */
 /**
 * @brief Function implementing the readIMUTask thread.
@@ -390,7 +239,7 @@ void transmit_CAN_task(void *argument)
 * @retval None
 */
 /* USER CODE END Header_read_IMU_task */
-void read_IMU_task(void *argument)
+void read_IMU_task(void const * argument)
 {
   /* USER CODE BEGIN read_IMU_task */
 
@@ -423,76 +272,6 @@ void read_IMU_task(void *argument)
   /* USER CODE END read_IMU_task */
 }
 
-/* USER CODE BEGIN Header_transmit_IMU_task */
-/**
-* @brief Function implementing the transmitIMUTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_transmit_IMU_task */
-void transmit_IMU_task(void *argument)
-{
-  /* USER CODE BEGIN transmit_IMU_task */
-
-  osStatus_t imu_queue_status;	/* IMU Queue Status */
-  IMU_msg_t imu_message;	/* IMU Message */
-
-  /* Infinite loop */
-  while(1)
-  {
-    /* Check if there are messages in the queue */
-    if (osMessageQueueGetCount(imuMessageQueueHandle) == 0) {
-	osThreadYield();
-    }
-
-    /* Get IMU Message from Queue */
-    imu_queue_status = osMessageQueueGet(imuMessageQueueHandle, &imu_message, NULL, osWaitForever);
-
-    /* Yield thread if status not ok */
-    if (imu_queue_status != osOK){
-      osThreadYield();
-    }
-
-    /* Initialize a IMU buffer */
-    uint8_t imu_buffer[IMU_MESSAGE_LEN] = {0};
-
-    /* TIMESTAMP */
-    for (uint8_t i=0; i<IMU_MESSAGE_LEN - 9; i++) {
-      /* send 'D' as placeholder */
-      imu_buffer[i] = 'D';
-    }
-
-    /* IMU ID */
-    imu_buffer[IMU_MESSAGE_LEN - 9] = '@';
-
-    /* IMU Data from queue */
-    imu_buffer[IMU_MESSAGE_LEN - 8] = imu_message.imu_type;
-    imu_buffer[IMU_MESSAGE_LEN - 7] = imu_message.dimension;
-
-    /* Copy data */
-    for (int i = 0; i < 4; i++) {
-	imu_buffer[i + IMU_MESSAGE_LEN - 6] = imu_message.data[i];
-    }
-
-    /* NEW LINE */
-    imu_buffer[IMU_MESSAGE_LEN - 2] = '\r';
-
-    /* CARRIAGE RETURN */
-    imu_buffer[IMU_MESSAGE_LEN - 1] = '\n';
-
-    /* Transmit over Radio */
-//    HAL_UART_Transmit(&huart1, imu_buffer, sizeof(imu_buffer), 1000);
-
-    /* TODO: Log to SDLogger */
-//    FIL *imu_file_ptr = sd_open("IMU_Messages.txt");
-//    sd_append(imu_file_ptr, imu_buffer);    // Append imu message to the SD card
-//    sd_close(imu_file_ptr);
-
-  }
-
-  /* USER CODE END transmit_IMU_task */
-}
-
 /* USER CODE BEGIN Header_read_GPS_task */
 /**
 * @brief Function implementing the readGPSTask thread.
@@ -500,7 +279,7 @@ void transmit_IMU_task(void *argument)
 * @retval None
 */
 /* USER CODE END Header_read_GPS_task */
-void read_GPS_task(void *argument)
+void read_GPS_task(void const * argument)
 {
   /* USER CODE BEGIN read_GPS_task */
   /* Infinite loop */
@@ -529,94 +308,22 @@ void read_GPS_task(void *argument)
   /* USER CODE END read_GPS_task */
 }
 
-/* USER CODE BEGIN Header_transmit_GPS_task */
+/* USER CODE BEGIN Header_transmit_RTC_task */
 /**
-* @brief Function implementing the transmitGPSTask thread.
+* @brief Function implementing the transmitRTCTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_transmit_GPS_task */
-void transmit_GPS_task(void *argument)
+/* USER CODE END Header_transmit_RTC_task */
+void transmit_RTC_task(void const * argument)
 {
-  /* USER CODE BEGIN transmit_GPS_task */
-
-  osStatus_t nmea_queue_status;
-  GPS_msg_t gps_message;
-
+  /* USER CODE BEGIN transmit_RTC_task */
   /* Infinite loop */
-  while(1) {
-
-    /* Check if there are messages in the queue */
-    if (osMessageQueueGetCount(gpsMessageQueueHandle) == 0) {
-      osThreadYield(); // Yield to other tasks if the queue is empty
-    }
-
-    /* Get a message from the queue */
-    nmea_queue_status = osMessageQueueGet(gpsMessageQueueHandle, &gps_message, NULL, osWaitForever);
-
-    /* Check if the queue status is OK */
-    if (nmea_queue_status != osOK){
-      /* If message retrieval failed, yield and continue the loop */
-      osThreadYield();
-      continue; // Skip the rest of this loop iteration
-    }
-
-    /* Initialize an NMEA buffer */
-    uint8_t gps_buffer[GPS_MESSAGE_LEN];
-    memset(gps_buffer, 0, sizeof(gps_buffer));
-
-    /* Copy the NMEA data into the buffer, ensuring not to exceed the buffer size */
-    strncpy((char *)gps_buffer, gps_message.data, GPS_MESSAGE_LEN - 2); // Save space for CR+LF
-
-    /* NEW LINE */
-    gps_buffer[GPS_MESSAGE_LEN - 2] = '\r'; // Carriage return
-
-    /* CARRIAGE RETURN */
-    gps_buffer[GPS_MESSAGE_LEN - 1] = '\n'; // Line feed
-
-    /* Transmit the NMEA message over UART to radio */
-//    HAL_UART_Transmit(&huart1, gps_buffer, sizeof(gps_buffer), 1000);
-
-    /* TODO: Log to SDLogger */
-//    FIL *gps_file_ptr = sd_open("GPS_Messages.txt");
-//    sd_append(gps_file_ptr, gps_buffer);    // Append gps message to the SD card
-//    sd_close(gps_file_ptr);
-
+  for(;;)
+  {
+    osDelay(1);
   }
-
-  /* USER CODE END transmit_GPS_task */
-}
-
-/* USER CODE BEGIN Header_kernel_LED_task */
-/**
-  * @brief  Function implementing the kernelLEDTask thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_kernel_LED_task */
-void kernel_LED_task(void *argument)
-{
-  /* USER CODE BEGIN kernel_LED_task */
-
-  osKernelState_t kernel_status; /* Kernel Status */
-
-  /* Infinite loop */
-  while (1) {
-
-    /* Get the kernel status */
-    kernel_status = osKernelGetState();
-
-    /* Check if the kernel status is "Running" */
-    if (kernel_status == osKernelRunning) {
-
-      /* If running, toggle the LED */
-      HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-    }
-
-    /* Delay */
-    osDelay(KERNEL_LED_DELAY);
-  }
-  /* USER CODE END kernel_LED_task */
+  /* USER CODE END transmit_RTC_task */
 }
 
 /* Private application code --------------------------------------------------*/
