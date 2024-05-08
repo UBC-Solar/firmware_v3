@@ -1,5 +1,0 @@
-../Core/Src/freertos.c:161:6:StartDefaultTask	1
-../Core/Src/freertos.c:182:6:task_drive_state_machine	1
-../Core/Src/freertos.c:205:6:getCANMessage	1
-../Core/Src/freertos.c:219:6:task_generic_100ms	1
-../Core/Src/freertos.c:111:6:MX_FREERTOS_Init	1
