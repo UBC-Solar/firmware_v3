@@ -18,12 +18,13 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include <can.h>
-#include <MDI_Helper_Functions.h>
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "can.h"
+#include "Cruise_Control.h"
+#include "MDI_Helper_Functions.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -95,12 +96,13 @@ bool Parse_Data_Flag = 0;
 bool parse_frame0 = 0;
 bool parse_frame1 = 0;
 bool parse_frame2 = 0;
+bool TriggerBlinky = 0;
 
 //Variables for HALL speed calculations
 uint32_t oldTime = 0;
 uint32_t currentTime = 0;
 float rpm = 0;
-float parsed_voltage = 0;
+float parsed_acceleration = 0;
 uint8_t countSlowTimerInterrupt = 0; //counter to send the slower messages
 
 /* USER CODE END 0 */
@@ -159,21 +161,31 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  //BOOT LED
+  //BOOT LED Initial Value
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
   while (1)
   {
+	////////////////
+	// BLINKY LED //
+	////////////////
+	if(TriggerBlinky == 1){
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
+	}
+	else {
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
+	}
+
     /////////////////////////////////////////////////////////
     // PARSE MESSAGES COMING FROM MOTOR CONTROLLER AND MCB //
     /////////////////////////////////////////////////////////
     if(Parse_Data_Flag == 1 ) //Parse_Data_Flag set in interrupt
     {
+      CopyRxData(localRxDataMessage401,RxDataLocal);
+      CAN_Decode_Velocity_Message(RxDataLocal, &msg0); //Decode the Incoming 0x401 Messages to get data for driving the car
 
-      //CopyRxData(localRxDataMessage401,RxDataLocal);
-      CAN_Decode_Velocity_Message(localRxDataMessage401, &msg0); //Decode the Incoming 0x401 Messages to get data for driving the car
-      Parse_Data_Flag = 0; 
-      send_data_flag = 1; 
+      Parse_Data_Flag = 0; //reset parse flag
+      send_data_flag = 1; //send updated data to motor flag
     }
     
     if(parse_frame0 == 1) //Parse the frame based on info we want
@@ -183,7 +195,7 @@ int main(void)
     	parse_frame0 = 0; //reset flag
     }
 
-    if(parse_frame1 == 1) //Parse the frame based on info we want (currently this frame doesnt have info we care)
+    if(parse_frame1 == 1) //Parse the frame based on info we want (currently this frame doesn't have info we care about)
     {
     	CopyRxData(localRxDataFrame1,RxDataLocal);
     	parse_frame1 = 0; //reset flag
@@ -199,40 +211,43 @@ int main(void)
     //////////////////////////////////////
     // SEND SIGNALS TO MOTOR CONTROLLER //
     //////////////////////////////////////
-
     if( (send_data_flag == 1 ) && (Parse_Data_Flag == 0) )
     {
+    	//send direction
+    	//According to data sheet: OPEN Switch = Forward / CLOSED Switch = Reverse
+    	//GPIO Must Be Open Drain
+    	if(msg0.FWD_direction == FORWARD_FALSE)
+    		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
+    	else
+    		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
+
+    	 //send power/eco
+    	 //According to data sheet: OPEN Switch = ECO_MODE / CLOSED Switch = POWER MODE
+    	 //GPIO Must Be Open Drain
+    	 if(msg0.PWR_mode_on == POWER_MODE_ON)
+    		 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+    	 else
+    		 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+
       //send acceleration current to motor
-      if(msg0.regen == REGEN_TRUE)
+      if(msg0.regen == REGEN_TRUE) {
         Send_Voltage(msg0.acceleration, DAC_REGEN_ADDR, &hi2c2);
+      }
       else{
-        parsed_voltage = msg0.acceleration;
-        Send_Voltage(parsed_voltage, DAC_ACC_ADDR, &hi2c2);
+        parsed_acceleration = msg0.acceleration;
+        Send_Voltage(parsed_acceleration, DAC_ACC_ADDR, &hi2c2);
       }
 
-      //send direction
-      if(msg0.direction == REVERSE_FALSE)
-    	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
-      else
-    	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
-
-      //send power/eco
-      if(msg0.power_or_eco == ECO_ON)
-    	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
-      else
-    	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
-
-	      send_data_flag = 0;
+      //reset flag
+      send_data_flag = 0;
     }
 
     /////////////////////////////
-    //// SEND MESSEGE TO MCB ////
+    //// SEND MESSAGE TO MCB ////
     /////////////////////////////
 
     if(SendMessageTimerInterrupt == 1)
     {
-    	SendMessageTimerInterrupt = 0;
-
     	//send request for data from MC
     	TxHeader.IDE = CAN_ID_EXT; //type of id being sent ext or simple
     	TxHeader.ExtId = 0x08F89540; //request frame ExtId
@@ -285,7 +300,10 @@ int main(void)
     		HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
     		SendSlowMessage = 0;
       }
+
+    	SendMessageTimerInterrupt = 0;
     }
+
     ///////////////////////////////
     //// HALL SPEED CONVERSION ////
     ///////////////////////////////
@@ -408,6 +426,7 @@ static void MX_CAN_Init(void)
 
 
   /* USER CODE END CAN_Init 2 */
+
 }
 
 /**
@@ -598,7 +617,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : ECO_Pin DIR_Pin */
   GPIO_InitStruct.Pin = ECO_Pin|DIR_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -658,6 +677,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	  if(countSlowTimerInterrupt == 5) //send 0x50B message every second (Interrupt triggers every 0.2 s)
 	  {
 		  SendSlowMessage = 1;
+		  TriggerBlinky ^= 1;
 		  countSlowTimerInterrupt = 0;
 	  }
   }

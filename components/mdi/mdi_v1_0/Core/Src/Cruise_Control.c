@@ -6,18 +6,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
-
-void PI_Controller_Outputs_wrapper(float setpoint_in,
+/*void PI_Controller_Outputs_wrapper(float setpoint_in,
                        	   	   	   float velocity_in,
 								   double *output,
 								   double *nominal_force,
 								   double *uncapped_acceleration)
 {
 
-	/* Calculate PI controller output */
-	double setpoint = setpoint_in[0]; // Input: Setpoint
-	double velocity = velocity_in[0]; // Input: Current velocity
+	// Calculate PI controller output
 	double f_nominal, a_nominal, f_loss;
 
 	//calculates the most efficient acceleration
@@ -28,19 +24,19 @@ void PI_Controller_Outputs_wrapper(float setpoint_in,
 	//Finds the power loss through tire friction and the air resistance, and sets that as a lower bound to out, or maintains speed
 	f_loss = 17.15 + (DRAG_COEFF * velocity_in * velocity_in);
 
-	/* Constants for the PI controller */
+	// Constants for the PI controller
 	double Ki = 0.0005 * CAR_MASS; // Integral gain
 	double Kp = 0.5 * CAR_MASS;   //proportional gain
-	/* Static variables to maintain integral state */
+	// Static variables to maintain integral state
 	static double integral = 0.0;
 
-	/* Calculate the error */
+	// Calculate the error
 	double error = setpoint_in - velocity_in;
 
-	/* Calculate the integral term (accumulating the error over time) */
+	// Calculate the integral term (accumulating the error over time)
 	integral += error;
 
-	/* Calculate the control output (throttle) */
+	// Calculate the control output (throttle)
 	double controlOutput = Kp * error + Ki * integral;
 	double u_out = controlOutput / 250;
 
@@ -50,10 +46,10 @@ void PI_Controller_Outputs_wrapper(float setpoint_in,
 			controlOutput = f_nominal;
 		}
 	}
-	/* Set the output to the control output */
+	// Set the output to the control output
 	*output = controlOutput;
 	*nominal_force = f_nominal;
 	*uncapped_acceleration = u_out;
 
  return;
-}
+}*/
