@@ -58,6 +58,7 @@ void MX_CAN_Init(void);
 typedef struct {
   CAN_RxHeaderTypeDef header;
   uint8_t data[8];
+  double timestamp;
 } CAN_msg_t;
 
 void CanFilterSetup(void);

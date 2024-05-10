@@ -86,7 +86,6 @@ typedef union DoubleBytes {
 /* USER CODE BEGIN Variables */
 
 extern FIL* logfile;
-extern CAN_msg_t;
 
 CAN_msg_t msg_t;
 

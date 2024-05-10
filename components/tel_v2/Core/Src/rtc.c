@@ -27,7 +27,8 @@
 #include "nmea_parse.h"
 
 #define GPS_RCV_BUFFER_SIZE 512
-#define GPS_SYNC_TIMEOUT 1000
+//#define GPS_SYNC_TIMEOUT 60000 * 5 // 5 minutes
+#define GPS_SYNC_TIMEOUT 1000 // 1 second
 
 /* USER CODE END 0 */
 
@@ -140,6 +141,7 @@ void Sync_RTC_With_GPS()
 
   uint32_t gps_sync_start_time = HAL_GetTick();
   while(RTC_Sync_Flag == 0 && HAL_GetTick() - gps_sync_start_time < GPS_SYNC_TIMEOUT) {
+      printf("Still syncing\n\r");
     /* Read in an NMEA message into the buffer */
     if(HAL_I2C_IsDeviceReady(&hi2c1, GPS_DEVICE_ADDRESS, 1, HAL_MAX_DELAY) == HAL_OK) {
 	    HAL_I2C_Master_Receive(&hi2c1, GPS_DEVICE_ADDRESS, receive_buffer, sizeof(receive_buffer), HAL_MAX_DELAY);
@@ -192,6 +194,8 @@ void Sync_RTC_With_GPS()
         /* Set the RTC Date with these settings */
         HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
+        printf("Set the time to %d:%d\n", sTime.Hours, sTime.Minutes);
+
         //printf("Date -- D: %u, M: %u, Y: %u\n\r", sDate.Date, sDate.Month, sDate.Year);
 
         /* Set the flag to 1 indicating that the RTC has been sync'd */
@@ -199,6 +203,8 @@ void Sync_RTC_With_GPS()
       }
     }
   }
+
+  printf("Sync complete\n\r");
 
   if (RTC_Sync_Flag == 0) {
     g_tel_diagnostics.gps_sync_fail = true;
@@ -237,25 +243,25 @@ double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate)
     t.tm_hour = sTime->Hours;
     t.tm_min = sTime->Minutes;
     t.tm_sec = sTime->Seconds;
-    t.tm_isdst = -1;                // Disable daylight saving time adjustments.
+    t.tm_isdst = 0;                // Disable daylight saving time adjustments.
 
     /* Subtract 8 hours with roll-back feature */
-    t.tm_hour -= 8;
-    if (t.tm_hour < 0) {
-        t.tm_hour += 24;  // Adjust the hour to ensure it's not less than 0.
-        t.tm_mday--;      // Decrement the day to reflect the day change.
-
-        /* Adjust the month and year if needed when day rolls below 1 */
-        if (t.tm_mday < 1) {
-            t.tm_mon--;  // Decrement the month.
-            if (t.tm_mon < 0) { // If month rolls below January
-                t.tm_mon = 11; // Set month to December
-                t.tm_year--;   // Decrement the year
-            }
-            /* Set day to last day of the new month */
-            t.tm_mday = lastDayOfMonth(t.tm_mon, t.tm_year + 1900);
-        }
-    }
+//    t.tm_hour -= 8;
+//    if (t.tm_hour < 0) {
+//        t.tm_hour += 24;  // Adjust the hour to ensure it's not less than 0.
+//        t.tm_mday--;      // Decrement the day to reflect the day change.
+//
+//        /* Adjust the month and year if needed when day rolls below 1 */
+//        if (t.tm_mday < 1) {
+//            t.tm_mon--;  // Decrement the month.
+//            if (t.tm_mon < 0) { // If month rolls below January
+//                t.tm_mon = 11; // Set month to December
+//                t.tm_year--;   // Decrement the year
+//            }
+//            /* Set day to last day of the new month */
+//            t.tm_mday = lastDayOfMonth(t.tm_mon, t.tm_year + 1900);
+//        }
+//    }
 
     /* Convert to epoch time - Function from time.h library */
     long int epoch_secs = (long int) mktime(&t);
