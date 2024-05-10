@@ -67,10 +67,6 @@ union FloatBytes {
     uint8_t bytes[4];
 } FloatBytes;
 
-typedef union DoubleBytes {
-	double double_value;			/**< Double value member of the union. */
-	uint64_t double_as_int;			/**< 64 bit in member of union. */
-} DoubleBytes;
 
 /* Use this MACRO to split the time stamp into individual bytes */
 #define TIMESTAMP_BYTE(i, timestamp) ((timestamp >> (i * 8)) & 0xFF);
@@ -272,6 +268,7 @@ void read_CAN_task(void const * argument)
 
 	 for (uint8_t i = 0; i < 8; i++) {
 	   radio_buffer[7 - i] = TIMESTAMP_BYTE(i, current_timestamp.double_as_int);
+//	   radio_buffer[7 - i] = TIMESTAMP_BYTE(i, rx_CAN_msg->timestamp.double_as_int);
 	 }
 
 	 /* CAN MESSAGE IDENTIFIER */

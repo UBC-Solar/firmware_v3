@@ -55,10 +55,16 @@ void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
+
+typedef union DoubleBytes {
+	double double_value;			/**< Double value member of the union. */
+	uint64_t double_as_int;			/**< 64 bit in member of union. */
+} DoubleBytes;
+
 typedef struct {
   CAN_RxHeaderTypeDef header;
   uint8_t data[8];
-  double timestamp;
+  union DoubleBytes timestamp;
 } CAN_msg_t;
 
 void CanFilterSetup(void);
