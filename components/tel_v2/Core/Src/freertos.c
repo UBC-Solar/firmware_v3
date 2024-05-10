@@ -293,7 +293,7 @@ void read_CAN_task(void const * argument)
 
 	 /* CAN DATA */
 	 for (uint8_t i = 0; i < 8; i++) {
-	   radio_buffer[13 + (7 - i)] = rx_CAN_msg->data[i];
+	   radio_buffer[13 + i] = rx_CAN_msg->data[i];
 	 }
 
 	 /* CAN DATA LENGTH */
