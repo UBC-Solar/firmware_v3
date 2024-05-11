@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -47,6 +48,20 @@ DMA_HandleTypeDef hdma_adc1;
 
 UART_HandleTypeDef huart2;
 
+/* Definitions for defaultTask */
+osThreadId_t defaultTaskHandle;
+const osThreadAttr_t defaultTask_attributes = {
+  .name = "defaultTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for task2 */
+osThreadId_t task2Handle;
+const osThreadAttr_t task2_attributes = {
+  .name = "task2",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 /* USER CODE BEGIN PV */
 volatile uint32_t adcResults[16]; //Buffer to store data from 8 sensors
 const int adcChannels = 16; //number of adc channels being used
@@ -60,8 +75,20 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
-/* USER CODE BEGIN PFP */
+void getSensorData(void *argument);
+void validateData(void *argument);
 
+/* USER CODE BEGIN PFP */
+#ifdef __GNUC__
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#else
+#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#endif
+PUTCHAR_PROTOTYPE
+{
+  HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  return ch;
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -104,6 +131,44 @@ int main(void)
 
   /* USER CODE END 2 */
 
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(getSensorData, NULL, &defaultTask_attributes);
+
+  /* creation of task2 */
+  task2Handle = osThreadNew(validateData, NULL, &task2_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -112,14 +177,14 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  HAL_ADC_Start_DMA(&hadc1,(uint32_t *)adcResults,adcChannels);
-
-	  while(adcConversionCompleted == 0){
-		  //Code to run during DMA
-	  }
-
-	  adcConversionCompleted = 0;
-	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin); //Toggle light when transfer is completed
-	  HAL_Delay(1000);
+//
+//	  while(adcConversionCompleted == 0){
+//			  //Code to run during DMA
+//	  }
+//
+//	  adcConversionCompleted = 0;
+//	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin); //Toggle light when transfer is completed
+//	  HAL_Delay(1000);
   }
   /* USER CODE END 3 */
 }
@@ -323,7 +388,7 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Channel1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 
 }
@@ -362,7 +427,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
@@ -381,6 +446,75 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
    */
 }
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_getSensorData */
+/**
+  * @brief  Function implementing the defaultTask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_getSensorData */
+void getSensorData(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
+  {
+	   	  HAL_ADC_Start_DMA(&hadc1,(uint32_t *)adcResults,adcChannels);
+
+		  while(adcConversionCompleted == 0){
+			  //Code to run during DMA
+		  }
+
+		  adcConversionCompleted = 0;
+		  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin); //Toggle light when transfer is completed
+		  printf("Sensor Data: SUCCESS \r\n");
+		  HAL_Delay(100);
+		  osDelay(100);
+  }
+  /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_validateData */
+/**
+* @brief Function implementing the task2 thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_validateData */
+void validateData(void *argument)
+{
+  /* USER CODE BEGIN validateData */
+  /* Infinite loop */
+  for(;;)
+  {
+	printf("Validation of sensor data completed \r\n");
+	HAL_Delay(1000);
+    osDelay(1000);
+  }
+  /* USER CODE END validateData */
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM4 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM4) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
