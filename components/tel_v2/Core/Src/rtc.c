@@ -213,9 +213,6 @@ void Sync_RTC_With_GPS()
   /* Can turn on the TEL board LED here to indicate that the RTC is SYNC'd  */
 }
 
-
-
-
 double get_current_timestamp()
 {
   /* Initialize Time and Date objects */

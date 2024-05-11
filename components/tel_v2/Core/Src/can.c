@@ -19,6 +19,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
+#include "rtc.h"
+
 
 /* USER CODE BEGIN 0 */
 
@@ -184,7 +186,6 @@ void Can_Init(void)
   /* To avoid warning of unused variable */
   (void) can_notification_status;
 }
-
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
