@@ -53,8 +53,8 @@
 // auto-reload register of the timer used for PWM generation + 1
 
 // Parameters for linear temp -> fan PWM calculation
-#define FAN_OFF_TEMP    20.0 // degrees C; fans off below this temp, on above, starting at MIN_FAN_PWM
-#define FAN_FULL_TEMP   45.0 // Fans will be on full beyond this temp
+#define FAN_OFF_TEMP    25.0 // degrees C; fans off below this temp, on above, starting at MIN_FAN_PWM
+#define FAN_FULL_TEMP   40.0 // Fans will be on full beyond this temp
                              //   (they'll be on full regardless under FAULT)
 #define MIN_FAN_PWM     15   // %; Fans may not actually spin at very low duty cycles
 #define TEMP_HYSTERESIS 1.0
