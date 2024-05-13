@@ -263,12 +263,10 @@ void read_CAN_task(void const * argument)
 	 // 23: '\n'
 
 	 /* TIMESTAMP */
-	 union DoubleBytes current_timestamp;
-	 current_timestamp.double_value = get_current_timestamp();
 
 	 for (uint8_t i = 0; i < 8; i++) {
-	   radio_buffer[7 - i] = TIMESTAMP_BYTE(i, current_timestamp.double_as_int);
-//	   radio_buffer[7 - i] = TIMESTAMP_BYTE(i, rx_CAN_msg->timestamp.double_as_int);
+//	   radio_buffer[7 - i] = TIMESTAMP_BYTE(i, current_timestamp.double_as_int);
+	   radio_buffer[7 - i] = TIMESTAMP_BYTE(i, rx_CAN_msg->timestamp.double_as_int);
 	 }
 
 	 /* CAN MESSAGE IDENTIFIER */
@@ -302,22 +300,23 @@ void read_CAN_task(void const * argument)
 	 /* NEW LINE */
 	 radio_buffer[CAN_BUFFER_LEN - 1] = '\n';
 
+	 sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
 
 	 /* Transmit over Radio */
 	 HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), 1000);
 
-	 /* Check for drive command */
-	 if (rx_CAN_msg->header.StdId == 0x401) {
-	     drive_cmd_count++; // Increment the count received
-	     if (drive_cmd_count == 10) { // Log every 10 of these messages
-		 sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
-		 drive_cmd_count = 0; // Reset the counter
-	     }
-	 }
-	 else { // Always write non drive command msgs to SD logger
-	   /* Convert radio_buffer to hex_string so it can be logged. MUST NOT USE strlen */
-	   sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
-	 }
+//	 /* Check for drive command */
+//	 if (rx_CAN_msg->header.StdId == 0x401) {
+//	     drive_cmd_count++; // Increment the count received
+//	     if (drive_cmd_count == 10) { // Log every 10 of these messages
+//		 sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
+//		 drive_cmd_count = 0; // Reset the counter
+//	     }
+//	 }
+//	 else { // Always write non drive command msgs to SD logger
+//	   /* Convert radio_buffer to hex_string so it can be logged. MUST NOT USE strlen */
+//	   sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
+//	 }
 
 	/* Free the memory allocated for this message */
 	osPoolFree(CAN_MSG_memory_pool, rx_CAN_msg);

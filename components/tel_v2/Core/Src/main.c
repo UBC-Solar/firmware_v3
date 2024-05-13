@@ -148,6 +148,8 @@ int main(void)
 	  curr_date.Month, curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
 
   /* mount SD card */
+  DSTATUS stat = disk_status(0);
+  DSTATUS stat2 = disk_initialize(0);
   fresult = sd_mount();
   // if (fresult == FR_OK) printf("SD Mounted Successfully\n\r");
   // else printf("SD NOT Mounted\n\r");
