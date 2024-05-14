@@ -41,18 +41,35 @@ void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg)
 
 	CAN_msg -> acceleration = u.float_velocity;
 
-	if (CAN_msg->velocity == 0){ //enter regen operation mode
+	if (CAN_msg->velocity == 0){
+		//enter regen operation mode
 		CAN_msg->regen = REGEN_TRUE;
-		CAN_msg->direction = REVERSE_FALSE; //is this forward or reverse?
+		CAN_msg->FWD_direction = FORWARD_TRUE; //NOTE: does this need forward or reverse when in regen?
 	}
-	else if(CAN_msg->velocity < 0){ //enter reverse operation mode
-		CAN_msg->direction = REVERSE_TRUE;
+	else if(CAN_msg->velocity == -100){
+		//enter reverse operation mode
+		CAN_msg->FWD_direction = FORWARD_FALSE;
 		CAN_msg->regen = REGEN_FALSE;
 	}
-	else { //Forward operation mode
-		CAN_msg->direction = REVERSE_FALSE;
+	else if((CAN_msg->velocity == 100)){
+		//Forward operation mode
+		CAN_msg->FWD_direction = FORWARD_TRUE;
 		CAN_msg->regen = REGEN_FALSE;
 	}
+	else if(CAN_msg ->cruise_control_enable == TRUE){
+		//enter cruise control
+		//TODO
+	}
+	else {
+		//defualt to stationary car
+		CAN_msg->FWD_direction = FORWARD_TRUE;
+		CAN_msg->regen = REGEN_FALSE;
+		CAN_msg ->acceleration = 0;
+	}
+
+
+	//set power mode. It should always be in PWR mode
+	CAN_msg->PWR_mode_on = POWER_MODE_ON;
 	return;
 } //end of decode_CAN_velocity_msg
 
@@ -106,6 +123,9 @@ void Decode_Frame0 (uint8_t localRxData[], CAN_message_t* CAN_msg)
 	 			 	           ((uint32_t)(localRxData[3] & 0xC0) >> 6) ;
 
 	CAN_msg -> controllerHeatsinkTemp = (float) FET_Temperature * 5.0; //datasheet 5 Celsius per LSB
+
+	//NOTE no direct motor temperature measurement. Set to 0 for now.
+	CAN_msg -> motorTemp = 0;
 }
 
 /**
@@ -147,28 +167,28 @@ void get501(uint8_t* message501, CAN_message_t CanMessage)
  		message64[i] = 0;
  	}
 
- 	message501[0] = getBit(message64[0], message64[1], message64[2], message64[3],
+ 	message501[3] = getBit(message64[0], message64[1], message64[2], message64[3],
  					  message64[4], message64[5], message64[6], message64[7]);
 
- 	message501[1] = getBit(message64[8], message64[9], message64[10], message64[11],
+ 	message501[2] = getBit(message64[8], message64[9], message64[10], message64[11],
  					  message64[12], message64[13], message64[14], message64[15]);
 
- 	message501[2] = getBit(message64[16], message64[17], message64[18], message64[19],
+ 	message501[1] = getBit(message64[16], message64[17], message64[18], message64[19],
  					  message64[20], message64[21], message64[22], message64[23]);
 
- 	message501[3] = getBit(message64[24], message64[25], message64[26], message64[27],
+ 	message501[0] = getBit(message64[24], message64[25], message64[26], message64[27],
  					  message64[28], message64[29], message64[30], message64[31]);
 
- 	message501[4] = getBit(message64[32], message64[33], message64[34], message64[35],
+ 	message501[7] = getBit(message64[32], message64[33], message64[34], message64[35],
  					  message64[36], message64[37], message64[38], message64[39]);
 
- 	message501[5] = getBit(message64[40], message64[41], message64[42], message64[43],
+ 	message501[6] = getBit(message64[40], message64[41], message64[42], message64[43],
  					  message64[44], message64[45], message64[46], message64[47]);
 
- 	message501[6] = getBit(message64[48], message64[49], message64[50], message64[51],
+ 	message501[5] = getBit(message64[48], message64[49], message64[50], message64[51],
  					  message64[52], message64[53], message64[54], message64[55]);
 
- 	message501[7] = getBit(message64[56], message64[57], message64[58], message64[59],
+ 	message501[4] = getBit(message64[56], message64[57], message64[58], message64[59],
  					  message64[60], message64[61], message64[62], message64[63]);
 }
 
@@ -179,15 +199,16 @@ void get502(uint8_t* message502, CAN_message_t CanMessage)
  	split_32_bit_number(CanMessage.busVoltage, busVoltageSplit);
  	uint8_t busCurrentSplit[4];
  	split_32_bit_number(CanMessage.busCurrent, busCurrentSplit);
+  
+ 	message502[3] = busVoltageSplit[0];
+ 	message502[2] = busVoltageSplit[1];
+ 	message502[1] = busVoltageSplit[2];
+ 	message502[0] = busVoltageSplit[3];
 
- 	message502[0] = busVoltageSplit[0];
- 	message502[1] = busVoltageSplit[1];
- 	message502[2] = busVoltageSplit[2];
- 	message502[3] = busVoltageSplit[3];
- 	message502[4] = busCurrentSplit[0];
- 	message502[5] = busCurrentSplit[1];
- 	message502[6] = busCurrentSplit[2];
-	message502[7] = busCurrentSplit[3];
+ 	message502[7] = busCurrentSplit[0];
+ 	message502[6] = busCurrentSplit[1];
+ 	message502[5] = busCurrentSplit[2];
+	message502[4] = busCurrentSplit[3];
 
 }
 
@@ -199,14 +220,15 @@ void get503(uint8_t* message503, CAN_message_t CanMessage)
  	uint8_t vehicleVelocitytSplit[4];
  	split_32_bit_number(CanMessage.vehicleVelocity, vehicleVelocitytSplit);
 
- 	message503[0] = motorVelocitySplit[0];
- 	message503[1] = motorVelocitySplit[1];
- 	message503[2] = motorVelocitySplit[2];
- 	message503[3] = motorVelocitySplit[3];
- 	message503[4] = vehicleVelocitytSplit[0];
- 	message503[5] = vehicleVelocitytSplit[1];
- 	message503[6] = vehicleVelocitytSplit[2];
-	message503[7] = vehicleVelocitytSplit[3];
+ 	message503[3] = motorVelocitySplit[0];
+ 	message503[2] = motorVelocitySplit[1];
+ 	message503[1] = motorVelocitySplit[2];
+ 	message503[0] = motorVelocitySplit[3];
+
+ 	message503[7] = vehicleVelocitytSplit[0];
+ 	message503[6] = vehicleVelocitytSplit[1];
+ 	message503[5] = vehicleVelocitytSplit[2];
+	message503[4] = vehicleVelocitytSplit[3];
 }
 
  void get50B(uint8_t* message50B, CAN_message_t CanMessage)
@@ -216,15 +238,15 @@ void get503(uint8_t* message503, CAN_message_t CanMessage)
  	split_32_bit_number(CanMessage.motorTemp, motorTempSplit);
  	uint8_t controllerHeatsinkTempSplit[4];
  	split_32_bit_number(CanMessage.controllerHeatsinkTemp,  controllerHeatsinkTempSplit);
-
- 	message50B[0] = motorTempSplit[0];
- 	message50B[1] = motorTempSplit[1];
- 	message50B[2] = motorTempSplit[2];
- 	message50B[3] = motorTempSplit[3];
- 	message50B[4] = controllerHeatsinkTempSplit[0];
- 	message50B[5] = controllerHeatsinkTempSplit[1];
- 	message50B[6] = controllerHeatsinkTempSplit[2];
-	message50B[7] = controllerHeatsinkTempSplit[3];
+   
+ 	message50B[3] = motorTempSplit[0];
+ 	message50B[2] = motorTempSplit[1];
+ 	message50B[1] = motorTempSplit[2];
+ 	message50B[0] = motorTempSplit[3];
+ 	message50B[7] = controllerHeatsinkTempSplit[0];
+ 	message50B[6] = controllerHeatsinkTempSplit[1];
+ 	message50B[5] = controllerHeatsinkTempSplit[2];
+	message50B[4] = controllerHeatsinkTempSplit[3];
 }
 
 void CopyRxData(uint8_t* globalRxData, uint8_t* localRxData)
