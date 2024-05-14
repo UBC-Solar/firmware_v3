@@ -22,7 +22,7 @@
 
 #define P1 0.3						  // TODO find proper value for this
 
-#define DELAY_MCB_STATE_MACHINE 10	  // Main mcb state machine delay time in ms
+#define DELAY_MCB_STATE_MACHINE 50	  // Main mcb state machine delay time in ms
 
 #define DELAY_GET_CAN_MESSAGES 10	  // Delay for getting CAN messages task
 
@@ -76,6 +76,7 @@ typedef struct InputFlags {
   volatile bool switch_pos_drive;
   volatile bool switch_pos_reverse;
   volatile bool switch_pos_park;
+  volatile bool throttle_ADC_out_of_range;
 } InputFlags;
 
 /*
@@ -117,6 +118,7 @@ void TaskGetCANMessage();
 void SendCANMotorCommand(MotorCommand motorCommand);
 void SendCANDIDNextPage();
 void SendCANDIDDriveState();
+void send_mcb_diagnostics();
 float normalize_adc_value(uint16_t value);
 void GetSwitchState(InputFlags * input_flags);
 

@@ -28,6 +28,7 @@
 /* USER CODE BEGIN Includes */
 #include "mcb.h"
 #include "can.h"
+#include "iwdg.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -165,6 +166,7 @@ void StartDefaultTask(void *argument)
   {
 	 HAL_GPIO_TogglePin(LED_OUT1_GPIO_Port, LED_OUT1_Pin);
 	 HAL_GPIO_TogglePin(LED_OUT2_GPIO_Port, LED_OUT2_Pin);
+	 HAL_IWDG_Refresh(&hiwdg);
 	 osDelay(100);
   }
   /* USER CODE END StartDefaultTask */
@@ -222,6 +224,9 @@ void task_generic_100ms(void *argument)
   {
     // Sends MCB drive state
     SendCANDIDDriveState();
+
+    // Sends MCB diagnostics
+    send_mcb_diagnostics();
 
     osDelay(100);
   }

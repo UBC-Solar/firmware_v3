@@ -98,6 +98,7 @@ bool parse_frame1 = 0;
 bool parse_frame2 = 0;
 bool TriggerBlinky = 0;
 
+
 //Variables for HALL speed calculations
 uint32_t oldTime = 0;
 uint32_t currentTime = 0;
@@ -160,7 +161,6 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
   //BOOT LED Initial Value
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
@@ -175,7 +175,6 @@ int main(void)
 	else {
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 	}
-
     /////////////////////////////////////////////////////////
     // PARSE MESSAGES COMING FROM MOTOR CONTROLLER AND MCB //
     /////////////////////////////////////////////////////////
@@ -186,6 +185,7 @@ int main(void)
 
       Parse_Data_Flag = 0; //reset parse flag
       send_data_flag = 1; //send updated data to motor flag
+
     }
     
     if(parse_frame0 == 1) //Parse the frame based on info we want
@@ -194,7 +194,7 @@ int main(void)
     	Decode_Frame0(RxDataLocal,&msg0);
     	parse_frame0 = 0; //reset flag
     }
-
+    
     if(parse_frame1 == 1) //Parse the frame based on info we want (currently this frame doesn't have info we care about)
     {
     	CopyRxData(localRxDataFrame1,RxDataLocal);
@@ -300,10 +300,8 @@ int main(void)
     		HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
     		SendSlowMessage = 0;
       }
-
     	SendMessageTimerInterrupt = 0;
     }
-
     ///////////////////////////////
     //// HALL SPEED CONVERSION ////
     ///////////////////////////////
@@ -426,7 +424,6 @@ static void MX_CAN_Init(void)
 
 
   /* USER CODE END CAN_Init 2 */
-
 }
 
 /**

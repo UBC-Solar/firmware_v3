@@ -20,6 +20,7 @@
 #define FORWARD_TRUE 1
 #define FORWARD_FALSE 0
 
+
 #define REGEN_TRUE 1 
 #define REGEN_FALSE 0 
 
@@ -27,6 +28,7 @@
 //Power mode would be for passing or when we need a boost up a hill
 #define POWER_MODE_OFF 0
 #define POWER_MODE_ON 1
+
 
 #define UINT10_MAX 0x3FF
 

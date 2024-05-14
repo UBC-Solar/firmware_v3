@@ -70,9 +70,6 @@ void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg)
 
 	//set power mode. It should always be in PWR mode
 	CAN_msg->PWR_mode_on = POWER_MODE_ON;
-
-
-
 	return;
 } //end of decode_CAN_velocity_msg
 
@@ -202,7 +199,7 @@ void get502(uint8_t* message502, CAN_message_t CanMessage)
  	split_32_bit_number(CanMessage.busVoltage, busVoltageSplit);
  	uint8_t busCurrentSplit[4];
  	split_32_bit_number(CanMessage.busCurrent, busCurrentSplit);
-
+  
  	message502[3] = busVoltageSplit[0];
  	message502[2] = busVoltageSplit[1];
  	message502[1] = busVoltageSplit[2];
@@ -241,7 +238,7 @@ void get503(uint8_t* message503, CAN_message_t CanMessage)
  	split_32_bit_number(CanMessage.motorTemp, motorTempSplit);
  	uint8_t controllerHeatsinkTempSplit[4];
  	split_32_bit_number(CanMessage.controllerHeatsinkTemp,  controllerHeatsinkTempSplit);
-
+   
  	message50B[3] = motorTempSplit[0];
  	message50B[2] = motorTempSplit[1];
  	message50B[1] = motorTempSplit[2];

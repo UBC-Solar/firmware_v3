@@ -34,15 +34,17 @@ typedef union {
 
 typedef struct{
     
-    uint16_t ADC_spare_current; //stores spare current sensor value
+    int32_t ADC_pack_current;// mA, max +/-100A
+    uint16_t ADC_pack_current_offset; // mV
+
+    uint16_t ADC_od_ref; // overdischarge current threshold, mV
+    uint16_t ADC_oc_ref; // overcharge current threshold, mV
+
+    uint16_t ADC_supp_batt_volt; // mV
+    int8_t ADC_temp_ambient_sense; // deg C, -127 to 127
+    
     uint16_t ADC_lvs_current; //stores current for the LVS system (mA), max value 30A,
-    int32_t ADC_batt_current;//(mA), max 100A
-
-    uint16_t ADC_supp_batt_volt; //stores supplemental battery voltage readings
-
-    uint16_t ADC_batt_curr_offset; //stores supplemental battery voltage offset
-    uint16_t ADC_lvs_offset; //stores low voltage system current offset
-    uint16_t ADC_spare_curr_offset; //stores spare current source offset
+    uint16_t ADC_lvs_current_sense_offset; //stores low voltage system current offset
 
 } ECU_ADC_Data_t;
 
