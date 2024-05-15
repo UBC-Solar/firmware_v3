@@ -27,8 +27,8 @@
 #include "nmea_parse.h"
 
 #define GPS_RCV_BUFFER_SIZE 512
-//#define GPS_SYNC_TIMEOUT 60000 * 5 // 5 minutes
-#define GPS_SYNC_TIMEOUT 1000 // 1 second
+#define GPS_SYNC_TIMEOUT 60000 * 5 // 5 minutes
+//#define GPS_SYNC_TIMEOUT 1000 // 1 second
 
 /* USER CODE END 0 */
 
