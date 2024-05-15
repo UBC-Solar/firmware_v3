@@ -39,12 +39,17 @@ uint16_t Parse_Acceleration(uint32_t pedal_data)
 */
 void Send_Voltage(float parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef* hi2c1)
 {
+	//NOTE: 90% max of 5V is 4.5 mitsuba can take up to 4.7-4.8. Might be able to get more spicy if needed
+	//but currently we are using a more conservative MAX for safety.
+    uint16_t MAX_OUT = 0.90 * UINT10_MAX; //0x398 (920 base 10)
     uint8_t DAC_msg_buffer[2];
     uint16_t dac_data = 0;
+
     //parsed_voltage is a percentage, multiply by 10 bit max number, and we should get expected value
     dac_data = UINT10_MAX * parsed_voltage;
 
-    if(dac_data > 1023) dac_data = UINT10_MAX; //shouldnt be needed if the input parsed voltage is always a float between 0-1
+    if(dac_data > MAX_OUT)
+    	dac_data = MAX_OUT; //cap output voltage to 90% of capacity. Controller can receive up to 4.7 V
     
     dac_data = dac_data << 2;
     DAC_msg_buffer[0] = dac_data >> 8;

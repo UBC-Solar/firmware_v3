@@ -14,16 +14,21 @@
 
 #define BUFFER_SIZE 2
 
-#define REVERSE_TRUE 1 
-#define REVERSE_FALSE 0 
+#define TRUE 1
+#define FALSE 0
+
+#define FORWARD_TRUE 1
+#define FORWARD_FALSE 0
+
 
 #define REGEN_TRUE 1 
 #define REGEN_FALSE 0 
 
 //Eco mode would be standard operation and maximum efficiency
 //Power mode would be for passing or when we need a boost up a hill
-#define ECO_ON 1
-#define POWER_ON 0
+#define POWER_MODE_OFF 0
+#define POWER_MODE_ON 1
+
 
 #define UINT10_MAX 0x3FF
 
@@ -35,11 +40,12 @@
 typedef struct
 {
 	uint16_t id;
-	int32_t  velocity;
+	float  velocity;
 	float acceleration;
-	bool direction; 
-	bool power_or_eco; 
+	bool FWD_direction;
+	bool PWR_mode_on;
 	bool regen;
+	bool cruise_control_enable;
 
 	//0x501
 	uint8_t motorCurrentFlag;

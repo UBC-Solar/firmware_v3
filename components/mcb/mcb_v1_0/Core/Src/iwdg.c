@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    wwdg.h
-  * @brief   This file contains all the function prototypes for
-  *          the wwdg.c file
+  * @file    iwdg.c
+  * @brief   This file provides code for the configuration
+  *          of the IWDG instances.
   ******************************************************************************
   * @attention
   *
@@ -17,36 +17,39 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
-/* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __WWDG_H__
-#define __WWDG_H__
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Includes ------------------------------------------------------------------*/
-#include "main.h"
+#include "iwdg.h"
 
-/* USER CODE BEGIN Includes */
+/* USER CODE BEGIN 0 */
 
-/* USER CODE END Includes */
+/* USER CODE END 0 */
 
-extern WWDG_HandleTypeDef hwwdg;
+IWDG_HandleTypeDef hiwdg;
 
-/* USER CODE BEGIN Private defines */
+/* IWDG init function */
+void MX_IWDG_Init(void)
+{
 
-/* USER CODE END Private defines */
+  /* USER CODE BEGIN IWDG_Init 0 */
 
-void MX_WWDG_Init(void);
+  /* USER CODE END IWDG_Init 0 */
 
-/* USER CODE BEGIN Prototypes */
+  /* USER CODE BEGIN IWDG_Init 1 */
 
-/* USER CODE END Prototypes */
+  /* USER CODE END IWDG_Init 1 */
+  hiwdg.Instance = IWDG;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
+  hiwdg.Init.Reload = 2000;
+  if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN IWDG_Init 2 */
 
-#ifdef __cplusplus
+  /* USER CODE END IWDG_Init 2 */
+
 }
-#endif
 
-#endif /* __WWDG_H__ */
+/* USER CODE BEGIN 1 */
 
+/* USER CODE END 1 */

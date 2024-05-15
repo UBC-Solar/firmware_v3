@@ -22,7 +22,7 @@
 
 #define P1 0.3						  // TODO find proper value for this
 
-#define DELAY_MCB_STATE_MACHINE 10	  // Main mcb state machine delay time in ms
+#define DELAY_MCB_STATE_MACHINE 50	  // Main mcb state machine delay time in ms
 
 #define DELAY_GET_CAN_MESSAGES 10	  // Delay for getting CAN messages task
 
