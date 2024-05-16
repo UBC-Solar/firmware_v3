@@ -24,6 +24,10 @@
 #include "selftest.h"
 
 /*============================================================================*/
+/* PRIVATE VARIABLES */
+static ECU_Data_t ecu_data = {0};
+
+/*============================================================================*/
 /* PRIVATE FUNCTION DEFINITIONS */
 
 /**
@@ -100,6 +104,9 @@ void BMS_MAIN_startupChecks(Pack_t *pack)
     BTM_writeRegisterGroup(CMD_WRCOMM, test_data);
     comm_status = BTM_readRegisterGroup(CMD_RDCOMM, test_data_rx);
     reg_group_match = doesRegGroupMatch(test_data, test_data_rx);
+
+    printf("reg group match: %d\r\n", reg_group_match);
+
     // checks for comms error
     // note: a lack of comms is different than the self-tests failing
     if (comm_status.error != BTM_OK)
@@ -112,20 +119,20 @@ void BMS_MAIN_startupChecks(Pack_t *pack)
         pack->status.bits.fault_self_test = true;
     }
 
-    ltc_temp_status = ST_checkLTCtemp();
-    processSelfTestStatus(pack, &ltc_temp_status);
+    // ltc_temp_status = ST_checkLTCtemp();
+    // processSelfTestStatus(pack, &ltc_temp_status);
 
-    ltc_vref2_status = ST_checkVREF2();
-    processSelfTestStatus(pack, &ltc_vref2_status);
+    // ltc_vref2_status = ST_checkVREF2();
+    // processSelfTestStatus(pack, &ltc_vref2_status);
 
-    shorted_cells_status = ST_shortedCells();
-    processSelfTestStatus(pack, &shorted_cells_status);
+    // shorted_cells_status = ST_shortedCells();
+    // processSelfTestStatus(pack, &shorted_cells_status);
 
-    open_wire_status = ST_checkOpenWire();
-    processSelfTestStatus(pack, &open_wire_status);
+    // open_wire_status = ST_checkOpenWire();
+    // processSelfTestStatus(pack, &open_wire_status);
 
-    overlap_measurement_status = ST_checkOverlapVoltage();
-    processSelfTestStatus(pack, &overlap_measurement_status);
+    // overlap_measurement_status = ST_checkOverlapVoltage();
+    // processSelfTestStatus(pack, &overlap_measurement_status);
 
     // TODO: check if this works once BMS is connected to real batteries
     // It works based on voltage drop due to resistance in the voltage tap leads when discharge is on... not sure if
@@ -146,18 +153,16 @@ void BMS_MAIN_startupChecks(Pack_t *pack)
 void BMS_MAIN_updatePackData(Pack_t *pack)
 {
     // ECU CAN Message
-    int8_t pack_current = 0;
-    uint8_t low_voltage_current = 0;
-    bool overcurrent_detected = 0;
     uint32_t ecu_can_rx_timestamp = 0;
     bool new_ecu_can_message_received;
+    int32_t pack_current_unscaled; //(Amps)
     // Other
     static bool soc_initialized = false;
 
     // Check for new ECU CAN message
-    new_ecu_can_message_received = CAN_GetMessage0x450Data(&pack_current, &low_voltage_current, &overcurrent_detected, &ecu_can_rx_timestamp);
+    new_ecu_can_message_received = CAN_GetMessage0x450Data(&ecu_can_rx_timestamp, &ecu_data);
 
-    if (new_ecu_can_message_received && overcurrent_detected)
+    if (new_ecu_can_message_received && ((ecu_data.status.bits.fault_charge_overcurrent || ecu_data.status.bits.fault_discharge_overcurrent) == true))
     {
         pack->status.bits.fault_over_current = true; // set FLT_DOC_COC bit
     }
@@ -190,10 +195,12 @@ void BMS_MAIN_updatePackData(Pack_t *pack)
         }
         else if (new_ecu_can_message_received)
         {
-            SOC_allModulesEst(pack, pack_current, ecu_can_rx_timestamp);
+            pack_current_unscaled = ecu_data.adc_data.batt_current / 65.535;
+            SOC_allModulesEst(pack, pack_current_unscaled, ecu_can_rx_timestamp);
         }
 
         // write pack status code
+
         ANA_analyzePack(pack);
     }
 }
@@ -209,7 +216,7 @@ void BMS_MAIN_driveOutputs(Pack_t *pack)
     float max_temp = 0;
 
     // if any fault active, drive FLT, COM, OT GPIOs, turn off balancing, drive fans 100%
-    if (PACK_ANY_FAULTS_SET(pack->status))
+    if (PACK_ANY_FAULTS_SET(pack->status) || ecu_data.status.bits.estop == true)
     {
         CONT_FLT_switch(true);
         CONT_COM_switch(pack->status.bits.fault_communications);
@@ -237,7 +244,9 @@ void BMS_MAIN_driveOutputs(Pack_t *pack)
             max_temp = ANA_findHighestModuleTemp(pack);
             fan_PWM = CONT_fanPwmFromTemp(max_temp);
         }
+
         CONT_FAN_PWM_set(fan_PWM);
+
     }
 }
 

@@ -214,7 +214,7 @@ void startDefaultTask(void const * argument)
   {
     //printf("startDefaultTask()\n\r");
 //    HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-    osDelay(DEFAULT_TASK_DELAY);
+    osDelay(DEFAULT_TASK_DELAY)
   }
   /* USER CODE END startDefaultTask */
 }

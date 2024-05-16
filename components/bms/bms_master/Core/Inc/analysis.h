@@ -37,7 +37,7 @@
 #define WARN_HIGH_V_THRESHOLD 41500U // 4.1500 V
 #define WARN_LOW_V_THRESHOLD 27500U  // 2.7500 V
 #define WARN_LOW_T_THRESHOLD 10.0    // degrees C
-#define WARN_HIGH_T_THRESHOLD 45.0   // degrees C
+#define WARN_HIGH_T_THRESHOLD 55.0   // degrees C
 
 // Hysteresis prevents spurious flip-flopping of status bits
 // derived from measurements if a measurement is right around

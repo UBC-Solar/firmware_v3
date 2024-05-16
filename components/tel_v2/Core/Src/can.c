@@ -166,7 +166,6 @@ void CanFilterSetup(void)
 
   // Configure reception filters
   HAL_CAN_ConfigFilter(&hcan, &CAN_filter0);
-
 }
 
 

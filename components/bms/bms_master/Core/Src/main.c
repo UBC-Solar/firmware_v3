@@ -161,7 +161,7 @@ int main(void)
   MX_TIM3_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  
+    
   DebugIO_Init(&huart1);
 
   // Initialize hardware and pack struct
@@ -170,14 +170,18 @@ int main(void)
   BTM_init(&hspi2); // initialize the LTC6813s and driver state
 
   BMS_MAIN_startupChecks(&pack);
-  /* USER CODE END 2 */
 
+  HAL_GPIO_WritePin(CONT_FLT_PORT, CONT_FLT_PIN, SET);
+  HAL_Delay(500);
+  HAL_GPIO_WritePin(CONT_FLT_PORT, CONT_FLT_PIN, RESET);
+
+  /* USER CODE END 2 */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     current_tick = HAL_GetTick();
-
+    //printf("Pack voltage: %d V\r\n", Pack_GetPackVoltage(&pack)/10000);
     // update pack values and control signals if pack update interval has elapsed
     if (current_tick - last_update_tick >= UPDATE_INTERVAL)
     {
@@ -271,11 +275,11 @@ static void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
-  hcan.Init.Prescaler = 18;
+  hcan.Init.Prescaler = 4;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_12TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_3TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_15TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = ENABLE;
   hcan.Init.AutoWakeUp = DISABLE;
