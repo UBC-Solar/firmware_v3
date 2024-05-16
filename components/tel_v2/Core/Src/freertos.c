@@ -266,7 +266,7 @@ void read_CAN_task(void const * argument)
 
 	 for (uint8_t i = 0; i < 8; i++) {
 //	   radio_buffer[7 - i] = TIMESTAMP_BYTE(i, current_timestamp.double_as_int);
-	   radio_buffer[7 - i] = TIMESTAMP_BYTE(i, rx_CAN_msg->timestamp.double_as_int);
+	   radio_buffer[7 - i] = (char) TIMESTAMP_BYTE(i, rx_CAN_msg->timestamp.double_as_int);
 	 }
 
 	 /* CAN MESSAGE IDENTIFIER */
@@ -300,7 +300,7 @@ void read_CAN_task(void const * argument)
 	 /* NEW LINE */
 	 radio_buffer[CAN_BUFFER_LEN - 1] = '\n';
 
-	 sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
+//	 sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
 
 	 /* Transmit over Radio */
 	 HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), 1000);
@@ -466,7 +466,7 @@ void read_GPS_task(void const * argument)
     HAL_UART_Transmit(&huart1, gps_buffer, sizeof(gps_buffer), 1000);
 
     /* Convert gps_buffer to hex_string so it can be logged. MUST NOT USE strlen */
-    sd_append_as_hexnums(logfile, gps_buffer, GPS_MESSAGE_LEN);
+//    sd_append_as_hexnums(logfile, gps_buffer, GPS_MESSAGE_LEN);
 
     /* Delay */
     osDelay(READ_GPS_DELAY);

@@ -136,28 +136,28 @@ int main(void)
       g_tel_diagnostics.rtc_reset = true;
   }
 
-  FRESULT fresult;
-  char startup_message[60];
-  char filename[30];
+//  FRESULT fresult;
+//  char startup_message[60];
+//  char filename[30];
 
-  HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
-  HAL_RTC_GetTime(&hrtc, &curr_time, RTC_FORMAT_BIN);
+//  HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
+//  HAL_RTC_GetTime(&hrtc, &curr_time, RTC_FORMAT_BIN);
 
   /* Year - Month - Date  Format */
-  sprintf(startup_message, "TEL start up on 20%u %u %u at %u:%u:%u", curr_date.Year,
-	  curr_date.Month, curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
+//  sprintf(startup_message, "TEL start up on 20%u %u %u at %u:%u:%u", curr_date.Year,
+//	  curr_date.Month, curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
 
   /* mount SD card */
-  DSTATUS stat = disk_status(0);
-  DSTATUS stat2 = disk_initialize(0);
-  fresult = sd_mount();
+//  DSTATUS stat = disk_status(0);
+//  DSTATUS stat2 = disk_initialize(0);
+//  fresult = sd_mount();
   // if (fresult == FR_OK) printf("SD Mounted Successfully\n\r");
   // else printf("SD NOT Mounted\n\r");
 
-  sprintf(filename, "TEL-20%u-%u-%uT%u-%u-%u.txt", curr_date.Year, curr_date.Month,
-	  curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
-  logfile = sd_open(filename);
-  sd_append(logfile, startup_message);
+//  sprintf(filename, "TEL-20%u-%u-%uT%u-%u-%u.txt", curr_date.Year, curr_date.Month,
+//	  curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
+//  logfile = sd_open(filename);
+//  sd_append(logfile, startup_message);
 
   /* USER CODE END 2 */
 
@@ -192,13 +192,14 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL8;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -213,7 +214,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }

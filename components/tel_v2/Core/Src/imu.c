@@ -44,5 +44,5 @@ void transmit_imu_data(uint64_t current_timestamp, uint8_t* imu_data, char imu_t
     HAL_UART_Transmit(&huart1, imu_buffer, sizeof(imu_buffer), 1000);
 
     /* Convert imu_buffer to hex_string so it can be logged. MUST NOT USE strlen */
-    sd_append_as_hexnums(logfile, imu_buffer, IMU_MESSAGE_LEN);
+//    sd_append_as_hexnums(logfile, imu_buffer, IMU_MESSAGE_LEN);
 }
