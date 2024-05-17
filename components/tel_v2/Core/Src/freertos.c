@@ -619,11 +619,17 @@ void send_tel_diagnostics()
   uint8_t data_send = 0x00;
   data_send = 0x00; // TODO: Set bits based on diagnostics
 
-  SET_BIT(data_send, 0); // RTC reset
-  SET_BIT(data_send, 1); // GPS Sync successful
-  SET_BIT(data_send, 2); // IMU Failure
-  SET_BIT(data_send, 3); // GPS Failure
-  SET_BIT(data_send, 4); // Watchdog reset occured
+  if(g_tel_diagnostics.rtc_reset) 
+    SET_BIT(data_send, 0);
+  if(g_tel_diagnostics.gps_sync_fail)
+    SET_BIT(data_send, 1);
+  if(g_tel_diagnostics.imu_fail)
+    SET_BIT(data_send, 2);
+  if(g_tel_diagnostics.gps_fail)
+    SET_BIT(data_send, 3);
+  if(g_tel_diagnostics.watchdog_reset)
+    SET_BIT(data_send, 4);
+  
   HAL_CAN_AddTxMessage(&hcan, &tel_diagnostics_header, data_send, &can_mailbox);
 }
 

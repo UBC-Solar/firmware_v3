@@ -36,7 +36,7 @@ CAN_TxHeaderTypeDef tel_diagnostics_header = {
     .ExtId = 0x0000,
     .IDE = CAN_ID_STD,
     .RTR = CAN_RTR_DATA,
-    .DLC = CAN_DATA_LENGTH};
+    .DLC = 1};
 
 CAN_TxHeaderTypeDef IMU_x_axis_header = {
     .StdId = IMU_X_AXIS,
