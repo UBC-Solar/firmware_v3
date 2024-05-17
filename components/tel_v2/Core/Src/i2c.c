@@ -208,6 +208,7 @@ void initIMU(void)
 	    //printf("Read a value from WHOAMI register: %x\n\r", data);
 	    break; // Break when initialized
     }
+    HAL_Delay(5);
   }
 
   /*
