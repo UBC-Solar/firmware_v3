@@ -583,7 +583,7 @@ void transmit_RTC_task(void const * argument)
     
     // Transmit message on CAN
     HAL_CAN_AddTxMessage(&hcan, &rtc_timestamp_header, data_send, &can_mailbox);
-    
+    send_tel_diagnostics();
     osDelay(TRANSMIT_RTC_DELAY);
   }
   /* USER CODE END transmit_RTC_task */
