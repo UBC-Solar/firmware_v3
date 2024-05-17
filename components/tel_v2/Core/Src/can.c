@@ -19,7 +19,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
-#include "rtc.h"
 
 /* USER CODE BEGIN 0 */
 
@@ -38,6 +37,57 @@ CAN_TxHeaderTypeDef tel_diagnostics_header = {
     .IDE = CAN_ID_STD,
     .RTR = CAN_RTR_DATA,
     .DLC = CAN_DATA_LENGTH};
+
+CAN_TxHeaderTypeDef IMU_x_axis_header = {
+    .StdId = IMU_X_AXIS,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
+
+CAN_TxHeaderTypeDef IMU_y_axis_header = {
+    .StdId = IMU_Y_AXIS,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
+
+CAN_TxHeaderTypeDef IMU_z_axis_header = {
+    .StdId = IMU_Z_AXIS,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
+
+CAN_TxHeaderTypeDef GPS_latitude = {
+    .StdId = GPS_latitude_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
+
+CAN_TxHeaderTypeDef GPS_longitude = {
+    .StdId = GPS_longitude_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
+
+CAN_TxHeaderTypeDef GPS_altitude_hdop = {
+    .StdId = GPS_altitude_hdop_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
+
+CAN_TxHeaderTypeDef GPS_side_count = {
+    .StdId = GPS_side_count_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
+
+
 
 uint32_t can_mailbox;
 

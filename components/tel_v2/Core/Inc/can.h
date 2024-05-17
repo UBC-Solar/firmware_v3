@@ -41,11 +41,27 @@ extern CAN_HandleTypeDef hcan;
 #define CAN_READY (uint32_t) 0x0001
 
 #define RTC_TIMESTAMP 0x751
+#define IMU_X_AXIS 0x752
+#define IMU_Y_AXIS 0x753
+#define IMU_Z_AXIS 0x754
+#define GPS_latitude_ID 0x755
+#define GPS_longitude_ID 0x756
+#define GPS_altitude_hdop_ID 0x757
+#define GPS_side_count_ID 0x758
 
 #define CAN_DATA_LENGTH 8
 
 extern CAN_TxHeaderTypeDef rtc_timestamp_header;
 extern CAN_TxHeaderTypeDef tel_diagnostics_header;
+extern CAN_TxHeaderTypeDef IMU_x_axis_header;
+extern CAN_TxHeaderTypeDef IMU_y_axis_header;
+extern CAN_TxHeaderTypeDef IMU_z_axis_header;
+extern CAN_TxHeaderTypeDef GPS_latitude;
+extern CAN_TxHeaderTypeDef GPS_longitude;
+extern CAN_TxHeaderTypeDef GPS_altitude_hdop;
+extern CAN_TxHeaderTypeDef GPS_side_count;
+
+
 
 extern uint32_t can_mailbox;
 

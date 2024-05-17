@@ -69,7 +69,8 @@ union FloatBytes {
 
 
 /* Use this MACRO to split the time stamp into individual bytes */
-#define TIMESTAMP_BYTE(i, timestamp) ((timestamp >> (i * 8)) & 0xFF);
+#define GET_BYTE_FROM_WORD(i, word) ((word >> (i * 8)) & 0xFF);
+
 
 /* USER CODE END PD */
 
@@ -184,7 +185,7 @@ void MX_FREERTOS_Init(void) {
   readIMUTaskHandle = osThreadCreate(osThread(readIMUTask), NULL);
 
   /* definition and creation of readGPSTask */
-  osThreadDef(readGPSTask, read_GPS_task, osPriorityNormal, 0, 1024);
+  osThreadDef(readGPSTask, read_GPS_task, osPriorityNormal, 0, 1536);
   readGPSTaskHandle = osThreadCreate(osThread(readGPSTask), NULL);
 
   /* definition and creation of transmitRTCTask */
@@ -265,8 +266,8 @@ void read_CAN_task(void const * argument)
 	 /* TIMESTAMP */
 
 	 for (uint8_t i = 0; i < 8; i++) {
-//	   radio_buffer[7 - i] = TIMESTAMP_BYTE(i, current_timestamp.double_as_int);
-	   radio_buffer[7 - i] = (char) TIMESTAMP_BYTE(i, rx_CAN_msg->timestamp.double_as_int);
+//	   radio_buffer[7 - i] = GET_BYTE_FROM_WORD(i, current_timestamp.double_as_int);
+	   radio_buffer[7 - i] = (char) GET_BYTE_FROM_WORD(i, rx_CAN_msg->timestamp.double_as_int);
 	 }
 
 	 /* CAN MESSAGE IDENTIFIER */
@@ -358,6 +359,7 @@ void read_IMU_task(void const * argument)
     uint16_t Accel_X_RAW = (uint16_t)(accel_data[0] << 8 | accel_data[1]);
     uint16_t Accel_Y_RAW = (uint16_t)(accel_data[2] << 8 | accel_data[3]);
     uint16_t Accel_Z_RAW = (uint16_t)(accel_data[4] << 8 | accel_data[5]);
+    printf("Raw Accel X: %d\n\r", Accel_X_RAW);
     /*
      * Convert the RAW values into acceleration in 'g' we have to divide according to the Full scale value
      * set in FS_SEL. Have configured FS_SEL = 0. So I am dividing by 16384.0
@@ -371,7 +373,9 @@ void read_IMU_task(void const * argument)
     uint8_t gyro_data[NUM_GYRO_BYTES];
 
     HAL_I2C_Mem_Read(&hi2c2, IMU_DEVICE_ADDRESS, GYRO_XOUT_H_REG, 1, gyro_data, NUM_GYRO_BYTES, 1000);
+
     uint16_t Gyro_X_RAW = (uint16_t)(gyro_data[0] << 8 | gyro_data[1]);
+    printf("Raw Gyro X: %d\n\r", Gyro_X_RAW);
     uint16_t Gyro_Y_RAW = (uint16_t)(gyro_data[2] << 8 | gyro_data[3]);
     uint16_t Gyro_Z_RAW = (uint16_t)(gyro_data[4] << 8 | gyro_data[5]);
     /*
@@ -390,6 +394,8 @@ void read_IMU_task(void const * argument)
     union DoubleBytes current_timestamp;
     current_timestamp.double_value = get_current_timestamp();
 
+    uint8_t data_send[8];
+
     /* Transmit IMU data */
     transmit_imu_data(current_timestamp.double_as_int, ax_x.bytes, 'A', 'X');
     transmit_imu_data(current_timestamp.double_as_int, ax_y.bytes, 'A', 'Y');
@@ -398,8 +404,29 @@ void read_IMU_task(void const * argument)
     transmit_imu_data(current_timestamp.double_as_int, gy_y.bytes, 'G', 'Y');
     transmit_imu_data(current_timestamp.double_as_int, gy_z.bytes, 'G', 'Z');
 
+    // X-axis data
+    for (int i = 0; i < 4; i++) {
+	data_send[3-i] = ax_x.bytes[i];
+	data_send[7-i] = gy_x.bytes[i];
+    }
+    HAL_CAN_AddTxMessage(&hcan, &IMU_x_axis_header, data_send, &can_mailbox);
+
+    // Y-axis data
+    for (int i = 0; i < 4; i++) {
+	data_send[3-i] = ax_y.bytes[i];
+	data_send[7-i] = gy_y.bytes[i];
+    }
+    HAL_CAN_AddTxMessage(&hcan, &IMU_y_axis_header, data_send, &can_mailbox);
+
+    // Z-axis data
+    for (int i = 0; i < 4; i++) {
+	data_send[3-i] = ax_z.bytes[i];
+	data_send[7-i] = gy_z.bytes[i];
+    }
+    HAL_CAN_AddTxMessage(&hcan, &IMU_z_axis_header, data_send, &can_mailbox);
+
     /* Delay */
-    osDelay(READ_IMU_DELAY * 10);
+    osDelay(READ_IMU_DELAY * 5);
   }
 
   /* USER CODE END read_IMU_task */
@@ -450,7 +477,7 @@ void read_GPS_task(void const * argument)
 
     /* TIMESTAMP: 8 Bytes */
     for (uint8_t i = 0; i < 8; i++) {
-      gps_buffer[7 - i] = TIMESTAMP_BYTE(i, current_timestamp.double_as_int);
+      gps_buffer[7 - i] = GET_BYTE_FROM_WORD(i, current_timestamp.double_as_int);
     }
 
     /*
@@ -465,11 +492,63 @@ void read_GPS_task(void const * argument)
     /* Transmit the NMEA message over UART to radio */
     HAL_UART_Transmit(&huart1, gps_buffer, sizeof(gps_buffer), 1000);
 
+    union DoubleBytes latitude_bytes;
+    union DoubleBytes longitude_bytes;
+    uint8_t latitude_send[8];
+    uint8_t longitude_send[8];
+
+    latitude_bytes.double_value = gps_data.latitude;
+    longitude_bytes.double_value = gps_data.longitude;
+
+    for  (uint8_t i=0; i < 8; i++) {
+	latitude_send[7 - i] = GET_BYTE_FROM_WORD(i, latitude_bytes.double_as_int);
+	longitude_send[7 - i] = GET_BYTE_FROM_WORD(i, longitude_bytes.double_as_int);
+    }
+
+    HAL_CAN_AddTxMessage(&hcan, &GPS_latitude, latitude_send, &can_mailbox);
+    osDelay(2000);
+
+    HAL_CAN_AddTxMessage(&hcan, &GPS_longitude, longitude_send, &can_mailbox);
+    osDelay(2000);
+
+    union FloatBytes altitude_bytes;
+    union FloatBytes hdop_bytes;
+    uint8_t altitude_hdop_send[8];
+
+    altitude_bytes.float_value = gps_data.altitude;
+    hdop_bytes.float_value = gps_data.hdop;
+
+    for  (uint8_t i=0; i < 8; i++) {
+	altitude_hdop_send[3 - i] = altitude_bytes.bytes[i];
+	altitude_hdop_send[7 - i] = hdop_bytes.bytes[i];
+    }
+
+    HAL_CAN_AddTxMessage(&hcan, &GPS_altitude_hdop, altitude_hdop_send, &can_mailbox);
+    osDelay(2000);
+
+    uint8_t side_and_count[8];
+    uint32_t sat_count = (uint32_t) gps_data.satelliteCount;
+    side_and_count[0] = gps_data.latSide;
+    side_and_count[1] = gps_data.lonSide;
+    for  (uint8_t i=0; i < 4; i++) {
+	side_and_count[5 - i] = ((sat_count >> (4 * i)) && 0xFF);
+    }
+    side_and_count[6] = 0;
+    side_and_count[7] = 0;
+
+    HAL_CAN_AddTxMessage(&hcan, &GPS_side_count, side_and_count, &can_mailbox);
+    osDelay(4000);
+
+
+
+
+
+
     /* Convert gps_buffer to hex_string so it can be logged. MUST NOT USE strlen */
 //    sd_append_as_hexnums(logfile, gps_buffer, GPS_MESSAGE_LEN);
 
     /* Delay */
-    osDelay(READ_GPS_DELAY);
+//    osDelay(READ_GPS_DELAY);
   }
 
   /* USER CODE END read_GPS_task */
@@ -488,14 +567,16 @@ void transmit_RTC_task(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    //printf("transmit_RTC_task()\n\r");
+    printf("transmit_RTC_task()\n\r");
     // Get rtc timestamp
-    time_t timestamp = (time_t) get_current_timestamp();
+    double timestamp = get_current_timestamp();
+    union DoubleBytes timestamp_bytes;
+    timestamp_bytes.double_value = timestamp;
     uint8_t data_send[8];
 
     // Populate data_send array
     for (int i = 0; i < 8; i++) {
-        data_send[i] = (timestamp >> (8 * i)) & 0xFF;
+        data_send[i] = (timestamp_bytes.double_as_int >> (8 * i)) & 0xFF;
     }
     
     // Transmit message on CAN
