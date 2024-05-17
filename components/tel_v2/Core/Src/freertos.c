@@ -38,6 +38,7 @@
 #include "fatfs_sd.h"
 #include "imu.h"
 #include "sd_logger.h"
+#include "main.h"
 
 /* USER CODE END Includes */
 
@@ -352,8 +353,9 @@ void read_IMU_task(void const * argument)
 
     /* Read accelerator data */
     uint8_t accel_data[NUM_ACCEL_BYTES];
+    HAL_StatusTypeDef imu_status = HAL_OK;
 
-    HAL_I2C_Mem_Read(&hi2c2, IMU_DEVICE_ADDRESS, ACCEL_XOUT_H_REG, 1, accel_data, NUM_ACCEL_BYTES, 1000);
+    imu_status |= HAL_I2C_Mem_Read(&hi2c2, IMU_DEVICE_ADDRESS, ACCEL_XOUT_H_REG, 1, accel_data, NUM_ACCEL_BYTES, 1000);
 
     uint16_t Accel_X_RAW = (uint16_t)(accel_data[0] << 8 | accel_data[1]);
     uint16_t Accel_Y_RAW = (uint16_t)(accel_data[2] << 8 | accel_data[3]);
@@ -370,7 +372,7 @@ void read_IMU_task(void const * argument)
     /* Read gyroscope data */
     uint8_t gyro_data[NUM_GYRO_BYTES];
 
-    HAL_I2C_Mem_Read(&hi2c2, IMU_DEVICE_ADDRESS, GYRO_XOUT_H_REG, 1, gyro_data, NUM_GYRO_BYTES, 1000);
+    imu_status |= HAL_I2C_Mem_Read(&hi2c2, IMU_DEVICE_ADDRESS, GYRO_XOUT_H_REG, 1, gyro_data, NUM_GYRO_BYTES, 1000);
     uint16_t Gyro_X_RAW = (uint16_t)(gyro_data[0] << 8 | gyro_data[1]);
     uint16_t Gyro_Y_RAW = (uint16_t)(gyro_data[2] << 8 | gyro_data[3]);
     uint16_t Gyro_Z_RAW = (uint16_t)(gyro_data[4] << 8 | gyro_data[5]);
@@ -397,6 +399,8 @@ void read_IMU_task(void const * argument)
     transmit_imu_data(current_timestamp.double_as_int, gy_x.bytes, 'G', 'X');
     transmit_imu_data(current_timestamp.double_as_int, gy_y.bytes, 'G', 'Y');
     transmit_imu_data(current_timestamp.double_as_int, gy_z.bytes, 'G', 'Z');
+
+    g_tel_diagnostics.imu_failure = (imu_status != HAL_OK);
 
     /* Delay */
     osDelay(READ_IMU_DELAY * 10);
