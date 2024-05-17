@@ -425,7 +425,7 @@ void read_IMU_task(void const * argument)
 	data_send[7-i] = gy_z.bytes[i];
     }
     HAL_CAN_AddTxMessage(&hcan, &IMU_z_axis_header, data_send, &can_mailbox);
-    g_tel_diagnostics.imu_failure = (imu_status != HAL_OK);
+    g_tel_diagnostics.imu_fail = (imu_status != HAL_OK);
 
     /* Delay */
     osDelay(READ_IMU_DELAY * 5);
