@@ -40,6 +40,7 @@ extern CAN_HandleTypeDef hcan;
 
 #define CAN_READY (uint32_t) 0x0001
 
+#define TEL_DIAGNOSTICS 0x750
 #define RTC_TIMESTAMP 0x751
 #define IMU_X_AXIS 0x752
 #define IMU_Y_AXIS 0x753

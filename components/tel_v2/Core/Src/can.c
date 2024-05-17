@@ -32,7 +32,7 @@ CAN_TxHeaderTypeDef rtc_timestamp_header = {
     .DLC = CAN_DATA_LENGTH};
 
 CAN_TxHeaderTypeDef tel_diagnostics_header = {
-    .StdId = RTC_TIMESTAMP,
+    .StdId = TEL_DIAGNOSTICS,
     .ExtId = 0x0000,
     .IDE = CAN_ID_STD,
     .RTR = CAN_RTR_DATA,
