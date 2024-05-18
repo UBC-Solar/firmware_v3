@@ -112,6 +112,9 @@ osThreadId transmitRTCTaskHandle;
 void check_IMU_result(union FloatBytes ax_x, union FloatBytes ax_y, union FloatBytes ax_z,
 		      union FloatBytes gy_x, union FloatBytes gy_y, union FloatBytes gy_z);
 
+void send_CAN_Radio(CAN_Radio_msg_t *tx_CAN_msg);
+
+
 /* USER CODE END FunctionPrototypes */
 
 void startDefaultTask(void const * argument);
@@ -361,7 +364,6 @@ void read_IMU_task(void const * argument)
     uint16_t Accel_X_RAW = (uint16_t)(accel_data[0] << 8 | accel_data[1]);
     uint16_t Accel_Y_RAW = (uint16_t)(accel_data[2] << 8 | accel_data[3]);
     uint16_t Accel_Z_RAW = (uint16_t)(accel_data[4] << 8 | accel_data[5]);
-    printf("Raw Accel X: %d\n\r", Accel_X_RAW);
     /*
      * Convert the RAW values into acceleration in 'g' we have to divide according to the Full scale value
      * set in FS_SEL. Have configured FS_SEL = 0. So I am dividing by 16384.0
@@ -376,7 +378,6 @@ void read_IMU_task(void const * argument)
 
     imu_status |= HAL_I2C_Mem_Read(&hi2c2, IMU_DEVICE_ADDRESS, GYRO_XOUT_H_REG, 1, gyro_data, NUM_GYRO_BYTES, 1000);
     uint16_t Gyro_X_RAW = (uint16_t)(gyro_data[0] << 8 | gyro_data[1]);
-    printf("Raw Gyro X: %d\n\r", Gyro_X_RAW);
     uint16_t Gyro_Y_RAW = (uint16_t)(gyro_data[2] << 8 | gyro_data[3]);
     uint16_t Gyro_Z_RAW = (uint16_t)(gyro_data[4] << 8 | gyro_data[5]);
     /*
@@ -395,40 +396,55 @@ void read_IMU_task(void const * argument)
     union DoubleBytes current_timestamp;
     current_timestamp.double_value = get_current_timestamp();
 
-    uint8_t data_send[8];
-
     /* Transmit IMU data */
-    transmit_imu_data(current_timestamp.double_as_int, ax_x.bytes, 'A', 'X');
-    transmit_imu_data(current_timestamp.double_as_int, ax_y.bytes, 'A', 'Y');
-    transmit_imu_data(current_timestamp.double_as_int, ax_z.bytes, 'A', 'Z');
-    transmit_imu_data(current_timestamp.double_as_int, gy_x.bytes, 'G', 'X');
-    transmit_imu_data(current_timestamp.double_as_int, gy_y.bytes, 'G', 'Y');
-    transmit_imu_data(current_timestamp.double_as_int, gy_z.bytes, 'G', 'Z');
+//    transmit_imu_data(current_timestamp.double_as_int, ax_x.bytes, 'A', 'X');
+//    transmit_imu_data(current_timestamp.double_as_int, ax_y.bytes, 'A', 'Y');
+//    transmit_imu_data(current_timestamp.double_as_int, ax_z.bytes, 'A', 'Z');
+//    transmit_imu_data(current_timestamp.double_as_int, gy_x.bytes, 'G', 'X');
+//    transmit_imu_data(current_timestamp.double_as_int, gy_y.bytes, 'G', 'Y');
+//    transmit_imu_data(current_timestamp.double_as_int, gy_z.bytes, 'G', 'Z');
 
-    // X-axis data
-    for (int i = 0; i < 4; i++) {
-	data_send[3-i] = ax_x.bytes[i];
-	data_send[7-i] = gy_x.bytes[i];
-    }
-    HAL_CAN_AddTxMessage(&hcan, &IMU_x_axis_header, data_send, &can_mailbox);
+    CAN_Radio_msg_t x_axis_data, y_axis_data, z_axis_data;
 
-    // Y-axis data
-    for (int i = 0; i < 4; i++) {
-	data_send[3-i] = ax_y.bytes[i];
-	data_send[7-i] = gy_y.bytes[i];
-    }
-    HAL_CAN_AddTxMessage(&hcan, &IMU_y_axis_header, data_send, &can_mailbox);
+    /* Set headers */
+    x_axis_data.header = IMU_x_axis_header;
+    y_axis_data.header = IMU_y_axis_header;
+    z_axis_data.header = IMU_z_axis_header;
 
-    // Z-axis data
+    /* Assign the timestamp */
+    x_axis_data.timestamp = current_timestamp;
+    y_axis_data.timestamp = current_timestamp;
+    z_axis_data.timestamp = current_timestamp;
+
     for (int i = 0; i < 4; i++) {
-	data_send[3-i] = ax_z.bytes[i];
-	data_send[7-i] = gy_z.bytes[i];
+	// X-axis data
+	x_axis_data.data[3-i] = ax_x.bytes[i];
+	x_axis_data.data[7-i] = gy_x.bytes[i];
+
+	// Y-axis data
+	y_axis_data.data[3-i] = ax_y.bytes[i];
+	y_axis_data.data[7-i] = gy_y.bytes[i];
+
+	// Z-axis data
+	z_axis_data.data[3-i] = ax_z.bytes[i];
+	z_axis_data.data[7-i] = gy_z.bytes[i];
     }
-    HAL_CAN_AddTxMessage(&hcan, &IMU_z_axis_header, data_send, &can_mailbox);
+
+    /* Transmit the messages */
+    HAL_CAN_AddTxMessage(&hcan, &x_axis_data.header, x_axis_data.data, &can_mailbox);
+    send_CAN_Radio(&x_axis_data);
+
+    HAL_CAN_AddTxMessage(&hcan, &y_axis_data.header, y_axis_data.data, &can_mailbox);
+    send_CAN_Radio(&y_axis_data);
+
+    HAL_CAN_AddTxMessage(&hcan, &z_axis_data.header, z_axis_data.data, &can_mailbox);
+    send_CAN_Radio(&z_axis_data);
+
+    // Update diagnostics
     g_tel_diagnostics.imu_fail = (imu_status != HAL_OK);
 
     /* Delay */
-    osDelay(READ_IMU_DELAY * 5);
+    osDelay(READ_IMU_DELAY * 5); // 500 ms
   }
 
   /* USER CODE END read_IMU_task */
@@ -461,85 +477,98 @@ void read_GPS_task(void const * argument)
     /* Parse the buffer data --> gets stored in gps_data; */
     nmea_parse(&gps_data, &receive_buffer);
 
-    /* Create string */
-    sprintf(gps_message.data,
-	    "Latitude: %.6f %c, Longitude: %.6f %c, Altitude: %.2f meters, HDOP: %.2f, Satellites: %d, Fix: %d, Time: %s",
-	    gps_data.latitude, gps_data.latSide,
-	    gps_data.longitude, gps_data.lonSide,
-	    gps_data.altitude, gps_data.hdop,
-	    gps_data.satelliteCount, gps_data.fix,
-	    gps_data.lastMeasure);
+//    /* Create string */
+//    sprintf(gps_message.data,
+//	    "Latitude: %.6f %c, Longitude: %.6f %c, Altitude: %.2f meters, HDOP: %.2f, Satellites: %d, Fix: %d, Time: %s",
+//	    gps_data.latitude, gps_data.latSide,
+//	    gps_data.longitude, gps_data.lonSide,
+//	    gps_data.altitude, gps_data.hdop,
+//	    gps_data.satelliteCount, gps_data.fix,
+//	    gps_data.lastMeasure);
+//
+//    /* Null Terminate */
+//    gps_message.data[sizeof(gps_message.data) - 1] = '\0';
+//
+//    /* Get current epoch Time Stamp */
+//    union DoubleBytes current_timestamp;
+//    current_timestamp.double_value = get_current_timestamp();
+//
+//    /* TIMESTAMP: 8 Bytes */
+//    for (uint8_t i = 0; i < 8; i++) {
+//      gps_buffer[7 - i] = GET_BYTE_FROM_WORD(i, current_timestamp.double_as_int);
+//    }
+//
+//    /*
+//     * Copy the NMEA data into the buffer, ensuring not to exceed the buffer size
+//     * Adds 8 to the start to skip the time stamp
+//     */
+//    strncpy(gps_buffer + 8, gps_message.data, 150); // Save space for CR+LF
+//
+//    gps_buffer[GPS_MESSAGE_LEN - 2] = '\r'; // Carriage return
+//    gps_buffer[GPS_MESSAGE_LEN - 1] = '\n'; // Line feed
 
-    /* Null Terminate */
-    gps_message.data[sizeof(gps_message.data) - 1] = '\0';
+    /* Transmit the NMEA message over UART to radio */
+//    HAL_UART_Transmit(&huart1, gps_buffer, sizeof(gps_buffer), 1000);
 
     /* Get current epoch Time Stamp */
     union DoubleBytes current_timestamp;
     current_timestamp.double_value = get_current_timestamp();
 
-    /* TIMESTAMP: 8 Bytes */
-    for (uint8_t i = 0; i < 8; i++) {
-      gps_buffer[7 - i] = GET_BYTE_FROM_WORD(i, current_timestamp.double_as_int);
-    }
+    CAN_Radio_msg_t latitude_msg, longitude_msg, altitude_hdop_msg, side_and_count_msg;
+    union DoubleBytes latitude_bytes, longitude_bytes;
+    union FloatBytes altitude_bytes, hdop_bytes;
 
-    /*
-     * Copy the NMEA data into the buffer, ensuring not to exceed the buffer size
-     * Adds 8 to the start to skip the time stamp
-     */
-    strncpy(gps_buffer + 8, gps_message.data, 150); // Save space for CR+LF
+    /* Assign headers */
+    latitude_msg.header = GPS_latitude_header;
+    longitude_msg.header = GPS_longitude_header;
+    altitude_hdop_msg.header = GPS_altitude_hdop_header;
+    side_and_count_msg.header = GPS_side_count_header;
 
-    gps_buffer[GPS_MESSAGE_LEN - 2] = '\r'; // Carriage return
-    gps_buffer[GPS_MESSAGE_LEN - 1] = '\n'; // Line feed
+    /* Assign timestamps */
+    latitude_msg.timestamp = current_timestamp;
+    longitude_msg.timestamp = current_timestamp;
+    altitude_hdop_msg.timestamp = current_timestamp;
+    side_and_count_msg.timestamp = current_timestamp;
 
-    /* Transmit the NMEA message over UART to radio */
-    HAL_UART_Transmit(&huart1, gps_buffer, sizeof(gps_buffer), 1000);
-
-    union DoubleBytes latitude_bytes;
-    union DoubleBytes longitude_bytes;
-    uint8_t latitude_send[8];
-    uint8_t longitude_send[8];
-
+    /* Assign data as double/float so it can be read as uint64/uint8x4 */
     latitude_bytes.double_value = gps_data.latitude;
     longitude_bytes.double_value = gps_data.longitude;
-
-    for  (uint8_t i=0; i < 8; i++) {
-	latitude_send[7 - i] = GET_BYTE_FROM_WORD(i, latitude_bytes.double_as_int);
-	longitude_send[7 - i] = GET_BYTE_FROM_WORD(i, longitude_bytes.double_as_int);
-    }
-
-    HAL_CAN_AddTxMessage(&hcan, &GPS_latitude, latitude_send, &can_mailbox);
-    osDelay(2000);
-
-    HAL_CAN_AddTxMessage(&hcan, &GPS_longitude, longitude_send, &can_mailbox);
-    osDelay(2000);
-
-    union FloatBytes altitude_bytes;
-    union FloatBytes hdop_bytes;
-    uint8_t altitude_hdop_send[8];
-
     altitude_bytes.float_value = gps_data.altitude;
     hdop_bytes.float_value = gps_data.hdop;
 
     for  (uint8_t i=0; i < 8; i++) {
-	altitude_hdop_send[3 - i] = altitude_bytes.bytes[i];
-	altitude_hdop_send[7 - i] = hdop_bytes.bytes[i];
+	latitude_msg.data[7 - i] = GET_BYTE_FROM_WORD(i, latitude_bytes.double_as_int);
+	longitude_msg.data[7 - i] = GET_BYTE_FROM_WORD(i, longitude_bytes.double_as_int);
+	altitude_hdop_msg.data[3 - i] = altitude_bytes.bytes[i];
+	altitude_hdop_msg.data[7 - i] = hdop_bytes.bytes[i];
     }
 
-    HAL_CAN_AddTxMessage(&hcan, &GPS_altitude_hdop, altitude_hdop_send, &can_mailbox);
+    /* Satellite Count Cast */
+    uint32_t sat_count = (uint32_t) gps_data.satelliteCount;
+    side_and_count_msg.data[0] = gps_data.latSide;
+    side_and_count_msg.data[1] = gps_data.lonSide;
+    for  (uint8_t i=0; i < 4; i++) {
+	side_and_count_msg.data[5 - i] = ((sat_count >> (8 * i)) && 0xFF);
+    }
+    side_and_count_msg.data[6] = 0;
+    side_and_count_msg.data[7] = 0;
+
+    /* Transmit a message every 2 seconds */
+    HAL_CAN_AddTxMessage(&hcan, &latitude_msg.header, latitude_msg.data, &can_mailbox);
+    send_CAN_Radio(&latitude_msg);
     osDelay(2000);
 
-    uint8_t side_and_count[8];
-    uint32_t sat_count = (uint32_t) gps_data.satelliteCount;
-    side_and_count[0] = gps_data.latSide;
-    side_and_count[1] = gps_data.lonSide;
-    for  (uint8_t i=0; i < 4; i++) {
-	side_and_count[5 - i] = ((sat_count >> (4 * i)) && 0xFF);
-    }
-    side_and_count[6] = 0;
-    side_and_count[7] = 0;
+    HAL_CAN_AddTxMessage(&hcan, &longitude_msg.header, longitude_msg.data, &can_mailbox);
+    send_CAN_Radio(&longitude_msg);
+    osDelay(2000);
 
-    HAL_CAN_AddTxMessage(&hcan, &GPS_side_count, side_and_count, &can_mailbox);
-    osDelay(4000);
+    HAL_CAN_AddTxMessage(&hcan, &altitude_hdop_msg.header, altitude_hdop_msg.data, &can_mailbox);
+    send_CAN_Radio(&altitude_hdop_msg);
+    osDelay(2000);
+
+    HAL_CAN_AddTxMessage(&hcan, &side_and_count_msg.header, side_and_count_msg.data, &can_mailbox);
+    send_CAN_Radio(&side_and_count_msg);
+    osDelay(4000); // 4000 so we have 2 + 2 + 2 + 4 = 10 seconds total
 
 
 
@@ -603,6 +632,50 @@ void check_IMU_result(union FloatBytes ax_x, union FloatBytes ax_y, union FloatB
       // This means there was a disconnect in one of the IMU cables and it needs to be re-initialized
       initIMU();
   }
+}
+
+void send_CAN_Radio(CAN_Radio_msg_t *tx_CAN_msg)
+{
+  uint8_t radio_buffer[CAN_BUFFER_LEN] = {0};
+
+  /* TIMESTAMP */
+  for (uint8_t i = 0; i < 8; i++) {
+    radio_buffer[7 - i] = (char) GET_BYTE_FROM_WORD(i, tx_CAN_msg->timestamp.double_as_int);
+  }
+
+  /* CAN MESSAGE IDENTIFIER */
+  radio_buffer[8] = '#';
+
+  /* CAN ID */
+  if (tx_CAN_msg->header.IDE == CAN_ID_STD)
+  {
+    radio_buffer[12]  = 0xFF & (tx_CAN_msg->header.StdId);
+    radio_buffer[11] = 0xFF & (tx_CAN_msg->header.StdId >> 8);
+  }
+  else if (tx_CAN_msg->header.IDE == CAN_ID_EXT)
+  {
+     radio_buffer[12]  = 0xFF & (tx_CAN_msg->header.ExtId);
+     radio_buffer[11] = 0xFF & (tx_CAN_msg->header.ExtId >> 8);
+     radio_buffer[10] = 0xFF & (tx_CAN_msg->header.ExtId >> 16);
+     radio_buffer[9] = 0xFF & (tx_CAN_msg->header.ExtId >> 24);
+  }
+
+   /* CAN DATA */
+   for (uint8_t i = 0; i < 8; i++) {
+     radio_buffer[13 + i] = tx_CAN_msg->data[i];
+   }
+
+   /* CAN DATA LENGTH */
+   radio_buffer[21] = tx_CAN_msg->header.DLC & 0xF;
+
+   /* CARRIAGE RETURN */
+   radio_buffer[CAN_BUFFER_LEN - 2] = '\r';
+
+   /* NEW LINE */
+   radio_buffer[CAN_BUFFER_LEN - 1] = '\n';
+
+   HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), 1000);
+
 }
 
 /*

@@ -57,10 +57,10 @@ extern CAN_TxHeaderTypeDef tel_diagnostics_header;
 extern CAN_TxHeaderTypeDef IMU_x_axis_header;
 extern CAN_TxHeaderTypeDef IMU_y_axis_header;
 extern CAN_TxHeaderTypeDef IMU_z_axis_header;
-extern CAN_TxHeaderTypeDef GPS_latitude;
-extern CAN_TxHeaderTypeDef GPS_longitude;
-extern CAN_TxHeaderTypeDef GPS_altitude_hdop;
-extern CAN_TxHeaderTypeDef GPS_side_count;
+extern CAN_TxHeaderTypeDef GPS_latitude_header;
+extern CAN_TxHeaderTypeDef GPS_longitude_header;
+extern CAN_TxHeaderTypeDef GPS_altitude_hdop_header;
+extern CAN_TxHeaderTypeDef GPS_side_count_header;
 
 
 
@@ -84,6 +84,12 @@ typedef struct {
   uint8_t data[8];
   union DoubleBytes timestamp;
 } CAN_msg_t;
+
+typedef struct {
+  CAN_TxHeaderTypeDef header;
+  uint8_t data[8];
+  union DoubleBytes timestamp;
+} CAN_Radio_msg_t;
 
 void CanFilterSetup(void);
 void Can_Init(void);

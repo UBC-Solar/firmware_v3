@@ -59,28 +59,28 @@ CAN_TxHeaderTypeDef IMU_z_axis_header = {
     .RTR = CAN_RTR_DATA,
     .DLC = CAN_DATA_LENGTH};
 
-CAN_TxHeaderTypeDef GPS_latitude = {
+CAN_TxHeaderTypeDef GPS_latitude_header = {
     .StdId = GPS_latitude_ID,
     .ExtId = 0x0000,
     .IDE = CAN_ID_STD,
     .RTR = CAN_RTR_DATA,
     .DLC = CAN_DATA_LENGTH};
 
-CAN_TxHeaderTypeDef GPS_longitude = {
+CAN_TxHeaderTypeDef GPS_longitude_header = {
     .StdId = GPS_longitude_ID,
     .ExtId = 0x0000,
     .IDE = CAN_ID_STD,
     .RTR = CAN_RTR_DATA,
     .DLC = CAN_DATA_LENGTH};
 
-CAN_TxHeaderTypeDef GPS_altitude_hdop = {
+CAN_TxHeaderTypeDef GPS_altitude_hdop_header = {
     .StdId = GPS_altitude_hdop_ID,
     .ExtId = 0x0000,
     .IDE = CAN_ID_STD,
     .RTR = CAN_RTR_DATA,
     .DLC = CAN_DATA_LENGTH};
 
-CAN_TxHeaderTypeDef GPS_side_count = {
+CAN_TxHeaderTypeDef GPS_side_count_header = {
     .StdId = GPS_side_count_ID,
     .ExtId = 0x0000,
     .IDE = CAN_ID_STD,
