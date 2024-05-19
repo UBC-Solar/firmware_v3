@@ -20,14 +20,20 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "can.h"
+#include "fatfs.h"
 #include "i2c.h"
+#include "rtc.h"
 #include "spi.h"
 #include "usart.h"
 #include "gpio.h"
-#include "sdcard.h"     // From sdCardLib in "Libraries"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+#include "debug_io.h"
+#include "sd_logger.h"
 
 /* USER CODE END Includes */
 
@@ -51,18 +57,19 @@
 
 /* USER CODE BEGIN PV */
 
+/* Diagnostics */
+
+tel_diagnostics g_tel_diagnostics = {false, false, false, false, false};
+
 /* CAN Filters */
 CAN_FilterTypeDef CAN_filter0;
 CAN_FilterTypeDef CAN_filter1;
 
-/* CAN Rx Header */
-CAN_RxHeaderTypeDef can_rx_header;
-
-/* Can Data */
-uint8_t current_can_data[8];
-
 /* HAL Status */
 HAL_StatusTypeDef rx_status;
+
+/* Log File */
+FIL* logfile;
 
 /* USER CODE END PV */
 
@@ -112,18 +119,49 @@ int main(void)
   MX_I2C1_Init();
   MX_I2C2_Init();
   MX_USART1_UART_Init();
+  MX_RTC_Init();
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
-  Can_Init();
+  DebugIO_Init(&huart5);
   initIMU();
 
-  // Initialize SD card
+  // Sync with RTC if date = Jan 1 2000 or GPIO is set to high
+  RTC_DateTypeDef curr_date;
+  RTC_TimeTypeDef curr_time;
+  HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
+  /* Sync the RTC with GPS if date is Jan 1, 2000 */
+  if ((curr_date.Month == RTC_MONTH_JANUARY && curr_date.Date == 1 && curr_date.Year == 0) || HAL_GPIO_ReadPin(RTC_SYNC_GPIO_Port, RTC_SYNC_Pin) == GPIO_PIN_SET) {
+      Sync_RTC_With_GPS();
+      g_tel_diagnostics.rtc_reset = true;
+  }
 
+//  FRESULT fresult;
+//  char startup_message[60];
+//  char filename[30];
+
+//  HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
+//  HAL_RTC_GetTime(&hrtc, &curr_time, RTC_FORMAT_BIN);
+
+  /* Year - Month - Date  Format */
+//  sprintf(startup_message, "TEL start up on 20%u %u %u at %u:%u:%u", curr_date.Year,
+//	  curr_date.Month, curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
+
+  /* mount SD card */
+//  DSTATUS stat = disk_status(0);
+//  DSTATUS stat2 = disk_initialize(0);
+//  fresult = sd_mount();
+  // if (fresult == FR_OK) printf("SD Mounted Successfully\n\r");
+  // else printf("SD NOT Mounted\n\r");
+
+//  sprintf(filename, "TEL-20%u-%u-%uT%u-%u-%u.txt", curr_date.Year, curr_date.Month,
+//	  curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
+//  logfile = sd_open(filename);
+//  sd_append(logfile, startup_message);
 
   /* USER CODE END 2 */
 
-  /* Init scheduler */
-  osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
+  /* Call init function for freertos objects (in freertos.c) */
   MX_FREERTOS_Init();
 
   /* Start scheduler */
@@ -149,13 +187,15 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
+  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
@@ -178,11 +218,38 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM1 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM1) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.

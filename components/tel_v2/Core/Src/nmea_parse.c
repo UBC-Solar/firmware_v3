@@ -160,6 +160,61 @@ int nmea_GPGLL(GPS *gps_data, char*inputString) {
     else return 0;
 }
 
+
+int nmea_GPRMC(GPS *gps_data, char* inputString) {
+
+    char *values[25];
+    int counter = 0;
+    memset(values, 0, sizeof(values));
+    char *start = inputString;
+    char *end;
+
+    // Loop until the end of the string is reached.
+    while (start != NULL && *start != '\0') {
+        end = strchr(start, ',');
+        if (end == NULL) {
+            // Last token reached.
+            end = start + strlen(start);
+        }
+
+        if (end == start) {
+            // Empty field found.
+            values[counter] = malloc(1); // Allocate space for a single character
+            values[counter][0] = '\0';   // Set it to the empty string
+        } else {
+            // Non-empty field found.
+            values[counter] = malloc(end - start + 1); // Allocate space for the token
+            strncpy(values[counter], start, end - start); // Copy the token
+            values[counter][end - start] = '\0'; // Null-terminate it
+        }
+
+        counter++;
+        if (*end == '\0') {
+            // End of the string reached.
+            break;
+        }
+        start = end + 1; // Move to the start of the next token.
+    }
+
+    // ... (Rest of your code for checking and handling the date and freeing memory)
+
+    // Make sure to check if the date was successfully extracted
+    if (counter > 9 && strlen(values[9]) == 6) {
+        strncpy(gps_data->date, values[9], 6);
+        gps_data->date[6] = '\0';
+        // Free allocated memory
+        for (int i = 0; i < counter; i++) free(values[i]);
+        gps_data->RMC_Flag = 1;
+        return 1; // Success
+    } else {
+        // Free allocated memory before returning
+        for (int i = 0; i < counter; i++) free(values[i]);
+        return 0; // Failure
+    }
+}
+
+
+
 void nmea_parse(GPS *gps_data, uint8_t *buffer){
     memset(data, 0, sizeof(data));
     char * token = strtok(buffer, "$"); // TODO: Check if buffer can be casted to a char * for strtok argument
@@ -180,6 +235,9 @@ void nmea_parse(GPS *gps_data, uint8_t *buffer){
            else if(strstr(data[i], "GNGGA") != NULL || (strstr(data[i], "GPGGA"))!=NULL){
                nmea_GPGGA(gps_data, data[i]);
            }
+           else if(strstr(data[i], "GNRMC") != NULL || (strstr(data[i], "GPRMC"))!=NULL){
+	       nmea_GPRMC(gps_data, data[i]);
+	   }
        }
 
     }
