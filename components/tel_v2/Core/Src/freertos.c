@@ -55,6 +55,7 @@
 #define READ_GPS_DELAY     10 * 1000  // 10 seconds (change to 5 minutes later)
 #define TRANSMIT_RTC_DELAY 5000       // 5000 milliseconds
 #define DEFAULT_TASK_DELAY 500        // 500 milliseconds
+#define TRANSMIT_DIAGNOSTICS_DELAY 2000 // 2000 milliseconds
 
 #define CAN_BUFFER_LEN  24
 
@@ -106,6 +107,7 @@ osThreadId readCANTaskHandle;
 osThreadId readIMUTaskHandle;
 osThreadId readGPSTaskHandle;
 osThreadId transmitRTCTaskHandle;
+osThreadId transmitDiagnosticsTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -122,6 +124,7 @@ void read_CAN_task(void const * argument);
 void read_IMU_task(void const * argument);
 void read_GPS_task(void const * argument);
 void transmit_RTC_task(void const * argument);
+void transmit_Diagnostics_task(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -195,6 +198,10 @@ void MX_FREERTOS_Init(void) {
   /* definition and creation of transmitRTCTask */
   osThreadDef(transmitRTCTask, transmit_RTC_task, osPriorityNormal, 0, 512);
   transmitRTCTaskHandle = osThreadCreate(osThread(transmitRTCTask), NULL);
+
+  /* definition and creation of transmitDiagnosticsTask */
+  osThreadDef(transmitDiagnosticsTask, transmit_Diagnostics_task, osPriorityNormal, 0, 512);
+  transmitDiagnosticsTaskHandle = osThreadCreate(osThread(transmitDiagnosticsTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -598,24 +605,70 @@ void transmit_RTC_task(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    printf("transmit_RTC_task()\n\r");
-    // Get rtc timestamp
-    double timestamp = get_current_timestamp();
-    union DoubleBytes timestamp_bytes;
-    timestamp_bytes.double_value = timestamp;
-    uint8_t data_send[8];
+
+    CAN_Radio_msg_t rtc_msg;
+    rtc_msg.header = rtc_timestamp_header;
+
+    union DoubleBytes current_timestamp;
+    current_timestamp.double_value = get_current_timestamp();
+
+    rtc_msg.timestamp = current_timestamp;
 
     // Populate data_send array
     for (int i = 0; i < 8; i++) {
-        data_send[i] = (timestamp_bytes.double_as_int >> (8 * i)) & 0xFF;
+        rtc_msg.data[i] = (current_timestamp.double_as_int >> (8 * i)) & 0xFF;
     }
     
-    // Transmit message on CAN
-    HAL_CAN_AddTxMessage(&hcan, &rtc_timestamp_header, data_send, &can_mailbox);
-    send_tel_diagnostics();
+    HAL_CAN_AddTxMessage(&hcan, &rtc_msg.header, rtc_msg.data, &can_mailbox);
+    send_CAN_Radio(&rtc_msg);
+
     osDelay(TRANSMIT_RTC_DELAY);
   }
   /* USER CODE END transmit_RTC_task */
+}
+
+/* USER CODE BEGIN Header_transmit_Diagnostics_task */
+/**
+* @brief Function implementing the transmitDiagnosticsTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_transmit_Diagnostics_task */
+void transmit_Diagnostics_task(void const * argument)
+{
+  /* USER CODE BEGIN transmit_Diagnostics_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    uint8_t data_send = 0x00;
+
+    CAN_Radio_msg_t diagnostics_msg;
+    diagnostics_msg.header = tel_diagnostics_header;
+    
+    union DoubleBytes current_timestamp;
+    current_timestamp.double_value = get_current_timestamp();
+
+    diagnostics_msg.timestamp = current_timestamp;
+
+    if(g_tel_diagnostics.rtc_reset) 
+      SET_BIT(data_send, 0);
+    if(g_tel_diagnostics.gps_sync_fail)
+      SET_BIT(data_send, 1);
+    if(g_tel_diagnostics.imu_fail)
+      SET_BIT(data_send, 2);
+    if(g_tel_diagnostics.gps_fail)
+      SET_BIT(data_send, 3);
+    if(g_tel_diagnostics.watchdog_reset)
+      SET_BIT(data_send, 4);
+    
+    diagnostics_msg.data[0] = data_send;
+    
+    HAL_CAN_AddTxMessage(&hcan, &diagnostics_msg.header, diagnostics_msg.data, &can_mailbox);
+    send_CAN_Radio(&diagnostics_msg);
+
+    osDelay(TRANSMIT_DIAGNOSTICS_DELAY);
+  }
+  /* USER CODE END transmit_Diagnostics_task */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -677,35 +730,6 @@ void send_CAN_Radio(CAN_Radio_msg_t *tx_CAN_msg)
    HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), 1000);
 
 }
-
-/*
- * Sends a tel diagnostics message over CAN
- * Bits
- * 0: RTC reset
- * 1: GPS Sync successful
- * 2: IMU Failure 
- * 3: GPS Failure
- * 4: Watchdog reset occured
- */
-void send_tel_diagnostics()
-{
-  uint8_t data_send = 0x00;
-  data_send = 0x00; // TODO: Set bits based on diagnostics
-
-  if(g_tel_diagnostics.rtc_reset) 
-    SET_BIT(data_send, 0);
-  if(g_tel_diagnostics.gps_sync_fail)
-    SET_BIT(data_send, 1);
-  if(g_tel_diagnostics.imu_fail)
-    SET_BIT(data_send, 2);
-  if(g_tel_diagnostics.gps_fail)
-    SET_BIT(data_send, 3);
-  if(g_tel_diagnostics.watchdog_reset)
-    SET_BIT(data_send, 4);
-  
-  HAL_CAN_AddTxMessage(&hcan, &tel_diagnostics_header, data_send, &can_mailbox);
-}
-
 
 /* USER CODE END Application */
 
