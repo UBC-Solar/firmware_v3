@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
+#include "rtc.h"
 
 /* USER CODE BEGIN 0 */
 
