@@ -299,7 +299,11 @@ void SendCANMotorCommand(MotorCommand motorCommand)
 		data_send[i] = velocity.bytes[i];
 	    data_send[4 + i] = throttle.bytes[i];
 	}
-	HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
+	
+	if (HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox) == HAL_OK) {
+		HAL_GPIO_TogglePin(LED_OUT1_GPIO_Port, LED_OUT1_Pin);
+	}
+	
 }
 
 /*
