@@ -70,6 +70,7 @@ Doxyfile-firmwarev3
 
 *.mk
 *.list
+*.cyclo
 
 # Build Folders
 components/mcb/mcb_v1_0/Mitsuba - Release/

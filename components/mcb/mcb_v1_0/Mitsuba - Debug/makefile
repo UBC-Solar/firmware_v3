@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (11.3.rel1)
+# Toolchain: GNU Tools for STM32 (12.3.rel1)
 ################################################################################
 
 -include ../makefile.init
@@ -67,8 +67,8 @@ all: main-build
 main-build: mcb_main.elf secondary-outputs
 
 # Tool invocations
-mcb_main.elf mcb_main.map: $(OBJS) $(USER_OBJS) C:\DEV\ubc_solar\firmware_v3\components\mcb\mcb_v1_0\STM32F103RCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "mcb_main.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\DEV\ubc_solar\firmware_v3\components\mcb\mcb_v1_0\STM32F103RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="mcb_main.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+mcb_main.elf mcb_main.map: $(OBJS) $(USER_OBJS) C:\Users\ishan\OneDrive\School\UBC\UBC\ Solar\firmware_v3\components\mcb\mcb_v1_0\STM32F103RCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "mcb_main.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\ishan\OneDrive\School\UBC\UBC Solar\firmware_v3\components\mcb\mcb_v1_0\STM32F103RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="mcb_main.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

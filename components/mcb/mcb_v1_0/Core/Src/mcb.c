@@ -201,7 +201,7 @@ void TransitionCRUISEstate(InputFlags input_flags, DriveState * state)
 void UpdateInputFlags(InputFlags * input_flags)
 {
 	input_flags->mech_brake_pressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
-	input_flags->regen_enabled = !HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+	input_flags->regen_enabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
 	input_flags->velocity_under_threshold = velocityOfCar < VELOCITY_THRESHOLD;
 	GetSwitchState(input_flags);
 }
@@ -299,7 +299,11 @@ void SendCANMotorCommand(MotorCommand motorCommand)
 		data_send[i] = velocity.bytes[i];
 	    data_send[4 + i] = throttle.bytes[i];
 	}
-	HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox);
+	
+	if (HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox) == HAL_OK) {
+		HAL_GPIO_TogglePin(LED_OUT1_GPIO_Port, LED_OUT1_Pin);
+	}
+	
 }
 
 /*
