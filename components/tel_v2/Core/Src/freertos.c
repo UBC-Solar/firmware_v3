@@ -380,6 +380,8 @@ void read_IMU_task(void const * argument)
     ax_y.float_value = Accel_Y_RAW / 16384.0;
     ax_z.float_value = Accel_Z_RAW / 16384.0;
 
+    osDelay(250);
+
     /* Read gyroscope data */
     uint8_t gyro_data[NUM_GYRO_BYTES];
 
@@ -425,17 +427,21 @@ void read_IMU_task(void const * argument)
 
     for (int i = 0; i < 4; i++) {
 	// X-axis data
-	x_axis_data.data[3-i] = ax_x.bytes[i];
-	x_axis_data.data[7-i] = gy_x.bytes[i];
+	x_axis_data.data[i] = ax_x.bytes[i];
+	x_axis_data.data[4+i] = gy_x.bytes[i];
 
 	// Y-axis data
-	y_axis_data.data[3-i] = ax_y.bytes[i];
-	y_axis_data.data[7-i] = gy_y.bytes[i];
+	y_axis_data.data[i] = ax_y.bytes[i];
+	y_axis_data.data[4+i] = gy_y.bytes[i];
 
 	// Z-axis data
-	z_axis_data.data[3-i] = ax_z.bytes[i];
-	z_axis_data.data[7-i] = gy_z.bytes[i];
+	z_axis_data.data[i] = ax_z.bytes[i];
+	z_axis_data.data[4+i] = gy_z.bytes[i];
     }
+
+    printf("IMU G_X: %f\n\r", gy_x.float_value);
+    printf("IMU G_Y: %f\n\r", gy_y.float_value);
+    printf("IMU G_Z: %f\n\r", gy_z.float_value);
 
     /* Transmit the messages */
     HAL_CAN_AddTxMessage(&hcan, &x_axis_data.header, x_axis_data.data, &can_mailbox);
@@ -451,7 +457,8 @@ void read_IMU_task(void const * argument)
     g_tel_diagnostics.imu_fail = (imu_status != HAL_OK);
 
     /* Delay */
-    osDelay(READ_IMU_DELAY * 5); // 500 ms
+//    osDelay(READ_IMU_DELAY * 5); // 500 ms
+    osDelay(250);
   }
 
   /* USER CODE END read_IMU_task */
@@ -651,15 +658,15 @@ void transmit_Diagnostics_task(void const * argument)
     diagnostics_msg.timestamp = current_timestamp;
 
     if(g_tel_diagnostics.rtc_reset) 
-      SET_BIT(data_send, 0);
+      SET_BIT(data_send, 1 << 0);
     if(g_tel_diagnostics.gps_sync_fail)
-      SET_BIT(data_send, 1);
+      SET_BIT(data_send, 1 << 1);
     if(g_tel_diagnostics.imu_fail)
-      SET_BIT(data_send, 2);
+      SET_BIT(data_send, 1 << 2);
     if(g_tel_diagnostics.gps_fail)
-      SET_BIT(data_send, 3);
+      SET_BIT(data_send, 1 << 3);
     if(g_tel_diagnostics.watchdog_reset)
-      SET_BIT(data_send, 4);
+      SET_BIT(data_send, 1 << 4);
     
     diagnostics_msg.data[0] = data_send;
     

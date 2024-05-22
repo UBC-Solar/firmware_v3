@@ -19,9 +19,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
-#include "rtc.h"
 
 /* USER CODE BEGIN 0 */
+#include "rtc.h"
 
 HAL_StatusTypeDef can_start;
 
