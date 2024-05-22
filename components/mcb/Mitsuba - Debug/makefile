@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (12.3.rel1)
+# Toolchain: GNU Tools for STM32 (11.3.rel1)
 ################################################################################
 
 -include ../makefile.init
@@ -38,37 +38,37 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := mcb_main
+BUILD_ARTIFACT_NAME := mcb
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-mcb_main.elf \
+mcb.elf \
 
 MAP_FILES += \
-mcb_main.map \
+mcb.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-mcb_main.list \
+mcb.list \
 
 OBJCOPY_BIN += \
-mcb_main.bin \
+mcb.bin \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: mcb_main.elf secondary-outputs
+main-build: mcb.elf secondary-outputs
 
 # Tool invocations
-mcb_main.elf mcb_main.map: $(OBJS) $(USER_OBJS) C:\Users\ishan\OneDrive\School\UBC\UBC\ Solar\firmware_v3\components\mcb\mcb_v1_0\STM32F103RCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "mcb_main.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\ishan\OneDrive\School\UBC\UBC Solar\firmware_v3\components\mcb\mcb_v1_0\STM32F103RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="mcb_main.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+mcb.elf mcb.map: $(OBJS) $(USER_OBJS) C:\DEV\ubc_solar\firmware_v3\components\mcb\STM32F103RCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "mcb.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\DEV\ubc_solar\firmware_v3\components\mcb\STM32F103RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="mcb.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -77,19 +77,19 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-mcb_main.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "mcb_main.list"
+mcb.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "mcb.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-mcb_main.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "mcb_main.bin"
+mcb.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "mcb.bin"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) default.size.stdout mcb_main.bin mcb_main.elf mcb_main.list mcb_main.map
+	-$(RM) default.size.stdout mcb.bin mcb.elf mcb.list mcb.map
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_BIN)
