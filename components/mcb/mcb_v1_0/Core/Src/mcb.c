@@ -201,7 +201,7 @@ void TransitionCRUISEstate(InputFlags input_flags, DriveState * state)
 void UpdateInputFlags(InputFlags * input_flags)
 {
 	input_flags->mech_brake_pressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
-	input_flags->regen_enabled = !HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+	input_flags->regen_enabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
 	input_flags->velocity_under_threshold = velocityOfCar < VELOCITY_THRESHOLD;
 	GetSwitchState(input_flags);
 }
