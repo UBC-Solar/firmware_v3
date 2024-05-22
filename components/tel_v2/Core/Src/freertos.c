@@ -439,10 +439,6 @@ void read_IMU_task(void const * argument)
 	z_axis_data.data[4+i] = gy_z.bytes[i];
     }
 
-    printf("IMU G_X: %f\n\r", gy_x.float_value);
-    printf("IMU G_Y: %f\n\r", gy_y.float_value);
-    printf("IMU G_Z: %f\n\r", gy_z.float_value);
-
     /* Transmit the messages */
     HAL_CAN_AddTxMessage(&hcan, &x_axis_data.header, x_axis_data.data, &can_mailbox);
     send_CAN_Radio(&x_axis_data);
