@@ -37,15 +37,7 @@ int tmToEpochSeconds(tm timeNow) {
     return (int)seconds;
 }
 
-on Timer singleshot {
-    // Start the periodic timer to send RTC CAN messages forever
-    timerStart(periodic, FOREVER);
-
-    // Now determine the data bytes for the timestamp. We use a 64 bit double.
-    // TODO IMPLEMENT THIS
-    // byte canData[8] = 0;                         // Create the byte array
-    // tm currentTime;
-
+on Timer periodic {
     tm currTime;
     timeGetDate(currTime);                          // Get the time struct containing date time information
     int seconds = tmToEpochSeconds(currTime);     // Convert tm struct to epoch seconds
@@ -54,29 +46,14 @@ on Timer singleshot {
     intToByteArray(seconds, canData);             // Convert the float to a byte array
 
     // After using the current CAN message id, increment before next use
-    msg.id    = msgId;
-    msg.flags = 0;
-    msg.dlc   = 8;
     msg.data  = canData;
 
     // Send CAN message
     canWrite(ch, msg);
-    printf("Single shot MsgId: %d\n", msg.id);
-}
-
-on Timer periodic {
-    msg.id = msgId;
-
-    // Send CAN message
-    canWrite(ch, msg);
-    printf("Periodic MsgId: %d\n", msg.id);
-    if (!timerIsPending(periodic)) {
-    printf("Timer done!");
-    }
 }
 
 on start {
-    printf("Starting testlogger companion script\n");
+    printf("Starting RTC timestamp script\n");
 
     // Setup ONE CAN channel to send messages. This is hard coded to CH1
     // This will override the settings in the binary configuration,
@@ -86,11 +63,13 @@ on start {
     canSetBusOutputControl(ch, canDRIVER_NORMAL);
     canBusOn(ch);
 
-    singleshot.timeout = 500;   // Wait half a second
-    periodic.timeout   = 1000;  // One second period
+    periodic.timeout   = 1000 * 60;  // One second period
 
-    // Start the singleshot timer to send the RTC timestamp
-    timerStart(singleshot);
+    // Start the periodic timer to send the RTC timestamp
+    msg.id    = msgId;
+    msg.flags = 0;
+    msg.dlc   = 8;
+    timerStart(periodic);
     printf("Start periodic transmission\n");
 }
 
