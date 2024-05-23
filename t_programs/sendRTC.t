@@ -37,19 +37,34 @@ int tmToEpochSeconds(tm timeNow) {
     return (int)seconds;
 }
 
-on Timer periodic {
+void sendRTCMessage() {
     tm currTime;
     timeGetDate(currTime);                          // Get the time struct containing date time information
     int seconds = tmToEpochSeconds(currTime);     // Convert tm struct to epoch seconds
     
     byte canData[8] = {0, 0 ,0, 0, 0, 0, 0, 0};   // Create the byte array all zeros
     intToByteArray(seconds, canData);             // Convert the float to a byte array
+    printf("Sending CAN message with epoch timestamp: %d\n", seconds);
 
     // After using the current CAN message id, increment before next use
     msg.data  = canData;
 
     // Send CAN message
     canWrite(ch, msg);
+}
+
+on Timer singleshot {
+    timerStart(periodic, FOREVER);
+    sendRTCMessage();
+}
+
+on Timer periodic {
+    sendRTCMessage();
+
+    printf("Periodic MsgId: %d\n", msg.id);
+    if (!timerIsPending(periodic)) {
+        printf("Timer done!");
+    }
 }
 
 on start {
@@ -63,13 +78,14 @@ on start {
     canSetBusOutputControl(ch, canDRIVER_NORMAL);
     canBusOn(ch);
 
-    periodic.timeout   = 1000 * 60;  // One second period
+    singleshot.timeout = 1;          // 1ms is minimum possible delay for instant message
+    periodic.timeout   = 1000 * 60;  // One minute period. Periodic always starts after
 
     // Start the periodic timer to send the RTC timestamp
     msg.id    = msgId;
     msg.flags = 0;
     msg.dlc   = 8;
-    timerStart(periodic);
+    timerStart(singleshot);
     printf("Start periodic transmission\n");
 }
 
