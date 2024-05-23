@@ -2,9 +2,6 @@ variables {
     // Base channel. CAN messages will be sent on channel ch
     const int ch = 0;
 
-    // The singleshot timer is used to get a delay before the first RTC CAN message
-    Timer singleshot;
-
     // The periodic timer is then used between each RTC CAN message
     Timer periodic;
 
@@ -53,11 +50,6 @@ void sendRTCMessage() {
     canWrite(ch, msg);
 }
 
-on Timer singleshot {
-    timerStart(periodic, FOREVER);
-    sendRTCMessage();
-}
-
 on Timer periodic {
     sendRTCMessage();
 
@@ -78,14 +70,14 @@ on start {
     canSetBusOutputControl(ch, canDRIVER_NORMAL);
     canBusOn(ch);
 
-    singleshot.timeout = 1;          // 1ms is minimum possible delay for instant message
     periodic.timeout   = 1000 * 60;  // One minute period. Periodic always starts after
 
     // Start the periodic timer to send the RTC timestamp
     msg.id    = msgId;
     msg.flags = 0;
     msg.dlc   = 8;
-    timerStart(singleshot);
+    sendRTCMessage();                 // Send the first message
+    timerStart(periodic, FOREVER);
     printf("Start periodic transmission\n");
 }
 
