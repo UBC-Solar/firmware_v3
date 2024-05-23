@@ -70,7 +70,7 @@ on start {
     canSetBusOutputControl(ch, canDRIVER_NORMAL);
     canBusOn(ch);
 
-    periodic.timeout   = 1000 * 60;  // One minute period. Periodic always starts after
+    periodic.timeout   = 500;  // One minute period. Periodic always starts after
 
     // Start the periodic timer to send the RTC timestamp
     msg.id    = msgId;
