@@ -6,7 +6,7 @@ variables {
     Timer periodic;
 
     // The message id of the sent RTC CAN messages
-    int msgId = 696;
+    int msgId = 0x696;
 
     // The CAN message to be sent
     CanMessage msg;

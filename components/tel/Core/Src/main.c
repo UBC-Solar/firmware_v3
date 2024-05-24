@@ -132,7 +132,7 @@ int main(void)
   HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
   /* Sync the RTC with GPS if date is Jan 1, 2000 */
   if ((curr_date.Month == RTC_MONTH_JANUARY && curr_date.Date == 1 && curr_date.Year == 0) || HAL_GPIO_ReadPin(RTC_SYNC_GPIO_Port, RTC_SYNC_Pin) == GPIO_PIN_SET) {
-      Sync_RTC_With_GPS();
+    //   Sync_RTC_With_GPS();
       g_tel_diagnostics.rtc_reset = true;
   }
 

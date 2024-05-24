@@ -266,6 +266,38 @@ void read_CAN_task(void const * argument)
 	  HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
 	  rx_CAN_msg = evt.value.p; // Get pointer from the queue union
 
+        // If id = 696, then pass get_current_timestamp() the data
+        // We set time here so as not to slow down interrupt
+        if (rx_CAN_msg->header.StdId == 0x696) {
+            /* Initialize Time and Date Objects */
+            RTC_TimeTypeDef sTime = {0};
+            RTC_DateTypeDef sDate = {0};
+
+            /* Manually parsing the hours, minutes, and seconds */
+            sTime.Hours   = rx_CAN_msg->data[2];
+            sTime.Minutes = rx_CAN_msg->data[1];
+            sTime.Seconds = rx_CAN_msg->data[0];
+
+            /* Set the RTC time with these settings */
+            HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+
+            /* Manually parsing the date, month, and year */
+            sDate.Date  = rx_CAN_msg->data[3];
+            sDate.Month = rx_CAN_msg->data[4];
+            sDate.Year  = rx_CAN_msg->data[5];
+
+            /* Set the RTC Date with these settings */
+            HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+
+            // Now change data to be epoch seconds int
+            double epochSeconds = convertToEpochTime(&sTime, &sDate);
+            rx_CAN_msg->timestamp.double_value = epochSeconds;
+
+            for (int i = 0; i < 8; i++) {
+                rx_CAN_msg->data[7 - i] = GET_BYTE_FROM_WORD(i, rx_CAN_msg->timestamp.double_as_int);
+            }
+        }
+
 	 // 0-7: Timestamp
 	 // 8: '#'
 	 // 9-12: CAN ID
@@ -277,7 +309,6 @@ void read_CAN_task(void const * argument)
 	 /* TIMESTAMP */
 
 	 for (uint8_t i = 0; i < 8; i++) {
-//	   radio_buffer[7 - i] = GET_BYTE_FROM_WORD(i, current_timestamp.double_as_int);
 	   radio_buffer[7 - i] = (char) GET_BYTE_FROM_WORD(i, rx_CAN_msg->timestamp.double_as_int);
 	 }
 
@@ -312,23 +343,8 @@ void read_CAN_task(void const * argument)
 	 /* NEW LINE */
 	 radio_buffer[CAN_BUFFER_LEN - 1] = '\n';
 
-//	 sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
-
 	 /* Transmit over Radio */
 	 HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), 1000);
-
-//	 /* Check for drive command */
-//	 if (rx_CAN_msg->header.StdId == 0x401) {
-//	     drive_cmd_count++; // Increment the count received
-//	     if (drive_cmd_count == 10) { // Log every 10 of these messages
-//		 sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
-//		 drive_cmd_count = 0; // Reset the counter
-//	     }
-//	 }
-//	 else { // Always write non drive command msgs to SD logger
-//	   /* Convert radio_buffer to hex_string so it can be logged. MUST NOT USE strlen */
-//	   sd_append_as_hexnums(logfile, radio_buffer, CAN_BUFFER_LEN);
-//	 }
 
 	/* Free the memory allocated for this message */
 	osPoolFree(CAN_MSG_memory_pool, rx_CAN_msg);
