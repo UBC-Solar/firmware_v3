@@ -39,9 +39,8 @@ extern CAN_HandleTypeDef hcan;
 /* USER CODE BEGIN Private defines */
 
 #define CAN_READY (uint32_t) 0x0001
-
+#define RTC_TIMESTAMP_MSG_ID 0x751
 #define TEL_DIAGNOSTICS_ID 0x750
-#define RTC_TIMESTAMP 0x751
 #define IMU_X_AXIS 0x752
 #define IMU_Y_AXIS 0x753
 #define IMU_Z_AXIS 0x754
@@ -93,6 +92,7 @@ typedef struct {
 
 void CanFilterSetup(void);
 void Can_Init(void);
+void modifyRTCTimestampMsg(CAN_msg_t *rx_CAN_msg);
 
 extern osThreadId readCANTaskHandle;
 

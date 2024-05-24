@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<!DOCTYPE KVASER>
+<KVASER>
+  <VERSION>2.0</VERSION>
+  <BINARY_VERSION>6.0</BINARY_VERSION>
+  <SETTINGS>
+    <MODE fifo_mode="NO" log_all="YES"/>
+    <CANPOWER timeout="5000"/>
+  </SETTINGS>
+  <CAN_BUS>
+    <PARAMETERS bitrate="500000" channel="0" silent="YES" sjw="1" tseg1="12" tseg2="1"/>
+  </CAN_BUS>
+  <SCRIPTS>
+    <SCRIPT default_channel="0" primary="YES">
+      <FILENAME>sendRTC.txe</FILENAME>
+      <PATH></PATH>
+    </SCRIPT>
+  </SCRIPTS>
+</KVASER>

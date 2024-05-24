@@ -22,6 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 #include "rtc.h"
+#include "main.h"
 
 HAL_StatusTypeDef can_start;
 
@@ -257,6 +258,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     for(int i = 0; i < 8; i++) {
       new_CAN_msg->data[i] = can_data[i];
     }
+
     new_CAN_msg->timestamp.double_value = get_current_timestamp();
     osMessagePut(CAN_MSG_Rx_Queue, new_CAN_msg, osWaitForever);
 //  }
@@ -266,6 +268,29 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
   /* To avoid warning of unused variable */
   //(void) status;
+}
+
+
+/**
+ * @brief Modify 0x751 message's data from time struct format to a 8 byte double 
+ *        epoch timestamp
+ * @param rx_CAN_msg: 0x751 CAN message to be modified
+ * @return void
+*/
+void modifyRTCTimestampMsg(CAN_msg_t *rx_CAN_msg) {
+    // Get the current time and date from the RTC
+    RTC_TimeTypeDef sTime;
+    RTC_DateTypeDef sDate;
+    sTime = HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+    sDate = HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+
+    // Convert the time and date to epoch seconds timestamp as a double
+    // and write the 64 bits as an 8 byte buffer
+    double epochSeconds = convertToEpochTime(&sTime, &sDate);
+    rx_CAN_msg->timestamp.double_value = epochSeconds;
+    for (int i = 0; i < 8; i++) {
+        rx_CAN_msg->data[i] = GET_BYTE_FROM_WORD(i, rx_CAN_msg->timestamp.double_as_int);
+    }
 }
 
 /* USER CODE END 1 */

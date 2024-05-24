@@ -265,38 +265,15 @@ void read_CAN_task(void const * argument)
       if (evt.status == osEventMessage) {
 	  HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
 	  rx_CAN_msg = evt.value.p; // Get pointer from the queue union
+    
+      /* Perform rtc syncing check if the message is 0x751 */
+      if (rx_CAN_msg->header.StdId == 0x751)
+      {
+        sync_memorator_rtc(rx_CAN_msg);
+      }
 
-        // If id = 696, then pass get_current_timestamp() the data
-        // We set time here so as not to slow down interrupt
-        if (rx_CAN_msg->header.StdId == RTC_TIMESTAMP) {
-            /* Initialize Time and Date Objects */
-            RTC_TimeTypeDef sTime = {0};
-            RTC_DateTypeDef sDate = {0};
-
-            /* Manually parsing the hours, minutes, and seconds */
-            sTime.Hours   = rx_CAN_msg->data[2];
-            sTime.Minutes = rx_CAN_msg->data[1];
-            sTime.Seconds = rx_CAN_msg->data[0];
-
-            /* Set the RTC time with these settings */
-            HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-
-            /* Manually parsing the date, month, and year */
-            sDate.Date  = rx_CAN_msg->data[3];
-            sDate.Month = rx_CAN_msg->data[4];
-            sDate.Year  = rx_CAN_msg->data[5];
-
-            /* Set the RTC Date with these settings */
-            HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-
-            // Now change data to be epoch seconds int
-            double epochSeconds = convertToEpochTime(&sTime, &sDate);
-            rx_CAN_msg->timestamp.double_value = epochSeconds;
-
-            for (int i = 0; i < 8; i++) {
-                rx_CAN_msg->data[i] = GET_BYTE_FROM_WORD(i, rx_CAN_msg->timestamp.double_as_int);
-            }
-        }
+      /* Modify data of 0x751 message to be a double timestamp instead of the time struct format */
+      modifyRTCTimestampMsg(rx_CAN_msg);
 
 	 // 0-7: Timestamp
 	 // 8: '#'
