@@ -8,9 +8,11 @@ from canlib import EAN, Device
 from canlib import kvamemolibxml
 from canlib import kvmlib
 import canlib.kvaMemoLibXml as kvaMemoLibXml
+import os
 
 # Constants 
 CH_NUM                  = 0                      # Assumes device is connected to channel 0 
+PATH_TO_DIR             = os.getcwd() + "\\tools\\t_programs\\sendRTC\\"
 XML_FILE_NAME           = "sendRTC.xml"          # Path to XML file in same directory as this code
 
 # Returns the EAN using the .ChannelData.card_upc_no attribute
@@ -26,7 +28,7 @@ def loadBinaryXML():
 
     dev = Device.find(ean=EAN(ean))                         # Get a device object to then download to
 
-    with open(XML_FILE_NAME, 'r') as myfile:                # Get XML file string
+    with open(PATH_TO_DIR + "\\" + XML_FILE_NAME, 'r') as myfile:
         config_xml = myfile.read()
 
     config_lif = kvamemolibxml.kvaXmlToBuffer(config_xml)   # Convert XML string to bytes
@@ -38,7 +40,7 @@ def performValidation():
     xl = kvaMemoLibXml.kvaMemoLibXml()
     print("kvaMemoLibXml version: v" + xl.getVersion())
 
-    with open(XML_FILE_NAME, 'r') as myfile:
+    with open(PATH_TO_DIR + "\\" + XML_FILE_NAME, 'r') as myfile:
         config_xml = myfile.read()
 
     xl.kvaXmlValidate(config_xml)

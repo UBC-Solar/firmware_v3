@@ -12,24 +12,14 @@
   </CAN_BUS>
   <TRIGGERBLOCK>
     <TRIGGERS>
-      <TRIGGER_MSG_ID can_ext="NO" can_fd="NO" channel="0" msgid="3" msgid_min="3"
+      <TRIGGER_MSG_ID can_ext="NO" can_fd="NO" channel="0" msgid="751" msgid_min="751"
        name="trigger_0" protocol="NONE" timeout="0"/>
-      <TRIGGER_MSG_ID can_ext="NO" can_fd="NO" channel="1" msgid="6" msgid_min="6"
-       name="trigger_1" protocol="NONE" timeout="0"/>
-      <TRIGGER_MSG_ID can_ext="NO" can_fd="NO" channel="1" msgid="3" msgid_min="3"
-       name="trigger_2" protocol="NONE" timeout="0"/>
     </TRIGGERS>
     <STATEMENTS>
       <STATEMENT posttrigger="0" pretrigger="0">
-        <EXPRESSION>trigger_0 OR trigger_2</EXPRESSION>
+        <EXPRESSION>trigger_0</EXPRESSION>
         <ACTIONS>
           <ACTION_START_LOG/>
-        </ACTIONS>
-      </STATEMENT>
-      <STATEMENT posttrigger="2500" pretrigger="0">
-        <EXPRESSION>trigger_1</EXPRESSION>
-        <ACTIONS>
-          <ACTION_STOP_LOG/>
         </ACTIONS>
       </STATEMENT>
     </STATEMENTS>
