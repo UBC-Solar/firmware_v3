@@ -1,0 +1,43 @@
+<?xml version="1.0" ?>
+<!DOCTYPE KVASER>
+<KVASER>
+  <VERSION>2.0</VERSION>
+  <BINARY_VERSION>6.0</BINARY_VERSION>
+  <SETTINGS>
+    <MODE fifo_mode="NO" log_all="NO"/>
+    <CANPOWER timeout="5000"/>
+  </SETTINGS>
+  <CAN_BUS>
+    <PARAMETERS bitrate="500000" channel="0" silent="NO" sjw="1" tseg1="12" tseg2="1"/>
+  </CAN_BUS>
+  <TRIGGERBLOCK>
+    <TRIGGERS>
+      <TRIGGER_MSG_ID can_ext="NO" can_fd="NO" channel="0" msgid="3" msgid_min="3"
+       name="trigger_0" protocol="NONE" timeout="0"/>
+      <TRIGGER_MSG_ID can_ext="NO" can_fd="NO" channel="1" msgid="6" msgid_min="6"
+       name="trigger_1" protocol="NONE" timeout="0"/>
+      <TRIGGER_MSG_ID can_ext="NO" can_fd="NO" channel="1" msgid="3" msgid_min="3"
+       name="trigger_2" protocol="NONE" timeout="0"/>
+    </TRIGGERS>
+    <STATEMENTS>
+      <STATEMENT posttrigger="0" pretrigger="0">
+        <EXPRESSION>trigger_0 OR trigger_2</EXPRESSION>
+        <ACTIONS>
+          <ACTION_START_LOG/>
+        </ACTIONS>
+      </STATEMENT>
+      <STATEMENT posttrigger="2500" pretrigger="0">
+        <EXPRESSION>trigger_1</EXPRESSION>
+        <ACTIONS>
+          <ACTION_STOP_LOG/>
+        </ACTIONS>
+      </STATEMENT>
+    </STATEMENTS>
+  </TRIGGERBLOCK>
+  <SCRIPTS>
+    <SCRIPT default_channel="0" primary="YES">
+      <FILENAME>sendRTC.txe</FILENAME>
+      <PATH></PATH>
+    </SCRIPT>
+  </SCRIPTS>
+</KVASER>

@@ -7,6 +7,7 @@ from canlib import canlib
 from canlib import EAN, Device
 from canlib import kvamemolibxml
 from canlib import kvmlib
+import canlib.kvaMemoLibXml as kvaMemoLibXml
 
 # Constants 
 CH_NUM                  = 0                      # Assumes device is connected to channel 0 
@@ -33,10 +34,36 @@ def loadBinaryXML():
     with kvmlib.openDevice(dev.channel_number()) as memo:   # Write XML binary to memorator
         memo.write_config(config_lif)
 
+def performValidation():
+    xl = kvaMemoLibXml.kvaMemoLibXml()
+    print("kvaMemoLibXml version: v" + xl.getVersion())
+
+    with open(XML_FILE_NAME, 'r') as myfile:
+        config_xml = myfile.read()
+
+    xl.kvaXmlValidate(config_xml)
+
+    (countErr, countWarn) = xl.xmlGetValidationStatusCount()
+    print("Errors: %d, Warnings: %d" % (countErr, countWarn))
+
+    if countErr != 0:
+        code = -1
+        while code != 0:
+            (code, text) = xl.xmlGetValidationError()
+            print("%d: %s" % (code, text))
+
+    if countWarn != 0:
+        code = -1
+        while code != 0:
+            (code, text) = xl.xmlGetValidationWarning()
+            print("%d: %s" % (code, text))
+
+    if countErr != 0 or countWarn != 0:
+        raise Exception('Please fix validation Errors/Warnings.')
 
 def main():
-    loadBinaryXML()
+    loadBinaryXML()             # Load XML file onto memorator
+    performValidation()         # Check for any errors
 
 if __name__ == "__main__":
     main()
-    
