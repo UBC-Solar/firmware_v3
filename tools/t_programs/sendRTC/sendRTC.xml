@@ -8,7 +8,7 @@
     <CANPOWER timeout="5000"/>
   </SETTINGS>
   <CAN_BUS>
-    <PARAMETERS bitrate="500000" channel="0" silent="YES" sjw="1" tseg1="12" tseg2="1"/>
+    <PARAMETERS bitrate="500000" channel="0" silent="YES" sjw="1" tseg1="13" tseg2="2"/>
   </CAN_BUS>
   <SCRIPTS>
     <SCRIPT default_channel="0" primary="YES">
