@@ -195,9 +195,9 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(readGPSTask, read_GPS_task, osPriorityNormal, 0, 1536);
   readGPSTaskHandle = osThreadCreate(osThread(readGPSTask), NULL);
 
-  /* definition and creation of transmitRTCTask */
-  osThreadDef(transmitRTCTask, transmit_RTC_task, osPriorityNormal, 0, 512);
-  transmitRTCTaskHandle = osThreadCreate(osThread(transmitRTCTask), NULL);
+//   /* definition and creation of transmitRTCTask */
+//   osThreadDef(transmitRTCTask, transmit_RTC_task, osPriorityNormal, 0, 512);
+//   transmitRTCTaskHandle = osThreadCreate(osThread(transmitRTCTask), NULL);
 
   /* definition and creation of transmitDiagnosticsTask */
   osThreadDef(transmitDiagnosticsTask, transmit_Diagnostics_task, osPriorityNormal, 0, 512);
@@ -268,7 +268,7 @@ void read_CAN_task(void const * argument)
 
         // If id = 696, then pass get_current_timestamp() the data
         // We set time here so as not to slow down interrupt
-        if (rx_CAN_msg->header.StdId == 0x696) {
+        if (rx_CAN_msg->header.StdId == RTC_TIMESTAMP) {
             /* Initialize Time and Date Objects */
             RTC_TimeTypeDef sTime = {0};
             RTC_DateTypeDef sDate = {0};
@@ -294,7 +294,7 @@ void read_CAN_task(void const * argument)
             rx_CAN_msg->timestamp.double_value = epochSeconds;
 
             for (int i = 0; i < 8; i++) {
-                rx_CAN_msg->data[7 - i] = GET_BYTE_FROM_WORD(i, rx_CAN_msg->timestamp.double_as_int);
+                rx_CAN_msg->data[i] = GET_BYTE_FROM_WORD(i, rx_CAN_msg->timestamp.double_as_int);
             }
         }
 
