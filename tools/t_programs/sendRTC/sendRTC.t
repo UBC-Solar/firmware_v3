@@ -12,38 +12,20 @@ variables {
     CanMessage msg;
 }
 
-// Function to convert int to an array of 8 bytes
-void intToByteArray(int value, char byteArray[]) {
-    byteArray[0] = (value & 0xFF);
-    byteArray[1] = ((value >> 8) & 0xFF);
-    byteArray[2] = ((value >> 16) & 0xFF);
-    byteArray[3] = ((value >> 24) & 0xFF);
-}
-
-// Function to get the seconds of the tm structure
-// tm_mon is 0 to 11
-int tmToEpochSeconds(tm timeNow) {
-    float seconds = 0;
-    seconds += timeNow.tm_sec;
-    seconds += timeNow.tm_min * 60;
-    seconds += timeNow.tm_hour * 3600;
-    seconds += timeNow.tm_mday * 86400;
-    seconds += timeNow.tm_mon * 2592000;
-    seconds += (timeNow.tm_year - 70) * 31536000;
-
-    return (int)seconds;
-}
-
 void sendRTCMessage() {
     tm currTime;
     timeGetDate(currTime);                          // Get the time struct containing date time information
-    int seconds = tmToEpochSeconds(currTime);     // Convert tm struct to epoch seconds
     
     byte canData[8] = {0, 0 ,0, 0, 0, 0, 0, 0};   // Create the byte array all zeros
-    intToByteArray(seconds, canData);             // Convert the float to a byte array
-    printf("Sending CAN message with epoch timestamp: %d\n", seconds);
+    canData[0] = currTime.tm_sec & 0xFF;                    // seconds
+    canData[1] = currTime.tm_min & 0xFF;                     // minutes
+    canData[2] = currTime.tm_hour & 0xFF;                      // hours
+    canData[3] = currTime.tm_mday & 0xFF;                      // day
+    canData[4] = (currTime.tm_mon + 1) & 0xFF;                      // month
+    canData[5] = (currTime.tm_year - 100) & 0xFF;                      // year
+    canData[6] = currTime.tm_isdst & 0xFF;                      // daylight savings flag
+    printf("Sending CAN message with epoch timestamp: %d Y %d month %d day %d hour %d min %d sec\n", canData[5], canData[4], canData[3], canData[2], canData[1], canData[0]);
 
-    // After using the current CAN message id, increment before next use
     msg.data  = canData;
 
     // Send CAN message
