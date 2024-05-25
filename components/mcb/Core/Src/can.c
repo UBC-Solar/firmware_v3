@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
+xQueueHandle CAN_rx_queue;
+
 /**
  * 	CAN message header for a drive command. This command header is to
  * 	send an appropriate drive command to the motor controller.
@@ -111,6 +113,8 @@ void MX_CAN_Init(void)
 
   /* USER CODE BEGIN CAN_Init 0 */
 
+  CAN_rx_queue = xQueueCreate(32, sizeof(CAN_msg_t));
+
   /* USER CODE END CAN_Init 0 */
 
   /* USER CODE BEGIN CAN_Init 1 */
@@ -167,6 +171,9 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
 
     __HAL_AFIO_REMAP_CAN1_2();
 
+    /* CAN1 interrupt Init */
+    HAL_NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
   /* USER CODE BEGIN CAN1_MspInit 1 */
 
   /* USER CODE END CAN1_MspInit 1 */
@@ -190,6 +197,8 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8|GPIO_PIN_9);
 
+    /* CAN1 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn);
   /* USER CODE BEGIN CAN1_MspDeInit 1 */
 
   /* USER CODE END CAN1_MspDeInit 1 */
@@ -197,5 +206,30 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  // Using queue with freeRTOS: https://controllerstech.com/freertos-tutorial-5-using-queue/
+  CAN_RxHeaderTypeDef can_rx_header;
+  uint8_t can_data[8];
+
+  /* Get CAN message */
+  HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can_rx_header, can_data); 
+
+  /* Put CAN message in the Queue */
+  CAN_msg_t new_CAN_msg;
+  new_CAN_msg.header = can_rx_header;
+  for(int i = 0; i < 8; i++) 
+  {
+    new_CAN_msg.data[i] = can_data[i];
+  }
+
+  // Add a message to the queue
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  xQueueSendFromISR(CAN_rx_queue, &new_CAN_msg, &xHigherPriorityTaskWoken);
+
+  portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
+  /* Set the Flag to CAN_READY */
+}
 
 /* USER CODE END 1 */

@@ -6,6 +6,7 @@
  */
 
 #include "mcb.h"
+#include "can.h"
 
 float cruiseVelocity = 0.0;		// Velocity for cruise control
 float velocityOfCar = 0.0;		// Current velocity of the car will be stored here.
@@ -253,28 +254,26 @@ MotorCommand GetMotorCommand(float throttle, float velocity)
  */
 void TaskGetCANMessage()
 {
-	uint8_t CANMessageData[CAN_DATA_LENGTH];
 	/* Infinite loop */
+	CAN_msg_t CAN_msg;
 	for(;;)
 	{
-		// Check if there is a CAN Message
-		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0))
+		
+		if (xQueueReceive(CAN_rx_queue, &CAN_msg, portMAX_DELAY) == pdTRUE)
 		{
- 			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_rx_header, CANMessageData);
-			if (can_rx_header.StdId == CAN_ID_BATTERY_SOC)
+			if (CAN_msg.header.StdId == CAN_ID_BATTERY_SOC)
 			{
-				ParseCANBatterySOC(CANMessageData);
+				ParseCANBatterySOC(CAN_msg.data);
 			}
-			else if (can_rx_header.StdId == CAN_ID_VELOCITY)
+			else if (CAN_msg.header.StdId == CAN_ID_VELOCITY)
 			{
-				ParseCANVelocity(CANMessageData);
+				ParseCANVelocity(CAN_msg.data);
 			}
-			else if (can_rx_header.StdId == CAN_ID_BATTERY_TEMP)
+			else if (CAN_msg.header.StdId == CAN_ID_BATTERY_TEMP)
 			{
-				ParseCANBatteryTemp(CANMessageData);
+				ParseCANBatteryTemp(CAN_msg.data);
 			}
 		}
-		osDelay(DELAY_GET_CAN_MESSAGES);
 	}
 	/* USER CODE END getBatterySOC */
 }
