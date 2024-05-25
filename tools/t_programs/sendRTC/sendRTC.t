@@ -5,9 +5,6 @@ variables {
     // The periodic timer is then used between each RTC CAN message
     Timer periodic;
 
-    // singleshot timer to wait for TEL to get ready
-    Timer singleshot;
-
     // The message id of the sent RTC CAN messages
     int msgId = 0x751;
 
@@ -35,11 +32,6 @@ void sendRTCMessage() {
     canWrite(ch, msg);
 }
 
-on Timer singleshot {
-    timerStart(periodic, FOREVER);
-    printf("Singleshot timer done\n");
-}
-
 on Timer periodic {
     sendRTCMessage();
 
@@ -60,15 +52,14 @@ on start {
     canSetBusOutputControl(ch, canDRIVER_NORMAL);
     canBusOn(ch);
 
-    singleshot.timeout = 1; // Instant start for sending out messages. BMS will 100ms delay for TEL
-    periodic.timeout   = 500;  // One minute period. Periodic always starts after
+    periodic.timeout   = 1000 * 60;  // 1 minute period. Periodic always starts after
 
     // Start the periodic timer to send the RTC timestamp
     msg.id    = msgId;
     msg.flags = 0;
     msg.dlc   = 8;
     sendRTCMessage();                 // Send the first message
-    timerStart(singleshot);         // Wait for TEL to get ready
+    timerStart(periodic, FOREVER);         
     printf("Start periodic transmission\n");
 }
 
