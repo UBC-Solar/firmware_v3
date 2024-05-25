@@ -125,6 +125,15 @@ int main(void)
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
+  if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET)
+  {
+    // IWDG reset occurred
+    g_tel_diagnostics.watchdog_reset = true;
+
+    // Clear flag
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+  }
+
   DebugIO_Init(&huart5);
   initIMU();
 
