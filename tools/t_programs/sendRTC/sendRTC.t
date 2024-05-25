@@ -60,7 +60,7 @@ on start {
     canSetBusOutputControl(ch, canDRIVER_NORMAL);
     canBusOn(ch);
 
-    singleshot.timeout = 3000; // Three second wait for TEL to get ready
+    singleshot.timeout = 1; // Instant start for sending out messages. BMS will 100ms delay for TEL
     periodic.timeout   = 500;  // One minute period. Periodic always starts after
 
     // Start the periodic timer to send the RTC timestamp

@@ -27,6 +27,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "can.h"
 
 /* USER CODE BEGIN Includes */
 #include <time.h>
@@ -45,6 +46,7 @@ void getGPSDateTime(uint8_t *buffer, char *GPSTime, char *GPSDate, uint8_t *RTC_
 double get_current_timestamp();
 double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate);
 int lastDayOfMonth(int month, int year);
+bool checkAndSetRTCReset();
 void sync_memorator_rtc(CAN_msg_t* rx_CAN_msg);
 
 /* USER CODE END Prototypes */

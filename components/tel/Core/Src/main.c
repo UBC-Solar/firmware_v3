@@ -126,15 +126,8 @@ int main(void)
   DebugIO_Init(&huart5);
   initIMU();
 
-  // Sync with RTC if date = Jan 1 2000 or GPIO is set to high
-  RTC_DateTypeDef curr_date;
-  RTC_TimeTypeDef curr_time;
-  HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
-
-  /* Set rtc_reset true if current time is Jan 1, 2000 */
-  if ((curr_date.Month == RTC_MONTH_JANUARY && curr_date.Date == 1 && curr_date.Year == 0) || HAL_GPIO_ReadPin(RTC_SYNC_GPIO_Port, RTC_SYNC_Pin) == GPIO_PIN_SET) {
-      g_tel_diagnostics.rtc_reset = true;
-  }
+  // Determine if RTC is reset and set diagnostic rtc_reset appropriately.
+  checkAndSetRTCReset();
 
 //  FRESULT fresult;
 //  char startup_message[60];

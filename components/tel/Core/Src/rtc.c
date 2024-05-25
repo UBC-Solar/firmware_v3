@@ -196,32 +196,39 @@ int lastDayOfMonth(int month, int year)
 }
 
 
-  // Sync with RTC if date = Jan 1 2000 or GPIO is set to high
-  RTC_DateTypeDef curr_date;
-  RTC_TimeTypeDef curr_time;
-  HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
-  /* Sync the RTC with GPS if date is Jan 1, 2000 */
-  if ((curr_date.Month == RTC_MONTH_JANUARY && curr_date.Date == 1 && curr_date.Year == 0) || HAL_GPIO_ReadPin(RTC_SYNC_GPIO_Port, RTC_SYNC_Pin) == GPIO_PIN_SET) {
-    //   Sync_RTC_With_GPS();
-      g_tel_diagnostics.rtc_reset = true;
-  }
+/**
+ * @brief Will check the current RTC time on the TEL board. If it is 2000-01-01
+ *        then RTC is not synced (it is reset to default). Also sets tel_diagnostic.rtc_reset to appropriate val
+ * @return boolean indicating if RTC reset (true) or not (false)
+ */
+bool checkAndSetRTCReset()
+{
+	RTC_DateTypeDef curr_date;
+	RTC_TimeTypeDef curr_time;
+	HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
 
-
+	/* Set rtc_reset true if current time is Jan 1, 2000 */
+	if ((curr_date.Month == RTC_MONTH_JANUARY && curr_date.Date == 1 && curr_date.Year == 0) || HAL_GPIO_ReadPin(RTC_SYNC_GPIO_Port, RTC_SYNC_Pin) == GPIO_PIN_SET) {
+		g_tel_diagnostics.rtc_reset = true;
+		return true;
+	}
+	return false;
+}
 /**
  * @brief Sets RTC time based on CAN data formatted as follows:
  *        Byte 0: Seconds, Byte 1: Minutes, Byte 2: Hours
- * @param canData: Pointer to the CAN data array
+ * @param data: Pointer to the CAN data array
  * @return None
 */
-void setRTCTime(uint8_t* canData)
+void setRTCTime(uint8_t* data)
 {
     /* Initialize Time Object */
     RTC_TimeTypeDef sTime = {0};
 
     /* Manually parsing the seconds minutes hours */
-    sTime.Seconds = rx_CAN_msg->data[0];
-    sTime.Minutes = rx_CAN_msg->data[1];
-    sTime.Hours   = rx_CAN_msg->data[2];
+    sTime.Seconds = data[0];
+    sTime.Minutes = data[1];
+    sTime.Hours   = data[2];
 
     /* Set the RTC time with these settings */
     HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
@@ -231,18 +238,18 @@ void setRTCTime(uint8_t* canData)
 /**
  * @brief Sets RTC date based on CAN data formatted as follows:
  *       Byte 3: Date, Byte 4: Month, Byte 5: Year (from 2000)
- * @param canData: Pointer to the CAN data array
+ * @param data: Pointer to the CAN data array
  * @return None
 */
-void setRTCDate(uint8_t* canData)
+void setRTCDate(uint8_t* data)
 {
     /* Initialize Date Object */
     RTC_DateTypeDef sDate = {0};
 
     /* Manually parsing the date, month, and year */
-    sDate.Date  = rx_CAN_msg->data[3];
-    sDate.Month = rx_CAN_msg->data[4];
-    sDate.Year  = rx_CAN_msg->data[5];
+    sDate.Date  = data[3];
+    sDate.Month = data[4];
+    sDate.Year  = data[5];
 
     /* Set the RTC Date with these settings */
     HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
@@ -251,18 +258,11 @@ void setRTCDate(uint8_t* canData)
 
 /**
  * @brief Function to sync the memorator RTC to the TEL clock
- *        Will check if RTC was reset and if so, will sync the memorator RTC
- *        Otherwise, will ignore the message and continue
  * @param rx_CAN_msg: Pointer to a CAN_msg_t
  * @return None
 */
 void sync_memorator_rtc(CAN_msg_t* rx_CAN_msg)
 {
-    /* Set rtc_reset true if current time is Jan 1, 2000 */
-    if ((curr_date.Month == RTC_MONTH_JANUARY && curr_date.Date == 1 && curr_date.Year == 0) || HAL_GPIO_ReadPin(RTC_SYNC_GPIO_Port, RTC_SYNC_Pin) == GPIO_PIN_SET) {
-        g_tel_diagnostics.rtc_reset = true;
-    }
-
     /* Only perform syncing if RTC was reset */
     if (g_tel_diagnostics.rtc_reset) {
         /* Set the RTC time and date based on the CAN data */

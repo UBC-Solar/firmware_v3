@@ -40,9 +40,8 @@ extern "C" {
 
 typedef struct tel_diagnostics{
   volatile bool rtc_reset;
-  volatile bool gps_sync_fail;
+  volatile bool gps_fix;
   volatile bool imu_fail;
-  volatile bool gps_fail;
   volatile bool watchdog_reset;
 } tel_diagnostics;
 

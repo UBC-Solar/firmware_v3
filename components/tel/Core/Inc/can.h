@@ -48,10 +48,10 @@ extern CAN_HandleTypeDef hcan;
 #define GPS_longitude_ID 0x756
 #define GPS_altitude_hdop_ID 0x757
 #define GPS_side_count_ID 0x758
+#define GET_BYTE_FROM_WORD(i, word) ((word >> (i * 8)) & 0xFF);
 
 #define CAN_DATA_LENGTH 8
 
-extern CAN_TxHeaderTypeDef rtc_timestamp_header;
 extern CAN_TxHeaderTypeDef tel_diagnostics_header;
 extern CAN_TxHeaderTypeDef IMU_x_axis_header;
 extern CAN_TxHeaderTypeDef IMU_y_axis_header;
@@ -92,7 +92,6 @@ typedef struct {
 
 void CanFilterSetup(void);
 void Can_Init(void);
-void modifyRTCTimestampMsg(CAN_msg_t *rx_CAN_msg);
 
 extern osThreadId readCANTaskHandle;
 
