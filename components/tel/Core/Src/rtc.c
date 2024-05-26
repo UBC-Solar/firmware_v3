@@ -128,20 +128,21 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 
 double get_current_timestamp()
 {
+  double milliseconds = (double)(HAL_GetTick() % 1000) / 1000.0;
   /* Initialize Time and Date objects */
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
 
   HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
   HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-  double epochTime = convertToEpochTime(&sTime, &sDate);
+  double epochTime = convertToEpochTime(&sTime, &sDate, milliseconds);
 
   /* Return the resulting epoch time */
   return epochTime;
 }
 
 /* Used to get current time stamp */
-double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate)
+double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate, double milliseconds)
 {
     /* Initialize tm struct - from time.h library */
     struct tm t;
@@ -177,7 +178,8 @@ double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate)
     long int epoch_secs = (long int) mktime(&t);
 
     /* Convert to double and add milliseconds with GetTick() */
-    return (double) epoch_secs + (double)(HAL_GetTick() % 1000) / 1000.0;
+    // printf("milliseconds: %f\r\n", milliseconds);
+    return (double) epoch_secs;
 }
 
 /* Function to return the last day of a month */
