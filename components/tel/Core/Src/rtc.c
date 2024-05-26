@@ -179,7 +179,7 @@ double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate, double
 
     /* Convert to double and add milliseconds with GetTick() */
     // printf("milliseconds: %f\r\n", milliseconds);
-    return (double) epoch_secs;
+    return (double) epoch_secs + milliseconds;
 }
 
 /* Function to return the last day of a month */
