@@ -37,6 +37,7 @@
 #include "rtc.h"
 #include "fatfs_sd.h"
 #include "imu.h"
+#include "iwdg.h"
 #include "sd_logger.h"
 #include "main.h"
 
@@ -54,7 +55,7 @@
 #define READ_IMU_DELAY     100	      // 100 milliseconds
 #define READ_GPS_DELAY     10 * 1000  // 10 seconds (change to 5 minutes later)
 #define TRANSMIT_RTC_DELAY 5000       // 5000 milliseconds
-#define DEFAULT_TASK_DELAY 500        // 500 milliseconds
+#define DEFAULT_TASK_DELAY 100        // 100 milliseconds
 #define TRANSMIT_DIAGNOSTICS_DELAY 2000 // 2000 milliseconds
 
 #define CAN_BUFFER_LEN  24
@@ -224,8 +225,7 @@ void startDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    //printf("startDefaultTask()\n\r");
-//    HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+    HAL_IWDG_Refresh(&hiwdg);
     osDelay(DEFAULT_TASK_DELAY);
   }
   /* USER CODE END startDefaultTask */
@@ -250,7 +250,7 @@ void read_CAN_task(void const * argument)
     /* Wait for thread flags to be set in the CAN Rx FIFO0 Interrupt Callback */
     osSignalWait(CAN_READY, osWaitForever);
     
-
+    HAL_IWDG_Refresh(&hiwdg);
     /*
      * Control Flow:
      * Wait for Flag from Interrupt
