@@ -135,7 +135,6 @@ int main(void)
   }
 
   DebugIO_Init(&huart5);
-  initIMU();
 
   // Sync with RTC if date = Jan 1 2000 or GPIO is set to high
   RTC_DateTypeDef curr_date;

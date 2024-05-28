@@ -352,7 +352,7 @@ void read_CAN_task(void const * argument)
 void read_IMU_task(void const * argument)
 {
   /* USER CODE BEGIN read_IMU_task */
-
+  initIMU();
   /* Infinite loop */
   while(1)
   {
