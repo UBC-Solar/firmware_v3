@@ -18,13 +18,12 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "rtc.h"
-#include "can.h"
+#include "tim.h"
 
 /* USER CODE BEGIN 0 */
 #include <stdbool.h>
 #include <time.h>
 #include "i2c.h"
-#include "main.h"
 #include "nmea_parse.h"
 
 #define GPS_RCV_BUFFER_SIZE 512
@@ -128,7 +127,8 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 
 double get_current_timestamp()
 {
-  double milliseconds = (double)(HAL_GetTick() % 1000) / 1000.0;
+//  double milliseconds = (double)(HAL_GetTick() % 1000) / 1000.0;
+  double milliseconds = (double)(__HAL_TIM_GET_COUNTER(&htim2)) / 10000.0;
   /* Initialize Time and Date objects */
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;

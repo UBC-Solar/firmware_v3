@@ -123,6 +123,7 @@ void startDefaultTask(void const * argument);
 void read_CAN_task(void const * argument);
 void read_IMU_task(void const * argument);
 void read_GPS_task(void const * argument);
+void transmit_RTC_task(void const * argument);
 void transmit_Diagnostics_task(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -179,7 +180,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of StartDefaultTask */
-  osThreadDef(StartDefaultTask, startDefaultTask, osPriorityLow, 0, 128);
+  osThreadDef(StartDefaultTask, startDefaultTask, osPriorityNormal, 0, 128);
   StartDefaultTaskHandle = osThreadCreate(osThread(StartDefaultTask), NULL);
 
   /* definition and creation of readCANTask */
@@ -193,6 +194,10 @@ void MX_FREERTOS_Init(void) {
   /* definition and creation of readGPSTask */
   osThreadDef(readGPSTask, read_GPS_task, osPriorityNormal, 0, 1536);
   readGPSTaskHandle = osThreadCreate(osThread(readGPSTask), NULL);
+
+  /* definition and creation of transmitRTCTask */
+  osThreadDef(transmitRTCTask, transmit_RTC_task, osPriorityNormal, 0, 512);
+  transmitRTCTaskHandle = osThreadCreate(osThread(transmitRTCTask), NULL);
 
   /* definition and creation of transmitDiagnosticsTask */
   osThreadDef(transmitDiagnosticsTask, transmit_Diagnostics_task, osPriorityNormal, 0, 512);
@@ -455,98 +460,32 @@ void read_IMU_task(void const * argument)
 /* USER CODE END Header_read_GPS_task */
 void read_GPS_task(void const * argument)
 {
-  /* USER CODE _task */
+  /* USER CODE BEGIN read_GPS_task */
   /* Infinite loop */
-  while(1) {
-    /* Initialize buffers */
-    uint8_t receive_buffer[GPS_RCV_BUFFER_SIZE];
-    GPS gps_data;
-    GPS_msg_t gps_message;
-    uint8_t gps_buffer[GPS_MESSAGE_LEN] = {0};
-
-    /* Read in an NMEA message into the buffer */
-    if(HAL_I2C_IsDeviceReady(&hi2c1, GPS_DEVICE_ADDRESS, 1, HAL_MAX_DELAY) == HAL_OK) {
-	    HAL_I2C_Master_Receive(&hi2c1, GPS_DEVICE_ADDRESS, receive_buffer, sizeof(receive_buffer), HAL_MAX_DELAY);
-    }
-
-    /* Parse the buffer data --> gets stored in gps_data; */
-    nmea_parse(&gps_data, &receive_buffer);
-
-    /* Only want to package GPS message if there is a fix. Otherwise no need */
-    if (gps_data.fix == 1)
-    {
-    	g_tel_diagnostics.gps_fix = true;
-		/* Get current epoch Time Stamp */
-		union DoubleBytes current_timestamp;
-		current_timestamp.double_value = get_current_timestamp();
-
-		CAN_Radio_msg_t latitude_msg, longitude_msg, altitude_hdop_msg, side_and_count_msg;
-		union DoubleBytes latitude_bytes, longitude_bytes;
-		union FloatBytes altitude_bytes, hdop_bytes;
-
-		/* Assign headers */
-		latitude_msg.header = GPS_latitude_header;
-		longitude_msg.header = GPS_longitude_header;
-		altitude_hdop_msg.header = GPS_altitude_hdop_header;
-		side_and_count_msg.header = GPS_side_count_header;
-
-		/* Assign timestamps */
-		latitude_msg.timestamp = current_timestamp;
-		longitude_msg.timestamp = current_timestamp;
-		altitude_hdop_msg.timestamp = current_timestamp;
-		side_and_count_msg.timestamp = current_timestamp;
-
-		/* Assign data as double/float so it can be read as uint64/uint8x4 */
-		latitude_bytes.double_value = gps_data.latitude;
-		longitude_bytes.double_value = gps_data.longitude;
-		altitude_bytes.float_value = gps_data.altitude;
-		hdop_bytes.float_value = gps_data.hdop;
-
-		for  (uint8_t i=0; i < 8; i++) {
-		latitude_msg.data[7 - i] = GET_BYTE_FROM_WORD(i, latitude_bytes.double_as_int);
-		longitude_msg.data[7 - i] = GET_BYTE_FROM_WORD(i, longitude_bytes.double_as_int);
-		altitude_hdop_msg.data[3 - i] = altitude_bytes.bytes[i];
-		altitude_hdop_msg.data[7 - i] = hdop_bytes.bytes[i];
-		}
-
-		/* Satellite Count Cast */
-		uint32_t sat_count = (uint32_t) gps_data.satelliteCount;
-		side_and_count_msg.data[0] = gps_data.latSide;
-		side_and_count_msg.data[1] = gps_data.lonSide;
-		for  (uint8_t i=0; i < 4; i++) {
-		side_and_count_msg.data[5 - i] = ((sat_count >> (8 * i)) && 0xFF);
-		}
-		side_and_count_msg.data[6] = 0;
-		side_and_count_msg.data[7] = 0;
-
-		/* Transmit a message every 2 seconds */
-		HAL_CAN_AddTxMessage(&hcan, &latitude_msg.header, latitude_msg.data, &can_mailbox);
-		send_CAN_Radio(&latitude_msg);
-		osDelay(2000);
-
-		HAL_CAN_AddTxMessage(&hcan, &longitude_msg.header, longitude_msg.data, &can_mailbox);
-		send_CAN_Radio(&longitude_msg);
-		osDelay(2000);
-
-		HAL_CAN_AddTxMessage(&hcan, &altitude_hdop_msg.header, altitude_hdop_msg.data, &can_mailbox);
-		send_CAN_Radio(&altitude_hdop_msg);
-		osDelay(2000);
-
-		HAL_CAN_AddTxMessage(&hcan, &side_and_count_msg.header, side_and_count_msg.data, &can_mailbox);
-		send_CAN_Radio(&side_and_count_msg);
-		osDelay(4000); // 4000 so we have 2 + 2 + 2 + 4 = 10 seconds total
-    }
-    else
-    {
-    	g_tel_diagnostics.gps_fix = false;
-    	osDelay(GPS_WAIT_MSG_DELAY);
-    }
+  for(;;)
+  {
+    osDelay(1);
   }
-
   /* USER CODE END read_GPS_task */
 }
 
 /* USER CODE BEGIN Header_transmit_RTC_task */
+/**
+* @brief Function implementing the transmitRTCTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_transmit_RTC_task */
+void transmit_RTC_task(void const * argument)
+{
+  /* USER CODE BEGIN transmit_RTC_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END transmit_RTC_task */
+}
 
 /* USER CODE BEGIN Header_transmit_Diagnostics_task */
 /**
