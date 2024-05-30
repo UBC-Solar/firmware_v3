@@ -128,7 +128,8 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 double get_current_timestamp()
 {
 //  double milliseconds = (double)(HAL_GetTick() % 1000) / 1000.0;
-  double milliseconds = (double)(__HAL_TIM_GET_COUNTER(&htim2)) / 10000.0;
+//  double milliseconds = (double)(__HAL_TIM_GET_COUNTER(&htim2)) / 10000.0;
+	double milliseconds = (double)(osKernelSysTick()% 1000) / 1000.0;
   /* Initialize Time and Date objects */
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
