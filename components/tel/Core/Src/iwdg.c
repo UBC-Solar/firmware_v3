@@ -31,7 +31,10 @@ void MX_IWDG_Init(void)
 {
 
   /* USER CODE BEGIN IWDG_Init 0 */
-
+  #ifdef DEBUG
+    // Do nothing if in debug mode. iwdg will reset the board if breakpoints are hit.
+    return;
+  #endif
   /* USER CODE END IWDG_Init 0 */
 
   /* USER CODE BEGIN IWDG_Init 1 */
