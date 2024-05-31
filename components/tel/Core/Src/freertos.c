@@ -225,7 +225,7 @@ void startDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    #ifdef DEBUG
+    #ifndef DEBUG
       HAL_IWDG_Refresh(&hiwdg);
     #endif
     osDelay(DEFAULT_TASK_DELAY);
@@ -252,7 +252,7 @@ void read_CAN_task(void const * argument)
     /* Wait for thread flags to be set in the CAN Rx FIFO0 Interrupt Callback */
     osSignalWait(CAN_READY, osWaitForever);
     
-    #ifdef DEBUG
+    #ifndef DEBUG
       HAL_IWDG_Refresh(&hiwdg);
     #endif
     /*
