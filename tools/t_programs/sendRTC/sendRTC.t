@@ -6,7 +6,7 @@ variables {
     Timer periodic;
 
     // The message id of the sent RTC CAN messages
-    int msgId = 0x751;
+    int msgId = 0x300;
 
     // The CAN message to be sent
     CanMessage msg;
@@ -52,7 +52,7 @@ on start {
     canSetBusOutputControl(ch, canDRIVER_NORMAL);
     canBusOn(ch);
 
-    periodic.timeout   = 1000 * 60;  // 1 minute period. Periodic always starts after
+    periodic.timeout   = 1000;  // 1 second period. Periodic always starts after
 
     // Start the periodic timer to send the RTC timestamp
     msg.id    = msgId;

@@ -39,7 +39,7 @@ extern CAN_HandleTypeDef hcan;
 /* USER CODE BEGIN Private defines */
 
 #define CAN_READY (uint32_t) 0x0001
-#define RTC_TIMESTAMP_MSG_ID 0x751
+#define RTC_TIMESTAMP_MSG_ID 0x300
 #define TEL_DIAGNOSTICS_ID 0x750
 #define IMU_X_AXIS 0x752
 #define IMU_Y_AXIS 0x753

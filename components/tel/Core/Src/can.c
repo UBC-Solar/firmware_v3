@@ -252,6 +252,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
       new_CAN_msg->data[i] = can_data[i];
     }
 
+    /* Perform rtc syncing check if the message is 0x300 and if RTC is reset to 2000-01-01 */
+    if (new_CAN_msg->header.StdId == RTC_TIMESTAMP_MSG_ID)
+    {
+      start_of_second = HAL_GetTick();
+    }
+
     new_CAN_msg->timestamp.double_value = get_current_timestamp();
     osMessagePut(CAN_MSG_Rx_Queue, new_CAN_msg, osWaitForever);
 //  }

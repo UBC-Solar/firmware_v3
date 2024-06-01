@@ -19,7 +19,7 @@
   <SCRIPTS>
     <SCRIPT default_channel="0" primary="YES">
       <FILENAME>sendRTC.txe</FILENAME>
-      <PATH>PUT YOUR FULL PATH HERE</PATH>
+      <PATH>C:\Users\Aarja\Documents\UBC\UBC_Solar\firmware_v3\tools\t_programs\sendRTC</PATH>
     </SCRIPT>
   </SCRIPTS>
 </KVASER>

@@ -65,6 +65,8 @@ tel_diagnostics g_tel_diagnostics = {false, false, false, false, false};
 CAN_FilterTypeDef CAN_filter0;
 CAN_FilterTypeDef CAN_filter1;
 
+uint32_t start_of_second = 0;
+
 /* HAL Status */
 HAL_StatusTypeDef rx_status;
 

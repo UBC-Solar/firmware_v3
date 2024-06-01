@@ -262,11 +262,13 @@ void read_CAN_task(void const * argument)
 	  rx_CAN_msg = evt.value.p; // Get pointer from the queue union
     
 
+
 	  /* Perform rtc syncing check if the message is 0x751 and if RTC is reset to 2000-01-01 */
-      if (rx_CAN_msg->header.StdId == 0x751 && checkAndSetRTCReset())
+      if (rx_CAN_msg->header.StdId == RTC_TIMESTAMP_MSG_ID && checkAndSetRTCReset())
       {
         sync_memorator_rtc(rx_CAN_msg);
       }
+
 
 	 // 0-7: Timestamp
 	 // 8: '#'
@@ -281,6 +283,7 @@ void read_CAN_task(void const * argument)
 	 for (uint8_t i = 0; i < 8; i++) {
 	   radio_buffer[7 - i] = (char) GET_BYTE_FROM_WORD(i, rx_CAN_msg->timestamp.double_as_int);
 	 }
+//	  printf("id = %u rx_CAN_msg->timestamp.double_value): %f\r\n", rx_CAN_msg->header.StdId, rx_CAN_msg->timestamp.double_value);
 
 	 /* CAN MESSAGE IDENTIFIER */
 	 radio_buffer[8] = '#';

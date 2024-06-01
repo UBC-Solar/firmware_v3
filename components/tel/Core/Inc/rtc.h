@@ -44,7 +44,7 @@ void MX_RTC_Init(void);
 /* USER CODE BEGIN Prototypes */
 void getGPSDateTime(uint8_t *buffer, char *GPSTime, char *GPSDate, uint8_t *RTC_Sync_Flag);
 double get_current_timestamp();
-double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate);
+double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate, double milliseconds);
 int lastDayOfMonth(int month, int year);
 bool checkAndSetRTCReset();
 void sync_memorator_rtc(CAN_msg_t* rx_CAN_msg);

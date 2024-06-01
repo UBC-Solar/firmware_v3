@@ -50,6 +50,8 @@ extern tel_diagnostics g_tel_diagnostics;
 extern CAN_FilterTypeDef CAN_filter0;
 extern CAN_FilterTypeDef CAN_filter1;
 
+extern uint32_t start_of_second;
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
