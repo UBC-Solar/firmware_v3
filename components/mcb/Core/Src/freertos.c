@@ -81,7 +81,7 @@ osThreadId_t GetCANMessageHandle;
 const osThreadAttr_t GetCANMessage_attributes = {
   .name = "GetCANMessage",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityAboveNormal,
 };
 /* Definitions for generic_100ms */
 osThreadId_t generic_100msHandle;
@@ -164,10 +164,12 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	//  HAL_GPIO_TogglePin(LED_OUT1_GPIO_Port, LED_OUT1_Pin);
-	//  HAL_GPIO_TogglePin(LED_OUT2_GPIO_Port, LED_OUT2_Pin);
-	 HAL_IWDG_Refresh(&hiwdg);
-	 osDelay(100);
+	  //  HAL_GPIO_TogglePin(LED_OUT1_GPIO_Port, LED_OUT1_Pin);
+	  //  HAL_GPIO_TogglePin(LED_OUT2_GPIO_Port, LED_OUT2_Pin);
+    #ifndef DEBUG
+	  HAL_IWDG_Refresh(&hiwdg);
+    #endif
+	  osDelay(100);
   }
   /* USER CODE END StartDefaultTask */
 }
