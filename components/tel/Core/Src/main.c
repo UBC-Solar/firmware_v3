@@ -66,6 +66,8 @@ tel_diagnostics g_tel_diagnostics = {false, false, false, false, false};
 CAN_FilterTypeDef CAN_filter0;
 CAN_FilterTypeDef CAN_filter1;
 
+uint32_t start_of_second = 0;
+
 /* HAL Status */
 HAL_StatusTypeDef rx_status;
 
@@ -137,15 +139,8 @@ int main(void)
   DebugIO_Init(&huart5);
   initIMU();
 
-  // Sync with RTC if date = Jan 1 2000 or GPIO is set to high
-  RTC_DateTypeDef curr_date;
-  RTC_TimeTypeDef curr_time;
-  HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
-  /* Sync the RTC with GPS if date is Jan 1, 2000 */
-  if ((curr_date.Month == RTC_MONTH_JANUARY && curr_date.Date == 1 && curr_date.Year == 0) || HAL_GPIO_ReadPin(RTC_SYNC_GPIO_Port, RTC_SYNC_Pin) == GPIO_PIN_SET) {
-      Sync_RTC_With_GPS();
-      g_tel_diagnostics.rtc_reset = true;
-  }
+  // Determine if RTC is reset and set diagnostic rtc_reset appropriately.
+  checkAndSetRTCReset();
 
 //  FRESULT fresult;
 //  char startup_message[60];

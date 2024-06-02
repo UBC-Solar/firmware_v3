@@ -22,15 +22,9 @@
 
 /* USER CODE BEGIN 0 */
 #include "rtc.h"
+#include "main.h"
 
 HAL_StatusTypeDef can_start;
-
-CAN_TxHeaderTypeDef rtc_timestamp_header = {
-    .StdId = RTC_TIMESTAMP,
-    .ExtId = 0x0000,
-    .IDE = CAN_ID_STD,
-    .RTR = CAN_RTR_DATA,
-    .DLC = CAN_DATA_LENGTH};
 
 CAN_TxHeaderTypeDef tel_diagnostics_header = {
     .StdId = TEL_DIAGNOSTICS_ID,
@@ -257,6 +251,13 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     for(int i = 0; i < 8; i++) {
       new_CAN_msg->data[i] = can_data[i];
     }
+
+    /* Perform rtc syncing check if the message is 0x300 and if RTC is reset to 2000-01-01 */
+    if (new_CAN_msg->header.StdId == RTC_TIMESTAMP_MSG_ID)
+    {
+      start_of_second = HAL_GetTick();
+    }
+
     new_CAN_msg->timestamp.double_value = get_current_timestamp();
     osMessagePut(CAN_MSG_Rx_Queue, new_CAN_msg, osWaitForever);
 //  }

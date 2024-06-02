@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "rtc.h"
+#include "can.h"
 
 /* USER CODE BEGIN 0 */
 #include <stdbool.h>
@@ -125,110 +126,23 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 
 /* USER CODE BEGIN 1 */
 
-
-void Sync_RTC_With_GPS()
-{
-  //printf("Syncing RTC with GPS...\n\r");
-  /* Initialize a receive buffer */
-  uint8_t receive_buffer[GPS_RCV_BUFFER_SIZE];
-
-  /* Buffers for the GPSTime and GPSDate */
-  char GPSTime[256];
-  char GPSDate[256];
-
-  /* Flag to track if the sync is complete */
-  uint8_t RTC_Sync_Flag = 0;
-
-  uint32_t gps_sync_start_time = HAL_GetTick();
-  while(RTC_Sync_Flag == 0 && HAL_GetTick() - gps_sync_start_time < GPS_SYNC_TIMEOUT) {
-      printf("Still syncing\n\r");
-    /* Read in an NMEA message into the buffer */
-    if(HAL_I2C_IsDeviceReady(&hi2c1, GPS_DEVICE_ADDRESS, 1, HAL_MAX_DELAY) == HAL_OK) {
-	    HAL_I2C_Master_Receive(&hi2c1, GPS_DEVICE_ADDRESS, receive_buffer, sizeof(receive_buffer), HAL_MAX_DELAY);
-	    //printf("Got Data\n\r");
-
-	    GPS myData;
-      nmea_parse(&myData, &receive_buffer);
-
-      // printf("Fix: %d\r\n", myData.fix);
-	    // printf("Time: %s\r\n", myData.lastMeasure);
-	    // printf("Latitude: %f%c\r\n", myData.latitude, myData.latSide);
-	    // printf("Longitude: %f%c\r\n", myData.longitude, myData.lonSide);
-	    // printf("Altitude: %f\r\n", myData.altitude);
-	    // printf("Sat Count: %d\r\n", myData.satelliteCount);
-	    // printf("RMC Flag: %u\r\n", myData.RMC_Flag);
-
-      /*
-       * lastMeasure is a null-terminated string and has the format hhmmss.sss
-       * Make sure there's a valid fix and that there is an RMC message
-       */
-      if(myData.fix == 1 && myData.RMC_Flag == 1) {
-        //printf("Setting the RTC now\n\r");
-        /* Copy the GPS time to GPSTime */
-        strncpy(GPSTime, myData.lastMeasure, 10);
-        GPSTime[10] = '\0'; // Ensure null termination
-
-        /* Copy the GPS date to GPSDate */
-        strncpy(GPSDate, myData.date, 6);
-        GPSDate[6] = '\0'; // Ensure null termination
-
-        /* Initialize Time and Date Objects */
-        RTC_TimeTypeDef sTime = {0};
-        RTC_DateTypeDef sDate = {0};
-
-        /* Manually parsing the hours, minutes, and seconds */
-        sTime.Hours   = (GPSTime[0] - '0') * 10 + (GPSTime[1] - '0');
-        sTime.Minutes = (GPSTime[2] - '0') * 10 + (GPSTime[3] - '0');
-        sTime.Seconds = (GPSTime[4] - '0') * 10 + (GPSTime[5] - '0');
-
-        /* Set the RTC time with these settings */
-        HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-
-        //printf("Time -- H: %u, M: %u, S: %u\n\r", sTime.Hours, sTime.Minutes, sTime.Seconds);
-
-        /* Manually parsing the date, month, and year */
-        sDate.Date  = (GPSDate[0] - '0') * 10 + (GPSDate[1] - '0');
-        sDate.Month = (GPSDate[2] - '0') * 10 + (GPSDate[3] - '0');
-        sDate.Year  = (GPSDate[4] - '0') * 10 + (GPSDate[5] - '0');
-
-        /* Set the RTC Date with these settings */
-        HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-
-        printf("Set the time to %d:%d\n", sTime.Hours, sTime.Minutes);
-
-        //printf("Date -- D: %u, M: %u, Y: %u\n\r", sDate.Date, sDate.Month, sDate.Year);
-
-        /* Set the flag to 1 indicating that the RTC has been sync'd */
-        RTC_Sync_Flag = 1;
-      }
-    }
-  }
-
-  printf("Sync complete\n\r");
-
-  if (RTC_Sync_Flag == 0) {
-    g_tel_diagnostics.gps_sync_fail = true;
-  }
-
-  /* Can turn on the TEL board LED here to indicate that the RTC is SYNC'd  */
-}
-
 double get_current_timestamp()
 {
   /* Initialize Time and Date objects */
+  double milliseconds = (HAL_GetTick() - start_of_second) / 1000.0;
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
 
   HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
   HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-  double epochTime = convertToEpochTime(&sTime, &sDate);
+  double epochTime = convertToEpochTime(&sTime, &sDate, milliseconds);
 
   /* Return the resulting epoch time */
   return epochTime;
 }
 
 /* Used to get current time stamp */
-double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate)
+double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate, double milliseconds)
 {
     /* Initialize tm struct - from time.h library */
     struct tm t;
@@ -264,7 +178,7 @@ double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate)
     long int epoch_secs = (long int) mktime(&t);
 
     /* Convert to double and add milliseconds with GetTick() */
-    return (double) epoch_secs + (double)(HAL_GetTick() % 1000) / 1000.0;
+    return (double)epoch_secs + milliseconds;
 }
 
 /* Function to return the last day of a month */
@@ -280,6 +194,85 @@ int lastDayOfMonth(int month, int year)
     }
   }
   return daysInMonth[month];
+}
+
+
+/**
+ * @brief Will check the current RTC time on the TEL board. If it is 2000-01-01
+ *        then RTC is not synced (it is reset to default). Also sets tel_diagnostic.rtc_reset to appropriate val
+ * @return boolean indicating if RTC reset (true) or not (false)
+ */
+bool checkAndSetRTCReset()
+{
+	RTC_DateTypeDef curr_date;
+	RTC_TimeTypeDef curr_time;
+	HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
+
+	/* Set rtc_reset true if current time is Jan 1, 2000 */
+	if ((curr_date.Month == RTC_MONTH_JANUARY && curr_date.Date == 1 && curr_date.Year == 0) || HAL_GPIO_ReadPin(RTC_SYNC_GPIO_Port, RTC_SYNC_Pin) == GPIO_PIN_SET) {
+		g_tel_diagnostics.rtc_reset = true;
+		return true;
+	}
+	return false;
+}
+/**
+ * @brief Sets RTC time based on CAN data formatted as follows:
+ *        Byte 0: Seconds, Byte 1: Minutes, Byte 2: Hours
+ * @param data: Pointer to the CAN data array
+ * @return None
+*/
+void setRTCTime(uint8_t* data)
+{
+    /* Initialize Time Object */
+    RTC_TimeTypeDef sTime = {0};
+
+    /* Manually parsing the seconds minutes hours */
+    sTime.Seconds = data[0];
+    sTime.Minutes = data[1];
+    sTime.Hours   = data[2];
+
+    /* Set the RTC time with these settings */
+    HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+}
+
+
+/**
+ * @brief Sets RTC date based on CAN data formatted as follows:
+ *       Byte 3: Date, Byte 4: Month, Byte 5: Year (from 2000)
+ * @param data: Pointer to the CAN data array
+ * @return None
+*/
+void setRTCDate(uint8_t* data)
+{
+    /* Initialize Date Object */
+    RTC_DateTypeDef sDate = {0};
+
+    /* Manually parsing the date, month, and year */
+    sDate.Date  = data[3];
+    sDate.Month = data[4];
+    sDate.Year  = data[5];
+
+    /* Set the RTC Date with these settings */
+    HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+}
+
+
+/**
+ * @brief Function to sync the memorator RTC to the TEL clock
+ * @param rx_CAN_msg: Pointer to a CAN_msg_t
+ * @return None
+*/
+void sync_memorator_rtc(CAN_msg_t* rx_CAN_msg)
+{
+    /* Only perform syncing if RTC was reset */
+    if (g_tel_diagnostics.rtc_reset) {
+        /* Set the RTC time and date based on the CAN data */
+        setRTCTime(rx_CAN_msg->data);
+        setRTCDate(rx_CAN_msg->data);
+
+        /* Set the flag to indicate that the RTC has been sync'd */
+        g_tel_diagnostics.rtc_reset = false;
+    }
 }
 
 /* USER CODE END 1 */
