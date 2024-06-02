@@ -33,6 +33,7 @@ typedef struct{
 static hv_ticks_t ticks;
 static volatile FSM_state_t FSM_state;
 static bool LVS_ALREADY_ON = false;
+static bool startup_complete = false; // set true when first reach monitoring state
 static bool last_HLIM_status;
 static bool last_LLIM_status;
 
@@ -357,9 +358,9 @@ void check_HLIM()
 
 /**
  * @brief Turns on TELEM board.
- * Exit Condition: Timer surpasses 0.2 seconds.
+ * Exit Condition: Timer surpasses LVS_INTERVAL.
  * Exit Action: Set TEL_CTRL pin high.
- * Exit State: DASH_ON
+ * Exit State: MEM_ON
  */
 void TELEM_on()
 {
@@ -367,7 +368,7 @@ void TELEM_on()
     {
         HAL_GPIO_WritePin(TEL_CTRL_GPIO_Port, TEL_CTRL_Pin, HIGH);
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = DASH_ON;
+        FSM_state = MEM_ON;
     }
 
     printf("end of TELEM on\r\n");
@@ -375,9 +376,28 @@ void TELEM_on()
 }
 
 /**
+ * @brief Turns on MEMORATOR (SPAR on ECU, VDS on DIST).
+ * Exit Condition: Timer surpasses LVS_INTERVAL.
+ * Exit Action: Set SPAR_CTRL pin high.
+ * Exit State: DASH_ON
+ */
+void MEM_on()
+{
+    if (timer_check(LVS_INTERVAL, &(ticks.last_generic_tick) ))
+    {
+        HAL_GPIO_WritePin(SPAR1_CTRL_GPIO_Port, SPAR1_CTRL_Pin, HIGH);
+        ticks.last_generic_tick = HAL_GetTick();
+        FSM_state = DASH_ON;
+    }
+
+    printf("end of MEM on\r\n");
+    return;
+}
+
+/**
  * @brief Turns on DASH board.
  *
- * Exit Condition: Timer surpasses 0.2 seconds.
+ * Exit Condition: Timer surpasses LVS_INTERVAL.
  * Exit Action: Set DASH pin high.
  * Exit State: MCB_ON
  */
@@ -397,7 +417,7 @@ void DASH_on()
 /**
  * @brief Turns on MCB board.
  *
- * Exit Condition: Timer surpasses 0.2 seconds.
+ * Exit Condition: Timer surpasses LVS_INTERVAL.
  * Exit Action: Set MCB pin high.
  * Exit State: MDU_ON
  */
@@ -417,12 +437,18 @@ void MCB_on()
 
 /**
  * @brief Turns on MDU board.
- * Exit Condition: Timer surpasses 0.2 seconds.
+ * Exit Condition: Timer surpasses LVS_INTERVAL.
  * Exit Action: Set MDU pin high.
  * Exit State: AMB_ON
  */
 void MDU_on()
 {
+    // Don't turn on MDU if ESTOP pressed
+    if(ecu_data.status.bits.estop == true){
+        FSM_state = AMB_ON;
+        return;
+    }
+
     if (timer_check(LVS_INTERVAL, &(ticks.last_generic_tick) ))
     {
         HAL_GPIO_WritePin(MDU_CTRL_GPIO_Port, MDU_CTRL_Pin, HIGH);
@@ -436,7 +462,7 @@ void MDU_on()
 
 /**
  * @brief Turns on AMB board and SPAR2 pin.
- * Exit Condition: Timer surpasses 0.2 seconds.
+ * Exit Condition: Timer surpasses LVS_INTERVAL.
  * Exit Action: Set AMB/SPAR2 pin high.
  * Exit State: MONITORING
  */
@@ -466,6 +492,14 @@ void ECU_monitor()
 {
 
     printf("Monitoring Start\r\n");
+    startup_complete = true; // Indicates all LV boards are up
+
+    // Additional ESTOP check to catch case where ESTOP is pressed during startup (see note in fault state)
+    if(ecu_data.status.bits.estop == true){
+        FSM_state = FAULT;
+        return;
+    }
+    
     // Current Status Checks
     if(ecu_data.adc_data.ADC_pack_current >= DOC_WARNING_THRESHOLD){
         ecu_data.status.bits.warning_pack_overdischarge_current = true;
@@ -481,7 +515,7 @@ void ECU_monitor()
     }
 
     /*************************
-    BMS and ESTOP Fault Checking
+    BMS Fault Checking
     **************************/
     if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH ||
         HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH ||
@@ -559,7 +593,15 @@ void fault()
     HAL_GPIO_WritePin(POS_CTRL_GPIO_Port, POS_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
+
+    // If ESTOP pressed during startup, start all LV boards
+    if(!startup_complete){
+        FSM_state = TELEM_ON;
+        return;
+    }
+
     HAL_GPIO_WritePin(MDU_CTRL_GPIO_Port, MDU_CTRL_Pin, LOW);
+
 
     /****************************
     Preform Perpetual Fault Tasks
