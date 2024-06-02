@@ -18,11 +18,14 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "can.h"
+#include "dma.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "common.h"
 
 /* USER CODE END Includes */
 
@@ -44,6 +47,8 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+volatile uint16_t adc1_buf[NUM_ADC_CHANNELS_TOTAL] = {0}; // Initialize ADC buffer
+VDS_Data_t vds_data = {0}; // Initialize VDS data structure
 
 /* USER CODE END PV */
 
@@ -55,7 +60,17 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
+{ // Analog watchdog 
+  /*TODO: Implement error handling here */
+}
 
+/*============================================================================*/
+/* GPIO INTERRUPT CALLBACKS */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  /*TODO: Implement error handling here */
+}
 /* USER CODE END 0 */
 
 /**
@@ -66,6 +81,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+  HAL_Delay(100); // Delay for 100ms to allow peripherals to initialize
 
   /* USER CODE END 1 */
 
@@ -75,6 +91,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+
 
   /* USER CODE END Init */
 
@@ -87,9 +104,13 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_CAN1_Init();
   MX_CAN2_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, NUM_ADC_CHANNELS_TOTAL); // Start ADC1 in DMA mode
+  HAL_TIM_Base_Start(&htim3);
 
   /* USER CODE END 2 */
 
@@ -112,6 +133,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -143,6 +165,12 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV2;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
   /** Configure the Systick interrupt time
   */
@@ -150,6 +178,62 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/*
+Notes on how to do conversion:
+1: lower half of ADC 
+2: upper half of ADC
+
+-pass which half needs to be processed as a parameter to processing methods
+-convert raw ADC values to physical values
+-assign physical values to the correct sensor in the VDS data structure
+-handover the VDS data structure to the CAN module (to be handled by Diego)
+
+*/
+
+void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
+{
+  if (hadc == &hadc1){
+    // TODO: Process ADC1 readings
+  }
+}
+
+// Conversion full complete DMA interrupt callback for ADCs
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+  if (hadc == &hadc1){
+    // TODO: Process ADC1 readings
+  }
+   
+}
+
+void processAndSaveValues_ADC1(int adc_half)
+{ //TODO: Modify this function to process and save ADC1 readings for VDS
+
+  // if (!ADC1_getBusyStatus())
+  // {
+  //   ADC1_setBusyStatus(1);
+  //   static float result[ADC1_NUM_ANALOG_CHANNELS];
+
+  //   ADC1_processRawReadings(adc_half, adc1_buf, result);
+
+  //   // For conversion order, see rank in CubeMX
+  //   ADC_setReading(result[0], OD_REF_SENSE__ADC1_IN5);
+  //   ADC_setReading(result[1], SUPP_SENSE__ADC1_IN6);
+  //   ADC_setReading(result[2], PACK_CURRENT_OFFSET_SENSE__ADC1_IN7);
+  //   ADC_setReading(result[3], LVS_CURRENT_OFFSET_SENSE__ADC1_IN8);
+  //   ADC_setReading(result[4], LVS_CURRENT_SENSE__ADC1_IN9);
+  //   ADC_setReading(result[5], PACK_CURRENT_SENSE__ADC1_IN14);
+  //   ADC_setReading(result[6], T_AMBIENT_SENSE__ADC1_IN15);
+  //   ADC_setReading(result[7], OC_REF_SENSE__ADC1_IN13);
+
+  //   ADC1_setBusyStatus(0);
+  // }
+  // else
+  // {
+  //   ADC1_setFaultStatus(1);
+  // }
+}
 
 /* USER CODE END 4 */
 
