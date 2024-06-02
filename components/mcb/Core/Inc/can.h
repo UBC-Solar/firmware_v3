@@ -29,7 +29,9 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
 /* USER CODE END Includes */
 
 extern CAN_HandleTypeDef hcan;
@@ -56,6 +58,13 @@ extern CAN_TxHeaderTypeDef drive_state_header;
 extern CAN_TxHeaderTypeDef mcb_diagnostics;
 extern uint32_t can_mailbox;
 extern CAN_RxHeaderTypeDef can_rx_header;
+extern xQueueHandle CAN_rx_queue;
+
+typedef struct {
+  CAN_RxHeaderTypeDef header;
+  uint8_t data[8];
+} CAN_msg_t;
+
 /* USER CODE END Private defines */
 
 void MX_CAN_Init(void);
