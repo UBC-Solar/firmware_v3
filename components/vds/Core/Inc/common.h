@@ -23,7 +23,9 @@ typedef union {
         bool vds_shock_travel_1: 1;
         bool vds_shock_travel_2: 1;
         bool vds_shock_travel_3: 1;
+        bool vds_shock_travel_4: 1;
         bool vds_steering_angle: 1;
+        bool adc_fault: 1; // Flag to indicate ADC fault
 
         uint8_t _reserved  : 2;
     } bits;
@@ -38,6 +40,7 @@ typedef struct{
     uint16_t ADC_shock_travel_1; // mV
     uint16_t ADC_shock_travel_2; // mV
     uint16_t ADC_shock_travel_3; // mV
+    uint16_t ADC_shock_travel_4; // mV
     uint16_t ADC_steering_angle; // mV
 } VDS_ADC_Data_t;
 
@@ -51,5 +54,8 @@ typedef struct{
 /* PUBLIC VARIABLES */
 
 extern VDS_Data_t vds_data;
+static volatile int ADC1_DMA_in_process_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is in process
+static volatile int ADC1_DMA_fault_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is at fault
+
 
 #endif /* __COMMON_H */

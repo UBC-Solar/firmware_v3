@@ -1,27 +1,26 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file    adc.c
-  * @brief   This file provides code for the configuration
-  *          of the ADC instances.
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    adc.c
+ * @brief   This file provides code for the configuration
+ *          of the ADC instances.
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2024 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "adc.h"
 
 /* USER CODE BEGIN 0 */
-
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
@@ -223,5 +222,96 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 }
 
 /* USER CODE BEGIN 1 */
+/**
+ * @brief Converts the raw readings of ADC1 into ADC voltage readings and
+ * averages these values at half of its buffer size per channel,
+ * when the DMA interrupt for ADC1 is called when half of its scan
+ * conversion sequence is completed. These output values will then be converted
+ * into VDS data variables.
+ *
+ * @param half Integer (1 or 0) indicating if the averaging is from the first half (0)
+ *             of its circular buffer or its second half (1).
+ * @param adc1_buf Volatile uint16_t array that represents ADC1's DMA circular buffer.
+ *                 Each time the ADC is read, the next 8 elements get populated
+ *                 with the ADC readings for each channel in the following order:
+ *                 ADC_brake_pressure_1, ADC_brake_pressure_2, ADC_brake_pressure_3,
+ *                 ADC_shock_travel_1, ADC_shock_travel_2, ADC_shock_travel_3,
+ *                 ADC_shock_travel_4, ADC_steering_angle.
+ * @param result Float array of size 8, storing the averaged ADC voltage readings for
+ *               each channel.
+ * @retval None.
+ */
+void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float result[])
+{
+  // TODO: Implement this function to average/process ADC1 readings
+  if (!half)
+  {
+    // First half of buffer
+    vds_data.adc_data.ADC_brake_pressure_1 = adc1_buf[0];
+    vds_data.adc_data.ADC_brake_pressure_2 = adc1_buf[1];
+    vds_data.adc_data.ADC_brake_pressure_3 = adc1_buf[2];
+    vds_data.adc_data.ADC_shock_travel_1 = adc1_buf[3];
+  }
+  else
+  {
+    // Second half of buffer
+    vds_data.adc_data.ADC_shock_travel_2 = adc1_buf[4];
+    vds_data.adc_data.ADC_shock_travel_3 = adc1_buf[5];
+    vds_data.adc_data.ADC_shock_travel_4 = adc1_buf[6];
+    vds_data.adc_data.ADC_steering_angle = adc1_buf[7];
+  }
+}
+
+
+/**
+ * @brief sets the Fault flag in the global variable ADC1_DMA_fault_flag
+ * depending if ADC1 attempts to read values in the middle of a DMA interrupt callback process
+ * 
+ * @param flag_value integer value: 1 is at fault, 0 is not at fault
+ * @retval sets ADC1_DMA_fault_flag with flag_value
+ */
+void ADC1_setFaultStatus(int flag_value)
+{
+  ADC1_DMA_fault_flag = flag_value;
+}
+
+/**
+ * @brief Retrieves the fault status of ADC1, stored in global variable
+ * ADC1_DMA_fault_flag
+ * 
+ * @param -
+ * @retval returns the global variable ADC1_DMA_fault_flag (int datatype).
+ *         1 means at fault; 0 means not at fault
+ */
+int ADC1_getFaultStatus() 
+{
+  return ADC1_DMA_fault_flag;
+}
+
+
+/**
+ * @brief sets the busy flag in the global variable ADC1_DMA_in_process_flag
+ * depending if ADC1 attempts to read values in the middle of a DMA interrupt callback process
+ * 
+ * @param flag_value integer value: 1 is busy, 0 is not at busy
+ * @retval sets ADC1_DMA_in_process_flag with flag_value
+ */
+void ADC1_setBusyStatus(int flag_value)
+{
+  ADC1_DMA_in_process_flag = flag_value;
+}
+
+/**
+ * @brief Retrieves the busy status of ADC1, stored in global variable
+ * ADC1_DMA_in_process_flag
+ * 
+ * @param -
+ * @retval returns the global variable ADC1_DMA_in_process_flag (int datatype).
+ *         1 means at busy; 0 means not at busy
+ */
+int ADC1_getBusyStatus() 
+{
+  return ADC1_DMA_in_process_flag;
+}
 
 /* USER CODE END 1 */

@@ -21,6 +21,7 @@
 #include "adc.h"
 #include "can.h"
 #include "dma.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -55,6 +56,7 @@ VDS_Data_t vds_data = {0}; // Initialize VDS data structure
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+void averageADCValues(int adc_half);
 
 /* USER CODE END PFP */
 
@@ -63,13 +65,18 @@ void SystemClock_Config(void);
 void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
 { // Analog watchdog 
   /*TODO: Implement error handling here */
+  if(hadc == &hadc1)
+  {
+    ADC1_setFaultStatus(1);
+    HAL_Delay(1); // Delay for 1ms
+  }
 }
 
 /*============================================================================*/
 /* GPIO INTERRUPT CALLBACKS */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  /*TODO: Implement error handling here */
+  /*TODO: Implement error handling here */  
 }
 /* USER CODE END 0 */
 
@@ -92,6 +99,17 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
+  //Reset all adc flags
+  vds_data.status.raw = 0;
+  vds_data.adc_data.ADC_brake_pressure_1 = 0;
+  vds_data.adc_data.ADC_brake_pressure_2 = 0;
+  vds_data.adc_data.ADC_brake_pressure_3 = 0;
+  vds_data.adc_data.ADC_shock_travel_1 = 0;
+  vds_data.adc_data.ADC_shock_travel_2 = 0;
+  vds_data.adc_data.ADC_shock_travel_3 = 0;
+  vds_data.adc_data.ADC_shock_travel_4 = 0;
+  vds_data.adc_data.ADC_steering_angle = 0;
+  vds_data.status.bits.adc_fault = 0;
 
   /* USER CODE END Init */
 
@@ -108,6 +126,7 @@ int main(void)
   MX_CAN1_Init();
   MX_CAN2_Init();
   MX_ADC1_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, NUM_ADC_CHANNELS_TOTAL); // Start ADC1 in DMA mode
   HAL_TIM_Base_Start(&htim3);
@@ -195,6 +214,7 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
 {
   if (hadc == &hadc1){
     // TODO: Process ADC1 readings
+    averageADCValues(0);
   }
 }
 
@@ -203,36 +223,41 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
   if (hadc == &hadc1){
     // TODO: Process ADC1 readings
+    averageADCValues(1);
   }
    
 }
 
-void processAndSaveValues_ADC1(int adc_half)
+void averageADCValues(int adc_half)
 { //TODO: Modify this function to process and save ADC1 readings for VDS
 
-  // if (!ADC1_getBusyStatus())
-  // {
-  //   ADC1_setBusyStatus(1);
-  //   static float result[ADC1_NUM_ANALOG_CHANNELS];
+  if (!ADC1_getBusyStatus())
+  {
+    ADC1_setBusyStatus(1);
+    static float result[NUM_ADC_CHANNELS_TOTAL]; //for use later if we need averaging
 
-  //   ADC1_processRawReadings(adc_half, adc1_buf, result);
+    //results are saved to vds_data and can be used from there
+    ADC1_processRawReadings(adc_half, adc1_buf, result); //function to process values from ADC1
+    ADC1_setBusyStatus(0);
+  }
+  else
+  {
+    ADC1_setFaultStatus(1);
+    HAL_Delay(1); // Delay for 1ms
+    averageADCValues(adc_half); // Retry
+  }
+}
 
-  //   // For conversion order, see rank in CubeMX
-  //   ADC_setReading(result[0], OD_REF_SENSE__ADC1_IN5);
-  //   ADC_setReading(result[1], SUPP_SENSE__ADC1_IN6);
-  //   ADC_setReading(result[2], PACK_CURRENT_OFFSET_SENSE__ADC1_IN7);
-  //   ADC_setReading(result[3], LVS_CURRENT_OFFSET_SENSE__ADC1_IN8);
-  //   ADC_setReading(result[4], LVS_CURRENT_SENSE__ADC1_IN9);
-  //   ADC_setReading(result[5], PACK_CURRENT_SENSE__ADC1_IN14);
-  //   ADC_setReading(result[6], T_AMBIENT_SENSE__ADC1_IN15);
-  //   ADC_setReading(result[7], OC_REF_SENSE__ADC1_IN13);
-
-  //   ADC1_setBusyStatus(0);
-  // }
-  // else
-  // {
-  //   ADC1_setFaultStatus(1);
-  // }
+//ADC error callback
+void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
+{
+  if (hadc == &hadc1)
+  {
+    ADC1_setFaultStatus(1);
+    HAL_Delay(1); // Delay for 1ms
+    averageADCValues(0); // Retry with ADC half 0
+    averageADCValues(1); // Retry with ADC half 1
+  }
 }
 
 /* USER CODE END 4 */
