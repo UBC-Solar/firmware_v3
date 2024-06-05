@@ -72,8 +72,9 @@ typedef struct
 uint16_t adc_data[ADC_BUF_SIZE]; // array to hold the temperature readings, and voltage and current readings
 uint8_t conv_flag = 0; // flag to indicate when to convert the raw data from ADC to temperature
 uint8_t idx = 0; // index for converting values in array
+uint32_t txMailbox;
 
-LookupEntry lookupTable[TABLE_SIZE] = {
+LookupEntry lookupTable[TABLE_SIZE] = { //Lookup Table: not in use, refer to volt2temp function
     {195.652, -40.0},
     {184.9171, -39.0},
     {174.8452, -38.0},
@@ -246,12 +247,11 @@ LookupEntry lookupTable[TABLE_SIZE] = {
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-//float volt2temp(uint32_t raw_value);
+float volt2temp(uint32_t raw_value);
 float interpolate(float x, float x0, float x1, float y0, float y1);
 float getTemperature(uint32_t raw_value);
 
-//uint32_t avgReading();
-//float log_float(float valueToConvert);
+uint32_t avgReading();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -276,7 +276,6 @@ void Convert_Values(uint8_t index) {
 
 		case ISENSE1:
 			/* ISENSE [V] = 0.11 * I [A] + 1.65 */
-//			uint32_t dummyValue = (ADC_VALUES[index] - 1.65) / 0.11;
 			CONVERTED_VALUES[index].float_value = (ADC_VALUES[index] - 1.65) / 0.11;
 			break;
 		case ISENSE2:
@@ -284,84 +283,81 @@ void Convert_Values(uint8_t index) {
 			CONVERTED_VALUES[index].float_value = (ADC_VALUES[index] - 1.65) / 0.11;
 			break;
 		case TEMP_1:
-			/* TEMP_1 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
+			/* TEMP_1 use volt2temp using values obtained from the NXFT15XH103FA2B090 Datasheet */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_2:
-			/* TEMP_2 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
+			/* TEMP_2 use volt2temp using values obtained from the NXFT15XH103FA2B090 Datasheet */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_3:
-			/* TEMP_3 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
+			/* TEMP_3 use volt2temp using values obtained from the NXFT15XH103FA2B090 Datasheet */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_4:
-			/* TEMP_4 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
+			/* TEMP_4 use volt2temp using values obtained from the NXFT15XH103FA2B090 Datasheet */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_5:
-			/* TEMP_5 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
+			/* TEMP_5 use volt2temp using values obtained from the NXFT15XH103FA2B090 Datasheet */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_6:
-			/* TEMP_6 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
+			/* TEMP_6 use volt2temp using values obtained from the NXFT15XH103FA2B090 Datasheet */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_7:
-			/* TEMP_7 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
+			/* TEMP_7 use volt2temp using values obtained from the NXFT15XH103FA2B090 Datasheet */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 		case TEMP_8:
-			/* TEMP_8 use Lookup Table using values obtained from the NXFT15XH103FA2B090 Datasheet */
-			CONVERTED_VALUES[index].float_value = getTemperature((uint32_t)ADC_VALUES[index]);
+			/* TEMP_8 use volt2temp using values obtained from the NXFT15XH103FA2B090 Datasheet */
+			CONVERTED_VALUES[index].float_value = volt2temp((uint32_t)ADC_VALUES[index]);
 			break;
 	}
 }
-//
-///**
-// * Method to convert a given ADC Channel value into a Temperature value
-// *
-// * @param raw_value the raw thermistor value from the ADC
-// * @param REF the reference voltage for the board typically 3.3V
-// *
-// * @return the float value for the converted temperature in Celsius
-// */
-//
-//float volt2temp(uint32_t raw_value){
-//		const float A = 3380; //from NXFT15XH103FA2B090 data sheet B25/50 Value
-//		const float B = 3428; //from NXFT15XH103FA2B090 data sheet B25/80 Value
-//		const float C = 3455; //from NXFT15XH103FA2B090 data sheet B25/100 Value
-//
-//	    const float R_balance = 3300; // from AMB PCB Schematic component R4.1 to R4.8
-//	    float V_therm = 0.0;
-//	    float R_therm = 0.0;
-//	    float Vout = 3.3; //Reference Voltage from Board
-//	    double temp_celsius = 0.0;
-//
-//	    V_therm = 3.3 * raw_value / pow(2, 12);
-//	    R_therm = (R_balance * ((Vout/V_therm) - 1))/1000; //convert to kOhm
-//
-//	    //SteinHart-Hart Equation: https://www.ametherm.com/thermistor/ntc-thermistors-steinhart-and-hart-equation
-////	    temp_kelvin = 1/(A + B*log(R_therm) + C* pow(log(R_therm),3) );
-//	    temp_celsius = - log((5*R_therm)/158)/0.042;
-////	    temp_celsius = (double) 31.6 * exp(-0.042*R_therm);
-//	    //return a Celsius value
-//	    return temp_celsius;
-////	    return temp_kelvin - 273.15;
-//}
-//
-////Helper method to get average 5 readings from ADC Channel
-//uint32_t avgReading(){
-//	uint32_t dummyValue =0;
-//	uint32_t average=0;
-//
-//	for(int index=0; index < 5; index++){
-//			  HAL_ADC_PollForConversion(&hadc1, 1000);
-//			  dummyValue = HAL_ADC_GetValue(&hadc1);
-//			  average+= dummyValue;
-//		}
-//	return average/5;
-//}
+
+/**
+ * Method to convert a given ADC Channel value into a Temperature value
+ *
+ * @param raw_value the raw thermistor value from the ADC
+ * @param REF the reference voltage for the board typically 3.3V
+ *
+ * @return the float value for the converted temperature in Celsius
+ */
+
+float volt2temp(uint32_t raw_value){ //https://www.vishay.com/docs/29049/ntcle100.pdf --> refer to this for the new thermistors
+		const float beta = 3977; //from NXFT15XH103FA2B090 data sheet B25/50 Value
+        const float room_temp = 298.15; // kelvin
+         const float R_room_temp = 10000.0; // resistance at room temperature (25C)
+
+	    const float R_balance = 3300; // from AMB PCB Schematic component R4.1 to R4.8
+	    float R_therm;
+	    float Vs = 3.3; //reference voltage from board
+	    float Vout = 3.3;
+	    double temp_celsius = 0.0;
+	    double temp_kelvin = 0.0;
+
+	    Vout = 3.3 * raw_value / pow(2, 12); //raw adc value to voltage
+	    R_therm = R_balance * ((Vs / Vout) - 1);
+	    temp_kelvin = (beta * room_temp)/ (beta + (room_temp * logf(R_therm / R_room_temp)));
+	    temp_celsius = temp_kelvin - 273.15;
+
+	  return temp_celsius;
+}
+
+//Helper method to get average 5 readings from ADC Channel
+uint32_t avgReading(){
+	uint32_t dummyValue =0;
+	uint32_t average=0;
+
+	for(int index=0; index < 5; index++){
+			  HAL_ADC_PollForConversion(&hadc1, 1000);
+			  dummyValue = HAL_ADC_GetValue(&hadc1);
+			  average+= dummyValue;
+		}
+	return average/5;
+}
 
 // Helper function to perform linear interpolation
 float interpolate(float x, float x0, float x1, float y0, float y1)
@@ -371,7 +367,7 @@ float interpolate(float x, float x0, float x1, float y0, float y1)
 
 
 /**
- * Method to convert a given ADC Channel value into a Temperature value using a Lookup Table
+ * Alternative Method to convert a given ADC Channel value into a Temperature value using a Lookup Table
  * Refer to the NXFT15XH103FA2B090 data sheet
  *
  * @param raw_value the raw thermistor value from the ADC
@@ -383,9 +379,7 @@ float getTemperature(uint32_t raw_value)
 	//Converting Raw ADC value to a resistance value in kOhm
 	const float R_balance = 3300; // from AMB PCB Schematic component R4.1 to R4.8
 	float V_therm = 0.0;
-	float R_therm = 0.0;
 	float Vout = 3.3; //Reference Voltage from Board
-	double temp_celsius = 0.0;
 
     V_therm = 3.3 * raw_value / pow(2, 12); //Obtain the voltage from sensor
 	float resistanceValue = (float) (R_balance * ((Vout/V_therm) - 1))/1000; //convert voltage to kOhm
@@ -512,86 +506,74 @@ int main(void)
 	  /* VSENSE1 */
 	  ADC_Select((uint8_t) VSENSE1);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-//	  ADC_VALUES[VSENSE1] = HAL_ADC_GetValue(&hadc1);
-	  ADC_VALUES[VSENSE1] = 4096;
+	  ADC_VALUES[VSENSE1] = HAL_ADC_GetValue(&hadc1);
 	  Convert_Values((uint8_t) VSENSE1);
 
 	  /* VSENSE 2 */
 	  ADC_Select((uint8_t) VSENSE2);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-//	  ADC_VALUES[VSENSE2] = HAL_ADC_GetValue(&hadc1);
-	  ADC_VALUES[VSENSE2] = 0;
+	  ADC_VALUES[VSENSE2] = HAL_ADC_GetValue(&hadc1);
 	  Convert_Values((uint8_t) VSENSE2);
 
 	  /* ISENSE1 */
 	  ADC_Select((uint8_t) ISENSE1);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-//	  ADC_VALUES[ISENSE1] = HAL_ADC_GetValue(&hadc1);
-	  ADC_VALUES[ISENSE1] = 0;
+	  ADC_VALUES[ISENSE1] = HAL_ADC_GetValue(&hadc1);
 	  Convert_Values((uint8_t) ISENSE1);
 
 	  /* ISENSE2 */
 	  ADC_Select((uint8_t) ISENSE2);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-//	  ADC_VALUES[ISENSE2] = HAL_ADC_GetValue(&hadc1);
-	  ADC_VALUES[ISENSE2] = 1000;
+	  ADC_VALUES[ISENSE2] = HAL_ADC_GetValue(&hadc1);
 	  Convert_Values((uint8_t) ISENSE2);
 
 
 	  /* TEMP_1 */
 	  ADC_Select((uint8_t) TEMP_1);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-//	  ADC_VALUES[TEMP_1] = HAL_ADC_GetValue(&hadc1);
-	  ADC_VALUES[TEMP_1] = 1010;
+	  ADC_VALUES[TEMP_1] = HAL_ADC_GetValue(&hadc1);
 	  Convert_Values((uint8_t) TEMP_1);
 
 	  /* TEMP_2 */
 	  ADC_Select((uint8_t) TEMP_2);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-//	  ADC_VALUES[TEMP_2] = HAL_ADC_GetValue(&hadc1);
-	  ADC_VALUES[TEMP_2] = 1120;
+	  ADC_VALUES[TEMP_2] = HAL_ADC_GetValue(&hadc1);
 	  Convert_Values((uint8_t) TEMP_2);
 
 	  /* TEMP_3 */
 	  ADC_Select((uint8_t) TEMP_3);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-//	  ADC_VALUES[TEMP_3] = HAL_ADC_GetValue(&hadc1);
-	  ADC_VALUES[TEMP_3] = 2030;
+	  ADC_VALUES[TEMP_3] = HAL_ADC_GetValue(&hadc1);
 	  Convert_Values((uint8_t) TEMP_3);
 
 	  /* TEMP_4 */
 	  ADC_Select((uint8_t) TEMP_4);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-//	  ADC_VALUES[TEMP_4] = HAL_ADC_GetValue(&hadc1);
-	  ADC_VALUES[TEMP_4] = 3240;
+	  ADC_VALUES[TEMP_4] = HAL_ADC_GetValue(&hadc1);
 	  Convert_Values((uint8_t) TEMP_4);
 
 	  /* TEMP_5 */
 	  ADC_Select((uint8_t) TEMP_5);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-//	  ADC_VALUES[TEMP_5] = HAL_ADC_GetValue(&hadc1);
-	  ADC_VALUES[TEMP_5] = 1250;
+	  ADC_VALUES[TEMP_5] = HAL_ADC_GetValue(&hadc1);
 	  Convert_Values((uint8_t) TEMP_5);
 
 	  /* TEMP_6 */
 	  ADC_Select((uint8_t) TEMP_6);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-//	  ADC_VALUES[TEMP_6] = HAL_ADC_GetValue(&hadc1);
-	  ADC_VALUES[TEMP_6] = 4060;
+	  ADC_VALUES[TEMP_6] = HAL_ADC_GetValue(&hadc1);
 	  Convert_Values((uint8_t) TEMP_6);
 
 	  /* TEMP_7 */
 	  ADC_Select((uint8_t) TEMP_7);
  	  HAL_ADC_PollForConversion(&hadc1, 1000);
-//	  ADC_VALUES[TEMP_7] = HAL_ADC_GetValue(&hadc1);
- 	  ADC_VALUES[TEMP_7] = 1770;
+	  ADC_VALUES[TEMP_7] = HAL_ADC_GetValue(&hadc1);
 	  Convert_Values((uint8_t) TEMP_7);
 
 	  /* TEMP_8 */
 	  ADC_Select((uint8_t) TEMP_8);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
-//	  ADC_VALUES[TEMP_8] = HAL_ADC_GetValue(&hadc1);
-	  ADC_VALUES[TEMP_8] = 4096;
+	  ADC_VALUES[TEMP_8] = HAL_ADC_GetValue(&hadc1);
 	  Convert_Values((uint8_t) TEMP_8);
 
 
@@ -630,7 +612,7 @@ int main(void)
 	  HAL_CAN_AddTxMessage(&hcan, &txHeaderCurrent, current_data, &txMailbox);
 	  HAL_CAN_AddTxMessage(&hcan, &txHeaderTemp, temp_data, &txMailbox);
 
-	  HAL_Delay (1000);
+	  HAL_Delay (500);
   }
   /* USER CODE END 3 */
 }
