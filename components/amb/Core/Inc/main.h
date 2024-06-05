@@ -99,6 +99,7 @@ void Convert_Values(uint8_t index);
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
 #define SWCLK_GPIO_Port GPIOA
+
 /* USER CODE BEGIN Private defines */
 
 /* Number of ADC Channels Used */
@@ -128,5 +129,3 @@ void Convert_Values(uint8_t index);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
