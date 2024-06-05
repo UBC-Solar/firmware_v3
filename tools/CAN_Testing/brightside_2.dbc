@@ -1,0 +1,358 @@
+VERSION ""
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: AMB BMS DID ECU OBC MDU MCB SDL TEL
+
+
+BO_ 3221225472 VECTOR__INDEPENDENT_SIG_MSG: 0 Vector__XXX
+ SG_ ConfigReadError : 21|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ WatchdogCausedLast : 20|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Unused : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1793 VoltageSensorsData: 8 AMB
+ SG_ VoltSensor1 : 0|32@1- (1,0) [0|0] "V" Vector__XXX
+ SG_ VoltSensor2 : 32|32@1- (1,0) [0|0] "V" Vector__XXX
+
+BO_ 1794 CurrentSensorsData: 8 AMB
+ SG_ CurrentSensor1 : 0|32@1- (1,0) [0|0] "A" Vector__XXX
+ SG_ CurrentSensor2 : 32|32@1- (1,0) [0|0] "A" Vector__XXX
+
+BO_ 1795 TempSensorsData: 8 AMB
+ SG_ TempSensors1 : 0|8@1+ (1,0) [0|0] "C" Vector__XXX
+ SG_ TempSensors2 : 8|8@1+ (1,0) [0|0] "C" Vector__XXX
+ SG_ TempSensors3 : 16|8@1+ (1,0) [0|0] "C" Vector__XXX
+ SG_ TempSensors4 : 24|8@1+ (1,0) [0|0] "C" Vector__XXX
+ SG_ TempSensors5 : 32|8@1+ (1,0) [0|0] "C" Vector__XXX
+ SG_ TempSensors6 : 40|8@1+ (1,0) [0|0] "C" Vector__XXX
+ SG_ TempSensors7 : 48|8@1+ (1,0) [0|0] "C" Vector__XXX
+ SG_ TempSensors8 : 56|8@1+ (1,0) [0|0] "C" Vector__XXX
+
+BO_ 1570 Faults: 7 BMS
+ SG_ SlaveBoardComm : 0|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ BMSSelfTest : 1|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ OverTemp : 2|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ UnderVoltage : 3|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ OverVoltage : 4|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ IsoLost : 5|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ChargeOvercurrent : 6|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ VoltOutofRange : 7|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ TempOutofRange : 8|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ PackBalancingActive : 9|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ LLIMActive : 10|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ HLIMActive : 11|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ChargeOverTemp : 12|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ LowVoltage : 13|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ HighVoltage : 14|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ LowTemp : 15|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ HighTemp : 16|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ RequestRegenOff : 17|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ NoECUCurrentMessage : 18|1@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1571 VoltageSummary: 6 BMS
+ SG_ TotalPackVoltage : 0|16@1+ (0.0021367521368,0) [0|140] "V" Vector__XXX
+ SG_ VoltageofLeast : 16|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ IndexofLowestModule : 24|8@1+ (1,0) [0|31] "" Vector__XXX
+ SG_ VoltageofHighest : 32|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ IndexofHighestModule : 40|8@1+ (1,0) [0|31] "" Vector__XXX
+
+BO_ 1572 PackHealth: 7 BMS
+ SG_ SOC : 0|8@1+ (1,0) [0|100] "%" Vector__XXX
+ SG_ DepthofDischarge : 8|16@1+ (1,0) [0|65] "kAH" Vector__XXX
+ SG_ Capacity : 24|16@1+ (1,0) [0|65] "kAH" Vector__XXX
+ SG_ b0x00 : 40|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ SOH : 48|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1573 TempSummary: 5 BMS
+ SG_ AverageTemp : 0|8@1- (1,0) [-127|127] "C" Vector__XXX
+ SG_ MinTemp : 8|8@1- (1,0) [-127|127] "C" Vector__XXX
+ SG_ IndexofLowestTemp : 16|8@1+ (1,0) [0|31] "" Vector__XXX
+ SG_ MaxTemp : 24|8@1- (1,0) [-127|127] "C" Vector__XXX
+ SG_ IndexofHighestTemp : 32|8@1+ (1,0) [0|31] "" Vector__XXX
+
+BO_ 1574 ModuleVoltages: 5 BMS
+ SG_ MultiplexingBits M : 0|3@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Voltage1 m0 : 8|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage2 m0 : 16|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage3 m0 : 24|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage4 m0 : 32|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage5 m1 : 8|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage6 m1 : 16|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage7 m1 : 24|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage8 m1 : 32|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage9 m2 : 8|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage10 m2 : 16|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage11 m2 : 24|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage12 m2 : 32|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage13 m3 : 8|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage14 m3 : 16|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage15 m3 : 24|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage16 m3 : 32|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage17 m4 : 8|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage18 m4 : 16|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage19 m4 : 24|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage20 m4 : 32|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage21 m5 : 8|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage22 m5 : 16|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage23 m5 : 24|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage24 m5 : 32|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage25 m6 : 8|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage26 m6 : 16|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage27 m6 : 24|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage28 m6 : 32|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage29 m7 : 8|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage30 m7 : 16|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage31 m7 : 24|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+ SG_ Voltage32 m7 : 32|8@1+ (0.019607843137,0) [0|5] "V" Vector__XXX
+
+BO_ 1575 ModuleTemps: 5 BMS
+ SG_ MultiplexingBits M : 0|3@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Temp1 m0 : 8|8@1- (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp2 m0 : 16|8@1- (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp3 m0 : 24|8@1- (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp4 m0 : 32|8@1- (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp5 m1 : 8|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp6 m1 : 16|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp7 m1 : 24|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp8 m1 : 32|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp9 m2 : 8|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp10 m2 : 16|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp11 m2 : 24|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp12 m2 : 32|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp13 m3 : 8|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp14 m3 : 16|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp15 m3 : 24|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp16 m3 : 32|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp17 m4 : 8|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp18 m4 : 16|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp19 m4 : 24|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp20 m4 : 32|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp21 m5 : 8|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp22 m5 : 16|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp23 m5 : 24|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp24 m5 : 32|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp25 m6 : 8|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp26 m6 : 16|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp27 m6 : 24|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp28 m6 : 32|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp29 m7 : 8|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp30 m7 : 16|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp31 m7 : 24|8@1+ (1,0) [-127|127] "C" Vector__XXX
+ SG_ Temp32 m7 : 32|8@1+ (1,0) [-127|127] "C" Vector__XXX
+
+BO_ 1576 ModuleStatuses: 5 BMS
+ SG_ MultiplexingBits M : 0|3@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module1 m0 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module2 m0 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module3 m0 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module4 m0 : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module5 m1 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module6 m1 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module7 m1 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module8 m1 : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module9 m2 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module10 m2 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module11 m2 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module12 m2 : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module13 m3 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module14 m3 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module15 m3 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module16 m3 : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module17 m4 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module18 m4 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module19 m4 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module20 m4 : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module21 m5 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module22 m5 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module23 m5 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module24 m5 : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module25 m6 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module26 m6 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module27 m6 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module28 m6 : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module29 m7 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module30 m7 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module31 m7 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Module32 m7 : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1577 BalancingStatus: 5 BMS
+ SG_ ModuleStatusofBits : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1104 ECUCurrentStatus: 3 ECU
+ SG_ PackCurrent : 0|8@1- (1,0) [-127|127] "A" Vector__XXX
+ SG_ LVCurrent : 8|8@1+ (0.11764705882,0) [0|30] "A" Vector__XXX
+ SG_ PackOverDischarge : 16|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ PackOverCharge : 17|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ DOC : 18|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ COC : 19|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ DOC_COC : 20|1@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1012 ECUChargerConstraints: 8 ECU
+ SG_ MaxChargingVoltage : 0|16@1+ (0.1,0) [0|0] "V" Vector__XXX
+ SG_ MaxChargingCurrent : 16|16@1+ (0.1,0) [0|0] "A" Vector__XXX
+ SG_ ChargerEnables : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ChargingModes : 40|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Reserved1 : 48|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Reserved2 : 56|8@1+ (1,0) [0|0] "" Vector__XXX 
+
+BO_ 997 OBCStatus : 8 OBC
+ SG_ OutputVoltage : 0|16@1+ (0.1,0) [0|0] "V" Vector__XXX
+ SG_ OutputCurrent : 16|16@1+ (0.1,0) [0|0] "A" Vector__XXX
+ SG_ HardwareProtection : 32|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ TemperatureProtection : 33|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ InputVoltageStatus : 34|2@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ OutputUnderVoltage : 36|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ OutputOverVoltage : 37|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ OutputOverCurrent : 38|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ OutputShortCircuit : 39|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ CommunicationStatus : 40|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ WorkingStatus : 41|2@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Initialization : 43|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ FanEnable : 44|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ CoolingPumpFanEnable : 45|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Unused1 : 46|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Unused2 : 47|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ CCSignalStatus : 48|2@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ CPSignalStatus : 50|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ChargingSocketTemperature : 51|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ElectronicLockState : 52|3@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ S2SwitchControlStatus : 55|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Temperature : 56|8@1+ (1,0) [0|0] "" Vector__XXX 
+
+BO_ 1280 Information: 8 MDU
+ SG_ TritiumID : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ SerialNumber : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1281 StatusInfo: 8 MDU
+ SG_ BridgePWM : 0|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ MotorCurrent : 1|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Velocity : 2|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ BusCurrent : 3|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ BusVoltUpperLim : 4|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ BusVoltLowerLim : 5|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ HeadsinkTemp : 6|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Reserved : 7|9@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ HardwareOverCurrent : 16|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ SoftwareOverCurrent : 17|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ DCBusOverVoltage : 18|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ BadMotorPosHallSeq : 19|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ WatchdogCausedLast : 20|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ConfigReadError : 21|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ A15VRailUnderVoltLock : 22|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Reserved2 : 23|9@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ActiveMotor : 32|16@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Reserved3 : 48|16@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1282 BusMeasurement: 8 MDU
+ SG_ BusVoltage : 0|32@1+ (1,0) [0|0] "V" Vector__XXX
+ SG_ BusCurrent : 32|32@1+ (1,0) [0|0] "A" Vector__XXX
+
+BO_ 1283 VelocityMeasurement: 8 MDU
+ SG_ MotorVelocity : 0|32@1+ (1,0) [0|0] "RPM" Vector__XXX
+ SG_ VehicleVelocity : 32|32@1+ (1,0) [0|0] "m/s" Vector__XXX
+
+BO_ 1291 SinkMotorTempMeas: 8 MDU
+ SG_ MotorTemp : 0|32@1+ (1,0) [0|0] "C" Vector__XXX
+ SG_ SurfaceTempController : 32|32@1+ (1,0) [0|0] "C" Vector__XXX
+
+BO_ 1024 DriverInterface: 2 MCB
+ SG_ NextScreenPressed : 0|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ CruiseEnabled : 1|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Unused : 2|6@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1025 MotorDriveCommand: 8 MCB
+ SG_ MotorVelocity : 0|32@1+ (1,0) [0|0] "m/s" Vector__XXX
+ SG_ MotorCurrent : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1026 MotorPowerCommand: 8 MCB
+ SG_ ResetCommand : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Reserved : 8|24@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ BusCurrent : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1872 SimulationSpeed: 8 TEL
+ SG_ SimulationSpeed : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+CM_ SG_ 1572 b0x00 "Unused";
+CM_ SG_ 1572 SOH "Unused";
+CM_ SG_ 1573 AverageTemp "Twos Complement";
+CM_ SG_ 1573 MinTemp "Twos Complement";
+CM_ SG_ 1573 MaxTemp "Twos Complement";
+CM_ SG_ 1575 Temp1 "Twos Complement";
+CM_ SG_ 1575 Temp2 "Twos Complement";
+CM_ SG_ 1575 Temp3 "Twos Complement";
+CM_ SG_ 1575 Temp4 "Twos Complement";
+CM_ SG_ 1575 Temp5 "Twos Complement";
+CM_ SG_ 1575 Temp6 "Twos Complement";
+CM_ SG_ 1575 Temp7 "Twos Complement";
+CM_ SG_ 1575 Temp8 "Twos Complement";
+CM_ SG_ 1575 Temp9 "Twos Complement";
+CM_ SG_ 1575 Temp10 "Twos Complement";
+CM_ SG_ 1575 Temp11 "Twos Complement";
+CM_ SG_ 1575 Temp12 "Twos Complement";
+CM_ SG_ 1575 Temp13 "Twos Complement";
+CM_ SG_ 1575 Temp14 "Twos Complement";
+CM_ SG_ 1575 Temp15 "Twos Complement";
+CM_ SG_ 1575 Temp16 "Twos Complement";
+CM_ SG_ 1575 Temp17 "Twos Complement";
+CM_ SG_ 1575 Temp18 "Twos Complement";
+CM_ SG_ 1575 Temp19 "Twos Complement";
+CM_ SG_ 1575 Temp20 "Twos Complement";
+CM_ SG_ 1575 Temp21 "Twos Complement";
+CM_ SG_ 1575 Temp22 "Twos Complement";
+CM_ SG_ 1575 Temp23 "Twos Complement";
+CM_ SG_ 1575 Temp24 "Twos Complement";
+CM_ SG_ 1575 Temp25 "Twos Complement";
+CM_ SG_ 1575 Temp26 "Twos Complement";
+CM_ SG_ 1575 Temp27 "Twos Complement";
+CM_ SG_ 1575 Temp28 "Twos Complement";
+CM_ SG_ 1575 Temp29 "Twos Complement";
+CM_ SG_ 1575 Temp30 "Twos Complement
+";
+CM_ SG_ 1575 Temp31 "Twos Complement";
+CM_ SG_ 1575 Temp32 "Twos Complement";
+CM_ SG_ 1104 PackCurrent "Twos Complement positive into pack ";
+CM_ SG_ 1104 DOC_COC "Discharge and Charge Overcurrent Status";
+CM_ SG_ 1280 TritiumID "char[4]string";
+CM_ SG_ 1025 MotorCurrent "Percentage of max current
+";
+CM_ SG_ 1026 BusCurrent "Percentage of the max bus current";
+CM_ SG_ 1026 ResetCommand "Unused";
+CM_ SG_ 1577 ModuleStatusofBits "Each bit indicates bal status (active high)";
+BA_DEF_  "BusType" STRING ;
+BA_DEF_DEF_  "BusType" "CAN";
+SIG_VALTYPE_ 1793 VoltSensor1 : 1;
+SIG_VALTYPE_ 1793 VoltSensor2 : 1;
+SIG_VALTYPE_ 1794 CurrentSensor1 : 1;
+SIG_VALTYPE_ 1794 CurrentSensor2 : 1;
+

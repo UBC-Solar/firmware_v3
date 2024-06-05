@@ -243,8 +243,8 @@ void CAN_SendMessage623(Pack_t *pack)
     uint8_t max_volt_rescaled = (uint8_t) ((max_module_voltage * MESSAGE_623_MODULE_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
 
     // Store in message 623 data array
-    txMessage.data[0] = (uint8_t) (total_pack_voltage >> 8); // casting shifted 16 bit integer into 8 bit integer get rids of upper 8 bits, leaves lower 8 bits
-    txMessage.data[1] = (uint8_t) total_pack_voltage;        // casting 16 bit integer into 8 bit integer gets rid of upper 8 bits, leaves lower 8 bits
+    txMessage.data[0] = (uint8_t)total_pack_voltage;        // LSB
+    txMessage.data[1] = (uint8_t)(total_pack_voltage >> 8); // MSB
     txMessage.data[2] = min_volt_rescaled;
     txMessage.data[3] = min_module; // add one because of indexing from zero
     txMessage.data[4] = max_volt_rescaled;
@@ -349,10 +349,10 @@ void CAN_SendMessages626(Pack_t *pack)
     {
         uint32_t base_module_num = multiplex_index * MODULES_PER_MULTIPLEXED_DATA_MESSAGE;
         txMessage.data[0] = multiplex_index;
-        txMessage.data[1] = ((pack->module[base_module_num     ].voltage * MESSAGE_623_PACK_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
-        txMessage.data[2] = ((pack->module[base_module_num + 1U].voltage * MESSAGE_623_PACK_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
-        txMessage.data[3] = ((pack->module[base_module_num + 2U].voltage * MESSAGE_623_PACK_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
-        txMessage.data[4] = ((pack->module[base_module_num + 3U].voltage * MESSAGE_623_PACK_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
+        txMessage.data[1] = ((pack->module[base_module_num     ].voltage * MESSAGE_623_MODULE_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
+        txMessage.data[2] = ((pack->module[base_module_num + 1U].voltage * MESSAGE_623_MODULE_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
+        txMessage.data[3] = ((pack->module[base_module_num + 2U].voltage * MESSAGE_623_MODULE_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
+        txMessage.data[4] = ((pack->module[base_module_num + 3U].voltage * MESSAGE_623_MODULE_VOLTAGE_SCALE_FACTOR) / PACK_MODULE_VOLTAGE_LSB_PER_V);
         queueCanMessage(&txMessage);
     }
 }
@@ -382,25 +382,91 @@ void CAN_SendMessages627(Pack_t *pack)
 }
 
 /**
+ * @brief Get data for set of messages for ID 628, construct CAN messages and send them
+ *
+ * @param pack pack data structure that data will be read from
+ */
+void CAN_SendMessages628(Pack_t *pack)
+{
+    CAN_TxMessage_t txMessage = {0};
+    txMessage.tx_header.StdId = 0x628U;
+    txMessage.tx_header.DLC = 5;
+    uint8_t status_bits = 0;
+    
+    for(uint8_t multiplex_index = 0; multiplex_index < NUM_MULTIPLEXED_DATA_MESSAGES; multiplex_index++)
+    {
+        uint32_t base_module_num = multiplex_index * MODULES_PER_MULTIPLEXED_DATA_MESSAGE;
+        txMessage.data[0] = multiplex_index;
+
+        for (int index = 1; index <= 4; index++)
+        {
+            status_bits |= (pack->module[ base_module_num + (index - 1) ].status.bits.fault_over_temperature);
+            status_bits |= (pack->module[ base_module_num + (index - 1) ].status.bits.fault_under_voltage)<< 1;
+            status_bits |= (pack->module[ base_module_num + (index - 1) ].status.bits.fault_over_voltage)<< 2;
+            status_bits |= (pack->module[ base_module_num + (index - 1) ].status.bits.charge_over_temperature_limit)<< 3;
+            status_bits |= (pack->module[ base_module_num + (index - 1) ].status.bits.warning_low_voltage)<< 4;
+            status_bits |= (pack->module[ base_module_num + (index - 1) ].status.bits.warning_high_voltage)<< 5;
+            status_bits |= (pack->module[ base_module_num + (index - 1) ].status.bits.warning_high_temperature)<< 6;
+
+            txMessage.data[index] = status_bits;
+            status_bits = 0;
+        }
+        queueCanMessage(&txMessage);
+    }
+}
+
+/**
+ * @brief Get data for set of messages for ID 629, construct CAN messages and send them
+ *
+ * @param pack pack data structure that data will be read from
+ */
+void CAN_SendMessages629(Pack_t * pack)
+{
+    CAN_TxMessage_t txMessage = {0};
+    txMessage.tx_header.StdId = 0x629U;
+    txMessage.tx_header.DLC = 4;
+    uint32_t balancing_status_raw = 0;
+
+    for(int module_num = 0; module_num < PACK_NUM_BATTERY_MODULES; module_num++)
+    {
+        balancing_status_raw |= pack->module[module_num].status.bits.balancing_active << module_num;
+    }
+
+    txMessage.data[0] = (uint8_t)(balancing_status_raw >> 0);
+    txMessage.data[1] = (uint8_t)(balancing_status_raw >> 8);
+    txMessage.data[2] = (uint8_t)(balancing_status_raw >> 16);
+    txMessage.data[3] = (uint8_t)(balancing_status_raw >> 24);
+
+    queueCanMessage(&txMessage);
+}
+
+/**
  * @brief Getter for data contained in the last received ECU current data CAN message
  * 
- * @param[out] pack_current Signed pack current in amps
- * @param[out] low_voltage_current Signed low voltage circuits current; LSB = (30/255) amps
- * @param[out] overcurrent_status True if discharge or charge over-current condition has been triggered
+ * @param batt_current Signed pack current scaled, to get in current in A divide by 65.535
+ * @param supp_batt_volt Unsigned supplemental battery voltage scaled, divide by 1000 to get voltage in V
+ * @param status Refer to Solar CAN ID Excel Sheet for specifics on each bit, last 3 bits are reserved
  * @param[out] rx_timestamp Time since board power on in ms at which last ECU CAN message was received
  * @returns Whether a CAN message has been received (and there is new data) since the last time this function was called
 */
-bool CAN_GetMessage0x450Data(int8_t *pack_current, uint8_t *low_voltage_current, bool *overcurrent_status, uint32_t *rx_timestamp)
+bool CAN_GetMessage0x450Data(uint32_t *rx_timestamp, ECU_Data_t *ecu_data)
 {
+
     HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section - do not want a CAN RX complete interrupt to be serviced during this function call
     bool new_rx_message = CAN_data.rx_message_0x450.new_rx_message;
-    CAN_data.rx_message_0x450.new_rx_message = false;
 
-    *pack_current = (int8_t) CAN_data.rx_message_0x450.data[0];
-    *low_voltage_current = CAN_data.rx_message_0x450.data[1];
-    *overcurrent_status = CAN_data.rx_message_0x450.data[2] & 0x1U;
-    *rx_timestamp = CAN_data.rx_message_0x450.timestamp;
+    if(new_rx_message == true){
 
+        CAN_data.rx_message_0x450.new_rx_message = false;
+
+        ecu_data->adc_data.batt_current = ((int16_t)(CAN_data.rx_message_0x450.data[1])) << 8  | (int16_t)(CAN_data.rx_message_0x450.data[0]);
+        ecu_data->adc_data.supp_batt_volt = ((uint8_t)(CAN_data.rx_message_0x450.data[3])) << 8 | (uint16_t)(CAN_data.rx_message_0x450.data[2]);
+        ecu_data->adc_data.lvs_current = (int8_t) CAN_data.rx_message_0x450.data[4];        
+        ecu_data->status.raw = CAN_data.rx_message_0x450.data[5];
+        *rx_timestamp = CAN_data.rx_message_0x450.timestamp;
+
+    }
+    
     HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section
     return new_rx_message;
 }

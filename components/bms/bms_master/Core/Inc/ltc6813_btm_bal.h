@@ -18,6 +18,6 @@
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
-void BTM_BAL_setDischarge(Pack_t *pack, bool discharge_setting[PACK_NUM_BATTERY_MODULES]);
+void BTM_BAL_setDischarge(Pack_t *pack, const bool discharge_setting[PACK_NUM_BATTERY_MODULES]);
 
 #endif /* INC_LTC6813_BTM_BAL_H_ */

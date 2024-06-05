@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2022 STMicroelectronics.
+  * Copyright (c) 2023 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -20,14 +20,21 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "can.h"
+#include "fatfs.h"
 #include "i2c.h"
+#include "iwdg.h"
+#include "rtc.h"
+#include "spi.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
-#include "can.h"
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+#include "debug_io.h"
+#include "sd_logger.h"
 
 /* USER CODE END Includes */
 
@@ -38,6 +45,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define CAN_MESSAGE_QUEUE_SIZE 10
+#define IMU_QUEUE_SIZE 10
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -49,20 +58,27 @@
 
 /* USER CODE BEGIN PV */
 
+/* Diagnostics */
+
+tel_diagnostics g_tel_diagnostics = {false, false, false, false, false};
+
+/* CAN Filters */
 CAN_FilterTypeDef CAN_filter0;
 CAN_FilterTypeDef CAN_filter1;
 
-CAN_RxHeaderTypeDef can_rx_header;
+uint32_t start_of_second = 0;
 
-uint8_t current_can_data[8];
+/* HAL Status */
 HAL_StatusTypeDef rx_status;
+
+/* Log File */
+FIL* logfile;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
-void Can_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -101,18 +117,57 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN_Init();
-  MX_USART3_UART_Init();
+  MX_SPI1_Init();
+  MX_UART5_Init();
   MX_I2C1_Init();
+  MX_I2C2_Init();
   MX_USART1_UART_Init();
+  MX_RTC_Init();
+  MX_FATFS_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
-  // <----- CAN set-up ------>
-  Can_Init();
+  if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET)
+  {
+    // IWDG reset occurred
+    g_tel_diagnostics.watchdog_reset = true;
+
+    // Clear flag
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+  }
+
+  DebugIO_Init(&huart5);
+  initIMU();
+
+  // Determine if RTC is reset and set diagnostic rtc_reset appropriately.
+  checkAndSetRTCReset();
+
+//  FRESULT fresult;
+//  char startup_message[60];
+//  char filename[30];
+
+//  HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
+//  HAL_RTC_GetTime(&hrtc, &curr_time, RTC_FORMAT_BIN);
+
+  /* Year - Month - Date  Format */
+//  sprintf(startup_message, "TEL start up on 20%u %u %u at %u:%u:%u", curr_date.Year,
+//	  curr_date.Month, curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
+
+  /* mount SD card */
+//  DSTATUS stat = disk_status(0);
+//  DSTATUS stat2 = disk_initialize(0);
+//  fresult = sd_mount();
+  // if (fresult == FR_OK) printf("SD Mounted Successfully\n\r");
+  // else printf("SD NOT Mounted\n\r");
+
+//  sprintf(filename, "TEL-20%u-%u-%uT%u-%u-%u.txt", curr_date.Year, curr_date.Month,
+//	  curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
+//  logfile = sd_open(filename);
+//  sd_append(logfile, startup_message);
 
   /* USER CODE END 2 */
 
-  /* Init scheduler */
-  osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
+  /* Call init function for freertos objects (in freertos.c) */
   MX_FREERTOS_Init();
 
   /* Start scheduler */
@@ -138,14 +193,18 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE
+                              |RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
+  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
@@ -164,6 +223,12 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }

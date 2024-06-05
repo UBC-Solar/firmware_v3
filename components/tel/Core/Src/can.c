@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2022 STMicroelectronics.
+  * Copyright (c) 2023 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -21,51 +21,73 @@
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
-
+#include "rtc.h"
 #include "main.h"
 
 HAL_StatusTypeDef can_start;
 
-/**
- * @brief Initialize CAN node for sending and receiving
- * @param: CAN filter structure
- * @retval: nothing
- */
-void CanFilterSetup(void)
-{
-	// Use mask and list mode to filter IDs from the CAN ID BOM
+CAN_TxHeaderTypeDef tel_diagnostics_header = {
+    .StdId = TEL_DIAGNOSTICS_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = 1};
 
-	// Filter for 0x500 and 0x600 IDs
-    CAN_filter0.FilterIdHigh = (uint16_t) (0x501 << 5);
-    CAN_filter0.FilterMaskIdHigh = (uint16_t) (0x7F5 << 5);
+CAN_TxHeaderTypeDef IMU_x_axis_header = {
+    .StdId = IMU_X_AXIS,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
 
-    CAN_filter0.FilterIdLow = (uint16_t) (0x620 << 5);
-    CAN_filter0.FilterMaskIdLow = (uint16_t) (0x7F8 << 5);
+CAN_TxHeaderTypeDef IMU_y_axis_header = {
+    .StdId = IMU_Y_AXIS,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
 
-    CAN_filter0.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-    CAN_filter0.FilterBank = (uint32_t) 0;
-    CAN_filter0.FilterMode = CAN_FILTERMODE_IDMASK;
-    CAN_filter0.FilterScale = CAN_FILTERSCALE_16BIT;
-    CAN_filter0.FilterActivation = CAN_FILTER_ENABLE;
+CAN_TxHeaderTypeDef IMU_z_axis_header = {
+    .StdId = IMU_Z_AXIS,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
 
-    // Remaining IDs filtered with list mode
-    CAN_filter1.FilterIdHigh = (uint16_t) (0x502 << 5);
-    CAN_filter1.FilterMaskIdHigh = (uint16_t) (0x401 << 5);
+CAN_TxHeaderTypeDef GPS_latitude_header = {
+    .StdId = GPS_latitude_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
 
-    CAN_filter1.FilterIdLow = (uint16_t) (0x401 << 5);
-    CAN_filter1.FilterMaskIdLow = (uint16_t) (0x401 << 5);
+CAN_TxHeaderTypeDef GPS_longitude_header = {
+    .StdId = GPS_longitude_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
 
-    CAN_filter1.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-    CAN_filter1.FilterBank = (uint32_t) 1;
-    CAN_filter1.FilterMode = CAN_FILTERMODE_IDLIST;
-    CAN_filter1.FilterScale = CAN_FILTERSCALE_16BIT;
-    CAN_filter1.FilterActivation = CAN_FILTER_ENABLE;
+CAN_TxHeaderTypeDef GPS_altitude_hdop_header = {
+    .StdId = GPS_altitude_hdop_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
 
-	// Configure reception filters
-    HAL_CAN_ConfigFilter(&hcan, &CAN_filter0);
-    HAL_CAN_ConfigFilter(&hcan, &CAN_filter1);
+CAN_TxHeaderTypeDef GPS_side_count_header = {
+    .StdId = GPS_side_count_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
 
-}
+
+
+uint32_t can_mailbox;
+
+extern CAN_MSG_Rx_Queue;
+extern CAN_MSG_memory_pool;
 
 /* USER CODE END 0 */
 
@@ -83,10 +105,10 @@ void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
-  hcan.Init.Prescaler = 4;
+  hcan.Init.Prescaler = 8;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_4TQ;
   hcan.Init.TimeSeg2 = CAN_BS2_4TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
@@ -169,15 +191,28 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 
 /* USER CODE BEGIN 1 */
 
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
-    HAL_StatusTypeDef status = HAL_CAN_DeactivateNotification(hcan,
-    CAN_IT_RX_FIFO0_MSG_PENDING);
-    assert_param(status == HAL_OK);
+void CanFilterSetup(void)
+{
+  /* TODO: Review Filter Implementation */
+  // Use mask and list mode to filter IDs from the CAN ID BOM
 
-    // osThreadFlagsClear(canReadMessagesTaskHandle);
-    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-    osThreadFlagsSet(readCANTaskHandle, CAN_READY);
+  // Filter for 0x500 and 0x600 IDs
+  CAN_filter0.FilterIdHigh = 0x0000;
+  CAN_filter0.FilterMaskIdHigh = 0x0000;
+
+  CAN_filter0.FilterIdLow = 0x0000;
+  CAN_filter0.FilterMaskIdLow = 0x0000;
+
+  CAN_filter0.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  CAN_filter0.FilterBank = (uint32_t) 0;
+  CAN_filter0.FilterMode = CAN_FILTERMODE_IDMASK;
+  CAN_filter0.FilterScale = CAN_FILTERSCALE_16BIT;
+  CAN_filter0.FilterActivation = CAN_FILTER_ENABLE;
+
+  // Configure reception filters
+  HAL_CAN_ConfigFilter(&hcan, &CAN_filter0);
 }
+
 
 /*
  * CAN set-up: Sets up the filters, Starts CAN with HAL, and Activates notifications for interrupts.
@@ -190,5 +225,48 @@ void Can_Init(void)
 
   HAL_StatusTypeDef can_notification_status = HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
   assert_param(can_notification_status == HAL_OK);
+
+  /* To avoid warning of unused variable */
+  (void) can_notification_status;
 }
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  //HAL_StatusTypeDef status = HAL_CAN_DeactivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+
+  /* Assert the status */
+  //assert_param(status == HAL_OK);
+  CAN_RxHeaderTypeDef can_rx_header;
+  uint8_t can_data[8];
+
+
+  /* Get CAN message */
+//  while(HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0) != 0) {
+    HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can_rx_header, can_data);  // TODO: Put can_rx_header and can_data into a data structure able to be accessed in the freertos task
+  //  printf("%d\n\r", HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0));
+    /* Put CAN message in the Queue */
+    CAN_msg_t *new_CAN_msg;
+    new_CAN_msg = osPoolAlloc(CAN_MSG_memory_pool);
+    new_CAN_msg->header = can_rx_header;
+    for(int i = 0; i < 8; i++) {
+      new_CAN_msg->data[i] = can_data[i];
+    }
+
+    /* Perform rtc syncing check if the message is 0x300 and if RTC is reset to 2000-01-01 */
+    if (new_CAN_msg->header.StdId == RTC_TIMESTAMP_MSG_ID)
+    {
+      start_of_second = HAL_GetTick();
+    }
+
+    new_CAN_msg->timestamp.double_value = get_current_timestamp();
+    osMessagePut(CAN_MSG_Rx_Queue, new_CAN_msg, osWaitForever);
+//  }
+
+  /* Set the Flag to CAN_READY */
+  osSignalSet(readCANTaskHandle, CAN_READY);
+
+  /* To avoid warning of unused variable */
+  //(void) status;
+}
+
 /* USER CODE END 1 */

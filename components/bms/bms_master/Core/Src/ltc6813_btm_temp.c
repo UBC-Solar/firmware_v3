@@ -311,7 +311,7 @@ void volts2temp(uint16_t ADC[], uint16_t REF2[], float temp_celsius[])
     {
         Vs = BTM_regValToVoltage(REF2[board]);
         Vout = BTM_regValToVoltage(ADC[board]);
-        R_therm = R_balance * ((Vs / Vout) - 1);
+        R_therm = R_balance * (Vout/(Vs-Vout));
         temp_kelvin = (beta * room_temp)
             / (beta + (room_temp * logf(R_therm / R_room_temp)));
         temp_celsius[board] = temp_kelvin - 273.15;

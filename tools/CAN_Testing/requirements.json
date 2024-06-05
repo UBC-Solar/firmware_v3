@@ -1,0 +1,204 @@
+{
+    "Receive": {
+        "0x701": {
+            "VoltSensor1": [4, 5, 0.5],
+            "VoltSensor2": [4, 5, 0.5]
+        },
+
+        "0x702": {
+            "CurrentSensor1": [4, 5, 0.5],
+            "CurrentSensor2": [4, 5, 0.5]
+        },
+
+        "0x703": {
+            "TempSensors1": [0, 0, 0],
+            "TempSensors2": [0, 0, 0],
+            "TempSensors3": [0, 0, 0],
+            "TempSensors4": [0, 0, 0],
+            "TempSensors5": [0, 0, 0],
+            "TempSensors6": [0, 0, 0],
+            "TempSensors7": [0, 0, 0],
+            "TempSensors8": [0, 0, 0]
+        },
+
+        "0x622": {
+            "SlaveBoardComm": [1, 0, 0.4],
+            "BMSSelfTest": [1, 0, 0.4],
+            "OverTemp": [1, 0, 0.4],
+            "UnderVoltage": [1, 0, 0.4],
+            "OverVoltage": [0, 0, 0],
+            "IsoLost": [0, 0, 0],
+            "ChargeOvercurrent": [0, 0, 0],
+            "VoltOutofRange": [0, 0, 0],
+            "TempOutofRange": [0, 0, 0],
+            "PackBalancingActive": [0, 0, 0],
+            "LLIMActive": [0, 0, 0],
+            "HLIMActive": [0, 0, 0],
+            "ChargeOverTemp": [0, 0, 0],
+            "LowVoltage": [0, 0, 0],
+            "HighVoltage": [0, 0, 0],
+            "LowTemp": [0, 0, 0],
+            "HighTemp": [0, 0, 0],
+            "RequestRegenOff": [0, 0, 0],
+            "NoECUCurrentMessage": [0, 0, 0]
+        },
+
+        "0x623": {
+            "TotalPackVoltage": [0, 0, 0],
+            "VoltageofLeast": [0, 0, 0],
+            "IndexofLowestModule": [0, 0, 0],
+            "VoltageofHighest": [0, 0, 0],
+            "IndexofHighestModule": [0, 0, 0]
+        },
+
+        "0x624": {
+            "SOC": [0, 0, 0],
+            "DepthofDischarge": [0, 0, 0],
+            "Capacity": [0, 0, 0],
+            "b0x00": [0, 0, 0],
+            "SOH": [0, 0, 0]
+        },
+
+        "0x625": {
+            "AverageTemp": [0, 0, 0],
+            "MinTemp": [0, 0, 0],
+            "IndexofLowestTemp": [0, 0, 0],
+            "MaxTemp": [0, 0, 0],
+            "IndexofHighestTemp": [0, 0, 0]
+        },
+
+        "0x626": {
+            "MultiplexingBits": [0, 0, 0],
+            "Voltage1": [0, 0, 0],
+            "Voltage2": [0, 0, 0],
+            "Voltage3": [0, 0, 0],
+            "Voltage4": [0, 0, 0]
+        },
+
+        "0x627": {
+            "MultiplexingBits": [0, 0, 0],
+            "Temp1": [0, 0, 0],
+            "Temp2": [0, 0, 0],
+            "Temp3": [0, 0, 0],
+            "Temp4": [0, 0, 0]
+        },
+
+        "0x628": {
+            "MultiplexingBits": [0, 0, 0],
+            "Module1": [0, 0, 0],
+            "Module2": [0, 0, 0],
+            "Module3": [0, 0, 0],
+            "Module4": [0, 0, 0]
+        },
+
+        "0x629": {
+            "ModuleStatusofBits": [0, 0, 0]
+        },
+
+        "0x450": {
+            "PackCurrent": [0, 0, 0],
+            "LVCurrent": [0, 0, 0],
+            "PackOverDischarge": [0, 0, 0],
+            "PackOverCharge": [0, 0, 0],
+            "DOC": [0, 0, 0],
+            "COC": [0, 0, 0],
+            "DOC_COC": [0, 0, 0]
+        },
+
+        "0x3f4": {
+            "MaxChargingVoltage": [0, 0, 0],
+            "MaxChargingCurrent": [0, 0, 0],
+            "ChargerEnables": [0, 0, 0],
+            "ChargingModes": [0, 0, 0],
+            "Reserved1": [0, 0, 0],
+            "Reserved2": [0, 0, 0]
+        },
+
+        "0x3e5": {
+            "OutputVoltage": [0, 0, 0],
+            "OutputCurrent": [0, 0, 0],
+            "HardwareProtection": [0, 0, 0],
+            "TemperatureProtection": [0, 0, 0],
+            "InputVoltageStatus": [0, 0, 0],
+            "OutputUnderVoltage": [0, 0, 0],
+            "OutputOverVoltage": [0, 0, 0],
+            "OutputOverCurrent": [0, 0, 0],
+            "OutputShortCircuit": [0, 0, 0],
+            "CommunicationStatus": [0, 0, 0],
+            "WorkingStatus": [0, 0, 0],
+            "Initialization": [0, 0, 0],
+            "FanEnable": [0, 0, 0],
+            "CoolingPumpFanEnable": [0, 0, 0],
+            "Unused1": [0, 0, 0],
+            "Unused2": [0, 0, 0],
+            "CCSignalStatus": [0, 0, 0],
+            "CPSignalStatus": [0, 0, 0],
+            "ChargingSocketTemperature": [0, 0, 0],
+            "ElectronicLockState": [0, 0, 0],
+            "S2SwitchControlStatus": [0, 0, 0],
+            "Temperature": [0, 0, 0]
+        },
+
+        "0x500": {
+            "TritiumID": [0, 0, 0],
+            "SerialNumber": [0, 0, 0]
+        },
+
+        "0x501": {
+            "BridgePWM": [0, 0, 0],
+            "MotorCurrent": [0, 0, 0],
+            "Velocity": [0, 0, 0],
+            "BusCurrent": [0, 0, 0],
+            "BusVoltUpperLim": [0, 0, 0],
+            "BusVoltLowerLim": [0, 0, 0],
+            "HeadsinkTemp": [0, 0, 0],
+            "Reserved": [0, 0, 0],
+            "HardwareOverCurrent": [0, 0, 0],
+            "SoftwareOverCurrent": [0, 0, 0],
+            "DCBusOverVoltage": [0, 0, 0],
+            "BadMotorPosHallSeq": [0, 0, 0],
+            "WatchdogCausedLast": [0, 0, 0],
+            "ConfigReadError": [0, 0, 0],
+            "A15VRailUnderVoltLock": [0, 0, 0],
+            "Reserved2": [0, 0, 0],
+            "ActiveMotor": [0, 0, 0],
+            "Reserved3": [0, 0, 0]
+        },
+
+        "0x502": {
+            "BusVoltage": [0, 0, 0],
+            "BusCurrent": [0, 0, 0]
+        },
+
+        "0x503": {
+            "MotorVelocity": [0, 0, 0],
+            "VehicleVelocity": [0, 0, 0]
+        },
+
+        "0x50b": {
+            "MotorTemp": [0, 0, 0],
+            "SurfaceTempController": [0, 0, 0]
+        },
+
+        "0x400": {
+            "NextScreenPressed": [0, 0, 0],
+            "CruiseEnabled": [0, 0, 0],
+            "Unused": [0, 0, 0]
+        },
+
+        "0x401": {
+            "MotorVelocity": [0, 0, 0],
+            "MotorCurrent": [0, 0, 0]
+        },
+
+        "0x402": {
+            "ResetCommand": [0, 0, 0],
+            "Reserved": [0, 0, 0],
+            "BusCurrent": [0, 0, 0]
+        },
+
+        "0x750": {
+            "SimulationSpeed": [0, 0, 0]
+        }
+    }
+}

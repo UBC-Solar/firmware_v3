@@ -24,14 +24,18 @@
 #include "selftest.h"
 
 /*============================================================================*/
+/* PRIVATE VARIABLES */
+static ECU_Data_t ecu_data = {0};
+
+/*============================================================================*/
 /* PRIVATE FUNCTION DEFINITIONS */
 
 /**
  * @brief Helper function for initial system checks
  * Returns true for full match, false otherwise
  */
-bool doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
-                       uint8_t reg_group2[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
+static bool doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
+                              uint8_t reg_group2[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE])
 {
     for (int ic_num = 0; ic_num < BTM_NUM_DEVICES; ic_num++)
     {
@@ -44,7 +48,7 @@ bool doesRegGroupMatch(uint8_t reg_group1[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE],
     return true;
 }
 
-void processSelfTestStatus(Pack_t *pack, BTM_Status_t *self_test_status)
+static void processSelfTestStatus(Pack_t *pack, BTM_Status_t *self_test_status)
 {
     if (self_test_status->error == BTM_ERROR_SELFTEST)
     {
@@ -56,14 +60,14 @@ void processSelfTestStatus(Pack_t *pack, BTM_Status_t *self_test_status)
     }
 }
 
-void stopBalancing(Pack_t *pack)
+static void stopBalancing(Pack_t *pack)
 {
     // Disable balancing of all modules
     bool discharge_setting[PACK_NUM_BATTERY_MODULES] = {false};
     BTM_BAL_setDischarge(pack, discharge_setting); // writes balancing commands for all modules
 }
 
-void clearModuleData(Pack_t *pack)
+static void clearModuleData(Pack_t *pack)
 {
     // Zero out data since valid data could not be collected
     for (uint32_t module_num = 0; module_num < PACK_NUM_BATTERY_MODULES; module_num++)
@@ -79,15 +83,14 @@ void clearModuleData(Pack_t *pack)
 
 /**
  * @brief Perform initial system checks
- * 
+ *
  * Writes COMM bit in status code if checks fail
  */
 void BMS_MAIN_startupChecks(Pack_t *pack)
 {
     uint8_t test_data[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {
         {0x55, 0x6E, 0x69, 0x42, 0x43, 0x20},
-        {0x53, 0x6f, 0x6c, 0x61, 0x72, 0x21}
-    };
+        {0x53, 0x6f, 0x6c, 0x61, 0x72, 0x21}};
     uint8_t test_data_rx[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
     BTM_Status_t comm_status = {BTM_OK, 0};
     BTM_Status_t ltc_temp_status = {BTM_OK, 0};
@@ -101,6 +104,9 @@ void BMS_MAIN_startupChecks(Pack_t *pack)
     BTM_writeRegisterGroup(CMD_WRCOMM, test_data);
     comm_status = BTM_readRegisterGroup(CMD_RDCOMM, test_data_rx);
     reg_group_match = doesRegGroupMatch(test_data, test_data_rx);
+
+    printf("reg group match: %d\r\n", reg_group_match);
+
     // checks for comms error
     // note: a lack of comms is different than the self-tests failing
     if (comm_status.error != BTM_OK)
@@ -113,20 +119,20 @@ void BMS_MAIN_startupChecks(Pack_t *pack)
         pack->status.bits.fault_self_test = true;
     }
 
-    ltc_temp_status = ST_checkLTCtemp();
-    processSelfTestStatus(pack, &ltc_temp_status);
+    // ltc_temp_status = ST_checkLTCtemp();
+    // processSelfTestStatus(pack, &ltc_temp_status);
 
-    ltc_vref2_status = ST_checkVREF2();
-    processSelfTestStatus(pack, &ltc_vref2_status);
+    // ltc_vref2_status = ST_checkVREF2();
+    // processSelfTestStatus(pack, &ltc_vref2_status);
 
-    shorted_cells_status = ST_shortedCells();
-    processSelfTestStatus(pack, &shorted_cells_status);
+    // shorted_cells_status = ST_shortedCells();
+    // processSelfTestStatus(pack, &shorted_cells_status);
 
-    open_wire_status = ST_checkOpenWire();
-    processSelfTestStatus(pack, &open_wire_status);
+    // open_wire_status = ST_checkOpenWire();
+    // processSelfTestStatus(pack, &open_wire_status);
 
-    overlap_measurement_status = ST_checkOverlapVoltage();
-    processSelfTestStatus(pack, &overlap_measurement_status);
+    // overlap_measurement_status = ST_checkOverlapVoltage();
+    // processSelfTestStatus(pack, &overlap_measurement_status);
 
     // TODO: check if this works once BMS is connected to real batteries
     // It works based on voltage drop due to resistance in the voltage tap leads when discharge is on... not sure if
@@ -147,18 +153,16 @@ void BMS_MAIN_startupChecks(Pack_t *pack)
 void BMS_MAIN_updatePackData(Pack_t *pack)
 {
     // ECU CAN Message
-    int8_t pack_current = 0;
-    uint8_t low_voltage_current = 0;
-    bool overcurrent_detected = 0;
     uint32_t ecu_can_rx_timestamp = 0;
     bool new_ecu_can_message_received;
+    int32_t pack_current_unscaled; //(Amps)
     // Other
     static bool soc_initialized = false;
 
     // Check for new ECU CAN message
-    new_ecu_can_message_received = CAN_GetMessage0x450Data(&pack_current, &low_voltage_current, &overcurrent_detected, &ecu_can_rx_timestamp);
+    new_ecu_can_message_received = CAN_GetMessage0x450Data(&ecu_can_rx_timestamp, &ecu_data);
 
-    if (new_ecu_can_message_received && overcurrent_detected)
+    if (new_ecu_can_message_received && ((ecu_data.status.bits.fault_charge_overcurrent || ecu_data.status.bits.fault_discharge_overcurrent) == true))
     {
         pack->status.bits.fault_over_current = true; // set FLT_DOC_COC bit
     }
@@ -191,10 +195,12 @@ void BMS_MAIN_updatePackData(Pack_t *pack)
         }
         else if (new_ecu_can_message_received)
         {
-            SOC_allModulesEst(pack, pack_current, ecu_can_rx_timestamp);
+            pack_current_unscaled = ecu_data.adc_data.batt_current / 65.535;
+            SOC_allModulesEst(pack, pack_current_unscaled, ecu_can_rx_timestamp);
         }
 
         // write pack status code
+
         ANA_analyzePack(pack);
     }
 }
@@ -203,14 +209,14 @@ void BMS_MAIN_updatePackData(Pack_t *pack)
  * @brief Update GPIO control signal outputs, balancing state, and fan pwm
  *
  * @param[in] pack Pack data to align output states to
-*/
+ */
 void BMS_MAIN_driveOutputs(Pack_t *pack)
 {
     uint32_t fan_PWM = 0;
     float max_temp = 0;
 
     // if any fault active, drive FLT, COM, OT GPIOs, turn off balancing, drive fans 100%
-    if (PACK_ANY_FAULTS_SET(pack->status))
+    if (PACK_ANY_FAULTS_SET(pack->status) || ecu_data.status.bits.estop == true)
     {
         CONT_FLT_switch(true);
         CONT_COM_switch(pack->status.bits.fault_communications);
@@ -238,7 +244,9 @@ void BMS_MAIN_driveOutputs(Pack_t *pack)
             max_temp = ANA_findHighestModuleTemp(pack);
             fan_PWM = CONT_fanPwmFromTemp(max_temp);
         }
+
         CONT_FAN_PWM_set(fan_PWM);
+
     }
 }
 
@@ -246,7 +254,7 @@ void BMS_MAIN_driveOutputs(Pack_t *pack)
  * @brief Send all of the BMS CAN messages with the most current pack data
  *
  * @param[in] pack Pack data used to populate message data
-*/
+ */
 void BMS_MAIN_sendCanMessages(Pack_t *pack)
 {
     CAN_SendMessage622(pack);
@@ -255,4 +263,6 @@ void BMS_MAIN_sendCanMessages(Pack_t *pack)
     CAN_SendMessage625(pack);
     CAN_SendMessages626(pack);
     CAN_SendMessages627(pack);
+    CAN_SendMessages628(pack);
+    CAN_SendMessages629(pack);
 }
