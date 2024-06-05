@@ -27,10 +27,10 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "can.h"
 
 /* USER CODE BEGIN Includes */
 #include <time.h>
+#include "can.h"
 
 /* USER CODE END Includes */
 
