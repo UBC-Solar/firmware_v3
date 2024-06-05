@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "rtc.h"
-#include "can.h"
 
 /* USER CODE BEGIN 0 */
 #include <stdbool.h>

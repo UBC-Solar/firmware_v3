@@ -108,7 +108,6 @@ osThreadId StartDefaultTaskHandle;
 osThreadId readCANTaskHandle;
 osThreadId readIMUTaskHandle;
 osThreadId readGPSTaskHandle;
-osThreadId transmitRTCTaskHandle;
 osThreadId transmitDiagnosticsTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
@@ -553,8 +552,6 @@ void read_GPS_task(void const * argument)
 
   /* USER CODE END read_GPS_task */
 }
-
-/* USER CODE BEGIN Header_transmit_RTC_task */
 
 /* USER CODE BEGIN Header_transmit_Diagnostics_task */
 /**
