@@ -462,7 +462,7 @@ void read_IMU_task(void const * argument)
 /* USER CODE END Header_read_GPS_task */
 void read_GPS_task(void const * argument)
 {
-  /* USER CODE _task */
+  /* USER CODE BEGIN read_GPS_task */
   /* Infinite loop */
   while(1) {
     /* Initialize buffers */
