@@ -58,7 +58,7 @@
 #define DEFAULT_TASK_DELAY 100        // 100 milliseconds
 #define TRANSMIT_DIAGNOSTICS_DELAY 2000 // 2000 milliseconds
 #define GPS_WAIT_MSG_DELAY 10 * 1000    // 10 seconds/10000 milliseconds wait before checking for GPS msg
-
+#define IMU_SINGLE_DELAY 125 // 125ms single delay, * 2 = 250ms per group of IMU messages.
 #define CAN_BUFFER_LEN  24
 
 #define GPS_MESSAGE_LEN 200
@@ -373,7 +373,7 @@ void read_IMU_task(void const * argument)
     ax_y.float_value = Accel_Y_RAW / 16384.0;
     ax_z.float_value = Accel_Z_RAW / 16384.0;
 
-    osDelay(250);
+    osDelay(IMU_SINGLE_DELAY);
 
     /* Read gyroscope data */
     uint8_t gyro_data[NUM_GYRO_BYTES];
@@ -447,7 +447,7 @@ void read_IMU_task(void const * argument)
 
     /* Delay */
 //    osDelay(READ_IMU_DELAY * 5); // 500 ms
-    osDelay(250);
+    osDelay(IMU_SINGLE_DELAY);
   }
 
   /* USER CODE END read_IMU_task */
