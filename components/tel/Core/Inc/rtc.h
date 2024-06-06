@@ -47,7 +47,7 @@ double get_current_timestamp();
 double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate, double milliseconds);
 int lastDayOfMonth(int month, int year);
 bool checkAndSetRTCReset();
-void sync_memorator_rtc(CAN_msg_t* rx_CAN_msg);
+void RTC_check_and_sync_rtc(CAN_msg_t* rx_CAN_msg);
 
 /* USER CODE END Prototypes */
 

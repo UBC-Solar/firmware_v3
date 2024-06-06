@@ -217,7 +217,7 @@ void CanFilterSetup(void)
 /*
  * CAN set-up: Sets up the filters, Starts CAN with HAL, and Activates notifications for interrupts.
  */
-void Can_Init(void)
+void CAN_Init(void)
 {
   CanFilterSetup();
   can_start = HAL_CAN_Start(&hcan);
@@ -267,6 +267,18 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
   /* To avoid warning of unused variable */
   //(void) status;
+}
+
+/**
+ * @brief Function to transmit CAN message on the CAN bus as well as over radio
+ * @param hcan The CAN handle
+ * @param tx_CAN_msg The CAN message to be transmitted
+ * @param can_mailbox The CAN mailbox
+ * @return void
+*/
+void CAN_radio_and_bus_transmit(CAN_HandleTypeDef* hcan, CAN_Radio_msg_t* tx_CAN_msg, uint32_t* can_mailbox) {
+    HAL_CAN_AddTxMessage(hcan, &(tx_CAN_msg->header), &(tx_CAN_msg->data), can_mailbox);
+    RADIO_TRANSMIT_CAN_msg(tx_CAN_msg);
 }
 
 /* USER CODE END 1 */

@@ -30,6 +30,9 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 
+#include "rtos_tasks.h"
+#include "cmsis_os.h"
+
 /* USER CODE END Includes */
 
 extern IWDG_HandleTypeDef hiwdg;
@@ -41,6 +44,9 @@ extern IWDG_HandleTypeDef hiwdg;
 void MX_IWDG_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
+void IWDG_refresh();
+void IWDG_refresh_with_default_delay();
 
 /* USER CODE END Prototypes */
 

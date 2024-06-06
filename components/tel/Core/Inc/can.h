@@ -31,6 +31,7 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 
 #include "cmsis_os.h"
+#include "utils.h"
 
 /* USER CODE END Includes */
 
@@ -72,26 +73,21 @@ void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
-
-typedef union DoubleBytes {
-	double double_value;			/**< Double value member of the union. */
-	uint64_t double_as_int;			/**< 64 bit in member of union. */
-} DoubleBytes;
-
 typedef struct {
   CAN_RxHeaderTypeDef header;
   uint8_t data[8];
-  union DoubleBytes timestamp;
+  union Utils_DoubleBytes_t timestamp;
 } CAN_msg_t;
 
 typedef struct {
   CAN_TxHeaderTypeDef header;
   uint8_t data[8];
-  union DoubleBytes timestamp;
+  union Utils_DoubleBytes_t timestamp;
 } CAN_Radio_msg_t;
 
 void CanFilterSetup(void);
-void Can_Init(void);
+void CAN_Init(void);
+void CAN_radio_and_bus_transmit(CAN_HandleTypeDef* hcan, CAN_Radio_msg_t* tx_CAN_msg, uint32_t* can_mailbox);
 
 extern osThreadId readCANTaskHandle;
 

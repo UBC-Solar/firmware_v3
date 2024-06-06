@@ -55,4 +55,23 @@ void MX_IWDG_Init(void)
 
 /* USER CODE BEGIN 1 */
 
+/**
+ * @brief Refreshes the IWDG if NOT in DEBUG mode
+*/
+void IWDG_refresh()
+{
+    #ifndef DEBUG
+      HAL_IWDG_Refresh(&hiwdg);
+    #endif
+}
+
+/**
+ * @brief Refreshes the IWDG with the default task delay
+*/
+void IWDG_refresh_with_default_delay()
+{
+    IWDG_refresh();
+    osDelay(DEFAULT_TASK_DELAY);
+}
+
 /* USER CODE END 1 */
