@@ -83,13 +83,13 @@ void Error_Handler(void);
 #define NUM_ADC_CHANNELS_TOTAL 16
 
 /* Sensor ADC Channel Assignments (0-7 IN USE)*/
-#define ST_1 0
-#define ST_2 1
-#define ST_3 2
-#define ST_4 3
-#define BP_1 4
-#define BP_2 5
-#define BP_3 6
+#define BP_1 0
+#define BP_2 1
+#define BP_3 2
+#define ST_1 3
+#define ST_2 4
+#define ST_3 5
+#define ST_4 6
 #define SA_1 7
 
 
