@@ -125,7 +125,7 @@ void Error_Handler(void);
 #define GPS_SDA_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-
+#define TEL_PRINT_CPU_LOAD 0
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

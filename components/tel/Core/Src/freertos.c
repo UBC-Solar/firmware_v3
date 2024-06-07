@@ -132,6 +132,25 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
 void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
 
+/* Hook prototypes */
+void configureTimerForRunTimeStats(void);
+unsigned long getRunTimeCounterValue(void);
+
+/* USER CODE BEGIN 1 */
+/* Functions needed when configGENERATE_RUN_TIME_STATS is on */
+__weak void configureTimerForRunTimeStats(void)
+{
+  // Don't need to configure anything here since we are using HAL_GetTick()
+  // Still need defined for compilation
+  return;
+}
+
+unsigned long getRunTimeCounterValue(void)
+{
+  return HAL_GetTick(); // Todo: Use higher resolution timer
+}
+/* USER CODE END 1 */
+
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
 static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
@@ -181,7 +200,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of StartDefaultTask */
-  osThreadDef(StartDefaultTask, startDefaultTask, osPriorityLow, 0, 128);
+  osThreadDef(StartDefaultTask, startDefaultTask, osPriorityNormal, 0, 128);
   StartDefaultTaskHandle = osThreadCreate(osThread(StartDefaultTask), NULL);
 
   /* definition and creation of readCANTask */
@@ -628,6 +647,15 @@ void transmit_RTC_task(void const * argument)
     
     HAL_CAN_AddTxMessage(&hcan, &rtc_msg.header, rtc_msg.data, &can_mailbox);
     send_CAN_Radio(&rtc_msg);
+
+    // Only get CPU load if in DEBUG build and TEL_PRINT_CPU_LOAD is enabled in main.h
+    #ifdef DEBUG && TEL_PRINT_CPU_LOAD == 1
+      // 40 bytes per task should be good enough hopefully
+      char* cpu_load_buffer[200];
+      vTaskGetRunTimeStats(cpu_load_buffer);
+      cpu_load_buffer[199] = '\0'; // Sanity set the last byte to null terminator
+      printf(cpu_load_buffer);
+    #endif 
 
     osDelay(TRANSMIT_RTC_DELAY);
   }
