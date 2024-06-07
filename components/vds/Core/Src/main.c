@@ -18,11 +18,15 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "can.h"
+#include "dma.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "common.h"
 
 /* USER CODE END Includes */
 
@@ -44,18 +48,36 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+volatile uint16_t adc1_buf[NUM_ADC_CHANNELS_TOTAL] = {0}; // Initialize ADC buffer
+VDS_Data_t vds_data = {0}; // Initialize VDS data structure
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+void averageADCValues(int adc_half);
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
+{ // Analog watchdog 
+  /*TODO: Implement error handling here */
+  if(hadc == &hadc1)
+  {
+    ADC1_setFaultStatus(1);
+    HAL_Delay(1); // Delay for 1ms
+  }
+}
 
+/*============================================================================*/
+/* GPIO INTERRUPT CALLBACKS */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  /*TODO: Implement error handling here */  
+}
 /* USER CODE END 0 */
 
 /**
@@ -66,6 +88,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+  HAL_Delay(100); // Delay for 100ms to allow peripherals to initialize
 
   /* USER CODE END 1 */
 
@@ -75,6 +98,18 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+
+  //Reset all adc flags
+  vds_data.status.raw = 0;
+  vds_data.adc_data.ADC_brake_pressure_1 = 0;
+  vds_data.adc_data.ADC_brake_pressure_2 = 0;
+  vds_data.adc_data.ADC_brake_pressure_3 = 0;
+  vds_data.adc_data.ADC_shock_travel_1 = 0;
+  vds_data.adc_data.ADC_shock_travel_2 = 0;
+  vds_data.adc_data.ADC_shock_travel_3 = 0;
+  vds_data.adc_data.ADC_shock_travel_4 = 0;
+  vds_data.adc_data.ADC_steering_angle = 0;
+  vds_data.status.bits.adc_fault = 0;
 
   /* USER CODE END Init */
 
@@ -87,9 +122,14 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_CAN1_Init();
   MX_CAN2_Init();
+  MX_ADC1_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, NUM_ADC_CHANNELS_TOTAL); // Start ADC1 in DMA mode
+  HAL_TIM_Base_Start(&htim3);
 
   /* USER CODE END 2 */
 
@@ -112,6 +152,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -143,6 +184,12 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV2;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
   /** Configure the Systick interrupt time
   */
@@ -150,6 +197,68 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/*
+Notes on how to do conversion:
+1: lower half of ADC 
+2: upper half of ADC
+
+-pass which half needs to be processed as a parameter to processing methods
+-convert raw ADC values to physical values
+-assign physical values to the correct sensor in the VDS data structure
+-handover the VDS data structure to the CAN module (to be handled by Diego)
+
+*/
+
+void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
+{
+  if (hadc == &hadc1){
+    // TODO: Process ADC1 readings
+    averageADCValues(0);
+  }
+}
+
+// Conversion full complete DMA interrupt callback for ADCs
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+  if (hadc == &hadc1){
+    // TODO: Process ADC1 readings
+    averageADCValues(1);
+  }
+   
+}
+
+void averageADCValues(int adc_half)
+{ //TODO: Modify this function to process and save ADC1 readings for VDS
+
+  if (!ADC1_getBusyStatus())
+  {
+    ADC1_setBusyStatus(1);
+    static float result[NUM_ADC_CHANNELS_TOTAL]; //for use later if we need averaging
+
+    //results are saved to vds_data and can be used from there
+    ADC1_processRawReadings(adc_half, adc1_buf, result); //function to process values from ADC1
+    ADC1_setBusyStatus(0);
+  }
+  else
+  {
+    ADC1_setFaultStatus(1);
+    HAL_Delay(1); // Delay for 1ms
+    averageADCValues(adc_half); // Retry
+  }
+}
+
+//ADC error callback
+void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
+{
+  if (hadc == &hadc1)
+  {
+    ADC1_setFaultStatus(1);
+    HAL_Delay(1); // Delay for 1ms
+    averageADCValues(0); // Retry with ADC half 0
+    averageADCValues(1); // Retry with ADC half 1
+  }
+}
 
 /* USER CODE END 4 */
 
