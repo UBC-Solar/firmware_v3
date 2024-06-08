@@ -72,6 +72,10 @@ void MX_ADC1_Init(void)
   }
   /* USER CODE BEGIN ADC1_Init 2 */
 
+  //Very useful function for calibrating ADC before usage. Always include this
+  if (HAL_ADCEx_Calibration_Start(&hadc1) != HAL_OK){
+      Error_Handler();
+    }
   /* USER CODE END ADC1_Init 2 */
 
 }

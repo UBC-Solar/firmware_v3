@@ -273,14 +273,12 @@ void Convert_Values(uint8_t index) {
 			/* Relationship for converting ADC for VSENSE1 and modify CONVERTED_VALUES[index] */
 			CONVERTED_VALUES[index].float_value = 3.3 * ADC_VALUES[index] / pow(2, 12) * 1000;	// slightly undercompensates
 			break;
-
 		case ISENSE1:
 			/* ISENSE [V] = 0.11 * I [A] + 1.65 */
-			CONVERTED_VALUES[index].float_value = (ADC_VALUES[index] - 1.65) / 0.11;
+			CONVERTED_VALUES[index].float_value = (((3.3 * ((float)ADC_VALUES[index] / pow(2, 12))) - ISENSE_OFFSET_VOLTAGE) / 0.11) - ISENSE_OFFSET_CURRENT;
 			break;
 		case ISENSE2:
-			/* ISENSE [V] = 0.11 * I [A] + 1.65 */
-			CONVERTED_VALUES[index].float_value = (ADC_VALUES[index] - 1.65) / 0.11;
+			CONVERTED_VALUES[index].float_value = (((3.3 * ((float)ADC_VALUES[index] / pow(2, 12))) - ISENSE_OFFSET_VOLTAGE) / 0.11) - ISENSE_OFFSET_CURRENT;
 			break;
 		case TEMP_1:
 			/* TEMP_1 use volt2temp using values obtained from the NXFT15XH103FA2B090 Datasheet */
@@ -500,6 +498,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
 
 	  /* Read ADC, process, then output to CANbus */
 

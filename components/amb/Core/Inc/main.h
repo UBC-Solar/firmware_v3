@@ -122,6 +122,9 @@ void Convert_Values(uint8_t index);
 #define TEMP_7			8
 #define TEMP_8			9
 
+/* Conversion Constants */
+#define ISENSE_OFFSET_CURRENT		0.0639
+#define ISENSE_OFFSET_VOLTAGE		1.65
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
