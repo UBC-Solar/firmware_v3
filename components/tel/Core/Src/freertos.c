@@ -56,8 +56,6 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
-#define UTILS_GET_BYTE_AT_INDEX(i, value) ((value >> (i * 8)) & 0xFF);        // Gets the byte at the index i of the data
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -150,23 +148,23 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of StartDefaultTask */
-  osThreadDef(StartDefaultTask, startDefaultTask, RTOS_TASKS_DEFAULT_TASK_PRIO, RTOS_TASKS_INSTANCES, RTOS_TASKS_DEFAULT_TASK_STACKSZ);
+  osThreadDef(StartDefaultTask, startDefaultTask, osPriorityLow, 0, 128);
   StartDefaultTaskHandle = osThreadCreate(osThread(StartDefaultTask), NULL);
 
   /* definition and creation of readCANTask */
-  osThreadDef(readCANTask, read_CAN_task, RTOS_TASKS_READ_CAN_TASK_PRIO, RTOS_TASKS_INSTANCES, RTOS_TASKS_READ_CAN_TASK_STACKSZ);
+  osThreadDef(readCANTask, read_CAN_task, osPriorityNormal, 0, 512);
   readCANTaskHandle = osThreadCreate(osThread(readCANTask), NULL);
 
   /* definition and creation of readIMUTask */
-  osThreadDef(readIMUTask, read_IMU_task, RTOS_TASKS_READ_IMU_TASK_PRIO, RTOS_TASKS_INSTANCES, RTOS_TASKS_READ_IMU_TASK_STACKSZ);
+  osThreadDef(readIMUTask, read_IMU_task, osPriorityNormal, 0, 1024);
   readIMUTaskHandle = osThreadCreate(osThread(readIMUTask), NULL);
 
   /* definition and creation of readGPSTask */
-  osThreadDef(readGPSTask, read_GPS_task, RTOS_TASKS_READ_GPS_TASK_PRIO, RTOS_TASKS_INSTANCES, RTOS_TASKS_READ_GPS_TASK_STACKSZ);
+  osThreadDef(readGPSTask, read_GPS_task, osPriorityNormal, 0, 1536);
   readGPSTaskHandle = osThreadCreate(osThread(readGPSTask), NULL);
 
   /* definition and creation of transmitDiagnosticsTask */
-  osThreadDef(transmitDiagnosticsTask, transmit_Diagnostics_task, RTOS_TASKS_READ_DIAGNOSTIC_TASK_PRIO, RTOS_TASKS_INSTANCES, RTOS_TASKS_READ_DIAGNOSTIC_TASK_STACKSZ);
+  osThreadDef(transmitDiagnosticsTask, transmit_Diagnostics_task, osPriorityNormal, 0, 512);
   transmitDiagnosticsTaskHandle = osThreadCreate(osThread(transmitDiagnosticsTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -174,7 +172,6 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_THREADS */
 
 }
-
 
 /* USER CODE BEGIN Header_startDefaultTask */
 /**
@@ -191,11 +188,21 @@ void startDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
+/**
+ * @brief Zeros out an array.
+ * @param array The array to zero out.
+ * @param size The size of the array.
+ * @return void
+ */
+void UTILS_zeroArray(uint8_t* array, uint8_t size) {
+    for (uint8_t i = 0; i < size; i++) {
+        array[i] = 0;
+    }
+} 
     IWDG_refresh_with_default_delay();
   }
   /* USER CODE END startDefaultTask */
 }
-
 
 /* USER CODE BEGIN Header_read_CAN_task */
 /**
@@ -234,7 +241,10 @@ void read_CAN_task(void const * argument)
     
         RTC_check_and_sync_rtc(rx_CAN_msg);             // Sync RTC with memorator message. Also sets rtc reset
 
-        RADIO_TRANSMIT_CAN_msg(rx_CAN_msg);             // Send CAN on radio
+        CAN_Radio_msg_t tx_CAN_msg;
+        CAN_rx_to_radio(rx_CAN_msg, &tx_CAN_msg);        // Convert CAN message to radio message
+        RADIO_TRANSMIT_CAN_msg(&tx_CAN_msg);             // Send CAN on radio
+
         osPoolFree(CAN_MSG_memory_pool, rx_CAN_msg);    // Free the memory pool
       }
       else break;
@@ -258,16 +268,16 @@ void read_IMU_task(void const * argument)
   /* Infinite loop */
   while(1)
   {
-    HAL_StatusTypeDef imu_status = HAL_OK;
-
-    IMU_send_as_CAN_msg_with_delay(&imu_status);                // Send IMU data as CAN message
-    g_tel_diagnostics.imu_fail = (imu_status != HAL_OK);        // Update diagnostics
-    osDelay(IMU_SINGLE_DELAY);
+    // HAL_StatusTypeDef imu_status = HAL_OK;
+// 
+    // IMU_send_as_CAN_msg_with_delay(&imu_status);                // Send IMU data as CAN message
+    // g_tel_diagnostics.imu_fail = (imu_status != HAL_OK);        // Update diagnostics
+    // osDelay(IMU_SINGLE_DELAY);
+    osDelay(IMU_SINGLE_DELAY * 2);
   }
 
   /* USER CODE END read_IMU_task */
 }
-
 
 /* USER CODE BEGIN Header_read_GPS_task */
 /**
@@ -300,7 +310,7 @@ void transmit_Diagnostics_task(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    RADIO_TRANSMIT_diagnostic_msg();
+    // RADIO_TRANSMIT_diagnostic_msg();
     osDelay(TRANSMIT_DIAGNOSTICS_DELAY);
   }
   /* USER CODE END transmit_Diagnostics_task */
@@ -310,3 +320,4 @@ void transmit_Diagnostics_task(void const * argument)
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
+

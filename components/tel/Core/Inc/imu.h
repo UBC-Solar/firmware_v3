@@ -5,6 +5,7 @@
 #include "sd_logger.h"
 #include "rtos_tasks.h"
 #include "rtc.h"
+#include "can.h"
 
 #define IMU_MESSAGE_LEN             17
 #define ACCEL_SENSITIVITY           16384.0

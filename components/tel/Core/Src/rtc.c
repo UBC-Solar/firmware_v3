@@ -214,6 +214,8 @@ bool checkAndSetRTCReset()
 	}
 	return false;
 }
+
+
 /**
  * @brief Sets RTC time based on CAN data formatted as follows:
  *        Byte 0: Seconds, Byte 1: Minutes, Byte 2: Hours
@@ -226,14 +228,13 @@ static void setRTCTime(uint8_t* data)
     RTC_TimeTypeDef sTime = {0};
 
     /* Manually parsing the seconds minutes hours */
-    sTime.Seconds = data[0];
-    sTime.Minutes = data[1];
-    sTime.Hours   = data[2];
+    sTime.Seconds = data[TIMETYPEDEF_SECONDS_IDX];
+    sTime.Minutes = data[TIMETYPEDEF_MINUTES_IDX];
+    sTime.Hours   = data[TIMETYPEDEF_HOURS_IDX];
 
     /* Set the RTC time with these settings */
     HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
 }
-
 
 /**
  * @brief Sets RTC date based on CAN data formatted as follows:
@@ -247,9 +248,9 @@ static void setRTCDate(uint8_t* data)
     RTC_DateTypeDef sDate = {0};
 
     /* Manually parsing the date, month, and year */
-    sDate.Date  = data[3];
-    sDate.Month = data[4];
-    sDate.Year  = data[5];
+    sDate.Date  = data[TIMETYPEDEF_DAY_IDX];
+    sDate.Month = data[TIMETYPEDEF_MONTH_IDX];
+    sDate.Year  = data[TIMETYPEDEF_YEAR_IDX];
 
     /* Set the RTC Date with these settings */
     HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);

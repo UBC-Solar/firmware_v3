@@ -37,6 +37,14 @@ extern "C" {
 extern RTC_HandleTypeDef hrtc;
 
 /* USER CODE BEGIN Private defines */
+
+#define TIMETYPEDEF_SECONDS_IDX     0
+#define TIMETYPEDEF_MINUTES_IDX     1
+#define TIMETYPEDEF_HOURS_IDX       2
+#define TIMETYPEDEF_DAY_IDX         3
+#define TIMETYPEDEF_MONTH_IDX       4   
+#define TIMETYPEDEF_YEAR_IDX        5
+
 /* USER CODE END Private defines */
 
 void MX_RTC_Init(void);

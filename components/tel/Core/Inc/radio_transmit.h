@@ -10,6 +10,7 @@
 
 #include "can.h"
 #include "usart.h"
+#include "rtc.h"
 
 /* RADIO BUFFER BYTE LENGTHS */
 #define CAN_BUFFER_LEN                      24
@@ -45,3 +46,4 @@
 #define CAN_TRANSMIT_TIMEOUT                1000                // 1 second timeout
 
 void RADIO_TRANSMIT_CAN_msg(CAN_Radio_msg_t *tx_CAN_msg);
+void RADIO_TRANSMIT_diagnostic_msg();

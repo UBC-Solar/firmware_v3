@@ -17,6 +17,7 @@ typedef union Utils_DoubleBytes_t {
 	uint64_t double_as_int;			/**< 64 bit in member of union. */
 } Utils_DoubleBytes_t;
 
+void UTILS_zeroArray(uint8_t* array, uint8_t size);
 
 /**
  * @brief Gets the byte at the index i of the data

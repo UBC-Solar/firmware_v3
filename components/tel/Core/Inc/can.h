@@ -49,9 +49,9 @@ extern CAN_HandleTypeDef hcan;
 #define GPS_longitude_ID 0x756
 #define GPS_altitude_hdop_ID 0x757
 #define GPS_side_count_ID 0x758
-#define GET_BYTE_FROM_WORD(i, word) ((word >> (i * 8)) & 0xFF);
 
 #define CAN_DATA_LENGTH 8
+#define CAN_TIMESTAMP_LENGTH 8
 
 extern CAN_TxHeaderTypeDef tel_diagnostics_header;
 extern CAN_TxHeaderTypeDef IMU_x_axis_header;
@@ -88,6 +88,7 @@ typedef struct {
 void CanFilterSetup(void);
 void CAN_Init(void);
 void CAN_radio_and_bus_transmit(CAN_HandleTypeDef* hcan, CAN_Radio_msg_t* tx_CAN_msg, uint32_t* can_mailbox);
+void CAN_rx_to_radio(CAN_msg_t* rx_CAN_msg, CAN_Radio_msg_t* tx_CAN_msg);
 
 extern osThreadId readCANTaskHandle;
 

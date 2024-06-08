@@ -277,8 +277,24 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
  * @return void
 */
 void CAN_radio_and_bus_transmit(CAN_HandleTypeDef* hcan, CAN_Radio_msg_t* tx_CAN_msg, uint32_t* can_mailbox) {
-    HAL_CAN_AddTxMessage(hcan, &(tx_CAN_msg->header), &(tx_CAN_msg->data), can_mailbox);
+    HAL_CAN_AddTxMessage(hcan, &(tx_CAN_msg->header), tx_CAN_msg->data, can_mailbox);
     RADIO_TRANSMIT_CAN_msg(tx_CAN_msg);
 }
 
+void CAN_rx_to_radio(CAN_msg_t* rx_CAN_msg, CAN_Radio_msg_t* tx_CAN_msg) {
+  // Do the header fields
+  tx_CAN_msg->header.StdId = rx_CAN_msg->header.StdId;
+  tx_CAN_msg->header.ExtId = rx_CAN_msg->header.ExtId;
+  tx_CAN_msg->header.IDE = rx_CAN_msg->header.IDE;
+  tx_CAN_msg->header.RTR = rx_CAN_msg->header.RTR;
+  tx_CAN_msg->header.DLC = rx_CAN_msg->header.DLC;
+
+  // Do the data field
+  for (int i = 0; i < 8; i++) {
+    tx_CAN_msg->data[i] = rx_CAN_msg->data[i];
+  }
+
+  // Do the timestamp field
+  tx_CAN_msg->timestamp = rx_CAN_msg->timestamp;  
+}
 /* USER CODE END 1 */
