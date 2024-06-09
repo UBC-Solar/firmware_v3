@@ -43,6 +43,7 @@ typedef struct tel_diagnostics{
   volatile bool gps_fix;
   volatile bool imu_fail;
   volatile bool watchdog_reset;
+  volatile uint16_t runtime_counter;
 } tel_diagnostics;
 
 extern tel_diagnostics g_tel_diagnostics;

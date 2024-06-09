@@ -25,6 +25,7 @@
 #include "iwdg.h"
 #include "rtc.h"
 #include "spi.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -45,8 +46,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define CAN_MESSAGE_QUEUE_SIZE 10
-#define IMU_QUEUE_SIZE 10
+#define CAN_MESSAGE_QUEUE_SIZE        10
+#define IMU_QUEUE_SIZE                10
+#define INITIAL_RUNTIME_COUNTER_VAL   0
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -59,8 +61,7 @@
 /* USER CODE BEGIN PV */
 
 /* Diagnostics */
-
-tel_diagnostics g_tel_diagnostics = {false, false, false, false, false};
+tel_diagnostics g_tel_diagnostics = {false, false, false, false, INITIAL_RUNTIME_COUNTER_VAL};
 
 /* CAN Filters */
 CAN_FilterTypeDef CAN_filter0;
@@ -125,7 +126,11 @@ int main(void)
   MX_RTC_Init();
   MX_FATFS_Init();
   MX_IWDG_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+
+  // Start the TIM2 interrupt based timer
+  HAL_TIM_Base_Start_IT(&htim2);
 
   if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET)
   {
@@ -256,6 +261,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   }
   /* USER CODE BEGIN Callback 1 */
 
+  // Increment the diagnostic counter
+  if (htim->Instance == TIM2) {
+    g_tel_diagnostics.runtime_counter++;
+  }
   /* USER CODE END Callback 1 */
 }
 
