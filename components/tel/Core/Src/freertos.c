@@ -188,18 +188,7 @@ void startDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-/**
- * @brief Zeros out an array.
- * @param array The array to zero out.
- * @param size The size of the array.
- * @return void
- */
-void UTILS_zeroArray(uint8_t* array, uint8_t size) {
-    for (uint8_t i = 0; i < size; i++) {
-        array[i] = 0;
-    }
-} 
-    IWDG_refresh_with_default_delay();
+   IWDG_refresh_with_default_delay();
   }
   /* USER CODE END startDefaultTask */
 }
@@ -228,8 +217,7 @@ void read_CAN_task(void const * argument)
      * Control Flow:
      * Wait for Flag from Interrupt
      * After flag occurs, read messages from queue repeatedly until it is empty
-     * Once empty, wait for flag again.
-     */
+     * Once empty,    // HAL_StatusTypeDef imu_status = HAL_OK;
 
     /* Get CAN Message from Queue */
     while(true) {
@@ -291,7 +279,8 @@ void read_GPS_task(void const * argument)
   /* USER CODE BEGIN read_GPS_task */
   /* Infinite loop */
   while(1) {
-    GPS_receive_and_transmit_as_CAN();
+    // GPS_receive_and_transmit_as_CAN();
+    osDelay(10 * 1000);
   }
 
   /* USER CODE END read_GPS_task */
