@@ -14,6 +14,7 @@ First, you will need to install the following software:
 
 Once you have these downloaded follow this [**video**](https://www.youtube.com/watch?v=Gz-lIVIU7ys&ab_channel=Kvaser)
 * A problem you may encounter is that the linux kernel headers are not installed. If this is the case run: `sudo apt-get install linux-headers-generic`
+* You may see an error saying that `'pkg-config'` is not installed. To install it do `sudo apt-get pkg-config`. 
 * Another issue can be that the compiler required for building linuxcan is `gcc-12`, however, by default Ubuntu may come with `gcc-11`. In this case, run: `sudo apt install --reinstall gcc-12`
 * As for building kvlibsdk, you may need to install these packages: `sudo apt-get install zlib1g`, `sudo apt-get install zlib1g-dev`, `sudo apt-get install libxml2`, and `sudo apt-get install libxml2-dev`.
 
