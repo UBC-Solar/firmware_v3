@@ -64,14 +64,14 @@
 CAN_msg_t msg_t;
 
 /* Define Memory Pool for the CAN_MSG queue data */
-osPoolDef (CAN_MSG_memory_pool, 32, CAN_msg_t);  // Declare memory pool
+osPoolDef (CAN_MSG_memory_pool, MAX_CAN_MSGS_IN_POOL, CAN_msg_t);  // Declare memory pool
 osPoolId  CAN_MSG_memory_pool;                 // Memory pool ID
 
 /* Create the Queue */
 // https://community.st.com/t5/stm32-mcus-products/osmessageget-crashing/td-p/257324
 // See this link for issues why osMessageGet may crash
 // osMessageQDef needs a pointer to the structure type, which needs to be a "dummy", not pointer to typedef.
-osMessageQDef(CAN_MSG_Rx_Queue, 32, &msg_t);              // Define message queue
+osMessageQDef(CAN_MSG_Rx_Queue, MAX_CAN_MSGS_IN_POOL, &msg_t);              // Define message queue
 osMessageQId  CAN_MSG_Rx_Queue;
 
 /* USER CODE END Variables */
@@ -186,10 +186,8 @@ void startDefaultTask(void const * argument)
   CAN_Init();
 
   /* Infinite loop */
-  for(;;)
-  {
-   IWDG_refresh_with_default_delay();
-  }
+  IWDG_inf_refresh_with_delay();
+
   /* USER CODE END startDefaultTask */
 }
 

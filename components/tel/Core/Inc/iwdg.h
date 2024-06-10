@@ -46,7 +46,7 @@ void MX_IWDG_Init(void);
 /* USER CODE BEGIN Prototypes */
 
 void IWDG_refresh();
-void IWDG_refresh_with_default_delay();
+void IWDG_inf_refresh_with_delay();
 
 /* USER CODE END Prototypes */
 

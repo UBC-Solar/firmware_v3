@@ -68,10 +68,13 @@ void IWDG_refresh()
 /**
  * @brief Refreshes the IWDG with the default task delay
 */
-void IWDG_refresh_with_default_delay()
+void IWDG_inf_refresh_with_delay()
 {
+  for (;;)
+  {
     IWDG_refresh();
     osDelay(DEFAULT_TASK_DELAY);
+  }
 }
 
 /* USER CODE END 1 */

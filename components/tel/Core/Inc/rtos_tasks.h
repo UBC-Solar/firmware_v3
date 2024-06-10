@@ -8,6 +8,9 @@
  */
 
 
+/* Size Constants */
+#define MAX_CAN_MSGS_IN_POOL                        32              // Maximum number of CAN messages in the CAN message pool 
+
 /* TASK DELAYS */
 #define DEFAULT_TASK_DELAY                          100             // 100ms
 #define TRANSMIT_DIAGNOSTICS_DELAY                  2000            // 2000ms
@@ -15,4 +18,4 @@
 #define IMU_SINGLE_DELAY                            125             // 125ms single delay, * 2 = 250ms per group of IMU messages.
 
 /* TASK INSTANCES */
-#define RTOS_TASKS_INSTANCES                        0
+#define RTOS_TASKS_INSTANCES                        0              
