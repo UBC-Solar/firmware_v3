@@ -126,7 +126,7 @@ static void check_GPS_fix_for_send(GPS* gps_data) {
  * @brief Receives GPS data and sends it as CAN message
  * @return void
 */
-void GPS_receive_and_transmit_as_CAN() {
+void GPS_delayed_rx_and_tx_as_CAN() {
     uint8_t receive_buffer[GPS_RCV_BUFFER_SIZE];
     GPS gps_data;
     GPS_msg_t gps_message;

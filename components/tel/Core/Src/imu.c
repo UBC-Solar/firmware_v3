@@ -117,7 +117,7 @@ static void create_and_send_CAN_msg(CAN_Radio_msg_t *x_data, CAN_Radio_msg_t *y_
     CAN_radio_and_bus_transmit(&hcan, z_data, &can_mailbox);
 }
 
-void IMU_send_as_CAN_msg_with_delay(HAL_StatusTypeDef* imu_status ) {
+void IMU_send_as_CAN_msg_single_delay(HAL_StatusTypeDef* imu_status ) {
     union Utils_FloatBytes_t ax_x, ax_y, ax_z, gy_x, gy_y, gy_z;
     CAN_Radio_msg_t x_axis_data, y_axis_data, z_axis_data;
 

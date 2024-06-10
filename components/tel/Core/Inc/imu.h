@@ -23,4 +23,4 @@ typedef struct {
   uint8_t data[4];
 } IMU_msg_t;
 
-void IMU_send_as_CAN_msg_with_delay();
+void IMU_send_as_CAN_msg_single_delay();

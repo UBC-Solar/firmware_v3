@@ -248,7 +248,7 @@ void read_IMU_task(void const * argument)
   {
     HAL_StatusTypeDef imu_status = HAL_OK;
 
-    IMU_send_as_CAN_msg_with_delay(&imu_status);                // Send IMU data as CAN message
+    IMU_send_as_CAN_msg_single_delay(&imu_status);                // Send IMU data as CAN message
     g_tel_diagnostics.imu_fail = (imu_status != HAL_OK);        // Update diagnostics
     osDelay(IMU_SINGLE_DELAY);
   }
@@ -268,8 +268,7 @@ void read_GPS_task(void const * argument)
   /* USER CODE BEGIN read_GPS_task */
   /* Infinite loop */
   while(1) {
-    GPS_receive_and_transmit_as_CAN();
-    osDelay(10 * 1000);
+     GPS_delayed_rx_and_tx_as_CAN(();
   }
 
   /* USER CODE END read_GPS_task */

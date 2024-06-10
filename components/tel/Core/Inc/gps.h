@@ -26,4 +26,4 @@
 #define GPS_SINGLE_MSG_DELAY                2000            // 2 second delay
 #define GPS_NEXT_MSG_DELAY                  4000            // 4 second delay
 
-void GPS_receive_and_transmit_as_CAN();
+void  GPS_delayed_rx_and_tx_as_CAN();
