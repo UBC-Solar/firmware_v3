@@ -281,6 +281,12 @@ void CAN_radio_and_bus_transmit(CAN_HandleTypeDef* hcan, CAN_Radio_msg_t* tx_CAN
     RADIO_TRANSMIT_CAN_msg(tx_CAN_msg);
 }
 
+
+/**
+ * @brief Function to convert a CAN_msg_t to a CAN_Radio_msg_t
+ * @param rx_CAN_msg The received CAN message
+ * @param tx_CAN_msg The CAN message to be transmitted
+ */
 void CAN_rx_to_radio(CAN_msg_t* rx_CAN_msg, CAN_Radio_msg_t* tx_CAN_msg) {
   // Do the header fields
   tx_CAN_msg->header.StdId = rx_CAN_msg->header.StdId;
@@ -297,4 +303,23 @@ void CAN_rx_to_radio(CAN_msg_t* rx_CAN_msg, CAN_Radio_msg_t* tx_CAN_msg) {
   // Do the timestamp field
   tx_CAN_msg->timestamp = rx_CAN_msg->timestamp;  
 }
+
+
+/**
+ * @brief Function to handle received CAN message on queue
+ * @param rx_CAN_msg The received CAN message
+ * @return void
+ */
+void CAN_handle_rx_msg(CAN_msg_t* rx_CAN_msg) {
+  HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   // Blink LED to indicate CAN message received
+
+  RTC_check_and_sync_rtc(rx_CAN_msg);              // Sync RTC with memorator message. Also sets rtc reset
+
+  CAN_Radio_msg_t tx_CAN_msg;
+  CAN_rx_to_radio(rx_CAN_msg, &tx_CAN_msg);        // Convert CAN message to radio message
+  RADIO_TRANSMIT_CAN_msg(&tx_CAN_msg);             // Send CAN on radio
+
+  osPoolFree(CAN_MSG_memory_pool, rx_CAN_msg);    // Free can msg from pool
+}
+
 /* USER CODE END 1 */

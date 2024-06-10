@@ -222,16 +222,8 @@ void read_CAN_task(void const * argument)
       evt = osMessageGet(CAN_MSG_Rx_Queue, osWaitForever);
 
       if (evt.status == osEventMessage) {
-        HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-        rx_CAN_msg = evt.value.p;                       // Get pointer from the queue union
-    
-        RTC_check_and_sync_rtc(rx_CAN_msg);             // Sync RTC with memorator message. Also sets rtc reset
-
-        CAN_Radio_msg_t tx_CAN_msg;
-        CAN_rx_to_radio(rx_CAN_msg, &tx_CAN_msg);        // Convert CAN message to radio message
-        RADIO_TRANSMIT_CAN_msg(&tx_CAN_msg);             // Send CAN on radio
-
-        osPoolFree(CAN_MSG_memory_pool, rx_CAN_msg);    // Free the memory pool
+        rx_CAN_msg = evt.value.p;                       // Get pointer to CAN message from the queue union
+        CAN_handle_rx_msg(rx_CAN_msg);                 // Handle the CAN message  
       }
       else break;
     }
@@ -259,7 +251,6 @@ void read_IMU_task(void const * argument)
     IMU_send_as_CAN_msg_with_delay(&imu_status);                // Send IMU data as CAN message
     g_tel_diagnostics.imu_fail = (imu_status != HAL_OK);        // Update diagnostics
     osDelay(IMU_SINGLE_DELAY);
-    osDelay(IMU_SINGLE_DELAY * 2);
   }
 
   /* USER CODE END read_IMU_task */
