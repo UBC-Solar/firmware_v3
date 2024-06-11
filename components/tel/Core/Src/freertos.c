@@ -266,9 +266,11 @@ void read_IMU_task(void const * argument)
 void read_GPS_task(void const * argument)
 {
   /* USER CODE BEGIN read_GPS_task */
+  GPS_wait_for_fix();                     // Try to get a fix first.
+
   /* Infinite loop */
   while(1) {
-    GPS_delayed_rx_and_tx_as_CAN();
+    GPS_delayed_rx_and_tx_as_CAN();       // Once a fix is obtained create and send GPS message as CAN
   }
 
   /* USER CODE END read_GPS_task */

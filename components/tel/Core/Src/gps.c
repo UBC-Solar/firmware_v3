@@ -108,7 +108,7 @@ void send_GPS_as_CAN(CAN_Radio_msg_t* latitude_msg, CAN_Radio_msg_t* longitude_m
  * @param gps_data: GPS struct containing the GPS data
  * @return void
 */
-static void check_GPS_fix_for_send(GPS* gps_data) {
+static void check_GPS_fix_for_send(GPS* gps_data, bool enable_delay) {
     /* Only want to package GPS message if there is a fix. Otherwise no need */
     if (gps_data->fix == GOT_FIX)
     {
@@ -118,12 +118,14 @@ static void check_GPS_fix_for_send(GPS* gps_data) {
     else
     {
     	g_tel_diagnostics.gps_fix = false;
-    	osDelay(GPS_WAIT_MSG_DELAY);
+        if (enable_delay) {
+            osDelay(GPS_WAIT_MSG_DELAY);
+        }
     }
 }
 
 /**
- * @brief Receives GPS data and sends it as CAN message
+ * @brief Continually tries to get a fix. Only returns once a fix is obtained
  * @return void
 */
 void GPS_delayed_rx_and_tx_as_CAN() {
@@ -131,7 +133,32 @@ void GPS_delayed_rx_and_tx_as_CAN() {
     GPS gps_data;
     GPS_msg_t gps_message;
     uint8_t gps_buffer[GPS_MESSAGE_LEN] = {UNINITIALIZED};
-
+    
     read_in_NMEA_data(&gps_data, receive_buffer);           // read in NMEA data into gps struct
-    check_GPS_fix_for_send(&gps_data);                      // check GPS fix and send GPS data as CAN message if there is a fix
+    check_GPS_fix_for_send(&gps_data, false);               // Rapidly check for fix. Dont delay (false)
+}
+
+/**
+ * @brief Receives GPS data and sends it as CAN message
+ * @return void
+*/
+void GPS_wait_for_fix() {
+    uint8_t receive_buffer[GPS_RCV_BUFFER_SIZE];
+    GPS gps_data;
+    GPS_msg_t gps_message;
+    uint8_t gps_buffer[GPS_MESSAGE_LEN] = {UNINITIALIZED};
+    
+    uint32_t gps_sync_start_time = HAL_GetTick();
+    while(g_tel_diagnostics.gps_fix != GOT_FIX && HAL_GetTick() - gps_sync_start_time < GPS_SYNC_TIMEOUT) {
+        read_in_NMEA_data(&gps_data, receive_buffer);           // read in NMEA data into gps struct
+        if (gps_data.fix == GOT_FIX)                           // If a fix is obtained then send out associated message
+        {
+            g_tel_diagnostics.gps_fix = true;                            
+            create_and_send_CAN_from_GPS(&gps_data);                     
+        }
+        else
+        {
+            g_tel_diagnostics.gps_fix = false;
+        }
+    }
 }

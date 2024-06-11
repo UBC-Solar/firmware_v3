@@ -25,5 +25,7 @@
 #define GOT_FIX                             1
 #define GPS_SINGLE_MSG_DELAY                2000            // 2 second delay
 #define GPS_NEXT_MSG_DELAY                  4000            // 4 second delay
+#define GPS_SYNC_TIMEOUT                    2 * 60 * 1000   // 2 minute timeout
 
-void  GPS_delayed_rx_and_tx_as_CAN();
+void GPS_delayed_rx_and_tx_as_CAN();
+void GPS_wait_for_fix(); 
