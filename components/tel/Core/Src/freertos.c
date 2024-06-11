@@ -268,7 +268,7 @@ void read_GPS_task(void const * argument)
   /* USER CODE BEGIN read_GPS_task */
   /* Infinite loop */
   while(1) {
-     GPS_delayed_rx_and_tx_as_CAN();
+    GPS_delayed_rx_and_tx_as_CAN();
   }
 
   /* USER CODE END read_GPS_task */
