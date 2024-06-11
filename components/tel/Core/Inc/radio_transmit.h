@@ -7,6 +7,9 @@
  *  @author Aarjav Jain
  */
 
+/* Define to prevent recursive inclusion -------------------------------------*/
+#ifndef __RADIO_TRANSNIT_H__
+#define __RADIO_TRANSNIT_H__
 
 #include "can.h"
 #include "usart.h"
@@ -15,11 +18,6 @@
 /* RADIO BUFFER BYTE LENGTHS */
 #define CAN_BUFFER_LEN                      24
 #define GPS_MESSAGE_LEN                     200
-
-/* INITIAL CONSTANTS */
-#define INITIAL_FLAGS                       0x00
-#define FLAG_HIGH                           1
-#define FIRST_DATA_BYTE                     0
 
 /* CAN BUFFER INDECIES */
 #define TIMESTAMP_INDEX_START               0
@@ -47,3 +45,6 @@
 
 void RADIO_TRANSMIT_CAN_msg(CAN_Radio_msg_t *tx_CAN_msg);
 void RADIO_TRANSMIT_diagnostic_msg();
+
+
+#endif /* __RADIO_TRANSMIT_H__ */

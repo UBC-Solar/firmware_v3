@@ -53,6 +53,11 @@ extern CAN_HandleTypeDef hcan;
 #define CAN_DATA_LENGTH 8
 #define CAN_TIMESTAMP_LENGTH 8
 
+/* INITIAL CONSTANTS */
+#define INITIAL_FLAGS                       0x00
+#define FLAG_HIGH                           1
+#define FIRST_DATA_BYTE                     0
+
 extern CAN_TxHeaderTypeDef tel_diagnostics_header;
 extern CAN_TxHeaderTypeDef IMU_x_axis_header;
 extern CAN_TxHeaderTypeDef IMU_y_axis_header;
@@ -89,6 +94,7 @@ void CanFilterSetup(void);
 void CAN_Init(void);
 void CAN_radio_and_bus_transmit(CAN_HandleTypeDef* hcan, CAN_Radio_msg_t* tx_CAN_msg, uint32_t* can_mailbox);
 void CAN_rx_to_radio(CAN_msg_t* rx_CAN_msg, CAN_Radio_msg_t* tx_CAN_msg);
+void CAN_diagnostic_msg_tx_radio_bus();
 
 extern osThreadId readCANTaskHandle;
 

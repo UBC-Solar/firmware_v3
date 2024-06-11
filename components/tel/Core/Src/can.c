@@ -269,6 +269,36 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   //(void) status;
 }
 
+
+/**
+ * @brief Function to transmit the TEL diagnostic message containing rtc reset, gps fix, imu fail, and watchdog reset flags
+ * @return void
+ */
+void CAN_diagnostic_msg_tx_radio_bus() {
+  uint8_t data_send = INITIAL_FLAGS;
+  CAN_Radio_msg_t diagnostics_msg;
+  diagnostics_msg.header = tel_diagnostics_header;
+  union Utils_DoubleBytes_t current_timestamp;
+
+  current_timestamp.double_value = get_current_timestamp();
+  diagnostics_msg.timestamp = current_timestamp;
+
+  if(g_tel_diagnostics.rtc_reset) 
+    SET_BIT(data_send, FLAG_HIGH << 0);
+  if(g_tel_diagnostics.gps_fix)
+    SET_BIT(data_send, FLAG_HIGH << 1);
+  if(g_tel_diagnostics.imu_fail)
+    SET_BIT(data_send, FLAG_HIGH << 2);
+  if(g_tel_diagnostics.watchdog_reset)
+    SET_BIT(data_send, FLAG_HIGH << 3);
+  
+  diagnostics_msg.data[FIRST_DATA_BYTE] = data_send;
+
+  CAN_radio_and_bus_transmit(&hcan, &diagnostics_msg, &can_mailbox);
+}
+
+
+
 /**
  * @brief Function to transmit CAN message on the CAN bus as well as over radio
  * @param hcan The CAN handle

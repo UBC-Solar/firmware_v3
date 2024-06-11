@@ -287,7 +287,7 @@ void transmit_Diagnostics_task(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    RADIO_TRANSMIT_diagnostic_msg();
+    CAN_diagnostic_msg_tx_radio_bus();
     osDelay(TRANSMIT_DIAGNOSTICS_DELAY);
   }
   /* USER CODE END transmit_Diagnostics_task */
