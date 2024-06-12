@@ -100,3 +100,4 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID );
 void update_DID_screen();
 void parse_warnings(uint8_t* CAN_rx_data);
 void DID_timeout();
+void send_did_heartbeat();

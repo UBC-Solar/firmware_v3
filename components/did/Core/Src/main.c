@@ -167,7 +167,7 @@ int main(void)
 	// Update DID LCD screen
 	update_DID_screen();
 
-  
+  send_did_heartbeat();
 
     /* USER CODE END WHILE */
 
