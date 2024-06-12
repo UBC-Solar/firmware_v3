@@ -167,6 +167,8 @@ int main(void)
 	// Update DID LCD screen
 	update_DID_screen();
 
+  
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
