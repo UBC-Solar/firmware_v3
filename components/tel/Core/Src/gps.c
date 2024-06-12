@@ -108,7 +108,7 @@ void send_GPS_as_CAN(CAN_Radio_msg_t* latitude_msg, CAN_Radio_msg_t* longitude_m
  * @param gps_data: GPS struct containing the GPS data
  * @return void
 */
-static void check_GPS_fix_for_send(GPS* gps_data, bool enable_delay) {
+static void check_GPS_fix_for_send(GPS* gps_data) {
     /* Only want to package GPS message if there is a fix. Otherwise no need */
     if (gps_data->fix == GOT_FIX)
     {
@@ -118,9 +118,6 @@ static void check_GPS_fix_for_send(GPS* gps_data, bool enable_delay) {
     else
     {
     	g_tel_diagnostics.gps_fix = false;
-        if (enable_delay) {
-            osDelay(GPS_WAIT_MSG_DELAY);
-        }
     }
 }
 
@@ -135,7 +132,7 @@ void GPS_delayed_rx_and_tx_as_CAN() {
     uint8_t gps_buffer[GPS_MESSAGE_LEN] = {UNINITIALIZED};
     
     read_in_NMEA_data(&gps_data, receive_buffer);           // read in NMEA data into gps struct
-    check_GPS_fix_for_send(&gps_data, false);               // Rapidly check for fix. Dont delay (false)
+    check_GPS_fix_for_send(&gps_data);               // Rapidly check for fix. Dont delay (false)
 }
 
 /**
