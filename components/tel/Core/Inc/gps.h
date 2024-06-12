@@ -6,7 +6,7 @@
  *  @author Diego Armstrong
  */
 
-#include "radio_transmit.h"
+#include "radio.h"
 #include "i2c.h"
 #include "nmea_parse.h"
 #include "rtc.h"

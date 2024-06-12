@@ -1,7 +1,7 @@
 
 /**
- *  @file radio_transmit.h
- *  @brief header file for radio_transmit.c. Define buffer lengths
+ *  @file radio.h
+ *  @brief header file for radio.c. Define buffer lengths
  *
  *  @date 2023/03/18
  *  @author Aarjav Jain
@@ -43,8 +43,8 @@
 /* TIMING CONSTANTS */
 #define CAN_TRANSMIT_TIMEOUT                1000                // 1 second timeout
 
-void RADIO_TRANSMIT_CAN_msg(CAN_Radio_msg_t *tx_CAN_msg);
-void RADIO_TRANSMIT_diagnostic_msg();
+void RADIO_CAN_msg(CAN_Radio_msg_t *tx_CAN_msg);
+void RADIO_diagnostic_msg();
 
 
-#endif /* __RADIO_TRANSMIT_H__ */
+#endif /* __RADIO_H__ */
