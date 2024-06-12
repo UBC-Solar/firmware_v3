@@ -24,7 +24,7 @@ static void read_in_NMEA_data(GPS* gps_data, uint8_t* receive_buffer)
     }
 
     /* Parse the buffer data --> gets stored in gps_data; */
-    nmea_parse(&gps_data, &receive_buffer);
+    nmea_parse(&gps_data, receive_buffer);
 }
 
 
