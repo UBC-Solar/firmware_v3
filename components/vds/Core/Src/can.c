@@ -22,6 +22,93 @@
 
 /* USER CODE BEGIN 0 */
 
+// CAN message headers for VDS
+
+CAN_TxHeaderTypeDef shock_travel_header = {
+		.StdId = CAN_ID_SHOCK_TRAVEL,
+		.ExtId = 0x0000,
+	    .IDE = CAN_ID_STD,
+	    .RTR = CAN_RTR_DATA,
+	    .DLC = CAN_DATA_LENGTH};
+
+CAN_TxHeaderTypeDef brake_and_steering_header = {
+		.StdId = CAN_ID_BRAKE_AND_STEERING,
+		.ExtId = 0x0000,
+		.IDE = CAN_ID_STD,
+		.RTR = CAN_RTR_DATA,
+		.DLC = CAN_DATA_LENGTH};
+
+CAN_TxHeaderTypeDef vds_diagnostic_header = {
+		.StdId = CAN_ID_VDS_DIAGNOSTIC,
+		.ExtId = 0x0000,
+		.IDE = CAN_ID_STD,
+		.RTR = CAN_RTR_DATA,
+		.DLC = 1};
+
+uint32_t can_mailbox;
+
+void CAN_SendShockTravel(VDS_Data_t *vds_data)
+{
+    CAN_Message_t message;
+    message.header = shock_travel_header;
+
+    ADC_Value_t adc_value;
+
+    adc_value.value = vds_data->adc_data.ADC_shock_travel_1;
+    message.data[0] = adc_value.bytes.low;
+    message.data[1] = adc_value.bytes.high;
+
+    adc_value.value = vds_data->adc_data.ADC_shock_travel_2;
+    message.data[2] = adc_value.bytes.low;
+    message.data[3] = adc_value.bytes.high;
+
+    adc_value.value = vds_data->adc_data.ADC_shock_travel_3;
+    message.data[4] = adc_value.bytes.low;
+    message.data[5] = adc_value.bytes.high;
+
+    adc_value.value = vds_data->adc_data.ADC_shock_travel_4;
+    message.data[6] = adc_value.bytes.low;
+    message.data[7] = adc_value.bytes.high;
+
+    HAL_CAN_AddTxMessage(&hcan2, &message.header, message.data, &can_mailbox);
+}
+
+void CAN_SendBrakeAndSteering(VDS_Data_t *vds_data)
+{
+    CAN_Message_t message;
+    message.header = brake_and_steering_header;
+
+    ADC_Value_t adc_value;
+
+    adc_value.value = vds_data->adc_data.ADC_brake_pressure_1;
+    message.data[0] = adc_value.bytes.low;
+    message.data[1] = adc_value.bytes.high;
+
+    adc_value.value = vds_data->adc_data.ADC_brake_pressure_2;
+    message.data[2] = adc_value.bytes.low;
+    message.data[3] = adc_value.bytes.high;
+
+    adc_value.value = vds_data->adc_data.ADC_brake_pressure_3;
+    message.data[4] = adc_value.bytes.low;
+    message.data[5] = adc_value.bytes.high;
+
+    adc_value.value = vds_data->adc_data.ADC_steering_angle;
+    message.data[6] = adc_value.bytes.low;
+    message.data[7] = adc_value.bytes.high;
+
+    HAL_CAN_AddTxMessage(&hcan1, &message.header, message.data, &can_mailbox);
+}
+
+void CAN_SendVDSDiagnostic(VDS_Data_t *vds_status){
+
+	// TODO: Once reqs have been decided, implementation here
+
+}
+
+
+
+
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan1;

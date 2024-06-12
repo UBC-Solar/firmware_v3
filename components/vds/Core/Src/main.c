@@ -51,12 +51,18 @@
 volatile uint16_t adc1_buf[NUM_ADC_CHANNELS_TOTAL] = {0}; // Initialize ADC buffer
 VDS_Data_t vds_data = {0}; // Initialize VDS data structure
 
+static uint32_t last_brake_and_steering_time = 0;
+static uint32_t last_shock_travel_time = 0;
+//static uint32_t last_diagnostic_time = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void averageADCValues(int adc_half);
+void processCANMessages(void);
+void convertADCValue(void);
 
 /* USER CODE END PFP */
 
@@ -128,6 +134,8 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+  HAL_CAN_Start(&hcan1);
+  HAL_CAN_Start(&hcan2);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, NUM_ADC_CHANNELS_TOTAL); // Start ADC1 in DMA mode
   HAL_TIM_Base_Start(&htim3);
 
@@ -137,6 +145,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  convertADCValue();
+	  processCANMessages();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -225,7 +235,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
     // TODO: Process ADC1 readings
     averageADCValues(1);
   }
-   
 }
 
 void averageADCValues(int adc_half)
@@ -258,6 +267,48 @@ void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
     averageADCValues(0); // Retry with ADC half 0
     averageADCValues(1); // Retry with ADC half 1
   }
+}
+
+void convertADCValue(void){
+
+  vds_data.adc_data.ADC_brake_pressure_1 = (24.55 * vds_data.adc_data.ADC_brake_pressure_1) + 1.925;
+  vds_data.adc_data.ADC_brake_pressure_2 = (24.55 * vds_data.adc_data.ADC_brake_pressure_2) + 1.925;
+  vds_data.adc_data.ADC_brake_pressure_3 = (24.55 * vds_data.adc_data.ADC_brake_pressure_3) + 1.925;
+  vds_data.adc_data.ADC_shock_travel_1 = (0.1595 * vds_data.adc_data.ADC_shock_travel_1) + 2.3875;
+  vds_data.adc_data.ADC_shock_travel_2 = (0.1595 * vds_data.adc_data.ADC_shock_travel_2) + 2.3875;
+  vds_data.adc_data.ADC_shock_travel_3 = (0.1595 * vds_data.adc_data.ADC_shock_travel_3) + 2.3875;
+  vds_data.adc_data.ADC_shock_travel_4 = (0.1595 * vds_data.adc_data.ADC_shock_travel_4) + 2.3875;
+
+  // TODO: Add conversion for steering angle once sensor has been selected and tested
+
+}
+
+void processCANMessages(void)
+{
+  uint32_t current_time = HAL_GetTick();
+
+
+  // Send shock travel message at 1kHz
+  if (current_time - last_shock_travel_time >= 1)
+  {
+    CAN_SendShockTravel(&vds_data);
+    last_shock_travel_time = current_time;
+  }
+
+  // Send brake and steering message at 10Hz
+  if (current_time - last_brake_and_steering_time >= 100)
+  {
+    CAN_SendBrakeAndSteering(&vds_data);
+    last_brake_and_steering_time = current_time;
+  }
+
+  // Send diagnostic message every 5 seconds
+  // TODO: Determine what we want from and how to implement diagnostic message
+//  if (current_time - last_diagnostic_time >= 5000)
+//  {
+//    CAN_SendDiagnostics(&vds_status);
+//    last_diagnostic_time = current_time;
+//  }
 }
 
 /* USER CODE END 4 */

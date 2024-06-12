@@ -50,6 +50,18 @@ typedef struct{
     VDS_ADC_Data_t adc_data;
 } VDS_Data_t;
 
+
+// Union to simplify process of copying over uint16's into two uint8's for CAN messsages
+
+typedef union {
+    struct {
+        uint8_t low;
+        uint8_t high;
+    } bytes;
+    uint16_t value;
+} ADC_Value_t;
+
+
 /*============================================================================*/
 /* PUBLIC VARIABLES */
 
