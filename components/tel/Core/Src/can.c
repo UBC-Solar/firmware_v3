@@ -246,7 +246,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     /* Put CAN message in the Queue */
     new_CAN_msg = osPoolAlloc(CAN_MSG_memory_pool);
     new_CAN_msg->header = can_rx_header;
-    for(int i = 0; i < 8; i++) {
+    for(int i = 0; i < CAN_DATA_LENGTH; i++) {
       new_CAN_msg->data[i] = can_data[i];
     }
 
