@@ -90,7 +90,7 @@ static void create_and_send_CAN_from_GPS(GPS* gps_data) {
  * @param side_and_count_msg: CAN message for side and count
  * @return void
 */
-static void send_GPS_as_CAN(CAN_Radio_msg_t* latitude_msg, CAN_Radio_msg_t* longitude_msg, CAN_Radio_msg_t* altitude_hdop_msg, CAN_Radio_msg_t* side_and_count_msg) {
+void send_GPS_as_CAN(CAN_Radio_msg_t* latitude_msg, CAN_Radio_msg_t* longitude_msg, CAN_Radio_msg_t* altitude_hdop_msg, CAN_Radio_msg_t* side_and_count_msg) {
     /* Transmit GPS messages as CAN */
     CAN_radio_and_bus_transmit(&hcan, latitude_msg, &can_mailbox);
     osDelay(GPS_SINGLE_MSG_DELAY);
