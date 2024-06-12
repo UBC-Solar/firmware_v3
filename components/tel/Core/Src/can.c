@@ -238,14 +238,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   //assert_param(status == HAL_OK);
   CAN_RxHeaderTypeDef can_rx_header;
   uint8_t can_data[8];
+  CAN_msg_t *new_CAN_msg;
 
 
   /* Get CAN message */
-//  while(HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0) != 0) {
     HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can_rx_header, can_data);  // TODO: Put can_rx_header and can_data into a data structure able to be accessed in the freertos task
-  //  printf("%d\n\r", HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0));
     /* Put CAN message in the Queue */
-    CAN_msg_t *new_CAN_msg;
     new_CAN_msg = osPoolAlloc(CAN_MSG_memory_pool);
     new_CAN_msg->header = can_rx_header;
     for(int i = 0; i < 8; i++) {
@@ -260,13 +258,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
     new_CAN_msg->timestamp.double_value = get_current_timestamp();
     osMessagePut(CAN_MSG_Rx_Queue, new_CAN_msg, osWaitForever);
-//  }
 
   /* Set the Flag to CAN_READY */
   osSignalSet(readCANTaskHandle, CAN_READY);
 
   /* To avoid warning of unused variable */
-  //(void) status;
 }
 
 
