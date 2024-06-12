@@ -3,7 +3,7 @@
  *  @file radio.c
  *  @brief Defines functions packaging data into a CAN buffer and sending it over UART
  *
- *  @date 2023/03/18
+ *  @date 2024/06/08
  *  @author Aarjav Jain
  */
 
@@ -70,7 +70,7 @@ static void copy_CAN_id(uint8_t* source, CAN_Radio_msg_t *tx_CAN_msg, uint32_t c
  * @param tx_CAN_msg: CAN_Radio_msg_t pointer to the CAN message to be sent
  * @return void
 */
-void RADIO_CAN_msg(CAN_Radio_msg_t *tx_CAN_msg)
+void RADIO_tx_CAN_msg(CAN_Radio_msg_t *tx_CAN_msg)
 {
   uint8_t radio_buffer[CAN_BUFFER_LEN] = {0};
   copy_timestamp(radio_buffer, tx_CAN_msg);                                                  /* TIMESTAMP */

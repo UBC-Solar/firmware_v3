@@ -43,8 +43,6 @@
 /* TIMING CONSTANTS */
 #define CAN_TRANSMIT_TIMEOUT                1000                // 1 second timeout
 
-void RADIO_CAN_msg(CAN_Radio_msg_t *tx_CAN_msg);
-void RADIO_diagnostic_msg();
-
+void RADIO_tx_CAN_msg(CAN_Radio_msg_t *tx_CAN_msg);
 
 #endif /* __RADIO_H__ */

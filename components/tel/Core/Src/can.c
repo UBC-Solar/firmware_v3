@@ -304,7 +304,7 @@ void CAN_diagnostic_msg_tx_radio_bus() {
 */
 void CAN_radio_and_bus_transmit(CAN_HandleTypeDef* hcan, CAN_Radio_msg_t* tx_CAN_msg, uint32_t* can_mailbox) {
     HAL_CAN_AddTxMessage(hcan, &(tx_CAN_msg->header), tx_CAN_msg->data, can_mailbox);
-    RADIO_CAN_msg(tx_CAN_msg);
+    RADIO_tx_CAN_msg(tx_CAN_msg);
 }
 
 
@@ -339,13 +339,13 @@ void CAN_rx_to_radio(CAN_msg_t* rx_CAN_msg, CAN_Radio_msg_t* tx_CAN_msg) {
 void CAN_handle_rx_msg(CAN_msg_t* rx_CAN_msg) {
   HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   // Blink LED to indicate CAN message received
 
-  RTC_check_and_sync_rtc(rx_CAN_msg);              // Sync RTC with memorator message. Also sets rtc reset
+  RTC_check_and_sync_rtc(rx_CAN_msg);                     // Sync RTC with memorator message. Also sets rtc reset
 
   CAN_Radio_msg_t tx_CAN_msg;
-  CAN_rx_to_radio(rx_CAN_msg, &tx_CAN_msg);        // Convert CAN message to radio message
-  RADIO_CAN_msg(&tx_CAN_msg);             // Send CAN on radio
+  CAN_rx_to_radio(rx_CAN_msg, &tx_CAN_msg);               // Convert CAN message to radio message
+  RADIO_tx_CAN_msg(&tx_CAN_msg);                          // Send CAN on radio
 
-  osPoolFree(CAN_MSG_memory_pool, rx_CAN_msg);    // Free can msg from pool
+  osPoolFree(CAN_MSG_memory_pool, rx_CAN_msg);            // Free can msg from pool
 }
 
 /* USER CODE END 1 */
