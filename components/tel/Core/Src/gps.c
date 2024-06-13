@@ -20,7 +20,7 @@ static void read_in_NMEA_data(GPS* gps_data, uint8_t* receive_buffer)
 {
     /* Read in an NMEA message into the buffer */
     if(HAL_I2C_IsDeviceReady(&hi2c1, GPS_DEVICE_ADDRESS, GPS_TRIALS, HAL_MAX_DELAY) == HAL_OK) {
-	    HAL_I2C_Master_Receive(&hi2c1, GPS_DEVICE_ADDRESS, receive_buffer, sizeof(receive_buffer), HAL_MAX_DELAY);
+	    HAL_I2C_Master_Receive(&hi2c1, GPS_DEVICE_ADDRESS, receive_buffer, GPS_MESSAGE_LEN, HAL_MAX_DELAY);
     }
 
     /* Parse the buffer data --> gets stored in gps_data; */
@@ -60,11 +60,14 @@ static void create_and_send_CAN_from_GPS(GPS* gps_data) {
     altitude_bytes.float_value = gps_data->altitude;
     hdop_bytes.float_value = gps_data->hdop;
 
-    for  (uint8_t i = 0; i < CAN_DATA_LENGTH; i++) {                // Want to make GPS data into CAN message
-        latitude_msg.data[DOUBLE_LAST_BYTE_IDX - i] = UTILS_GET_BYTE_AT_INDEX(i, latitude_bytes.double_as_int);
-        longitude_msg.data[DOUBLE_LAST_BYTE_IDX - i] = UTILS_GET_BYTE_AT_INDEX(i, longitude_bytes.double_as_int);
-        altitude_hdop_msg.data[FLOAT_LAST_BYTE_IDX - i] = altitude_bytes.bytes[i];                
-        altitude_hdop_msg.data[DOUBLE_LAST_BYTE_IDX - i] = hdop_bytes.bytes[i];
+    for (uint8_t i = 0; i < CAN_DATA_LENGTH; i++) {                // Want to make GPS data into CAN message
+        latitude_msg.data[i] = UTILS_GET_BYTE_AT_INDEX(i, latitude_bytes.double_as_int);
+        longitude_msg.data[i] = UTILS_GET_BYTE_AT_INDEX(i, longitude_bytes.double_as_int);
+    }
+
+    for (uint8_t i = 0; i < CAN_DATA_LENGTH / 2; i++) {               
+        altitude_hdop_msg.data[i] = altitude_bytes.bytes[i];                
+        altitude_hdop_msg.data[(CAN_DATA_LENGTH / 2) + i] = hdop_bytes.bytes[i];
     }
 
     /* Satellite Count Cast */
@@ -72,7 +75,7 @@ static void create_and_send_CAN_from_GPS(GPS* gps_data) {
     side_and_count_msg.data[LATSIDE_MSG_IDX] = gps_data->latSide;
     side_and_count_msg.data[LONSIDE_MSG_IDX] = gps_data->lonSide;
     for  (uint8_t i = 0; i < NUM_BYTES_FLOAT; i++) {
-        side_and_count_msg.data[GPS_SIDE_AND_COUNT_DATA_END_INDEX - i] = ((sat_count >> (BITS_IN_BYTE * i)) && MASK_8_BITS);
+        side_and_count_msg.data[i + SAT_COUNT_START_INDEX] = ((sat_count >> (BITS_IN_BYTE * i)) && MASK_8_BITS);
     }
     side_and_count_msg.data[INDEX_6] = UNINITIALIZED;
     side_and_count_msg.data[INDEX_7] = UNINITIALIZED;

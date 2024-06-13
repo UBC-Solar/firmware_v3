@@ -20,12 +20,13 @@
 #define UNINITIALIZED                       0
 #define INDEX_6                             6
 #define INDEX_7                             7
-#define NUM_BYTES_FLOAT                     4
+#define NUM_BYTES_FLOAT                     4   
 #define GPS_SIDE_AND_COUNT_DATA_END_INDEX   5
 #define GOT_FIX                             1
 #define GPS_SINGLE_MSG_DELAY                2000            // 2 second delay
 #define GPS_NEXT_MSG_DELAY                  4000            // 4 second delay
 #define GPS_SYNC_TIMEOUT                    2 * 60 * 1000   // 2 minute timeout
+#define SAT_COUNT_START_INDEX               2
 
 void GPS_delayed_rx_and_tx_as_CAN();
 void GPS_wait_for_fix(); 
