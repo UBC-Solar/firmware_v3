@@ -1,0 +1,106 @@
+# Heartbeat Message Set-Up
+To set up the heartbeat message for your board there are two primary steps.
+1. Create and set-up a hardware timer at the specified rate.
+2. Construct the data field of a diagnostic message and update the DBC's signals for it.
+2. Add the `send_heartbeat` message to the interrupt handler for the timer.
+    - **Parameter 1**: CAN standard ID for your board's heartbeat message as a paramter to the `send_heartbeat` funciton.
+    - **Parameter 2**: 6 byte data field of your diagnostic message. Internally an 8 byte message however the last 2 bytes are reserved in the `send_heartbeat` function for the `uint16_t` runtime counter.
+
+## Setting up a Hardware Timer
+1. Navigate to your boards `*.ioc` file.
+2. Open it and open the **Timers** tab.
+    - ![alt text](SEND_HEARTBEAT_images/image.png)
+3. Out of the avaliable timers select one. **For this example I will use TIM2**
+4. In the menu of your selected timer change **Clock Source** to **Internal Clock**:
+    - ![alt text](SEND_HEARTBEAT_images/image-1.png)
+5. Now, we want the heartbeat message to run at 1 second intervals. To do this, we need to set up the prescaler and the counter period so that the clock counts up to the counter period in 1 second of time.
+    - First, we need to check the HCLK rate on your board. This will tell use the refernce clock for the timer we are setting up.
+    - Navigate to the Clock Configuration section in the `*.ioc` and check the constant in the box beside HCLK (mine is highlighted 72 in the picture). This is the clock frequency in **MHz**:
+        - ![alt text](SEND_HEARTBEAT_images/image-2.png) 
+    - Now to determine the prescaler and counter period we have some constraints
+        - Firstly, these values are limited to 16 bits max. Thus we can only choose values 0 - 65535 inclusive.
+        - In my case, if I wanted to use the HCLK frequency and have a counter period to last 1 second, I would need 72 million ticks before 1 second passes. Unfortunetly, 72,000,000 > 65535 so we need to choose something else. This is where the prescaler comes in.
+            - The prescaler divides the HCLK frequency down which means the ticks occur at a lower frequency and thus less ticks are needed for 1 second to pass. 
+        - In my case, **I will use prescaler = 7200 - 1** and **counter period = 10000 - 1**. The reason you need the `-1` is because the formula relating prescaler, counter period, and clock frequency is as follows: `counter_period + 1 = HCLK / (prescaler + 1)`. This is because the ticks are zero-indexed.
+        - ![alt text](SEND_HEARTBEAT_images/image-3.png)
+6. Now we need to make this timer's callback be interrupt based whenever the counter period (1 second) is up. To do this select the **NVIC Settings** tab and enable the global interrupt for your timer:
+    - ![alt text](SEND_HEARTBEAT_images/image-4.png)
+7. Make sure to click `Ctrl + S` to save your changes and let STM32CubeMX/IDE generate the code for you.
+**Now you have set up a timer's interrupt at a 1 second rate to run the `send_heartbeat` function in.
+
+## Constructing the Diagnostic Data Field
+This section explains how to set up the 6 bytes in your data field. 
+1. Open the CAN ID table and find the message ID for the heartbeat message for your board
+    - AMB: 0x201
+    - BMS: 0x202
+    - DID: 0x203
+    - ECU: 0x204
+    - MDU: 0x205
+    - MCB: 0x206
+    - TEL: 0x207
+    - MEMORATOR: 0x208 
+    - OBC: 0x209
+    - **PUT AN IMAGE HERE**
+2. From here add rows to specify what other signals you want to see with your diagnostic message. Your signals can only be 48 bits total because the upper 16 bits of the diagnostic message are reserved for the runtime counter. For example, the TEL board's diagnostic message has the following signals:
+    - ![alt text](SEND_HEARTBEAT_images/image-5.png)
+3. Now that we have specified the signals we want we need to package the signals into the 6 byte data field (remember this is without the runtime counter so in the TEL board's case we only need to pack `RTC_reset`, `GPS_Fix`, `IMU_Fail`, and `Watchdog Reset`).
+    - Here is an example of how TEL has set up its diagnostic message:
+
+    **In `heartbeat.c`**:
+    ```c
+    #define USER_DIAGNOSTIC_MSG_LENGTH      6
+
+    #define AMB_HEARTBEAT_STDID             0x201
+    #define MCB_HEARTBEAT_STDID             0x202
+    #define DID_HEARTBEAT_STDID             0x203
+    #define ECU_HEARTBEAT_STDID             0x204
+    #define MDU_HEARTBEAT_STDID             0x205
+    #define MCB_HEARTBEAT_STDID             0x206
+    #define TEL_HEARTBEAT_STDID             0x207
+    #define MEMORATOR_HEARTBEAT_STDID       0x208
+    #define OBC_HEARTBEAT_STDID             0x209
+    ```
+
+    **In TEL for example**:
+    ```c
+    #include "heartbeat.h"
+
+    #define RTC_RESET_BIT         0
+    #define GPS_FIX_BIT           1
+    #define IMU_FAIL_BIT          2
+    #define WATCHDOG_RESET_BIT    3
+    #define FLAG_HIGH             1
+    #define FIRST_BYTE_INDEX      0
+    #define UNINITIALIZED         0
+
+    uint8_t TEL_diagnostic_data[USER_DIAGNOSTIC_MSG_LENGTH] = {UNINITIALIZED};
+    uint8_t TEL_single_byte_diagnostic_data                 = UNINITIALIZED;
+
+    // SET_BIT is defined in stm32fxx.h
+    // #define SET_BIT(REG, BIT)     ((REG) |= (BIT))
+    SET_BIT(TEL_single_byte_diagnostic_data, FLAG_HIGH << RTC_RESET_BIT)
+    SET_BIT(TEL_single_byte_diagnostic_data, FLAG_HIGH << GPS_FIX_BIT)
+    SET_BIT(TEL_single_byte_diagnostic_data, FLAG_HIGH << IMU_FAIL_BIT)
+    SET_BIT(TEL_single_byte_diagnostic_data, FLAG_HIGH << WATCHDOG_RESET_BIT)
+
+    TEL_diagnostic_data[FIRST_BYTE] = TEL_single_byte_diagnostic_data;
+
+    // You will then need to access this data array in the timer callback function (next section)
+
+    ```
+
+    - Your goal is to fill the 6 byte data field to the spec of the CAN ID table (and change the DBC accordingly if you add custom diagnostic signals later). The DBC is already updated for the 16 bit runtime counter.
+
+## Adding the `send_heartbeat` Function to the Timer Callback
+1. Navigate to the `main.c` file in your project.
+2. Search for the `HAL_TIM_PeriodElapsedCallback` function
+3. Inside this function where it says `USER CODE BEGIN Callback` add the following:
+    ```c
+    if (htim->Instance == <YOUR TIMER>)
+    {
+        send_heartbeat(TEL_HEARTBEAT_STDID, TEL_diagnostic_data);
+    }
+    ```
+    - ![alt text](SEND_HEARTBEAT_images/image-7.png)
+
+**Now you are done setting up the heartbeat message for your board!**
