@@ -125,6 +125,10 @@ void IMU_send_as_CAN_msg_single_delay(HAL_StatusTypeDef* imu_status ) {
     osDelay(IMU_SINGLE_DELAY);
     set_gyro_data(&gy_x, &gy_y, &gy_z, imu_status);
 
+    if (*imu_status != HAL_OK) {                        // If imu could not be read then dont send messages
+        return;
+    }
+
     create_and_send_CAN_msg(&x_axis_data, &y_axis_data, &z_axis_data, 
                                 &ax_x, &ax_y, &ax_z, 
                                 &gy_x, &gy_y, &gy_z);
