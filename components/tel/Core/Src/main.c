@@ -256,7 +256,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
       SET_BIT(user_diagnostic_data_byte, FLAG_HIGH << WATCHDOG_RESET_BIT);
 
     user_diagnostic_data[FIRST_BYTE_INDEX] = user_diagnostic_data_byte;
-    HEARTBEAT_handler(TEL_HEARTBEAT_STDID, user_diagnostic_data, &hcan, can_mailbox);
+    DIAGNOSTIC_handler(TEL_DIAGNOSTIC_STDID, user_diagnostic_data, &hcan, can_mailbox);
   }
   /* USER CODE END Callback 1 */
 }

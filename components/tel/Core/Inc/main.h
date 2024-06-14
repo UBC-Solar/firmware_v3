@@ -32,7 +32,7 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdbool.h>
-#include "heartbeat.h"
+#include "diagnostic.h"
 
 /* USER CODE END Includes */
 
@@ -128,14 +128,14 @@ void Error_Handler(void);
 #define GPS_SDA_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-  #define RTC_RESET_BIT         0
-  #define GPS_FIX_BIT           1
-  #define IMU_FAIL_BIT          2
-  #define WATCHDOG_RESET_BIT    3
-  #define FLAG_HIGH             1
-  #define FIRST_BYTE_INDEX      0
-  #define UNINITIALIZED         0
-  
+#define RTC_RESET_BIT         0
+#define GPS_FIX_BIT           1
+#define IMU_FAIL_BIT          2
+#define WATCHDOG_RESET_BIT    3
+#define FLAG_HIGH             1
+#define FIRST_BYTE_INDEX      0
+#define UNINITIALIZED         0
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
