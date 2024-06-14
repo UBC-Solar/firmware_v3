@@ -7,9 +7,13 @@ variables {
 
     // The message id of the sent RTC CAN messages
     int msgId = 0x300;
+    int heartbeat_id = 0x208;
+
+    int heartbeat_counter = 0;
 
     // The CAN message to be sent
     CanMessage msg;
+    CanMessage heartbeat_msg;
 }
 
 void sendRTCMessage() {
@@ -32,8 +36,22 @@ void sendRTCMessage() {
     canWrite(ch, msg);
 }
 
+void sendHeartbeat() {
+    byte heartbeat_data[8] = {0, 0 ,0, 0, 0, 0, 0, 0};
+    heartbeat_data[7] = heartbeat_counter & 0xFF;
+    heartbeat_data[8] = (heartbeat_counter >> 8) & 0xFF;
+
+    heartbeat_msg.data = heartbeat_data;
+    
+    // Send heartbeat message
+    canWrite(ch, heartbeat_msg);
+
+    heartbeat_counter++;
+}
+
 on Timer periodic {
-    sendRTCMessage();
+    sendRTCMessage();         // For syncing to RTC
+    sendHeartbeat();          // Diagnostic heartbeat message
 
     printf("Periodic MsgId: %d\n", msg.id);
     if (!timerIsPending(periodic)) {
@@ -58,7 +76,12 @@ on start {
     msg.id    = msgId;
     msg.flags = 0;
     msg.dlc   = 8;
+
+    heartbeat_msg.id = heartbeat_id;  // Set heartbeat message header
+    heartbeat_msg.flags = 0;
+    heartbeat_msg.dlc = 8;
     sendRTCMessage();                 // Send the first message
+    sendHeartbeat();
     timerStart(periodic, FOREVER);         
     printf("Start periodic transmission\n");
 }
