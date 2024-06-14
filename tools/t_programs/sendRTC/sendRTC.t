@@ -7,7 +7,7 @@ variables {
 
     // The message id of the sent RTC CAN messages
     int msgId = 0x300;
-    int heartbeat_id = 0x208;
+    int heartbeat_id = 0x307;
 
     int heartbeat_counter = 0;
 
