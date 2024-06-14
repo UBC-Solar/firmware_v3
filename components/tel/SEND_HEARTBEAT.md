@@ -52,14 +52,15 @@ This section explains how to set up the 6 bytes in your data field.
     #define USER_DIAGNOSTIC_MSG_LENGTH      6
 
     #define AMB_HEARTBEAT_STDID             0x201
-    #define MCB_HEARTBEAT_STDID             0x202
+    #define BMS_HEARTBEAT_STDID             0x202
     #define DID_HEARTBEAT_STDID             0x203
     #define ECU_HEARTBEAT_STDID             0x204
-    #define MDU_HEARTBEAT_STDID             0x205
-    #define MCB_HEARTBEAT_STDID             0x206
-    #define TEL_HEARTBEAT_STDID             0x207
+    #define OBC_HEARTBEAT_STDID             0x205
+    #define MDU_HEARTBEAT_STDID             0x206
+    #define MCB_HEARTBEAT_STDID             0x207
     #define MEMORATOR_HEARTBEAT_STDID       0x208
-    #define OBC_HEARTBEAT_STDID             0x209
+    #define TEL_HEARTBEAT_STDID             0x209
+    #define VDS_HEARTBEAT_STDID             0x20A
     ```
 
     **In TEL for example**:

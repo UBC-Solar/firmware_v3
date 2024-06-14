@@ -21,14 +21,15 @@
 
 /* CAN STDID CONSTANTS */
 #define AMB_HEARTBEAT_STDID             0x201
-#define MCB_HEARTBEAT_STDID             0x202
+#define BMS_HEARTBEAT_STDID             0x202
 #define DID_HEARTBEAT_STDID             0x203
 #define ECU_HEARTBEAT_STDID             0x204
-#define MDU_HEARTBEAT_STDID             0x205
-#define MCB_HEARTBEAT_STDID             0x206
-#define TEL_HEARTBEAT_STDID             0x207
+#define OBC_HEARTBEAT_STDID             0x205
+#define MDU_HEARTBEAT_STDID             0x206
+#define MCB_HEARTBEAT_STDID             0x207
 #define MEMORATOR_HEARTBEAT_STDID       0x208
-#define OBC_HEARTBEAT_STDID             0x209
+#define TEL_HEARTBEAT_STDID             0x209
+#define VDS_HEARTBEAT_STDID             0x20A
 #define CAN_NO_EXTID                    0x0000
 
 /* BYTE INDEXING CONSTANTS */
