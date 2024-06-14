@@ -2,9 +2,11 @@
 To set up the heartbeat message for your board there are two primary steps.
 1. Create and set-up a hardware timer at the specified rate.
 2. Construct the data field of a diagnostic message and update the DBC's signals for it.
-2. Add the `send_heartbeat` message to the interrupt handler for the timer.
+2. Add the `HEARBEAT_handler` function to the interrupt handler for the timer.
     - **Parameter 1**: CAN standard ID for your board's heartbeat message as a paramter to the `send_heartbeat` funciton.
     - **Parameter 2**: 6 byte data field of your diagnostic message. Internally an 8 byte message however the last 2 bytes are reserved in the `send_heartbeat` function for the `uint16_t` runtime counter.
+    - **Parameter 3**: The CAN handle for your board.
+    - **Parameter 4**: The mailbox for your board's CAN handle.
 
 ## Setting up a Hardware Timer
 1. Navigate to your boards `*.ioc` file.
@@ -26,27 +28,26 @@ To set up the heartbeat message for your board there are two primary steps.
 6. Now we need to make this timer's callback be interrupt based whenever the counter period (1 second) is up. To do this select the **NVIC Settings** tab and enable the global interrupt for your timer:
     - ![alt text](SEND_HEARTBEAT_images/image-4.png)
 7. Make sure to click `Ctrl + S` to save your changes and let STM32CubeMX/IDE generate the code for you.
-**Now you have set up a timer's interrupt at a 1 second rate to run the `send_heartbeat` function in.
 
 ## Constructing the Diagnostic Data Field
 This section explains how to set up the 6 bytes in your data field. 
 1. Open the CAN ID table and find the message ID for the heartbeat message for your board
-    - AMB: 0x201
-    - BMS: 0x202
-    - DID: 0x203
-    - ECU: 0x204
-    - MDU: 0x205
-    - MCB: 0x206
-    - TEL: 0x207
-    - MEMORATOR: 0x208 
-    - OBC: 0x209
+    - AMB: `0x201`
+    - BMS: `0x202`
+    - DID: `0x203`
+    - ECU: `0x204`
+    - MDU: `0x205`
+    - MCB: `0x206`
+    - TEL: `0x207`
+    - MEMORATOR: `0x208` 
+    - OBC: `0x209`
     - **PUT AN IMAGE HERE**
 2. From here add rows to specify what other signals you want to see with your diagnostic message. Your signals can only be 48 bits total because the upper 16 bits of the diagnostic message are reserved for the runtime counter. For example, the TEL board's diagnostic message has the following signals:
     - ![alt text](SEND_HEARTBEAT_images/image-5.png)
 3. Now that we have specified the signals we want we need to package the signals into the 6 byte data field (remember this is without the runtime counter so in the TEL board's case we only need to pack `RTC_reset`, `GPS_Fix`, `IMU_Fail`, and `Watchdog Reset`).
     - Here is an example of how TEL has set up its diagnostic message:
 
-    **In `heartbeat.c`**:
+    **In `heartbeat.h` these are already defined and can be used**:
     ```c
     #define USER_DIAGNOSTIC_MSG_LENGTH      6
 
@@ -74,17 +75,21 @@ This section explains how to set up the 6 bytes in your data field.
     #define UNINITIALIZED         0
 
     // Start logic to set user_diagnostic_data
-    uint8_t TEL_diagnostic_data[USER_DIAGNOSTIC_MSG_LENGTH] = {UNINITIALIZED};
-    uint8_t TEL_single_byte_diagnostic_data                 = UNINITIALIZED;
+    uint8_t user_diagnostic_data[USER_DIAGNOSTIC_MSG_LENGTH] = {UNINITIALIZED};      
+    uint8_t user_diagnostic_data_byte = UNINITIALIZED;
 
     // SET_BIT is defined in stm32fxx.h
     // #define SET_BIT(REG, BIT)     ((REG) |= (BIT))
-    SET_BIT(TEL_single_byte_diagnostic_data, FLAG_HIGH << RTC_RESET_BIT)
-    SET_BIT(TEL_single_byte_diagnostic_data, FLAG_HIGH << GPS_FIX_BIT)
-    SET_BIT(TEL_single_byte_diagnostic_data, FLAG_HIGH << IMU_FAIL_BIT)
-    SET_BIT(TEL_single_byte_diagnostic_data, FLAG_HIGH << WATCHDOG_RESET_BIT)
+    if (g_tel_diagnostics.rtc_reset) 
+      SET_BIT(user_diagnostic_data_byte, FLAG_HIGH << RTC_RESET_BIT);
+    if (g_tel_diagnostics.gps_fix)
+      SET_BIT(user_diagnostic_data_byte, FLAG_HIGH << GPS_FIX_BIT);
+    if (g_tel_diagnostics.imu_fail)
+      SET_BIT(user_diagnostic_data_byte, FLAG_HIGH << IMU_FAIL_BIT);
+    if (g_tel_diagnostics.watchdog_reset)
+      SET_BIT(user_diagnostic_data_byte, FLAG_HIGH << WATCHDOG_RESET_BIT);
 
-    TEL_diagnostic_data[FIRST_BYTE_INDEX] = TEL_single_byte_diagnostic_data;
+    user_diagnostic_data[FIRST_BYTE_INDEX] = user_diagnostic_data_byte;
     // End logic to set user_diagnostic_data
 
     // It is recommended to set this array inside the timer callback if statement for your timer. See next section for more details.
@@ -93,7 +98,7 @@ This section explains how to set up the 6 bytes in your data field.
 
     - Your goal is to fill the 6 byte data field to the spec of the CAN ID table (and change the DBC accordingly if you add custom diagnostic signals later). The DBC is already updated for the 16 bit runtime counter.
 
-## Adding the `send_heartbeat` Function to the Timer Callback
+## Adding the `HEARTBEAT_handler` Function to the Timer Callback
 1. In `main.h` include the `heartbeat.h` file:
     ```c
     #include "heartbeat.h"
