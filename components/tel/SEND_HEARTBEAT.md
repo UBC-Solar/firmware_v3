@@ -73,6 +73,7 @@ This section explains how to set up the 6 bytes in your data field.
     #define FIRST_BYTE_INDEX      0
     #define UNINITIALIZED         0
 
+    // Start logic to set user_diagnostic_data
     uint8_t TEL_diagnostic_data[USER_DIAGNOSTIC_MSG_LENGTH] = {UNINITIALIZED};
     uint8_t TEL_single_byte_diagnostic_data                 = UNINITIALIZED;
 
@@ -83,24 +84,34 @@ This section explains how to set up the 6 bytes in your data field.
     SET_BIT(TEL_single_byte_diagnostic_data, FLAG_HIGH << IMU_FAIL_BIT)
     SET_BIT(TEL_single_byte_diagnostic_data, FLAG_HIGH << WATCHDOG_RESET_BIT)
 
-    TEL_diagnostic_data[FIRST_BYTE] = TEL_single_byte_diagnostic_data;
+    TEL_diagnostic_data[FIRST_BYTE_INDEX] = TEL_single_byte_diagnostic_data;
+    // End logic to set user_diagnostic_data
 
-    // You will then need to access this data array in the timer callback function (next section)
+    // It is recommended to set this array inside the timer callback if statement for your timer. See next section for more details.
 
     ```
 
     - Your goal is to fill the 6 byte data field to the spec of the CAN ID table (and change the DBC accordingly if you add custom diagnostic signals later). The DBC is already updated for the 16 bit runtime counter.
 
 ## Adding the `send_heartbeat` Function to the Timer Callback
-1. Navigate to the `main.c` file in your project.
-2. Search for the `HAL_TIM_PeriodElapsedCallback` function
-3. Inside this function where it says `USER CODE BEGIN Callback` add the following:
+1. In `main.h` include the `heartbeat.h` file:
+    ```c
+    #include "heartbeat.h"
+    ```
+2. Navigate to the `main.c` file in your project.
+3. Either extern or define `CAN_HandleTypeDef hcan` and `uint32_t can_mailbox`
+    - This is so that the heartbeat message is sent on the correctly on the CAN bus.
+4. Search for the `HAL_TIM_PeriodElapsedCallback` function
+5. Inside this function where it says `USER CODE BEGIN Callback` add the following (may need to adjust paramters depending on your code):
     ```c
     if (htim->Instance == <YOUR TIMER>)
     {
-        send_heartbeat(TEL_HEARTBEAT_STDID, TEL_diagnostic_data);
+        // ...
+        // logic to set user_diagnostic_data
+        //..
+
+        HEARTBEAT_handler(<YOUR BOARD>_HEARTBEAT_STDID, user_diagnostic_data, &hcan, can_mailbox);
     }
     ```
-    - ![alt text](SEND_HEARTBEAT_images/image-7.png)
 
 **Now you are done setting up the heartbeat message for your board!**

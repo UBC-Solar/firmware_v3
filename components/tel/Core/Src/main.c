@@ -67,6 +67,9 @@ tel_diagnostics g_tel_diagnostics = {false, false, false, false, INITIAL_RUNTIME
 CAN_FilterTypeDef CAN_filter0;
 CAN_FilterTypeDef CAN_filter1;
 
+extern CAN_HandleTypeDef hcan;
+extern uint32_t can_mailbox;
+
 uint32_t start_of_second = 0;
 
 /* HAL Status */
@@ -146,29 +149,6 @@ int main(void)
 
   // Determine if RTC is reset and set diagnostic rtc_reset appropriately.
   checkAndSetRTCReset();
-
-//  FRESULT fresult;
-//  char startup_message[60];
-//  char filename[30];
-
-//  HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
-//  HAL_RTC_GetTime(&hrtc, &curr_time, RTC_FORMAT_BIN);
-
-  /* Year - Month - Date  Format */
-//  sprintf(startup_message, "TEL start up on 20%u %u %u at %u:%u:%u", curr_date.Year,
-//	  curr_date.Month, curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
-
-  /* mount SD card */
-//  DSTATUS stat = disk_status(0);
-//  DSTATUS stat2 = disk_initialize(0);
-//  fresult = sd_mount();
-  // if (fresult == FR_OK) printf("SD Mounted Successfully\n\r");
-  // else printf("SD NOT Mounted\n\r");
-
-//  sprintf(filename, "TEL-20%u-%u-%uT%u-%u-%u.txt", curr_date.Year, curr_date.Month,
-//	  curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
-//  logfile = sd_open(filename);
-//  sd_append(logfile, startup_message);
 
   /* USER CODE END 2 */
 
@@ -263,7 +243,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
   // Increment the diagnostic counter
   if (htim->Instance == TIM2) {
-    g_tel_diagnostics.runtime_counter++;
+    uint8_t user_diagnostic_data[USER_DIAGNOSTIC_MSG_LENGTH] = {UNINITIALIZED};       // Will be replaced once refactor merged. Kill diagnostic task
+    uint8_t user_diagnostic_data_byte = UNINITIALIZED;
+
+    if (g_tel_diagnostics.rtc_reset) 
+      SET_BIT(user_diagnostic_data_byte, FLAG_HIGH << RTC_RESET_BIT);
+    if (g_tel_diagnostics.gps_fix)
+      SET_BIT(user_diagnostic_data_byte, FLAG_HIGH << GPS_FIX_BIT);
+    if (g_tel_diagnostics.imu_fail)
+      SET_BIT(user_diagnostic_data_byte, FLAG_HIGH << IMU_FAIL_BIT);
+    if (g_tel_diagnostics.watchdog_reset)
+      SET_BIT(user_diagnostic_data_byte, FLAG_HIGH << WATCHDOG_RESET_BIT);
+
+    user_diagnostic_data[FIRST_BYTE_INDEX] = user_diagnostic_data_byte;
+    HEARTBEAT_handler(TEL_HEARTBEAT_STDID, user_diagnostic_data, &hcan, can_mailbox);
   }
   /* USER CODE END Callback 1 */
 }
