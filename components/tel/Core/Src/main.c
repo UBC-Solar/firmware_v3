@@ -25,6 +25,7 @@
 #include "iwdg.h"
 #include "rtc.h"
 #include "spi.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -125,6 +126,7 @@ int main(void)
   MX_RTC_Init();
   MX_FATFS_Init();
   MX_IWDG_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET)

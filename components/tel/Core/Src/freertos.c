@@ -154,7 +154,7 @@ void MX_FREERTOS_Init(void) {
   /* definition and creation of readCANTask */
   osThreadDef(readCANTask, read_CAN_task, osPriorityNormal, 0, 512);
   readCANTaskHandle = osThreadCreate(osThread(readCANTask), NULL);
-  
+
   /* definition and creation of readIMUTask */
   osThreadDef(readIMUTask, read_IMU_task, osPriorityNormal, 0, 512);
   readIMUTaskHandle = osThreadCreate(osThread(readIMUTask), NULL);
