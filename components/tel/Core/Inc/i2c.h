@@ -65,6 +65,10 @@ extern I2C_HandleTypeDef hi2c2;
 #define NUM_ACCEL_BYTES 6
 #define NUM_GYRO_BYTES 6
 
+#define READ_TIMEOUT 1000
+#define GPS_TRIALS    1
+
+
 /* USER CODE END Private defines */
 
 void MX_I2C1_Init(void);

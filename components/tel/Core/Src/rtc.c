@@ -214,26 +214,27 @@ bool checkAndSetRTCReset()
 	}
 	return false;
 }
+
+
 /**
  * @brief Sets RTC time based on CAN data formatted as follows:
  *        Byte 0: Seconds, Byte 1: Minutes, Byte 2: Hours
  * @param data: Pointer to the CAN data array
  * @return None
 */
-void setRTCTime(uint8_t* data)
+static void setRTCTime(uint8_t* data)
 {
     /* Initialize Time Object */
     RTC_TimeTypeDef sTime = {0};
 
     /* Manually parsing the seconds minutes hours */
-    sTime.Seconds = data[0];
-    sTime.Minutes = data[1];
-    sTime.Hours   = data[2];
+    sTime.Seconds = data[TIMETYPEDEF_SECONDS_IDX];
+    sTime.Minutes = data[TIMETYPEDEF_MINUTES_IDX];
+    sTime.Hours   = data[TIMETYPEDEF_HOURS_IDX];
 
     /* Set the RTC time with these settings */
     HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
 }
-
 
 /**
  * @brief Sets RTC date based on CAN data formatted as follows:
@@ -241,15 +242,15 @@ void setRTCTime(uint8_t* data)
  * @param data: Pointer to the CAN data array
  * @return None
 */
-void setRTCDate(uint8_t* data)
+static void setRTCDate(uint8_t* data)
 {
     /* Initialize Date Object */
     RTC_DateTypeDef sDate = {0};
 
     /* Manually parsing the date, month, and year */
-    sDate.Date  = data[3];
-    sDate.Month = data[4];
-    sDate.Year  = data[5];
+    sDate.Date  = data[TIMETYPEDEF_DAY_IDX];
+    sDate.Month = data[TIMETYPEDEF_MONTH_IDX];
+    sDate.Year  = data[TIMETYPEDEF_YEAR_IDX];
 
     /* Set the RTC Date with these settings */
     HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
@@ -261,7 +262,7 @@ void setRTCDate(uint8_t* data)
  * @param rx_CAN_msg: Pointer to a CAN_msg_t
  * @return None
 */
-void sync_memorator_rtc(CAN_msg_t* rx_CAN_msg)
+static void sync_memorator_rtc(CAN_msg_t* rx_CAN_msg)
 {
     /* Only perform syncing if RTC was reset */
     if (g_tel_diagnostics.rtc_reset) {
@@ -271,6 +272,19 @@ void sync_memorator_rtc(CAN_msg_t* rx_CAN_msg)
 
         /* Set the flag to indicate that the RTC has been sync'd */
         g_tel_diagnostics.rtc_reset = false;
+    }
+}
+
+/**
+ * @brief Function to check and sync the RTC with memorator message
+ * @param rx_CAN_msg The received CAN message
+ * @return void
+*/
+void RTC_check_and_sync_rtc(CAN_msg_t* rx_CAN_msg) {
+    /* Perform rtc syncing check if the message is 0x300 and if RTC is reset to 2000-01-01 */
+    if (rx_CAN_msg->header.StdId == RTC_TIMESTAMP_MSG_ID && checkAndSetRTCReset())
+    {
+        sync_memorator_rtc(rx_CAN_msg);
     }
 }
 
