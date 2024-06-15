@@ -14,8 +14,43 @@
 
 #include "main.h"
 
+//Define the number of ADC samples to be taken
+#define NUMBER_ADC_SAMPLES  1024
+
 /*============================================================================*/
 /* STRUCTURES */
+
+// Type definition for the ADC sensor averages
+typedef struct
+{
+    // FIFO queue to track the last 1024 samples of each sensor
+    struct
+    {
+        uint16_t ADC_brake_pressure_1[NUMBER_ADC_SAMPLES];
+        uint16_t ADC_brake_pressure_2[NUMBER_ADC_SAMPLES];
+        uint16_t ADC_brake_pressure_3[NUMBER_ADC_SAMPLES];
+        uint16_t ADC_steering_angle[NUMBER_ADC_SAMPLES];
+    } values;
+
+    struct
+    {
+        // Use to track current number of sensors in the FIFO
+        uint16_t ADC_brake_pressure_1;
+        uint16_t ADC_brake_pressure_2;
+        uint16_t ADC_brake_pressure_3;
+        uint16_t ADC_steering_angle;
+    } counter;
+
+    struct
+    {
+        // Use to track the sum of all the samples in the FIFO
+        uint32_t ADC_brake_pressure_1;
+        uint32_t ADC_brake_pressure_2;
+        uint32_t ADC_brake_pressure_3;
+        uint32_t ADC_steering_angle;
+    } previous_sum;
+} VDS_ADC_AVERAGES;
+
 
 typedef union {
     struct {
@@ -70,6 +105,8 @@ typedef union {
 extern VDS_Data_t vds_data;
 extern volatile int ADC1_DMA_in_process_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is in process
 extern volatile int ADC1_DMA_fault_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is at fault
+
+extern volatile VDS_ADC_AVERAGES adc_averages;
 
 //keeping track of averages
 extern float sum[NUM_ADC_CHANNELS_USED];

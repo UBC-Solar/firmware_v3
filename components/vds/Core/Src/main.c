@@ -63,6 +63,7 @@ volatile int ADC1_DMA_fault_flag = 0; //flag that indicates the DMA interrupt if
 //keeping track of averages
 float sum[NUM_ADC_CHANNELS_USED] = {0.0};
 uint32_t counters[NUM_ADC_CHANNELS_USED] = {0};
+volatile VDS_ADC_AVERAGES adc_averages = {0};
 
 /* USER CODE END PV */
 

@@ -39,7 +39,7 @@ extern "C" {
 extern ADC_HandleTypeDef hadc1;
 
 /* USER CODE BEGIN Private defines */
-#define NUMBER_ADC_SAMPLES  100
+#define NUMBER_ADC_SAMPLES  1024
 
 /* USER CODE END Private defines */
 
@@ -48,6 +48,7 @@ void MX_ADC1_Init(void);
 /* USER CODE BEGIN Prototypes */
 
 void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float result[]);
+float getAveragedValue(volatile uint16_t array[], uint16_t length);
 
 int ADC1_getBusyStatus();
 void ADC1_setBusyStatus(int flag_value);
