@@ -242,8 +242,7 @@ void read_CAN_task(void const * argument)
   osEvent evt;
 
   /* Infinite loop */
-  while (1) {
-    //printf("read_CAN_task()\n\r");
+  while (true) {
     /* Wait for thread flags to be set in the CAN Rx FIFO0 Interrupt Callback */
     osSignalWait(CAN_READY, osWaitForever);
     
@@ -254,85 +253,27 @@ void read_CAN_task(void const * argument)
      * Control Flow:
      * Wait for Flag from Interrupt
      * After flag occurs, read messages from queue repeatedly until it is empty
-     * Once empty, wait for flag again.
-     */
+     * Once empty,    // HAL_StatusTypeDef imu_status = HAL_OK;
 
     /* Get CAN Message from Queue */
-    while(1) {
-      uint8_t radio_buffer[CAN_BUFFER_LEN] = {0};
+    while(true) {
       evt = osMessageGet(CAN_MSG_Rx_Queue, osWaitForever);
+
       if (evt.status == osEventMessage) {
-	  HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-	  rx_CAN_msg = evt.value.p; // Get pointer from the queue union
-    
+        rx_CAN_msg = evt.value.p;                       // Get pointer to CAN message from the queue union
+        HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   // Blink LED to indicate CAN message received
 
+        // RTC_check_and_sync_rtc(rx_CAN_msg);                     // Sync RTC with memorator message. Also sets rtc reset
 
-	  /* Perform rtc syncing check if the message is 0x751 and if RTC is reset to 2000-01-01 */
-      if (rx_CAN_msg->header.StdId == RTC_TIMESTAMP_MSG_ID && checkAndSetRTCReset())
-      {
-        sync_memorator_rtc(rx_CAN_msg);
+        // CAN_Radio_msg_t tx_CAN_msg;
+        // CAN_rx_to_radio(rx_CAN_msg, &tx_CAN_msg);               // Convert CAN message to radio message
+        // RADIO_tx_CAN_msg(&tx_CAN_msg);                          // Send CAN on radio
+
+        osPoolFree(CAN_MSG_memory_pool, rx_CAN_msg);            // Free can msg from pool      
       }
-
-
-	 // 0-7: Timestamp
-	 // 8: '#'
-	 // 9-12: CAN ID
-	 // 13-20: CAN Data
-	 // 21: CAN Data Length
-	 // 22: '\r'             // TODO: Do we need this? maybe just use \0 instead?
-	 // 23: '\n'
-
-	 /* TIMESTAMP */
-
-	 for (uint8_t i = 0; i < 8; i++) {
-	   radio_buffer[7 - i] = (char) GET_BYTE_FROM_WORD(i, rx_CAN_msg->timestamp.double_as_int);
-	 }
-//	  printf("id = %u rx_CAN_msg->timestamp.double_value): %f\r\n", rx_CAN_msg->header.StdId, rx_CAN_msg->timestamp.double_value);
-
-	 /* CAN MESSAGE IDENTIFIER */
-	 radio_buffer[8] = '#';
-
-	 /* CAN ID */ // TODO: Check if this is correct. Are the 0 bytes in the STD in the correct spot?
-	 if (rx_CAN_msg->header.IDE == CAN_ID_STD)
-	 {
-	   radio_buffer[12]  = 0xFF & (rx_CAN_msg->header.StdId);
-	   radio_buffer[11] = 0xFF & (rx_CAN_msg->header.StdId >> 8);
-	 }
-	 else if (rx_CAN_msg->header.IDE == CAN_ID_EXT)
-	 {
-	   radio_buffer[12]  = 0xFF & (rx_CAN_msg->header.ExtId);
-	   radio_buffer[11] = 0xFF & (rx_CAN_msg->header.ExtId >> 8);
-	   radio_buffer[10] = 0xFF & (rx_CAN_msg->header.ExtId >> 16);
-	   radio_buffer[9] = 0xFF & (rx_CAN_msg->header.ExtId >> 24);
-	 }
-
-	 /* CAN DATA */
-	 for (uint8_t i = 0; i < 8; i++) {
-	   radio_buffer[13 + i] = rx_CAN_msg->data[i];
-	 }
-
-	 /* CAN DATA LENGTH */
-	 radio_buffer[21] = rx_CAN_msg->header.DLC & 0xF;
-
-	 /* CARRIAGE RETURN */
-	 radio_buffer[CAN_BUFFER_LEN - 2] = '\r';
-
-	 /* NEW LINE */
-	 radio_buffer[CAN_BUFFER_LEN - 1] = '\n';
-
-	 /* Transmit over Radio */
-	 HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), 1000);
-
-	/* Free the memory allocated for this message */
-	osPoolFree(CAN_MSG_memory_pool, rx_CAN_msg);
-
-       }
       else break;
     }
-//    else osDelay(5);
   }
-
-  /* USER CODE END read_CAN_task */
 }
 
 /* USER CODE BEGIN Header_read_IMU_task */
