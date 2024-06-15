@@ -18,6 +18,7 @@ typedef union Utils_DoubleBytes_t {
 } Utils_DoubleBytes_t;
 
 void UTILS_zeroArray(uint8_t* array, uint8_t size);
+void UTILS_copy_to_buffer(uint8_t* buffer, uint32_t start_index, uint32_t end_index, uint8_t* source);
 
 /**
  * @brief Gets the byte at the index i of the data

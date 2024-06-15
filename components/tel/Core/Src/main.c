@@ -36,6 +36,7 @@
 #include <string.h>
 #include "debug_io.h"
 #include "sd_logger.h"
+#include "diagnostic.h"
 
 /* USER CODE END Includes */
 
@@ -257,7 +258,23 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
+  // Increment the diagnostic counter
+  if (htim->Instance == TIM2) {
+    uint8_t user_diagnostic_data[USER_DIAGNOSTIC_MSG_LENGTH] = {UNINITIALIZED};       // Will be replaced once refactor merged. Kill diagnostic task
+    uint8_t user_diagnostic_data_byte = UNINITIALIZED;
 
+    if (g_tel_diagnostics.rtc_reset) 
+      SET_BIT(user_diagnostic_data_byte, FLAG_HIGH << RTC_RESET_BIT);
+    if (g_tel_diagnostics.gps_fix)
+      SET_BIT(user_diagnostic_data_byte, FLAG_HIGH << GPS_FIX_BIT);
+    if (g_tel_diagnostics.imu_fail)
+      SET_BIT(user_diagnostic_data_byte, FLAG_HIGH << IMU_FAIL_BIT);
+    if (g_tel_diagnostics.watchdog_reset)
+      SET_BIT(user_diagnostic_data_byte, FLAG_HIGH << WATCHDOG_RESET_BIT);
+
+    user_diagnostic_data[FIRST_BYTE_INDEX] = user_diagnostic_data_byte;
+    DIAGNOSTIC_handler(TEL_DIAGNOSTIC_STDID, user_diagnostic_data, &hcan, can_mailbox);
+  }
   /* USER CODE END Callback 1 */
 }
 

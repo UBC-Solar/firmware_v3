@@ -18,21 +18,6 @@
 // 23: '\n'
 
 
-/**
- * @brief Copies the source array to the buffer array from start_index to end_index
- * @param buffer: uint8_t pointer to the buffer array
- * @param startIndex: uint32_t start index of the buffer array
- * @param end_index: uint32_t end index of the buffer array
- * @param source: uint8_t pointer to the source array
- * @return void
-*/
-static void copy_to_buffer(uint8_t* buffer, uint32_t start_index, uint32_t end_index, uint8_t* source) {
-  if (end_index >= start_index) {
-    for (uint32_t i = start_index; i <= end_index; i++) {
-      buffer[i] = source[i - start_index];
-    }
-  }
-}
 
 
 /**
@@ -76,7 +61,7 @@ void RADIO_tx_CAN_msg(CAN_Radio_msg_t *tx_CAN_msg)
   copy_timestamp(radio_buffer, tx_CAN_msg);                                                  /* TIMESTAMP */
   radio_buffer[CAN_MESSAGE_IDENTIFIER_INDEX] = CAN_MESSAGE_IDENTIFIER;                       /* CAN MESSAGE IDENTIFIER */
   copy_CAN_id(radio_buffer, tx_CAN_msg, tx_CAN_msg->header.IDE);                             /* CAN ID */
-  copy_to_buffer(radio_buffer, CAN_DATA_INDEX_START, CAN_DATA_INDEX_END, tx_CAN_msg->data);  /* CAN DATA */
+  UTILS_copy_to_buffer(radio_buffer, CAN_DATA_INDEX_START, CAN_DATA_INDEX_END, tx_CAN_msg->data);  /* CAN DATA */
   radio_buffer[CAN_DATA_LENGTH_INDEX] = tx_CAN_msg->header.DLC & MASK_4_BITS;                /* CAN DATA LENGTH */
   radio_buffer[CAN_CARRIAGE_RETURN_INDEX] = '\r';                                            /* CARRIAGE RETURN */
   radio_buffer[CAN_NEW_LINE_INDEX] = '\n';                                                   /* NEW LINE */
