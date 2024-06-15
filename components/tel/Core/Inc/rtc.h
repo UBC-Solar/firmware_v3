@@ -37,6 +37,14 @@ extern "C" {
 extern RTC_HandleTypeDef hrtc;
 
 /* USER CODE BEGIN Private defines */
+
+#define TIMETYPEDEF_SECONDS_IDX     0
+#define TIMETYPEDEF_MINUTES_IDX     1
+#define TIMETYPEDEF_HOURS_IDX       2
+#define TIMETYPEDEF_DAY_IDX         3
+#define TIMETYPEDEF_MONTH_IDX       4   
+#define TIMETYPEDEF_YEAR_IDX        5
+
 /* USER CODE END Private defines */
 
 void MX_RTC_Init(void);
@@ -47,7 +55,7 @@ double get_current_timestamp();
 double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate, double milliseconds);
 int lastDayOfMonth(int month, int year);
 bool checkAndSetRTCReset();
-void sync_memorator_rtc(CAN_msg_t* rx_CAN_msg);
+void RTC_check_and_sync_rtc(CAN_msg_t* rx_CAN_msg);
 
 /* USER CODE END Prototypes */
 
@@ -56,4 +64,3 @@ void sync_memorator_rtc(CAN_msg_t* rx_CAN_msg);
 #endif
 
 #endif /* __RTC_H__ */
-
