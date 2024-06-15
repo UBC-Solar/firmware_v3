@@ -12,20 +12,22 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "main.h"
+
 /*============================================================================*/
 /* STRUCTURES */
 
 typedef union {
     struct {
-        bool vds_brake_pressure_1: 1; // Flags to indicate integrity of sensor data
-        bool vds_brake_pressure_2: 1;
-        bool vds_brake_pressure_3: 1;
-        bool vds_shock_travel_1: 1;
-        bool vds_shock_travel_2: 1;
-        bool vds_shock_travel_3: 1;
-        bool vds_shock_travel_4: 1;
-        bool vds_steering_angle: 1;
-        bool adc_fault: 1; // Flag to indicate ADC fault
+        volatile bool vds_brake_pressure_1: 1; // Flags to indicate integrity of sensor data
+        volatile bool vds_brake_pressure_2: 1;
+        volatile bool vds_brake_pressure_3: 1;
+        volatile bool vds_shock_travel_1: 1;
+        volatile bool vds_shock_travel_2: 1;
+        volatile bool vds_shock_travel_3: 1;
+        volatile bool vds_shock_travel_4: 1;
+        volatile bool vds_steering_angle: 1;
+        volatile bool adc_fault: 1; // Flag to indicate ADC fault
 
         uint8_t _reserved  : 2;
     } bits;
@@ -34,14 +36,14 @@ typedef union {
 } VDS_StatusCode_t;
 
 typedef struct{
-    uint16_t ADC_brake_pressure_1; // mV
-    uint16_t ADC_brake_pressure_2; // mV
-    uint16_t ADC_brake_pressure_3; // mV
-    uint16_t ADC_shock_travel_1; // mV
-    uint16_t ADC_shock_travel_2; // mV
-    uint16_t ADC_shock_travel_3; // mV
-    uint16_t ADC_shock_travel_4; // mV
-    uint16_t ADC_steering_angle; // mV
+    volatile uint16_t ADC_brake_pressure_1; // mV
+    volatile uint16_t ADC_brake_pressure_2; // mV
+    volatile uint16_t ADC_brake_pressure_3; // mV
+    volatile uint16_t ADC_shock_travel_1; // mV
+    volatile uint16_t ADC_shock_travel_2; // mV
+    volatile uint16_t ADC_shock_travel_3; // mV
+    volatile uint16_t ADC_shock_travel_4; // mV
+    volatile uint16_t ADC_steering_angle; // mV
 } VDS_ADC_Data_t;
 
 
@@ -66,8 +68,11 @@ typedef union {
 /* PUBLIC VARIABLES */
 
 extern VDS_Data_t vds_data;
-static volatile int ADC1_DMA_in_process_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is in process
-static volatile int ADC1_DMA_fault_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is at fault
+extern volatile int ADC1_DMA_in_process_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is in process
+extern volatile int ADC1_DMA_fault_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is at fault
 
+//keeping track of averages
+extern float sum[NUM_ADC_CHANNELS_USED];
+extern uint32_t counters[NUM_ADC_CHANNELS_USED];
 
 #endif /* __COMMON_H */

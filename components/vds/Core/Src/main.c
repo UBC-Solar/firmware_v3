@@ -55,6 +55,14 @@ static uint32_t last_brake_and_steering_time = 0;
 static uint32_t last_shock_travel_time = 0;
 //static uint32_t last_diagnostic_time = 0;
 
+//Initialise global variables for the VDS data structure and ADC readings
+volatile int ADC1_DMA_in_process_flag = 0; //flag that indicates the DMA interrupt if ADC1 has been called and is in process
+volatile int ADC1_DMA_fault_flag = 0; //flag that indicates the DMA interrupt if ADC1 has been called and is at fault
+
+//keeping track of averages
+float sum[NUM_ADC_CHANNELS_USED] = {0.0};
+uint32_t counters[NUM_ADC_CHANNELS_USED] = {0};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -243,10 +251,8 @@ void averageADCValues(int adc_half)
   if (!ADC1_getBusyStatus())
   {
     ADC1_setBusyStatus(1);
-    static float result[NUM_ADC_CHANNELS_TOTAL]; //for use later if we need averaging
-
-    //results are saved to vds_data and can be used from there
-    ADC1_processRawReadings(adc_half, adc1_buf, result); //function to process values from ADC1
+    static float result[NUM_ADC_CHANNELS_TOTAL]; //stores averaged results
+    ADC1_processRawReadings(adc_half, adc1_buf, result); //function to process values from ADC1 and update vds struct
     ADC1_setBusyStatus(0);
   }
   else

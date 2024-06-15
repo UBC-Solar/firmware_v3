@@ -39,6 +39,7 @@ extern "C" {
 extern ADC_HandleTypeDef hadc1;
 
 /* USER CODE BEGIN Private defines */
+#define NUMBER_ADC_SAMPLES  100
 
 /* USER CODE END Private defines */
 
