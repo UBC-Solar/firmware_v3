@@ -217,7 +217,7 @@ void CanFilterSetup(void)
 /*
  * CAN set-up: Sets up the filters, Starts CAN with HAL, and Activates notifications for interrupts.
  */
-void Can_Init(void)
+void CAN_Init(void)
 {
   CanFilterSetup();
   can_start = HAL_CAN_Start(&hcan);
@@ -238,17 +238,15 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   //assert_param(status == HAL_OK);
   CAN_RxHeaderTypeDef can_rx_header;
   uint8_t can_data[8];
+  CAN_msg_t *new_CAN_msg;
 
 
   /* Get CAN message */
-//  while(HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0) != 0) {
     HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can_rx_header, can_data);  // TODO: Put can_rx_header and can_data into a data structure able to be accessed in the freertos task
-  //  printf("%d\n\r", HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0));
     /* Put CAN message in the Queue */
-    CAN_msg_t *new_CAN_msg;
     new_CAN_msg = osPoolAlloc(CAN_MSG_memory_pool);
     new_CAN_msg->header = can_rx_header;
-    for(int i = 0; i < 8; i++) {
+    for(int i = 0; i < CAN_DATA_LENGTH; i++) {
       new_CAN_msg->data[i] = can_data[i];
     }
 
@@ -260,13 +258,94 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
     new_CAN_msg->timestamp.double_value = get_current_timestamp();
     osMessagePut(CAN_MSG_Rx_Queue, new_CAN_msg, osWaitForever);
-//  }
 
   /* Set the Flag to CAN_READY */
   osSignalSet(readCANTaskHandle, CAN_READY);
 
   /* To avoid warning of unused variable */
-  //(void) status;
+}
+
+
+/**
+ * @brief Function to transmit the TEL diagnostic message containing rtc reset, gps fix, imu fail, and watchdog reset flags
+ * @return void
+ */
+void CAN_diagnostic_msg_tx_radio_bus() {
+  uint8_t data_send = INITIAL_FLAGS;
+  CAN_Radio_msg_t diagnostics_msg;
+  diagnostics_msg.header = tel_diagnostics_header;
+  union Utils_DoubleBytes_t current_timestamp;
+
+  current_timestamp.double_value = get_current_timestamp();
+  diagnostics_msg.timestamp = current_timestamp;
+
+  if(g_tel_diagnostics.rtc_reset) 
+    SET_BIT(data_send, FLAG_HIGH << 0);
+  if(g_tel_diagnostics.gps_fix)
+    SET_BIT(data_send, FLAG_HIGH << 1);
+  if(g_tel_diagnostics.imu_fail)
+    SET_BIT(data_send, FLAG_HIGH << 2);
+  if(g_tel_diagnostics.watchdog_reset)
+    SET_BIT(data_send, FLAG_HIGH << 3);
+  
+  diagnostics_msg.data[FIRST_DATA_BYTE] = data_send;
+
+  CAN_radio_and_bus_transmit(&hcan, &diagnostics_msg, &can_mailbox);
+}
+
+
+
+/**
+ * @brief Function to transmit CAN message on the CAN bus as well as over radio
+ * @param hcan The CAN handle
+ * @param tx_CAN_msg The CAN message to be transmitted
+ * @param can_mailbox The CAN mailbox
+ * @return void
+*/
+void CAN_radio_and_bus_transmit(CAN_HandleTypeDef* hcan, CAN_Radio_msg_t* tx_CAN_msg, uint32_t* can_mailbox) {
+    HAL_CAN_AddTxMessage(hcan, &(tx_CAN_msg->header), tx_CAN_msg->data, can_mailbox);
+    RADIO_tx_CAN_msg(tx_CAN_msg);
+}
+
+
+/**
+ * @brief Function to convert a CAN_msg_t to a CAN_Radio_msg_t
+ * @param rx_CAN_msg The received CAN message
+ * @param tx_CAN_msg The CAN message to be transmitted
+ */
+void CAN_rx_to_radio(CAN_msg_t* rx_CAN_msg, CAN_Radio_msg_t* tx_CAN_msg) {
+  // Do the header fields
+  tx_CAN_msg->header.StdId = rx_CAN_msg->header.StdId;
+  tx_CAN_msg->header.ExtId = rx_CAN_msg->header.ExtId;
+  tx_CAN_msg->header.IDE = rx_CAN_msg->header.IDE;
+  tx_CAN_msg->header.RTR = rx_CAN_msg->header.RTR;
+  tx_CAN_msg->header.DLC = rx_CAN_msg->header.DLC;
+
+  // Do the data field
+  for (int i = 0; i < 8; i++) {
+    tx_CAN_msg->data[i] = rx_CAN_msg->data[i];
+  }
+
+  // Do the timestamp field
+  tx_CAN_msg->timestamp = rx_CAN_msg->timestamp;  
+}
+
+
+/**
+ * @brief Function to handle received CAN message on queue
+ * @param rx_CAN_msg The received CAN message
+ * @return void
+ */
+void CAN_handle_rx_msg(CAN_msg_t* rx_CAN_msg) {
+  HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   // Blink LED to indicate CAN message received
+
+  // RTC_check_and_sync_rtc(rx_CAN_msg);                     // Sync RTC with memorator message. Also sets rtc reset
+
+  CAN_Radio_msg_t tx_CAN_msg;
+  CAN_rx_to_radio(rx_CAN_msg, &tx_CAN_msg);               // Convert CAN message to radio message
+  RADIO_tx_CAN_msg(&tx_CAN_msg);                          // Send CAN on radio
+
+  osPoolFree(CAN_MSG_memory_pool, rx_CAN_msg);            // Free can msg from pool
 }
 
 /* USER CODE END 1 */

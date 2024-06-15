@@ -43,7 +43,7 @@ static void copy_to_buffer(uint8_t* buffer, uint32_t start_index, uint32_t end_i
 */
 static void copy_timestamp(uint8_t* buffer, CAN_Radio_msg_t *tx_CAN_msg) {
   for (uint8_t i = 0; i < 8; i++) {
-	   buffer[TIMESTAMP_INDEX_END - i] = (char) GET_BYTE_FROM_WORD(i, tx_CAN_msg->timestamp.double_as_int);
+	   buffer[TIMESTAMP_INDEX_END - i] = (char) UTILS_GET_BYTE_AT_INDEX(i, tx_CAN_msg->timestamp.double_as_int);
   }
 }
 

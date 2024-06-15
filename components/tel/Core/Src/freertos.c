@@ -215,7 +215,7 @@ void MX_FREERTOS_Init(void) {
 void startDefaultTask(void const * argument)
 {
   /* USER CODE BEGIN startDefaultTask */
-  Can_Init();
+  CAN_Init();
 
   /* Infinite loop */
   for(;;)
@@ -261,15 +261,7 @@ void read_CAN_task(void const * argument)
 
       if (evt.status == osEventMessage) {
         rx_CAN_msg = evt.value.p;                       // Get pointer to CAN message from the queue union
-        HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   // Blink LED to indicate CAN message received
-
-        // RTC_check_and_sync_rtc(rx_CAN_msg);                     // Sync RTC with memorator message. Also sets rtc reset
-
-        // CAN_Radio_msg_t tx_CAN_msg;
-        // CAN_rx_to_radio(rx_CAN_msg, &tx_CAN_msg);               // Convert CAN message to radio message
-        // RADIO_tx_CAN_msg(&tx_CAN_msg);                          // Send CAN on radio
-
-        osPoolFree(CAN_MSG_memory_pool, rx_CAN_msg);            // Free can msg from pool      
+        CAN_handle_rx_msg(rx_CAN_msg);                 // Handle the CAN message  
       }
       else break;
     }
@@ -290,109 +282,16 @@ void read_IMU_task(void const * argument)
   /* Infinite loop */
   while(1)
   {
-    //printf("read_IMU_task()\n\r");
-    /* Initialize a IMU buffer */
-    uint8_t imu_buffer[IMU_MESSAGE_LEN] = {0};
-
-    union FloatBytes ax_x, ax_y, ax_z, gy_x, gy_y, gy_z;
-
-    /* Read accelerator data */
-    uint8_t accel_data[NUM_ACCEL_BYTES];
     HAL_StatusTypeDef imu_status = HAL_OK;
 
-    imu_status |= HAL_I2C_Mem_Read(&hi2c2, IMU_DEVICE_ADDRESS, ACCEL_XOUT_H_REG, 1, accel_data, NUM_ACCEL_BYTES, 1000);
-
-    uint16_t Accel_X_RAW = (uint16_t)(accel_data[0] << 8 | accel_data[1]);
-    uint16_t Accel_Y_RAW = (uint16_t)(accel_data[2] << 8 | accel_data[3]);
-    uint16_t Accel_Z_RAW = (uint16_t)(accel_data[4] << 8 | accel_data[5]);
-    /*
-     * Convert the RAW values into acceleration in 'g' we have to divide according to the Full scale value
-     * set in FS_SEL. Have configured FS_SEL = 0. So I am dividing by 16384.0
-     * For more details check ACCEL_CONFIG Register.
-     */
-    ax_x.float_value = Accel_X_RAW / 16384.0;  // get the float g
-    ax_y.float_value = Accel_Y_RAW / 16384.0;
-    ax_z.float_value = Accel_Z_RAW / 16384.0;
-
-    osDelay(IMU_SINGLE_DELAY);
-
-    /* Read gyroscope data */
-    uint8_t gyro_data[NUM_GYRO_BYTES];
-
-    imu_status |= HAL_I2C_Mem_Read(&hi2c2, IMU_DEVICE_ADDRESS, GYRO_XOUT_H_REG, 1, gyro_data, NUM_GYRO_BYTES, 1000);
-    uint16_t Gyro_X_RAW = (uint16_t)(gyro_data[0] << 8 | gyro_data[1]);
-    uint16_t Gyro_Y_RAW = (uint16_t)(gyro_data[2] << 8 | gyro_data[3]);
-    uint16_t Gyro_Z_RAW = (uint16_t)(gyro_data[4] << 8 | gyro_data[5]);
-    /*
-     * Convert the RAW values into dps (degrees/s) we have to divide according to the
-     * Full scale value set in FS_SEL. Have configured FS_SEL = 0.
-     * So I am dividing by 131.0. For more details check GYRO_CONFIG Register
-     */
-    gy_x.float_value = Gyro_X_RAW / 131.0;  // get the float g
-    gy_y.float_value = Gyro_Y_RAW / 131.0;
-    gy_z.float_value = Gyro_Z_RAW / 131.0;
-
-    /* Verify IMU is connected */
-    // check_IMU_result(ax_x, ax_y, ax_z, gy_x, gy_y, gy_z); // TODO set flag
-
-    /* Get current epoch Time Stamp */
-    union DoubleBytes current_timestamp;
-    current_timestamp.double_value = get_current_timestamp();
-
-    /* Transmit IMU data */
-//    transmit_imu_data(current_timestamp.double_as_int, ax_x.bytes, 'A', 'X');
-//    transmit_imu_data(current_timestamp.double_as_int, ax_y.bytes, 'A', 'Y');
-//    transmit_imu_data(current_timestamp.double_as_int, ax_z.bytes, 'A', 'Z');
-//    transmit_imu_data(current_timestamp.double_as_int, gy_x.bytes, 'G', 'X');
-//    transmit_imu_data(current_timestamp.double_as_int, gy_y.bytes, 'G', 'Y');
-//    transmit_imu_data(current_timestamp.double_as_int, gy_z.bytes, 'G', 'Z');
-
-    CAN_Radio_msg_t x_axis_data, y_axis_data, z_axis_data;
-
-    /* Set headers */
-    x_axis_data.header = IMU_x_axis_header;
-    y_axis_data.header = IMU_y_axis_header;
-    z_axis_data.header = IMU_z_axis_header;
-
-    /* Assign the timestamp */
-    x_axis_data.timestamp = current_timestamp;
-    y_axis_data.timestamp = current_timestamp;
-    z_axis_data.timestamp = current_timestamp;
-
-    for (int i = 0; i < 4; i++) {
-	// X-axis data
-	x_axis_data.data[i] = ax_x.bytes[i];
-	x_axis_data.data[4+i] = gy_x.bytes[i];
-
-	// Y-axis data
-	y_axis_data.data[i] = ax_y.bytes[i];
-	y_axis_data.data[4+i] = gy_y.bytes[i];
-
-	// Z-axis data
-	z_axis_data.data[i] = ax_z.bytes[i];
-	z_axis_data.data[4+i] = gy_z.bytes[i];
-    }
-
-    /* Transmit the messages */
-    HAL_CAN_AddTxMessage(&hcan, &x_axis_data.header, x_axis_data.data, &can_mailbox);
-    send_CAN_Radio(&x_axis_data);
-
-    HAL_CAN_AddTxMessage(&hcan, &y_axis_data.header, y_axis_data.data, &can_mailbox);
-    send_CAN_Radio(&y_axis_data);
-
-    HAL_CAN_AddTxMessage(&hcan, &z_axis_data.header, z_axis_data.data, &can_mailbox);
-    send_CAN_Radio(&z_axis_data);
-
-    // Update diagnostics
-    g_tel_diagnostics.imu_fail = (imu_status != HAL_OK);
-
-    /* Delay */
-//    osDelay(READ_IMU_DELAY * 5); // 500 ms
+    IMU_send_as_CAN_msg_single_delay(&imu_status);                // Send IMU data as CAN message
+    g_tel_diagnostics.imu_fail = (imu_status != HAL_OK);        // Update diagnostics
     osDelay(IMU_SINGLE_DELAY);
   }
 
   /* USER CODE END read_IMU_task */
 }
+
 
 /* USER CODE BEGIN Header_read_GPS_task */
 /**
@@ -404,95 +303,15 @@ void read_IMU_task(void const * argument)
 void read_GPS_task(void const * argument)
 {
   /* USER CODE BEGIN read_GPS_task */
+
   /* Infinite loop */
   while(1) {
-    /* Initialize buffers */
-    uint8_t receive_buffer[GPS_RCV_BUFFER_SIZE];
-    GPS gps_data;
-    GPS_msg_t gps_message;
-    uint8_t gps_buffer[GPS_MESSAGE_LEN] = {0};
-
-    /* Read in an NMEA message into the buffer */
-    if(HAL_I2C_IsDeviceReady(&hi2c1, GPS_DEVICE_ADDRESS, 1, HAL_MAX_DELAY) == HAL_OK) {
-	    HAL_I2C_Master_Receive(&hi2c1, GPS_DEVICE_ADDRESS, receive_buffer, sizeof(receive_buffer), HAL_MAX_DELAY);
-    }
-
-    /* Parse the buffer data --> gets stored in gps_data; */
-    nmea_parse(&gps_data, &receive_buffer);
-
-    /* Only want to package GPS message if there is a fix. Otherwise no need */
-    if (gps_data.fix == 1)
-    {
-    	g_tel_diagnostics.gps_fix = true;
-		/* Get current epoch Time Stamp */
-		union DoubleBytes current_timestamp;
-		current_timestamp.double_value = get_current_timestamp();
-
-		CAN_Radio_msg_t latitude_msg, longitude_msg, altitude_hdop_msg, side_and_count_msg;
-		union DoubleBytes latitude_bytes, longitude_bytes;
-		union FloatBytes altitude_bytes, hdop_bytes;
-
-		/* Assign headers */
-		latitude_msg.header = GPS_latitude_header;
-		longitude_msg.header = GPS_longitude_header;
-		altitude_hdop_msg.header = GPS_altitude_hdop_header;
-		side_and_count_msg.header = GPS_side_count_header;
-
-		/* Assign timestamps */
-		latitude_msg.timestamp = current_timestamp;
-		longitude_msg.timestamp = current_timestamp;
-		altitude_hdop_msg.timestamp = current_timestamp;
-		side_and_count_msg.timestamp = current_timestamp;
-
-		/* Assign data as double/float so it can be read as uint64/uint8x4 */
-		latitude_bytes.double_value = gps_data.latitude;
-		longitude_bytes.double_value = gps_data.longitude;
-		altitude_bytes.float_value = gps_data.altitude;
-		hdop_bytes.float_value = gps_data.hdop;
-
-		for  (uint8_t i=0; i < 8; i++) {
-		latitude_msg.data[7 - i] = GET_BYTE_FROM_WORD(i, latitude_bytes.double_as_int);
-		longitude_msg.data[7 - i] = GET_BYTE_FROM_WORD(i, longitude_bytes.double_as_int);
-		altitude_hdop_msg.data[3 - i] = altitude_bytes.bytes[i];
-		altitude_hdop_msg.data[7 - i] = hdop_bytes.bytes[i];
-		}
-
-		/* Satellite Count Cast */
-		uint32_t sat_count = (uint32_t) gps_data.satelliteCount;
-		side_and_count_msg.data[0] = gps_data.latSide;
-		side_and_count_msg.data[1] = gps_data.lonSide;
-		for  (uint8_t i=0; i < 4; i++) {
-		side_and_count_msg.data[5 - i] = ((sat_count >> (8 * i)) && 0xFF);
-		}
-		side_and_count_msg.data[6] = 0;
-		side_and_count_msg.data[7] = 0;
-
-		/* Transmit a message every 2 seconds */
-		HAL_CAN_AddTxMessage(&hcan, &latitude_msg.header, latitude_msg.data, &can_mailbox);
-		send_CAN_Radio(&latitude_msg);
-		osDelay(2000);
-
-		HAL_CAN_AddTxMessage(&hcan, &longitude_msg.header, longitude_msg.data, &can_mailbox);
-		send_CAN_Radio(&longitude_msg);
-		osDelay(2000);
-
-		HAL_CAN_AddTxMessage(&hcan, &altitude_hdop_msg.header, altitude_hdop_msg.data, &can_mailbox);
-		send_CAN_Radio(&altitude_hdop_msg);
-		osDelay(2000);
-
-		HAL_CAN_AddTxMessage(&hcan, &side_and_count_msg.header, side_and_count_msg.data, &can_mailbox);
-		send_CAN_Radio(&side_and_count_msg);
-		osDelay(4000); // 4000 so we have 2 + 2 + 2 + 4 = 10 seconds total
-    }
-    else
-    {
-    	g_tel_diagnostics.gps_fix = false;
-    	osDelay(GPS_WAIT_MSG_DELAY);
-    }
+    GPS_delayed_rx_and_tx_as_CAN();       // Once a fix is obtained create and send GPS message as CAN
   }
 
   /* USER CODE END read_GPS_task */
 }
+
 
 /* USER CODE BEGIN Header_transmit_Diagnostics_task */
 /**
@@ -507,30 +326,7 @@ void transmit_Diagnostics_task(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    uint8_t data_send = 0x00;
-
-    CAN_Radio_msg_t diagnostics_msg;
-    diagnostics_msg.header = tel_diagnostics_header;
-    
-    union DoubleBytes current_timestamp;
-    current_timestamp.double_value = get_current_timestamp();
-
-    diagnostics_msg.timestamp = current_timestamp;
-
-    if(g_tel_diagnostics.rtc_reset) 
-      SET_BIT(data_send, 1 << 0);
-    if(g_tel_diagnostics.gps_fix)
-      SET_BIT(data_send, 1 << 1);
-    if(g_tel_diagnostics.imu_fail)
-      SET_BIT(data_send, 1 << 2);
-    if(g_tel_diagnostics.watchdog_reset)
-      SET_BIT(data_send, 1 << 3);
-    
-    diagnostics_msg.data[0] = data_send;
-    
-    HAL_CAN_AddTxMessage(&hcan, &diagnostics_msg.header, diagnostics_msg.data, &can_mailbox);
-    send_CAN_Radio(&diagnostics_msg);
-
+    CAN_diagnostic_msg_tx_radio_bus();
     osDelay(TRANSMIT_DIAGNOSTICS_DELAY);
   }
   /* USER CODE END transmit_Diagnostics_task */
