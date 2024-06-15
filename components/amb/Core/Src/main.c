@@ -246,9 +246,11 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+// Only refresh watchdog when not in debug mode
+#ifndef DEBUG	
 	  /*Set the watchdog timer, refer to https://controllerstech.com/iwdg-and-wwdg-in-stm32/ */
 	  HAL_IWDG_Refresh(&hiwdg);
-
+#endif
 	  /* Read ADC, process, then output to CANbus */
 
 	  /* VSENSE1 */
