@@ -125,6 +125,8 @@ void Convert_Values(uint8_t index);
 /* Conversion Constants */
 #define ISENSE_OFFSET_CURRENT		0.0639
 #define ISENSE_OFFSET_VOLTAGE		1.65
+#define VSENSE_OFFSET_VOLTS			0.645
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
