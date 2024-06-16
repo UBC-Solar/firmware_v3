@@ -221,6 +221,8 @@ void getCANMessage(void *argument)
 void task_generic_100ms(void *argument)
 {
   /* USER CODE BEGIN task_generic_100ms */
+
+  static uint64_t counter = 0;
   /* Infinite loop */
   for(;;)
   {
@@ -230,6 +232,13 @@ void task_generic_100ms(void *argument)
     // Sends MCB diagnostics
     send_mcb_diagnostics();
 
+    // Send MCB githash every 10000ms
+    if(counter % 100 == 0)
+    {
+      send_mcb_githash();
+    }
+
+    counter++;
     osDelay(100);
   }
   /* USER CODE END task_generic_100ms */

@@ -4,9 +4,11 @@
  *  Created on: Jun. 1, 2023
  *      Author: Kyle Groulx
  */
+#include <string.h>
 
 #include "mcb.h"
 #include "can.h"
+#include "../../../../libraries/githash/githash.h" // TODO: Add this library to the project instead of using the relative path
 
 float cruiseVelocity = 0.0;		// Velocity for cruise control
 float velocityOfCar = 0.0;		// Current velocity of the car will be stored here.
@@ -92,6 +94,16 @@ void send_mcb_diagnostics()
 	HAL_CAN_AddTxMessage(&hcan, &mcb_diagnostics, data_send, &can_mailbox);
 
 	return;
+}
+
+/* 
+ * Sends the MCB githash over CAN
+ */
+void send_mcb_githash()
+{
+	uint8_t data_send[CAN_DATA_LENGTH];
+	memcpy(data_send, GITHASH, sizeof(GITHASH));
+	HAL_CAN_AddTxMessage(&hcan, &mcb_diagnostics, data_send, &can_mailbox);
 }
 
 MotorCommand DoStateDRIVE( InputFlags input_flags )
