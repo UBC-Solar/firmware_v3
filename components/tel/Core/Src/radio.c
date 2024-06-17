@@ -17,6 +17,14 @@
 // 22: '\r'             // TODO: Do we need this? maybe just use \0 instead?
 // 23: '\n'
 
+//api_buffer global variables
+uint8_t api_buffer[API_BUFFER_SIZE];
+uint16_t api_buffer_position = 0;
+uint8_t api_message_count = 0;
+
+
+
+
 
 /**
  * @brief Copies the source array to the buffer array from start_index to end_index
@@ -65,13 +73,59 @@ static void copy_CAN_id(uint8_t* source, CAN_Radio_msg_t *tx_CAN_msg, uint32_t c
 
 
 /**
- * @brief Sends a CAN message over the radio by packing it into a CAN_BUFFER_LEN buffer 
- *        and transmits it over UART
+ * @brief Takes CAN radio buffer and adds it to an API Packet Array. Once enough messages are in the array, array is transmitted.
+ * @param radio_buffer[]: pointer to an array in which the messages are being added.
+ * @return void
+*/
+void RADIO_tx_API_Packager(uint8_t api_buffer[], uint16_t api_buffer_position)
+{
+ uint16_t api_packet_size = API_OVERHEAD_SIZE + api_buffer_position;
+ uint8_t api_packet[api_packet_size];
+ XBEE_api_overhead_setup(api_packet);
+
+ for (int i = 0; i<api_buffer_position; i++){
+	 api_packet[MESSAGE_DATA_START_POSITION + i] = api_buffer[i];
+ }
+
+ XBEE_calculate_length(api_packet, api_packet_size);
+ XBEE_calculate_checksum(api_packet, api_packet_size);
+
+ HAL_UART_Transmit(&huart1, api_packet, sizeof(api_packet), CAN_TRANSMIT_TIMEOUT);                     /* Transmit over UART */
+}
+
+
+
+/**
+ * @brief Takes CAN radio buffer and adds it to an API Packet Array. Once enough messages are in the array, array is transmitted.
+ * @param radio_buffer[]: pointer to an array in which the messages are being added.
+ * @return void
+*/
+void RADIO_tx_API_Accumulator(uint8_t radio_message[])
+{
+  int i;
+  for (i = 0; i<CAN_BUFFER_LEN; i++){
+	  api_buffer[i+api_buffer_position] = radio_message[i];
+  }
+
+  api_message_count++;
+  api_buffer_position = api_buffer_position + i;
+
+  if (api_message_count == API_PACKET_SIZE){
+	  RADIO_tx_API_Packager(api_buffer, api_buffer_position);
+	  api_message_count = 0;
+	  api_buffer_position = 0;
+  }
+}
+
+/**
+ * @brief Packages a CAN message into a CAN_BUFFER_LEN buffer
+ *        and stores it in an array for api packing and transmission
  * @param tx_CAN_msg: CAN_Radio_msg_t pointer to the CAN message to be sent
  * @return void
 */
 void RADIO_tx_CAN_msg(CAN_Radio_msg_t *tx_CAN_msg)
 {
+
   uint8_t radio_buffer[CAN_BUFFER_LEN] = {0};
   copy_timestamp(radio_buffer, tx_CAN_msg);                                                  /* TIMESTAMP */
   radio_buffer[CAN_MESSAGE_IDENTIFIER_INDEX] = CAN_MESSAGE_IDENTIFIER;                       /* CAN MESSAGE IDENTIFIER */
@@ -81,6 +135,14 @@ void RADIO_tx_CAN_msg(CAN_Radio_msg_t *tx_CAN_msg)
   radio_buffer[CAN_CARRIAGE_RETURN_INDEX] = '\r';                                            /* CARRIAGE RETURN */
   radio_buffer[CAN_NEW_LINE_INDEX] = '\n';                                                   /* NEW LINE */
 
-  HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), CAN_TRANSMIT_TIMEOUT);                     /* Transmit over UART */
-}   
+  RADIO_tx_API_Accumulator(radio_buffer);
+
+  // HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), CAN_TRANSMIT_TIMEOUT);                     /* Transmit over UART */
+}
+
+
+
+
+
+
 
