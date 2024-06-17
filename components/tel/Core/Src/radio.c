@@ -73,8 +73,8 @@ static void copy_CAN_id(uint8_t* source, CAN_Radio_msg_t *tx_CAN_msg, uint32_t c
 
 
 /**
- * @brief Takes CAN radio buffer and adds it to an API Packet Array. Once enough messages are in the array, array is transmitted.
- * @param radio_buffer[]: pointer to an array in which the messages are being added.
+ * @brief Takes api_buffer and packages it into an api frame. transmits this api frame over uart.
+ * @param radio_buffer[]: pointer to an array in which the messages are being added, api_buffer_postion: position in api_buffer where messages end.
  * @return void
 */
 void RADIO_tx_API_Packager(uint8_t api_buffer[], uint16_t api_buffer_position)
@@ -96,7 +96,7 @@ void RADIO_tx_API_Packager(uint8_t api_buffer[], uint16_t api_buffer_position)
 
 
 /**
- * @brief Takes CAN radio buffer and adds it to an API Packet Array. Once enough messages are in the array, array is transmitted.
+ * @brief Takes CAN radio buffer and adds it to an API buffer Array. Once enough messages are in the array, array is sent for packaging.
  * @param radio_buffer[]: pointer to an array in which the messages are being added.
  * @return void
 */
