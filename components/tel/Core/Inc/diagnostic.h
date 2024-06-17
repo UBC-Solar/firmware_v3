@@ -27,11 +27,11 @@
 #define MEMORATOR_DIAGNOSTIC_STDID       0x307
 #define TEL_DIAGNOSTIC_STDID             0x308
 #define VDS_DIAGNOSTIC_STDID             0x309
-#define CAN_NO_EXTID                    0x0000
+#define CAN_NO_EXTID                     0x0000
 
 /* BYTE INDEXING CONSTANTS */
-#define COUNTER_BYTE_LO                 6
-#define COUNTER_BYTE_HI                 7
+#define COUNTER_BYTE_LO                 0
+#define COUNTER_BYTE_HI                 1
 #define BYTE_MASK                       0xFF
 #define BITS_IN_BYTE                    8
 #define DATA_START_INDEX                0
