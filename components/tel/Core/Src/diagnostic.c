@@ -97,6 +97,7 @@ static void send_diagnostic_CAN(uint32_t can_stdid, uint8_t* full_diagnostic_dat
     set_diagnostic_CAN_header(&diagnostic_CAN_msg_header, can_stdid);                              // Create CAN format header
 
     HAL_CAN_AddTxMessage(hcan, &diagnostic_CAN_msg_header, full_diagnostic_data, can_mailbox);    // Transmit diagnostic on CAN bus
+    // CANTX_send(&diagnostic_CAN_msg_header, full_diagnostic_data, hcan, &can_mailbox, Error_Handler); // Transmit diagnostic on CAN bus
     radio_transmit_if_TEL(&diagnostic_CAN_msg_header, can_stdid, full_diagnostic_data);           // Transmit diagnostic on radio if board is TEL
 }
 

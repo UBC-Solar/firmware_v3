@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include "main.h"
+#include "../../../../libraries/communication/can/Core/Inc/CAN_transmit.h"
 
 #ifndef DIAGNOSTIC_H
 #define DIAGNOSTIC_H
