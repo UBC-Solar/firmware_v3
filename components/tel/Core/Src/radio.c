@@ -102,15 +102,15 @@ void RADIO_tx_API_Packager(uint8_t api_buffer[], uint16_t api_buffer_position)
 */
 void RADIO_tx_API_Accumulator(uint8_t radio_message[])
 {
-  int i;
-  for (i = 0; i<CAN_BUFFER_LEN; i++){
+
+  for (int i = 0; i<CAN_BUFFER_LEN; i++){
 	  api_buffer[i+api_buffer_position] = radio_message[i];
   }
 
   api_message_count++;
-  api_buffer_position = api_buffer_position + i;
+  api_buffer_position = api_buffer_position + CAN_BUFFER_LEN;
 
-  if (api_message_count == API_PACKET_SIZE){
+  if (api_message_count == API_MAX_MSGS){
 	  RADIO_tx_API_Packager(api_buffer, api_buffer_position);
 	  api_message_count = 0;
 	  api_buffer_position = 0;
