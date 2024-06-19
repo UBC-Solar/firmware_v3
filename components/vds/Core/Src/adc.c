@@ -276,117 +276,58 @@ float getAveragedValue(volatile uint16_t array[], uint16_t length)
  */
 void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float result[])
 {
-    // Get the start and end index of the sensor values
-    int start_index = half * (NUM_ADC_CHANNELS_USED / 2);
-    int end_index = start_index + (NUM_ADC_CHANNELS_USED / 2);
+    if (half) {
+        return; // No elements to average in second half of buffer
+    }  
 
-    // Part 1: Sum the required sensors and average
-    for (uint16_t i = start_index; i < end_index; i++)
-    {
-        switch (i)
-        {
-        case BP_1:
-            if (adc_averages.counter.ADC_brake_pressure_1 >= NUMBER_ADC_SAMPLES)
-            {
-                adc_averages.counter.ADC_brake_pressure_1 = 0; // Reset the index back to the beginning of the FIFO
-                adc_averages.previous_sum.ADC_brake_pressure_1 = 0; // Reset the sum
-            }
-
-            // If buffer is full, subtract the oldest value from the sum
-            if (adc_averages.counter.ADC_brake_pressure_1 == 0 && adc_averages.previous_sum.ADC_brake_pressure_1 != 0)
-            {
-                adc_averages.previous_sum.ADC_brake_pressure_1 -= adc_averages.values.ADC_brake_pressure_1[NUMBER_ADC_SAMPLES - 1];
-            }
-
-            // Add the current value to the FIFO
-            adc_averages.values.ADC_brake_pressure_1[adc_averages.counter.ADC_brake_pressure_1] = adc1_buf[i];
-
-            // Calculate the running sum of the FIFO
-            adc_averages.previous_sum.ADC_brake_pressure_1 += adc1_buf[i];
-
-            // Calculate the new average
-            result[i] = (float) adc_averages.previous_sum.ADC_brake_pressure_1 / (adc_averages.counter.ADC_brake_pressure_1 + 1);
-
-            // Increment the counter
-            adc_averages.counter.ADC_brake_pressure_1++;
-            break;
-
-        //All other cases are similar to the first case
-        case BP_2:
-            if (adc_averages.counter.ADC_brake_pressure_2 >= NUMBER_ADC_SAMPLES)
-            {
-                adc_averages.counter.ADC_brake_pressure_2 = 0;
-                adc_averages.previous_sum.ADC_brake_pressure_2 = 0;
-            }
-            if (adc_averages.counter.ADC_brake_pressure_2 == 0 && adc_averages.previous_sum.ADC_brake_pressure_2 != 0)
-            {
-                adc_averages.previous_sum.ADC_brake_pressure_2 -= adc_averages.values.ADC_brake_pressure_2[NUMBER_ADC_SAMPLES - 1];
-            }
-            adc_averages.values.ADC_brake_pressure_2[adc_averages.counter.ADC_brake_pressure_2] = adc1_buf[i];
-            adc_averages.previous_sum.ADC_brake_pressure_2 += adc1_buf[i];
-            result[i] = (float)adc_averages.previous_sum.ADC_brake_pressure_2 / (adc_averages.counter.ADC_brake_pressure_2 + 1);
-            adc_averages.counter.ADC_brake_pressure_2++;
-            break;
-
-        case BP_3:
-            if (adc_averages.counter.ADC_brake_pressure_3 >= NUMBER_ADC_SAMPLES)
-            {
-                adc_averages.counter.ADC_brake_pressure_3 = 0;
-                adc_averages.previous_sum.ADC_brake_pressure_3 = 0;
-            }
-            if (adc_averages.counter.ADC_brake_pressure_3 == 0 && adc_averages.previous_sum.ADC_brake_pressure_3 != 0)
-            {
-                adc_averages.previous_sum.ADC_brake_pressure_3 -= adc_averages.values.ADC_brake_pressure_3[NUMBER_ADC_SAMPLES - 1];
-            }
-            adc_averages.values.ADC_brake_pressure_3[adc_averages.counter.ADC_brake_pressure_3] = adc1_buf[i];
-            adc_averages.previous_sum.ADC_brake_pressure_3 += adc1_buf[i];
-            result[i] = (float)adc_averages.previous_sum.ADC_brake_pressure_3 / (adc_averages.counter.ADC_brake_pressure_3 + 1);
-            adc_averages.counter.ADC_brake_pressure_3++;
-            break;
-
-        case SA_1:
-            if (adc_averages.counter.ADC_steering_angle >= NUMBER_ADC_SAMPLES)
-            {
-                adc_averages.counter.ADC_steering_angle = 0;
-                adc_averages.previous_sum.ADC_steering_angle = 0;
-            }
-            if (adc_averages.counter.ADC_steering_angle == 0 && adc_averages.previous_sum.ADC_steering_angle != 0)
-            {
-                adc_averages.previous_sum.ADC_steering_angle -= adc_averages.values.ADC_steering_angle[NUMBER_ADC_SAMPLES - 1];
-            }
-            adc_averages.values.ADC_steering_angle[adc_averages.counter.ADC_steering_angle] = adc1_buf[i];
-            adc_averages.previous_sum.ADC_steering_angle += adc1_buf[i];
-            result[i] = (float)adc_averages.previous_sum.ADC_steering_angle / (adc_averages.counter.ADC_steering_angle + 1);
-            adc_averages.counter.ADC_steering_angle++;
-            break;
-
-        default:
-            // We don't need to average this sensor
-            break;
-        }
-
-
-        // Update the total sum and count
-        if (!half)
-        {
-            /* Result array stores averaged values, adc1_buf has instantaneous readings */
-
-            // Update the global structure
-            vds_data.adc_data.ADC_brake_pressure_1 = (uint16_t) getAveragedValue(adc_averages.values.ADC_brake_pressure_1, NUMBER_ADC_SAMPLES);
-            vds_data.adc_data.ADC_brake_pressure_2 = (uint16_t) getAveragedValue(adc_averages.values.ADC_brake_pressure_2, NUMBER_ADC_SAMPLES);
-            vds_data.adc_data.ADC_brake_pressure_3 = (uint16_t) getAveragedValue(adc_averages.values.ADC_brake_pressure_3, NUMBER_ADC_SAMPLES);
-            vds_data.adc_data.ADC_shock_travel_1 = adc1_buf[ST_1];
-        }
-        else
-        {
-            // Second half of buffer
-            vds_data.adc_data.ADC_shock_travel_2 = adc1_buf[ST_2];
-            vds_data.adc_data.ADC_shock_travel_3 = adc1_buf[ST_3];
-            vds_data.adc_data.ADC_shock_travel_4 = adc1_buf[ST_4];
-            vds_data.adc_data.ADC_steering_angle = (uint16_t) getAveragedValue(adc_averages.values.ADC_steering_angle, NUMBER_ADC_SAMPLES);
-        }
+    // Average the brake pressure and steering angle every 100 samples
+    if (adc_averages.counter.ADC_brake_pressure_1 < NUMBER_ADC_SAMPLES) {
+        adc_averages.previous_sum.ADC_brake_pressure_1 += adc1_buf[BP_1];
+        adc_averages.counter.ADC_brake_pressure_1++;
+    } 
+    if (adc_averages.counter.ADC_brake_pressure_1 >= NUMBER_ADC_SAMPLES) {
+        vds_data.adc_data.ADC_brake_pressure_1 = (uint16_t)(adc_averages.previous_sum.ADC_brake_pressure_1 / NUMBER_ADC_SAMPLES);
+        adc_averages.previous_sum.ADC_brake_pressure_1 = 0;
+        adc_averages.counter.ADC_brake_pressure_1 = 0;
     }
+
+    if (adc_averages.counter.ADC_brake_pressure_2 < NUMBER_ADC_SAMPLES) {
+        adc_averages.previous_sum.ADC_brake_pressure_2 += adc1_buf[BP_2];
+        adc_averages.counter.ADC_brake_pressure_2++;
+    } 
+    if (adc_averages.counter.ADC_brake_pressure_2 >= NUMBER_ADC_SAMPLES) {
+        vds_data.adc_data.ADC_brake_pressure_2 = (uint16_t)(adc_averages.previous_sum.ADC_brake_pressure_2 / NUMBER_ADC_SAMPLES);
+        adc_averages.previous_sum.ADC_brake_pressure_2 = 0;
+        adc_averages.counter.ADC_brake_pressure_2 = 0;
+    }
+
+    if (adc_averages.counter.ADC_brake_pressure_3 < NUMBER_ADC_SAMPLES) {
+        adc_averages.previous_sum.ADC_brake_pressure_3 += adc1_buf[BP_3];
+        adc_averages.counter.ADC_brake_pressure_3++;
+    } 
+    if (adc_averages.counter.ADC_brake_pressure_3 >= NUMBER_ADC_SAMPLES) {
+        vds_data.adc_data.ADC_brake_pressure_3 = (uint16_t)(adc_averages.previous_sum.ADC_brake_pressure_3 / NUMBER_ADC_SAMPLES);
+        adc_averages.previous_sum.ADC_brake_pressure_3 = 0;
+        adc_averages.counter.ADC_brake_pressure_3 = 0;
+    }
+
+    if (adc_averages.counter.ADC_steering_angle < NUMBER_ADC_SAMPLES) {
+        adc_averages.previous_sum.ADC_steering_angle += adc1_buf[SA_1];
+        adc_averages.counter.ADC_steering_angle++;
+    } 
+    if (adc_averages.counter.ADC_steering_angle >= NUMBER_ADC_SAMPLES) {
+        vds_data.adc_data.ADC_steering_angle = (uint16_t)(adc_averages.previous_sum.ADC_steering_angle / NUMBER_ADC_SAMPLES);
+        adc_averages.previous_sum.ADC_steering_angle = 0;
+        adc_averages.counter.ADC_steering_angle = 0;
+    }
+
+    // Update the Shock Travel every 1ms
+    vds_data.adc_data.ADC_shock_travel_1 = adc1_buf[ST_1];
+    vds_data.adc_data.ADC_shock_travel_2 = adc1_buf[ST_2];
+    vds_data.adc_data.ADC_shock_travel_3 = adc1_buf[ST_3];
+    vds_data.adc_data.ADC_shock_travel_4 = adc1_buf[ST_4];
 }
+
 
 /**
  * @brief sets the Fault flag in the global variable ADC1_DMA_fault_flag
