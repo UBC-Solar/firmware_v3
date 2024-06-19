@@ -14,6 +14,13 @@ try:
 except subprocess.CalledProcessError:
     suffix = '*'
 
+file_contents = f'''
+#ifndef GITHASH_H
+#define GITHASH_H
+#define GITHASH "{commit_hash}{suffix}"
+#endif
+'''
+
 # Create the githash.h file and write the commit hash to it
 with open(f'{repo_root}/libraries/githash/githash.h', 'w') as file:
-    file.write(f'#define GITHASH "{commit_hash}{suffix}"\n')
+    file.write(file_contents)

@@ -232,6 +232,7 @@ void task_generic_100ms(void *argument)
     // Sends MCB diagnostics
     send_mcb_diagnostics();
 
+    osDelay(10); // We need a small delay in between sending since the tx buffer is only 2 message
     // Send MCB githash every 10000ms
     if(counter % 100 == 0)
     {
@@ -239,7 +240,7 @@ void task_generic_100ms(void *argument)
     }
 
     counter++;
-    osDelay(100);
+    osDelay(90);
   }
   /* USER CODE END task_generic_100ms */
 }
