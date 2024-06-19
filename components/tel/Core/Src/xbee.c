@@ -11,7 +11,8 @@
 
 
 /**
- * @brief Adds up all the bytes after length and before checksum in an api packet
+ * @brief Adds up all the bytes after length and before checksum in an api packet. Packet_length-1 is the final position in the api_packet,
+ * and will contain checksums, so we exclude it when adding up bytes.
  *
  * @param api packet: api packet array
  * @return uint16_t total_bytes in api packet before checksum and after length fields
@@ -20,7 +21,7 @@
 uint16_t XBEE_sum_bytes (uint8_t api_packet[], uint16_t packet_length)
 {
   uint16_t total_bytes = 0;
-  for (int i = FRAME_TYPE_POSITION; i < packet_length-2; i++){
+  for (int i = FRAME_TYPE_POSITION; i < packet_length -1; i++){
 		 total_bytes += api_packet[i];
   }
   return total_bytes;
@@ -88,7 +89,7 @@ void XBEE_calculate_checksum(uint8_t api_packet[], uint16_t packet_length)
  uint16_t total_bytes = XBEE_sum_bytes(api_packet, packet_length);
  uint16_t checksum;
  checksum = UINT8_MAX_SIZE - (total_bytes & MASK_8_BITS);
- api_packet[packet_length-1] = checksum;
+ api_packet[packet_length-1] = checksum; //packet_length -1 is final position in api_packet array
 
 }
 
