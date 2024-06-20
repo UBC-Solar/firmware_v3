@@ -58,7 +58,7 @@ CAN_TxHeaderTypeDef drive_state_header = {
     .DLC = CAN_DATA_LENGTH};
 
 /**
- * 	CAN message header for Drive state (0x403).
+ * 	CAN message header for mcb diagnostics (0x404).
  */
 CAN_TxHeaderTypeDef mcb_diagnostics = {
     .StdId = MCB_DIAGNOSTICS_ADDRESS,
@@ -66,6 +66,17 @@ CAN_TxHeaderTypeDef mcb_diagnostics = {
     .IDE = CAN_ID_STD,
     .RTR = CAN_RTR_DATA,
     .DLC = CAN_DATA_LENGTH};
+
+/**
+ * 	CAN message header for mcb githash (0x405).
+ */
+CAN_TxHeaderTypeDef mcb_githash = {
+    .StdId = MCB_GITHASH_ADDRESS,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_LENGTH};
+
 
 uint32_t can_mailbox;
 

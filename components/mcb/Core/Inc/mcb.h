@@ -119,6 +119,7 @@ void SendCANMotorCommand(MotorCommand motorCommand);
 void SendCANDIDNextPage();
 void SendCANDIDDriveState();
 void send_mcb_diagnostics();
+void send_mcb_githash();
 float normalize_adc_value(uint16_t value);
 void GetSwitchState(InputFlags * input_flags);
 
