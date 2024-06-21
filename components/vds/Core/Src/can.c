@@ -142,8 +142,6 @@ void CAN_processMessages(void)
 		shock_travel_counter = 0;
 	}
 
-	CAN_SendShockTravel(&vds_data);
-
 	//TODO: Implement VDS diagnostic once ready
 }
 
