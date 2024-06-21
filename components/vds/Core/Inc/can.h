@@ -63,6 +63,7 @@ void MX_CAN2_Init(void);
 void CAN_SendShockTravel(VDS_Data_t *adc_data);
 void CAN_SendBrakeAndSteering(VDS_Data_t *adc_data);
 void CAN_SendDiagnostics(VDS_StatusCode_t *status);
+void CAN_processMessages(void);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

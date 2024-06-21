@@ -43,6 +43,14 @@ extern ADC_HandleTypeDef hadc1;
 #define DMA_BUFFER_START 0
 #define DMA_BUFFER_END 7
 
+// Macros for Brake Pressure conversion
+#define BRAKE_PRESSURE_MULTIPLIER 24.55
+#define BRAKE_PRESSURE_OFFSET 1.925
+
+// Macros for Shock Travel conversion
+#define SHOCK_TRAVEL_MULTIPLIER 0.1595
+#define SHOCK_TRAVEL_OFFSET 2.3875
+
 /* USER CODE END Private defines */
 
 void MX_ADC1_Init(void);
@@ -60,6 +68,8 @@ void ADC1_setFaultStatus(int flag_value);
 
 int ADC_getReading(int adc_channel);
 void ADC_setReading(float adc_reading, uint8_t adc_channel);
+
+void ADC_convertRawValues(void);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

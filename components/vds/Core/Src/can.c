@@ -22,6 +22,9 @@
 
 /* USER CODE BEGIN 0 */
 
+extern uint32_t brake_steering_counter = 0;
+extern uint32_t diagnostic_counter = 0;
+
 // CAN message headers for VDS
 
 CAN_TxHeaderTypeDef shock_travel_header = {
@@ -53,25 +56,18 @@ void CAN_SendShockTravel(VDS_Data_t *vds_data)
     message.header = shock_travel_header;
 
     ADC_Value_t adc_value;
+    uint16_t *shock_travel_ptr = (uint16_t*)&vds_data->adc_data.ADC_shock_travel_1;
 
-    adc_value.value = vds_data->adc_data.ADC_shock_travel_1;
-    message.data[0] = adc_value.bytes.low;
-    message.data[1] = adc_value.bytes.high;
-
-    adc_value.value = vds_data->adc_data.ADC_shock_travel_2;
-    message.data[2] = adc_value.bytes.low;
-    message.data[3] = adc_value.bytes.high;
-
-    adc_value.value = vds_data->adc_data.ADC_shock_travel_3;
-    message.data[4] = adc_value.bytes.low;
-    message.data[5] = adc_value.bytes.high;
-
-    adc_value.value = vds_data->adc_data.ADC_shock_travel_4;
-    message.data[6] = adc_value.bytes.low;
-    message.data[7] = adc_value.bytes.high;
+    for (int i = 0; i < 4; ++i)
+    {
+        adc_value.value = *(shock_travel_ptr + i);
+        message.data[i * 2] = adc_value.bytes.low;
+        message.data[i * 2 + 1] = adc_value.bytes.high;
+    }
 
     HAL_CAN_AddTxMessage(&hcan2, &message.header, message.data, &can_mailbox);
 }
+
 
 void CAN_SendBrakeAndSteering(VDS_Data_t *vds_data)
 {
@@ -79,31 +75,50 @@ void CAN_SendBrakeAndSteering(VDS_Data_t *vds_data)
     message.header = brake_and_steering_header;
 
     ADC_Value_t adc_value;
+    volatile uint16_t *sensor_data[] = {
+        &vds_data->adc_data.ADC_brake_pressure_1,
+        &vds_data->adc_data.ADC_brake_pressure_2,
+        &vds_data->adc_data.ADC_brake_pressure_3,
+        &vds_data->adc_data.ADC_steering_angle
+    };
 
-    adc_value.value = vds_data->adc_data.ADC_brake_pressure_1;
-    message.data[0] = adc_value.bytes.low;
-    message.data[1] = adc_value.bytes.high;
-
-    adc_value.value = vds_data->adc_data.ADC_brake_pressure_2;
-    message.data[2] = adc_value.bytes.low;
-    message.data[3] = adc_value.bytes.high;
-
-    adc_value.value = vds_data->adc_data.ADC_brake_pressure_3;
-    message.data[4] = adc_value.bytes.low;
-    message.data[5] = adc_value.bytes.high;
-
-    adc_value.value = vds_data->adc_data.ADC_steering_angle;
-    message.data[6] = adc_value.bytes.low;
-    message.data[7] = adc_value.bytes.high;
+    for (int i = 0; i < 4; ++i)
+    {
+        adc_value.value = *(sensor_data[i]);
+        message.data[i * 2] = adc_value.bytes.low;
+        message.data[i * 2 + 1] = adc_value.bytes.high;
+    }
 
     HAL_CAN_AddTxMessage(&hcan1, &message.header, message.data, &can_mailbox);
 }
+
 
 void CAN_SendVDSDiagnostic(VDS_Data_t *vds_status){
 
 	// TODO: Once reqs have been decided, implementation here
 
 }
+
+void CAN_processMessages(void)
+{
+
+    CAN_SendShockTravel(&vds_data);
+
+    // Send brake and steering message at 10Hz (every 100ms)
+    if (brake_steering_counter >= 100)
+    {
+        CAN_SendBrakeAndSteering(&vds_data);
+        brake_steering_counter = 0; // Reset counter
+    }
+
+    // Send diagnostic message every 5 seconds (5000ms)
+    if (diagnostic_counter >= 5000)
+    {
+        // CAN_SendDiagnostics(&vds_status);
+        diagnostic_counter = 0; // Reset counter
+    }
+}
+
 
 
 
