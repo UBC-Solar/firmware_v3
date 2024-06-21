@@ -328,19 +328,6 @@ void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float resul
     vds_data.adc_data.ADC_shock_travel_4 = adc1_buf[ST_4];
 }
 
-void ADC_convertRawValues(void){
-
-  vds_data.adc_data.ADC_brake_pressure_1 = (BRAKE_PRESSURE_MULTIPLIER * vds_data.adc_data.ADC_brake_pressure_1) + BRAKE_PRESSURE_OFFSET;
-  vds_data.adc_data.ADC_brake_pressure_2 = (BRAKE_PRESSURE_MULTIPLIER * vds_data.adc_data.ADC_brake_pressure_2) + BRAKE_PRESSURE_OFFSET;
-  vds_data.adc_data.ADC_brake_pressure_3 = (BRAKE_PRESSURE_MULTIPLIER * vds_data.adc_data.ADC_brake_pressure_3) + BRAKE_PRESSURE_OFFSET;
-  vds_data.adc_data.ADC_shock_travel_1 = (SHOCK_TRAVEL_MULTIPLIER * vds_data.adc_data.ADC_shock_travel_1) + SHOCK_TRAVEL_OFFSET;
-  vds_data.adc_data.ADC_shock_travel_2 = (SHOCK_TRAVEL_MULTIPLIER * vds_data.adc_data.ADC_shock_travel_2) + SHOCK_TRAVEL_OFFSET;
-  vds_data.adc_data.ADC_shock_travel_3 = (SHOCK_TRAVEL_MULTIPLIER * vds_data.adc_data.ADC_shock_travel_3) + SHOCK_TRAVEL_OFFSET;
-  vds_data.adc_data.ADC_shock_travel_4 = (SHOCK_TRAVEL_MULTIPLIER * vds_data.adc_data.ADC_shock_travel_4) + SHOCK_TRAVEL_OFFSET;
-
-  // TODO: Add conversion for steering angle once sensor has been selected and tested
-}
-
 /**
  * @brief sets the Fault flag in the global variable ADC1_DMA_fault_flag
  * depending if ADC1 attempts to read values in the middle of a DMA interrupt callback process

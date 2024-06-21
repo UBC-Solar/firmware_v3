@@ -112,4 +112,8 @@ extern volatile VDS_ADC_AVERAGES adc_averages;
 extern float sum[NUM_ADC_CHANNELS_USED];
 extern uint32_t counters[NUM_ADC_CHANNELS_USED];
 
+extern uint32_t brake_steering_counter;
+extern uint32_t shock_travel_counter;
+extern uint32_t diagnostic_counter;
+
 #endif /* __COMMON_H */

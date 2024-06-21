@@ -43,6 +43,8 @@ extern ADC_HandleTypeDef hadc1;
 #define DMA_BUFFER_START 0
 #define DMA_BUFFER_END 7
 
+
+
 // Macros for Brake Pressure conversion
 #define BRAKE_PRESSURE_MULTIPLIER 24.55
 #define BRAKE_PRESSURE_OFFSET 1.925

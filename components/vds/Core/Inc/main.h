@@ -78,6 +78,9 @@ void Error_Handler(void);
 
 /* Number of ADC Channels used */
 #define NUM_ADC_CHANNELS_USED 8
+#define NUM_BRAKE_PRESSURE_SENSORS 3
+#define NUM_SHOCK_TRAVEL_SENSORS 4
+#define NUM_STEERING_ANGLE_SENSORS 1
 
 /*Number of ADC Channels Total */
 #define NUM_ADC_CHANNELS_TOTAL 16

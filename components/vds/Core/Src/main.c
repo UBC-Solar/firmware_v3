@@ -53,8 +53,8 @@ volatile uint16_t adc1_buf[NUM_ADC_CHANNELS_TOTAL] = {0}; // Initialize ADC buff
 VDS_Data_t vds_data = {0}; // Initialize VDS data structure
 
 uint32_t brake_steering_counter = 0;
+uint32_t shock_travel_counter = 0;
 uint32_t diagnostic_counter = 0;
-
 //Initialise global variables for the VDS data structure and ADC readings
 volatile int ADC1_DMA_in_process_flag = 0; //flag that indicates the DMA interrupt if ADC1 has been called and is in process
 volatile int ADC1_DMA_fault_flag = 0; //flag that indicates the DMA interrupt if ADC1 has been called and is at fault
@@ -157,7 +157,6 @@ int main(void)
   {
 	  //Independent watchdog timer and
 	  HAL_IWDG_Refresh(&hiwdg);
-	  ADC_convertRawValues();
 	  CAN_processMessages();
     /* USER CODE END WHILE */
 
@@ -241,6 +240,7 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
   }
 
   brake_steering_counter++;
+  shock_travel_counter++;
   diagnostic_counter++;
 }
 
@@ -253,6 +253,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   }
 
   brake_steering_counter++;
+  shock_travel_counter++;
   diagnostic_counter++;
 }
 
