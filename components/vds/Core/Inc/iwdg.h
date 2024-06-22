@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    can.h
+  * @file    iwdg.h
   * @brief   This file contains all the function prototypes for
-  *          the can.c file
+  *          the iwdg.c file
   ******************************************************************************
   * @attention
   *
@@ -18,8 +18,8 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __CAN_H__
-#define __CAN_H__
+#ifndef __IWDG_H__
+#define __IWDG_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,46 +29,24 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-#include "common.h"
+
 /* USER CODE END Includes */
 
-extern CAN_HandleTypeDef hcan1;
-
-extern CAN_HandleTypeDef hcan2;
+extern IWDG_HandleTypeDef hiwdg;
 
 /* USER CODE BEGIN Private defines */
 
-#define CAN_ID_SHOCK_TRAVEL 		0X710
-#define CAN_ID_BRAKE_AND_STEERING 	0X711
-#define CAN_ID_VDS_DIAGNOSTIC 		0X712
-
-#define CAN_DATA_LENGTH 			8
-
-typedef struct {
-    CAN_TxHeaderTypeDef header;
-    uint8_t data[8];
-} CAN_Message_t;
-
-extern CAN_TxHeaderTypeDef shock_travel_header;
-extern CAN_TxHeaderTypeDef brake_and_steering_header;
-extern CAN_TxHeaderTypeDef vds_diagnostic_header;
-
-
 /* USER CODE END Private defines */
 
-void MX_CAN1_Init(void);
-void MX_CAN2_Init(void);
+void MX_IWDG_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-void CAN_SendShockTravel(VDS_Data_t *adc_data);
-void CAN_SendBrakeAndSteering(VDS_Data_t *adc_data);
-void CAN_SendDiagnostics(VDS_StatusCode_t *status);
-void CAN_processMessages(void);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __CAN_H__ */
+#endif /* __IWDG_H__ */
 

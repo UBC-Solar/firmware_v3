@@ -21,6 +21,7 @@
 #include "adc.h"
 #include "can.h"
 #include "dma.h"
+#include "iwdg.h"
 #include "tim.h"
 #include "gpio.h"
 
@@ -51,12 +52,26 @@
 volatile uint16_t adc1_buf[NUM_ADC_CHANNELS_TOTAL] = {0}; // Initialize ADC buffer
 VDS_Data_t vds_data = {0}; // Initialize VDS data structure
 
+uint32_t brake_steering_counter = 0;
+uint32_t shock_travel_counter = 0;
+uint32_t diagnostic_counter = 0;
+//Initialise global variables for the VDS data structure and ADC readings
+volatile int ADC1_DMA_in_process_flag = 0; //flag that indicates the DMA interrupt if ADC1 has been called and is in process
+volatile int ADC1_DMA_fault_flag = 0; //flag that indicates the DMA interrupt if ADC1 has been called and is at fault
+
+//keeping track of averages
+float sum[NUM_ADC_CHANNELS_USED] = {0.0};
+uint32_t counters[NUM_ADC_CHANNELS_USED] = {0};
+volatile VDS_ADC_AVERAGES adc_averages = {0};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void averageADCValues(int adc_half);
+void processCANMessages(void);
+void convertADCValue(void);
 
 /* USER CODE END PFP */
 
@@ -127,7 +142,10 @@ int main(void)
   MX_CAN2_Init();
   MX_ADC1_Init();
   MX_TIM3_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
+  HAL_CAN_Start(&hcan1);
+  HAL_CAN_Start(&hcan2);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, NUM_ADC_CHANNELS_TOTAL); // Start ADC1 in DMA mode
   HAL_TIM_Base_Start(&htim3);
 
@@ -137,6 +155,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  //Independent watchdog timer and
+	  HAL_IWDG_Refresh(&hiwdg);
+	  CAN_processMessages();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -157,10 +178,11 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.Prediv1Source = RCC_PREDIV1_SOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
@@ -185,7 +207,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV2;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -213,19 +235,26 @@ Notes on how to do conversion:
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
 {
   if (hadc == &hadc1){
-    // TODO: Process ADC1 readings
+    //Process ADC1 readings
     averageADCValues(0);
   }
+
+  brake_steering_counter++;
+  shock_travel_counter++;
+  diagnostic_counter++;
 }
 
 // Conversion full complete DMA interrupt callback for ADCs
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
   if (hadc == &hadc1){
-    // TODO: Process ADC1 readings
+    //This half is not in use for the VDS
     averageADCValues(1);
   }
-   
+
+  brake_steering_counter++;
+  shock_travel_counter++;
+  diagnostic_counter++;
 }
 
 void averageADCValues(int adc_half)
@@ -234,10 +263,8 @@ void averageADCValues(int adc_half)
   if (!ADC1_getBusyStatus())
   {
     ADC1_setBusyStatus(1);
-    static float result[NUM_ADC_CHANNELS_TOTAL]; //for use later if we need averaging
-
-    //results are saved to vds_data and can be used from there
-    ADC1_processRawReadings(adc_half, adc1_buf, result); //function to process values from ADC1
+    static float result[NUM_ADC_CHANNELS_TOTAL]; //stores averaged results
+    ADC1_processRawReadings(adc_half, adc1_buf, result); //function to process values from ADC1 and update vds struct
     ADC1_setBusyStatus(0);
   }
   else

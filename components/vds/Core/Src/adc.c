@@ -21,6 +21,8 @@
 #include "adc.h"
 
 /* USER CODE BEGIN 0 */
+#include <stdint.h>
+#include "common.h"
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
@@ -128,6 +130,11 @@ void MX_ADC1_Init(void)
   }
   /* USER CODE BEGIN ADC1_Init 2 */
 
+  if (HAL_ADCEx_Calibration_Start(&hadc1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
   /* USER CODE END ADC1_Init 2 */
 
 }
@@ -222,6 +229,32 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+// Helper function to calculate the average of non-zero elements in an array
+float getAveragedValue(volatile uint16_t array[], uint16_t length)
+{
+    uint32_t sum = 0;   // Sum of non-zero elements
+    uint16_t count = 0; // Count of non-zero elements
+
+    for (uint16_t i = 0; i < length; i++)
+    {
+        if (array[i] != 0)
+        {
+            sum += array[i];
+            count++;
+        }
+    }
+
+    // If there are no non-zero elements, return 0 to avoid division by zero
+    if (count == 0)
+    {
+        return 0.0f;
+    }
+
+    return (float)sum / count;
+}
+
+
 /**
  * @brief Converts the raw readings of ADC1 into ADC voltage readings and
  * averages these values at half of its buffer size per channel,
@@ -232,41 +265,73 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
  * @param half Integer (1 or 0) indicating if the averaging is from the first half (0)
  *             of its circular buffer or its second half (1).
  * @param adc1_buf Volatile uint16_t array that represents ADC1's DMA circular buffer.
- *                 Each time the ADC is read, the next 8 elements get populated
+ *                 Each time the ADC is read, the next 4 elements get populated
  *                 with the ADC readings for each channel in the following order:
  *                 ADC_brake_pressure_1, ADC_brake_pressure_2, ADC_brake_pressure_3,
  *                 ADC_shock_travel_1, ADC_shock_travel_2, ADC_shock_travel_3,
  *                 ADC_shock_travel_4, ADC_steering_angle.
  * @param result Float array of size 8, storing the averaged ADC voltage readings for
- *               each channel.
+ *               brake and steering angle.
  * @retval None.
  */
 void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float result[])
 {
-  // TODO: Implement this function to average/process ADC1 readings
-  if (!half)
-  {
-    // First half of buffer
-    vds_data.adc_data.ADC_brake_pressure_1 = adc1_buf[0];
-    vds_data.adc_data.ADC_brake_pressure_2 = adc1_buf[1];
-    vds_data.adc_data.ADC_brake_pressure_3 = adc1_buf[2];
-    vds_data.adc_data.ADC_shock_travel_1 = adc1_buf[3];
-  }
-  else
-  {
-    // Second half of buffer
-    vds_data.adc_data.ADC_shock_travel_2 = adc1_buf[4];
-    vds_data.adc_data.ADC_shock_travel_3 = adc1_buf[5];
-    vds_data.adc_data.ADC_shock_travel_4 = adc1_buf[6];
-    vds_data.adc_data.ADC_steering_angle = adc1_buf[7];
-  }
-}
+    if (half) {
+        return; // No elements to average in second half of buffer
+    }  
 
+    // Average the brake pressure and steering angle every 100 samples
+    if (adc_averages.counter.ADC_brake_pressure_1 < NUMBER_ADC_SAMPLES) {
+        adc_averages.previous_sum.ADC_brake_pressure_1 += adc1_buf[BP_1];
+        adc_averages.counter.ADC_brake_pressure_1++;
+    } 
+    if (adc_averages.counter.ADC_brake_pressure_1 >= NUMBER_ADC_SAMPLES) {
+        vds_data.adc_data.ADC_brake_pressure_1 = (uint16_t)(adc_averages.previous_sum.ADC_brake_pressure_1 / NUMBER_ADC_SAMPLES);
+        adc_averages.previous_sum.ADC_brake_pressure_1 = 0;
+        adc_averages.counter.ADC_brake_pressure_1 = 0;
+    }
+
+    if (adc_averages.counter.ADC_brake_pressure_2 < NUMBER_ADC_SAMPLES) {
+        adc_averages.previous_sum.ADC_brake_pressure_2 += adc1_buf[BP_2];
+        adc_averages.counter.ADC_brake_pressure_2++;
+    } 
+    if (adc_averages.counter.ADC_brake_pressure_2 >= NUMBER_ADC_SAMPLES) {
+        vds_data.adc_data.ADC_brake_pressure_2 = (uint16_t)(adc_averages.previous_sum.ADC_brake_pressure_2 / NUMBER_ADC_SAMPLES);
+        adc_averages.previous_sum.ADC_brake_pressure_2 = 0;
+        adc_averages.counter.ADC_brake_pressure_2 = 0;
+    }
+
+    if (adc_averages.counter.ADC_brake_pressure_3 < NUMBER_ADC_SAMPLES) {
+        adc_averages.previous_sum.ADC_brake_pressure_3 += adc1_buf[BP_3];
+        adc_averages.counter.ADC_brake_pressure_3++;
+    } 
+    if (adc_averages.counter.ADC_brake_pressure_3 >= NUMBER_ADC_SAMPLES) {
+        vds_data.adc_data.ADC_brake_pressure_3 = (uint16_t)(adc_averages.previous_sum.ADC_brake_pressure_3 / NUMBER_ADC_SAMPLES);
+        adc_averages.previous_sum.ADC_brake_pressure_3 = 0;
+        adc_averages.counter.ADC_brake_pressure_3 = 0;
+    }
+
+    if (adc_averages.counter.ADC_steering_angle < NUMBER_ADC_SAMPLES) {
+        adc_averages.previous_sum.ADC_steering_angle += adc1_buf[SA_1];
+        adc_averages.counter.ADC_steering_angle++;
+    } 
+    if (adc_averages.counter.ADC_steering_angle >= NUMBER_ADC_SAMPLES) {
+        vds_data.adc_data.ADC_steering_angle = (uint16_t)(adc_averages.previous_sum.ADC_steering_angle / NUMBER_ADC_SAMPLES);
+        adc_averages.previous_sum.ADC_steering_angle = 0;
+        adc_averages.counter.ADC_steering_angle = 0;
+    }
+
+    // Update the Shock Travel every 1ms
+    vds_data.adc_data.ADC_shock_travel_1 = adc1_buf[ST_1];
+    vds_data.adc_data.ADC_shock_travel_2 = adc1_buf[ST_2];
+    vds_data.adc_data.ADC_shock_travel_3 = adc1_buf[ST_3];
+    vds_data.adc_data.ADC_shock_travel_4 = adc1_buf[ST_4];
+}
 
 /**
  * @brief sets the Fault flag in the global variable ADC1_DMA_fault_flag
  * depending if ADC1 attempts to read values in the middle of a DMA interrupt callback process
- * 
+ *
  * @param flag_value integer value: 1 is at fault, 0 is not at fault
  * @retval sets ADC1_DMA_fault_flag with flag_value
  */
@@ -278,21 +343,20 @@ void ADC1_setFaultStatus(int flag_value)
 /**
  * @brief Retrieves the fault status of ADC1, stored in global variable
  * ADC1_DMA_fault_flag
- * 
+ *
  * @param -
  * @retval returns the global variable ADC1_DMA_fault_flag (int datatype).
  *         1 means at fault; 0 means not at fault
  */
-int ADC1_getFaultStatus() 
+int ADC1_getFaultStatus()
 {
   return ADC1_DMA_fault_flag;
 }
 
-
 /**
  * @brief sets the busy flag in the global variable ADC1_DMA_in_process_flag
  * depending if ADC1 attempts to read values in the middle of a DMA interrupt callback process
- * 
+ *
  * @param flag_value integer value: 1 is busy, 0 is not at busy
  * @retval sets ADC1_DMA_in_process_flag with flag_value
  */
@@ -304,12 +368,12 @@ void ADC1_setBusyStatus(int flag_value)
 /**
  * @brief Retrieves the busy status of ADC1, stored in global variable
  * ADC1_DMA_in_process_flag
- * 
+ *
  * @param -
  * @retval returns the global variable ADC1_DMA_in_process_flag (int datatype).
  *         1 means at busy; 0 means not at busy
  */
-int ADC1_getBusyStatus() 
+int ADC1_getBusyStatus()
 {
   return ADC1_DMA_in_process_flag;
 }
