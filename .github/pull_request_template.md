@@ -22,15 +22,17 @@
 - [ ] Vehicle testing
 - [ ] Bench top testing
 - [ ] Unit testing
-- [ ] Trust me bro
+- [ ] Other
+- [ ] N/A
 
 <!-- Describe your testing steps here -->
 
 ## Sanity check
-<!-- Verify these steps (check even if not applicable) -->
-- [ ] CAN ID table updated
-- [ ] IOC up to date and commited
-- [ ] gitignore updated
+<!-- Check box if all steps complete (check even if not applicable) -->
+- CAN ID table updated
+- IOC updated and commited
+- gitignore updated and commited
+- [ ] Steps confirmed
 
 ## Sources
 <!-- Added any links to articles or videos used -->
