@@ -23,6 +23,19 @@
 /* USER CODE BEGIN 0 */
 
 /**
+ * 	CAN message header for a the did_heartbeat
+ */
+// TODO: These should all probably be const
+CAN_TxHeaderTypeDef did_heartbeat_header = {
+    .StdId = DID_HEARTBEAT_ADDRESS,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = DID_HEARTBEAT_DATA_LENGTH};
+
+uint32_t can_mailbox;
+
+/**
  * @brief Initialize CAN node for sending and receiving
  * @param: CAN filter structure
  * @retval: nothing

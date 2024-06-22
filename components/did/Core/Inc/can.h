@@ -33,8 +33,12 @@ extern "C" {
 /* USER CODE END Includes */
 
 extern CAN_HandleTypeDef hcan;
-
+extern CAN_TxHeaderTypeDef did_heartbeat_header;
+extern uint32_t can_mailbox;
 /* USER CODE BEGIN Private defines */
+
+#define DID_HEARTBEAT_ADDRESS 0x580
+#define DID_HEARTBEAT_DATA_LENGTH 2
 
 /* USER CODE END Private defines */
 

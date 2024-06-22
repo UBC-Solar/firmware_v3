@@ -5,6 +5,7 @@
 #include "DID.h"
 #include "LCD.h"
 #include "math.h"
+#include "can.h"
 
 #define GETBIT(var, bit)	(((var) >> (bit)) & 1) // gives bit position 
 
@@ -463,3 +464,25 @@ void DID_timeout()
         lastPageTime = HAL_GetTick();
 	}
 }
+
+void send_did_heartbeat()
+{
+	static uint32_t last_update_time = 0;
+	static uint16_t heartbeat_counter = 0;
+
+	// Only send heartbeat every DID_HEARTBEAT_CYCLETIME ms
+	if( last_update_time + DID_HEARTBEAT_CYCLETIME > HAL_GetTick() )
+		return;
+	last_update_time = HAL_GetTick();
+	
+	// Increment heartbeat counter
+	heartbeat_counter++;
+
+	// package heartbeat_counter into the 2 bytes transmit over CAN
+	uint8_t data_send[2];
+	data_send[0] = heartbeat_counter & 0xFF;
+	data_send[1] = (heartbeat_counter >> 8) & 0xFF;
+	HAL_CAN_AddTxMessage(&hcan, &did_heartbeat_header, data_send, &can_mailbox);
+}
+
+

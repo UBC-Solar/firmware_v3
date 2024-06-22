@@ -22,6 +22,8 @@
 
 #define CAN_ID_SIMULATION_SPEED 0x750
 
+#define CAN_ID_HEARTBEAT 		0x580
+
 /*
  *	Cycle times (ms)
  */
@@ -60,6 +62,7 @@
 
 #define DID_REFRESH_DELAY		100	    // How often the DID will refresh the screen (ms)
 #define DID_PAGE_TIMEOUT        10000   // Time in ms until the DID changes back to the main page when on another page
+#define DID_HEARTBEAT_CYCLETIME 1000    // Time in ms between DID heartbeats
 
 #define NUM_PAGES 4
 #define PAGE_0 0
@@ -97,3 +100,4 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID );
 void update_DID_screen();
 void parse_warnings(uint8_t* CAN_rx_data);
 void DID_timeout();
+void send_did_heartbeat();
