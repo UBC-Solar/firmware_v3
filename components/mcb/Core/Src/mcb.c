@@ -193,7 +193,8 @@ void TransitionREVERSEstate(InputFlags input_flags, DriveState * state)
 
 MotorCommand DoStatePARK()
 {
-	return GetMotorCommand(1.0, 0.0);
+	// return GetMotorCommand(1.0, 0.0);		// REGEN
+	return GetMotorCommand(0.0, 0.0);		// COASTING
 }
 
 void TransitionPARKstate(InputFlags input_flags, DriveState * state)
