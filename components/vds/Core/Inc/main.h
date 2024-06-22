@@ -85,6 +85,11 @@ void Error_Handler(void);
 /*Number of ADC Channels Total */
 #define NUM_ADC_CHANNELS_TOTAL 16
 
+/* Buffer length configuration */
+#define ADC1_NUM_ANALOG_CHANNELS 8
+#define ADC1_BUF_LENGTH_PER_CHANNEL 100
+#define ADC1_BUF_LENGTH (ADC1_BUF_LENGTH_PER_CHANNEL * ADC1_NUM_ANALOG_CHANNELS)
+
 /* Sensor ADC Channel Assignments (0-7 IN USE)*/
 #define BP_1 0
 #define BP_2 1
