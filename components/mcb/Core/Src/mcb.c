@@ -47,11 +47,13 @@ void drive_state_machine_handler()
 			TransitionPARKstate(input_flags, &state);
 		break;
 
-		case CRUISE:
-			motorCommand = DoStateCRUISE(input_flags);
-			TransitionCRUISEstate(input_flags, &state);
-		break;
+		// TODO: Cruise disabled
+		// case CRUISE:
+		// 	motorCommand = DoStateCRUISE(input_flags);
+		// 	TransitionCRUISEstate(input_flags, &state);
+		// break;
 
+		// Invalid state, send 0.0 throttle and 0.0
 		default:
 			motorCommand = GetMotorCommand(0.0, 0.0);
 	}
@@ -106,7 +108,6 @@ void send_mcb_diagnostics()
  */
 void send_mcb_githash()
 {
-	//HAL_Delay(10);
 	uint8_t data_send[CAN_DATA_LENGTH];
 	strncpy((char*)data_send, GITHASH, CAN_DATA_LENGTH);
 	HAL_CAN_AddTxMessage(&hcan, &mcb_githash, data_send, &can_mailbox);
@@ -117,33 +118,17 @@ MotorCommand DoStateDRIVE( InputFlags input_flags )
 {
 	// Check if mech brake is pressed
 	if ( input_flags.mech_brake_pressed )
-		return GetMotorCommand(0.0, 0.0);
+		return GetMotorCommand(0.0, VELOCITY_REGEN_DISABLED);
 
 	// Check if regen is enabled
-	if (input_flags.regen_enabled && !input_flags.battery_regen_disabled) // regen switch on and battery isn't requesting regen to be turned off
+	if (input_flags.regen_enabled) // regen switch on and battery isn't requesting regen to be turned off
 	{
-		if( g_throttle == 0.0 ) // if throttle 
-			return GetMotorCommand(g_throttle, 0.0);
-		if( g_throttle > 0.0 )
-			return GetMotorCommand(g_throttle, 100.0);
+		return GetMotorCommand(g_throttle, VELOCITY_FORWARD);
 	}
-
-	// Regen disabled
-	#ifdef MITSUBA
-		if( g_throttle == 0.0 )
-			return GetMotorCommand(g_throttle, 0.0);
-		if( g_throttle < P1 )
-			return GetMotorCommand(P1, 100.0);
-		if( g_throttle > P1)
-			return GetMotorCommand(g_throttle, 100.0);
-	#endif
-	#ifdef TRITIUM
-		if( g_throttle == 0.0 )
-			return GetMotorCommand( 0.0, 100.0 );
-		if( g_throttle > 0.0 )
-			return GetMotorCommand( g_throttle, 100.0 );
-	#endif
-
+	else // Regen disable
+	{
+		return GetMotorCommand(g_throttle, VELOCITY_REGEN_DISABLED);
+	}
 }
 
 void TransitionDRIVEstate( InputFlags input_flags, DriveState * state)
@@ -161,25 +146,10 @@ MotorCommand DoStateREVERSE(InputFlags input_flags)
 {
 	// Check if mech brake is pressed
 	if ( input_flags.mech_brake_pressed )
-		return GetMotorCommand(0.0, 0.0);
+		return GetMotorCommand(0.0, VELOCITY_REGEN_DISABLED);
 
-	// Regen disabled
-	#ifdef MITSUBA
-		if( g_throttle == 0.0 )
-			return GetMotorCommand(g_throttle, 0.0);
-		if( g_throttle < P1 )
-			return GetMotorCommand(P1, -100.0);
-		if( g_throttle > P1)
-			return GetMotorCommand(g_throttle, -100.0);
-	#endif
-	#ifdef TRITIUM
-		if( g_throttle == 0.0 )
-			return GetMotorCommand( 0.0, -100.0 );
-		if( g_throttle > 0.0 )
-			return GetMotorCommand( g_throttle, -100.0 );
-	#endif
-
-	return GetMotorCommand(0.0,0.0);
+	// Regen disabled in reverse on MDI, dont need to check input_flags.regen_enabled
+	return GetMotorCommand(g_throttle, VELOCITY_REVERSE);
 }
 
 void TransitionREVERSEstate(InputFlags input_flags, DriveState * state)
@@ -192,8 +162,7 @@ void TransitionREVERSEstate(InputFlags input_flags, DriveState * state)
 
 MotorCommand DoStatePARK()
 {
-	// return GetMotorCommand(1.0, 0.0);		// REGEN
-	return GetMotorCommand(0.0, 0.0);		// COASTING
+	return GetMotorCommand(0.0, VELOCITY_REGEN_DISABLED);		// COASTING
 }
 
 void TransitionPARKstate(InputFlags input_flags, DriveState * state)
@@ -221,7 +190,7 @@ void TransitionCRUISEstate(InputFlags input_flags, DriveState * state)
 void UpdateInputFlags(InputFlags * input_flags)
 {
 	input_flags->mech_brake_pressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
-	input_flags->regen_enabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+	input_flags->regen_enabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin) && !input_flags->battery_regen_disabled;
 	input_flags->velocity_under_threshold = velocityOfCar < VELOCITY_THRESHOLD;
 	GetSwitchState(input_flags);
 }
@@ -356,6 +325,7 @@ void GetSwitchState(InputFlags * input_flags)
 {
 	if( !HAL_GPIO_ReadPin(SWITCH_IN1_GPIO_Port, SWITCH_IN1_Pin) && !HAL_GPIO_ReadPin(SWITCH_IN2_GPIO_Port, SWITCH_IN2_Pin) )
 	{
+		// Todo: Change to enum instead of a bool for each one
 		input_flags->switch_pos_drive = false;
 		input_flags->switch_pos_reverse = true;
 		input_flags->switch_pos_park = false;

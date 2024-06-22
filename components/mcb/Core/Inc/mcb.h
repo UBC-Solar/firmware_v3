@@ -20,8 +20,6 @@
 
 #define CAN_DATA_LENGTH 8			  // Length of a CAN message in bytes
 
-#define P1 0						  // TODO find proper value for this
-
 #define DELAY_MCB_STATE_MACHINE 50	  // Main mcb state machine delay time in ms
 
 #define DELAY_GET_CAN_MESSAGES 10	  // Delay for getting CAN messages task
@@ -37,6 +35,11 @@
 #define CRUISE_MAX 30 				  // Max cruise speed in m/s
 #define CRUISE_MIN 5 				  // Min cruise speed	in m/s
 #define CRUISE_THROTTLE 0.3            // Base line throttle in cruise control (0-1)
+
+// TODO: refactor
+#define VELOCITY_FORWARD 100.0
+#define VELOCITY_REVERSE -100.0
+#define VELOCITY_REGEN_DISABLED 0.0
 
 /**
  * Zones of Operation:
