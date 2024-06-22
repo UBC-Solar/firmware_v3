@@ -49,7 +49,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-volatile uint16_t adc1_buf[NUM_ADC_CHANNELS_TOTAL] = {0}; // Initialize ADC buffer
+volatile uint16_t adc1_buf[ADC1_BUF_LENGTH] = {0}; // Initialize ADC buffer
 VDS_Data_t vds_data = {0}; // Initialize VDS data structure
 
 uint32_t brake_steering_counter = 0;
@@ -146,7 +146,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_CAN_Start(&hcan1);
   HAL_CAN_Start(&hcan2);
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, NUM_ADC_CHANNELS_TOTAL); // Start ADC1 in DMA mode
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, ADC1_BUF_LENGTH); // Start ADC1 in DMA mode
   HAL_TIM_Base_Start(&htim3);
 
   /* USER CODE END 2 */
