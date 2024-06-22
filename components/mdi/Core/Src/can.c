@@ -43,7 +43,7 @@ void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg)
 
 	if (CAN_msg->velocity == 0){
 		//enter regen operation mode
-		CAN_msg->regen = REGEN_TRUE;
+		CAN_msg->regen = REGEN_FALSE;
 		CAN_msg->FWD_direction = FORWARD_TRUE; //NOTE: does this need forward or reverse when in regen?
 	}
 	else if(CAN_msg->velocity == -100){
@@ -54,7 +54,7 @@ void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg)
 	else if((CAN_msg->velocity == 100)){
 		//Forward operation mode
 		CAN_msg->FWD_direction = FORWARD_TRUE;
-		CAN_msg->regen = REGEN_FALSE;
+		CAN_msg->regen = REGEN_TRUE;
 	}
 	else if(CAN_msg ->cruise_control_enable == TRUE){
 		//enter cruise control
@@ -66,10 +66,9 @@ void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg)
 		CAN_msg->regen = REGEN_FALSE;
 		CAN_msg ->acceleration = 0;
 	}
-
-
+	
 	//set power mode. It should always be in PWR mode
-	CAN_msg->PWR_mode_on = POWER_MODE_ON;
+	CAN_msg->PWR_mode_on = ECO_MODE_ON;
 	return;
 } //end of decode_CAN_velocity_msg
 
