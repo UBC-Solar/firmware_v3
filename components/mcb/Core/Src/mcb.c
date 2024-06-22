@@ -315,6 +315,7 @@ void SendCANMotorCommand(MotorCommand motorCommand)
  */
 float normalize_adc_value(uint16_t value)
 {
+	// TODO: Use a case statement + clean up
 	if (value <= ADC_LOWER_DEADZONE || value > ADC_MAX_FOR_FULL_THROTTLE) {					// Shorted to ground or beyond pedal compression
 		input_flags.throttle_ADC_out_of_range = true;
 		return 0.0;
@@ -325,7 +326,7 @@ float normalize_adc_value(uint16_t value)
 	} else if (value >= ADC_MIN_FOR_FULL_THROTTLE && value <= ADC_MAX_FOR_FULL_THROTTLE) {	// Pedal compressed between brake cable to 1 inch past cable
 		input_flags.throttle_ADC_out_of_range = false;
 		return 1.0;
-	} else {																				// Default should NEVER go here
+	} else {																				// Default If pedal is not pressed
 		input_flags.throttle_ADC_out_of_range = false;
 		return 0.0;
 	}
