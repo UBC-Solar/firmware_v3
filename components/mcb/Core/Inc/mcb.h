@@ -42,19 +42,19 @@
  * Zones of Operation:
  * 1. No foot on throttle/not moved from rest
  * 	  	In this Zone the ADC values were between 1150 to 1250. We dont want any motor spinnning
- * 		Thus, ADC_FOR_NO_SPIN = 1300. normalized adc value = 0
+ * 		Thus, ADC_FOR_NO_SPIN is defined below. normalized adc value = 0
  * 2. Foot on throttle
- * 		This zone is > 1300 up to 1830. Based on experiment we found that putting the pedal so that its tip intersects 
- * 		with the brake cable give us a highest ADC value of 1830. Thus, ADC_MIN_FOR_FULL_THROTTLE = 1830.
+ * 		This zone is > ADC_FOR_NO_SPIN up to ADC_MIN_FOR_FULL_THROTTLE. Based on experiment we found that putting the pedal so that its tip intersects 
+ * 		with the brake cable give us a highest ADC value of 1830. Thus, ADC_MIN_FOR_FULL_THROTTLE is defined below
  * 		normalized adc value scales linearly from 0 to 1.
  * 3. Full Throttle:
- * 		This zone is > 1830 up to 2000. This is at 1 inch past the intersection of the brake cable. 
- * 		Experiment shows 1 inch past brake cable is 1930 to 1966. Thus, ADC_MAX_FOR_FULL_THROTTLE = 2000
+ * 		This zone is > ADC_MIN_FOR_FULL_THROTTLE up to ADC_MAX_FOR_FULL_THROTTLE. This is at 1 inch past the intersection of the brake cable. 
+ * 		Experiment shows 1 inch past brake cable is 1930 to 1966. Thus, ADC_MAX_FOR_FULL_THROTTLE is defined below
  * 		normalized adc value = 1.0
  * 4. Out of Range:
- * 		To protect against shorts, we will consider any value above 2000 as out of range. 
+ * 		To protect against shorts, we will consider any value above ADC_MAX_FOR_FULL_THROTTLE as out of range. 
  * 		This means normalized adc values = 0.
- * Note: ADC_LOWER_DEADZONE is set to 900 because nothing lower than that has been seen. This is to protect against short to GND.
+ * Note: ADC_LOWER_DEADZONE is defined based on an ADC reading that is lower than anything we have seen. This is to protect against short to GND.
  */
 #define ADC_LOWER_DEADZONE            900
 #define ADC_FOR_NO_SPIN               1300    

@@ -129,7 +129,6 @@ MotorCommand DoStateDRIVE( InputFlags input_flags )
 	}
 
 	// Regen disabled
-	return GetMotorCommand(0.0,0.0);
 	#ifdef MITSUBA
 		if( g_throttle == 0.0 )
 			return GetMotorCommand(g_throttle, 0.0);
