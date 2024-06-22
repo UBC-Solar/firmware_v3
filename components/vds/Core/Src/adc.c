@@ -46,7 +46,7 @@ void MX_ADC1_Init(void)
   */
   hadc1.Instance = ADC1;
   hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
@@ -265,7 +265,7 @@ float getAveragedValue(volatile uint16_t array[], uint16_t length)
  * @param half Integer (1 or 0) indicating if the averaging is from the first half (0)
  *             of its circular buffer or its second half (1).
  * @param adc1_buf Volatile uint16_t array that represents ADC1's DMA circular buffer.
- *                 Each time the ADC is read, the next 4 elements get populated
+ *                 Each time the ADC is read, the next 8 elements get populated
  *                 with the ADC readings for each channel in the following order:
  *                 ADC_brake_pressure_1, ADC_brake_pressure_2, ADC_brake_pressure_3,
  *                 ADC_shock_travel_1, ADC_shock_travel_2, ADC_shock_travel_3,
@@ -276,7 +276,7 @@ float getAveragedValue(volatile uint16_t array[], uint16_t length)
  */
 void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float result[])
 {
-    int start_index = half * (HALF_BUF_SIZE); // Start of the selected half buffer
+    int start_index = half * (ADC1_BUF_LENGTH >> 1); // Start of the selected half buffer
     
     if (!half) {
         // Update the Shared VDS struct with values from the first half of the buffer

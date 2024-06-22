@@ -13,12 +13,11 @@
 #include <stdbool.h>
 
 #include "main.h"
-
-//Define the number of ADC samples to be taken
-#define NUMBER_ADC_SAMPLES  1024
+#include "adc.h"
 
 /*============================================================================*/
 /* STRUCTURES */
+#define NUMBER_ADC_SAMPLES 100
 
 // Type definition for the ADC sensor averages
 typedef struct

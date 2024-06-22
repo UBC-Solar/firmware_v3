@@ -30,6 +30,7 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 #include "common.h"
+#include "adc.h"
 /* USER CODE END Includes */
 
 extern CAN_HandleTypeDef hcan1;
