@@ -27,9 +27,12 @@ void drive_state_machine_handler()
 {
 	UpdateInputFlags(&input_flags);
 
-	uint16_t g_throttle_ADC = ReadADC(&hadc1);
+	g_throttle_ADC = ReadADC(&hadc1);
+//	printf("g_throttle_ADC raw: %d\r\n", g_throttle_ADC);
 
 	g_throttle = normalize_adc_value(g_throttle_ADC);
+//	printf("g_throttle_ADC normal: %d\r\n", g_throttle_ADC);
+//	printf("STATE: %d\r\n", state);
 
 	switch(state)
 	{
@@ -57,8 +60,28 @@ void drive_state_machine_handler()
 			motorCommand = GetMotorCommand(0.0, 0.0);
 	}
 
+//	printf("Throttle: %f, Velocity: %f, STATE: %d\r\n", motorCommand.throttle, motorCommand.velocity, state);
 	SendCANMotorCommand(motorCommand);
 }
+
+
+/**
+ * Zones of Operation:
+ * 1. No foot on throttle/not moved from rest
+ * 	  	In this Zone the ADC values were between 1150 to 1250. We dont want any motor spinnning
+ * 		Thus, ADC_FOR_NO_SPIN = 1300. normalized adc value = 0
+ * 2. Foot on throttle
+ * 		This zone is > 1300 up to 1830. Based on experiment we found that putting the pedal so that its tip intersects 
+ * 		with the brake cable give us a highest ADC value of 1830. Thus, ADC_MIN_FOR_FULL_THROTTLE = 1830.
+ * 		normalized adc value scales linearly from 0 to 1.
+ * 3. Full Throttle:
+ * 		This zone is > 1830 up to 2000. This is at 1 inch past the intersection of the brake cable. 
+ * 		Experiment shows 1 inch past brake cable is 1930 to 1966. Thus, ADC_MAX_FOR_FULL_THROTTLE = 2000
+ * 		normalized adc value = 1.0
+ * 4. Out of Range:
+ * 		To protect against shorts, we will consider any value above 2000 as out of range. 
+ * 		This means normalized adc values = 0.
+ */
 
 /*
  * Sends MCB diagnostics over CAN
@@ -73,6 +96,7 @@ void send_mcb_diagnostics()
 
 	data_send[0] = g_throttle_ADC & 0xFF;
 	data_send[1] = (g_throttle_ADC >> 8) & 0xFF;
+
 
 	if (input_flags.throttle_ADC_out_of_range == true)	
 	{
