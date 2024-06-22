@@ -185,9 +185,9 @@ MotorCommand DoStateREVERSE(InputFlags input_flags)
 
 void TransitionREVERSEstate(InputFlags input_flags, DriveState * state)
 {
-	if ( input_flags.switch_pos_drive && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+	if ( input_flags.switch_pos_drive && input_flags.velocity_under_threshold )
 		*state = DRIVE;
-	else if ( input_flags.switch_pos_park && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+	else if ( input_flags.switch_pos_park && input_flags.velocity_under_threshold )
 		*state = PARK;
 }
 
