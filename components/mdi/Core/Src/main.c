@@ -221,13 +221,13 @@ int main(void)
     	else
     		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
 
-    	 //SEND POWER/ECO
-    	 //According to data sheet: OPEN Switch = ECO_MODE / CLOSED Switch = POWER MODE
-    	 //GPIO Must Be Open Drain
-    	 if(msg0.PWR_mode_on == POWER_MODE_ON)
-    		 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
-    	 else
-    		 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+      //SEND POWER/ECO
+      //According to data sheet: OPEN Switch = ECO_MODE / CLOSED Switch = POWER MODE
+      //GPIO Must Be Open Drain
+      if(msg0.PWR_mode_on == POWER_MODE_ON)
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+      else
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
 
       //SEND ACCELERATION
       Send_Voltage(msg0.acceleration, DAC_ACC_ADDR, &hi2c2);
