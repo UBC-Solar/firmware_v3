@@ -73,8 +73,6 @@ Doxyfile-firmwarev3
 *.cyclo
 
 # Build Folders
-Mitsuba - Release/
-Mitsuba - Debug/
-Tritium - Release/
-Tritium - Debug/
+Release/
+Debug/
 Drivers/

@@ -133,12 +133,10 @@ MotorCommand DoStateDRIVE( InputFlags input_flags )
 
 void TransitionDRIVEstate( InputFlags input_flags, DriveState * state)
 {
-	if( input_flags.switch_pos_reverse && input_flags.velocity_under_threshold )
+	if( input_flags.switch_pos_reverse && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 		*state = REVERSE;
-	else if( input_flags.switch_pos_park && input_flags.velocity_under_threshold )
+	else if( input_flags.switch_pos_park && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 		*state = PARK;
-	else if( input_flags.cruise_enabled )
-		*state = CRUISE;
 }
 
 
@@ -154,9 +152,9 @@ MotorCommand DoStateREVERSE(InputFlags input_flags)
 
 void TransitionREVERSEstate(InputFlags input_flags, DriveState * state)
 {
-	if ( input_flags.switch_pos_drive && input_flags.velocity_under_threshold )
+	if ( input_flags.switch_pos_drive && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 		*state = DRIVE;
-	else if ( input_flags.switch_pos_park && input_flags.velocity_under_threshold )
+	else if ( input_flags.switch_pos_park && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 		*state = PARK;
 }
 
@@ -167,17 +165,17 @@ MotorCommand DoStatePARK()
 
 void TransitionPARKstate(InputFlags input_flags, DriveState * state)
 {
-	if ( input_flags.switch_pos_drive && input_flags.velocity_under_threshold )
+	if ( input_flags.switch_pos_drive && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed )
 		*state = DRIVE;
-	else if ( input_flags.switch_pos_reverse && input_flags.velocity_under_threshold )
+	else if ( input_flags.switch_pos_reverse && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 		*state = REVERSE;
 }
 
+// TODO: Cruise not implimented
 MotorCommand DoStateCRUISE()
 {
 	return GetMotorCommand(CRUISE_THROTTLE, cruiseVelocity);
 }
-
 void TransitionCRUISEstate(InputFlags input_flags, DriveState * state)
 {
 	if ( input_flags.mech_brake_pressed || !input_flags.cruise_enabled )

@@ -104,6 +104,10 @@ int main(void)
   CanFilterSetup();
   HAL_CAN_Start(&hcan);
   HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+
+  // Set up the PWM for the lights
+  TIM2->CCR2 = 5000;
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
   /* USER CODE END 2 */
 
   /* Init scheduler */
