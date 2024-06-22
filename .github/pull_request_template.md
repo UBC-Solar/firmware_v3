@@ -31,3 +31,6 @@
 - [ ] CAN ID table updated
 - [ ] IOC up to date and commited
 - [ ] gitignore updated
+
+## Sources
+<!-- Added any links to articles or videos used -->
