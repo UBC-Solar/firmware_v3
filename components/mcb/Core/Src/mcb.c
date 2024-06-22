@@ -129,6 +129,7 @@ MotorCommand DoStateDRIVE( InputFlags input_flags )
 	}
 
 	// Regen disabled
+	return GetMotorCommand(0.0,0.0);
 	#ifdef MITSUBA
 		if( g_throttle == 0.0 )
 			return GetMotorCommand(g_throttle, 0.0);
@@ -144,7 +145,6 @@ MotorCommand DoStateDRIVE( InputFlags input_flags )
 			return GetMotorCommand( g_throttle, 100.0 );
 	#endif
 
-	return GetMotorCommand(0.0,0.0);
 }
 
 void TransitionDRIVEstate( InputFlags input_flags, DriveState * state)
@@ -198,9 +198,9 @@ MotorCommand DoStatePARK()
 
 void TransitionPARKstate(InputFlags input_flags, DriveState * state)
 {
-	if ( input_flags.switch_pos_drive && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+	if ( input_flags.switch_pos_drive && input_flags.velocity_under_threshold )
 		*state = DRIVE;
-	else if ( input_flags.switch_pos_reverse && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+	else if ( input_flags.switch_pos_reverse && input_flags.velocity_under_threshold )
 		*state = REVERSE;
 }
 
