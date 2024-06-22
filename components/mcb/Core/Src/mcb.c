@@ -28,11 +28,7 @@ void drive_state_machine_handler()
 	UpdateInputFlags(&input_flags);
 
 	g_throttle_ADC = ReadADC(&hadc1);
-//	printf("g_throttle_ADC raw: %d\r\n", g_throttle_ADC);
-
 	g_throttle = normalize_adc_value(g_throttle_ADC);
-//	printf("g_throttle_ADC normal: %d\r\n", g_throttle_ADC);
-//	printf("STATE: %d\r\n", state);
 
 	switch(state)
 	{
@@ -60,28 +56,10 @@ void drive_state_machine_handler()
 			motorCommand = GetMotorCommand(0.0, 0.0);
 	}
 
-//	printf("Throttle: %f, Velocity: %f, STATE: %d\r\n", motorCommand.throttle, motorCommand.velocity, state);
 	SendCANMotorCommand(motorCommand);
 }
 
 
-/**
- * Zones of Operation:
- * 1. No foot on throttle/not moved from rest
- * 	  	In this Zone the ADC values were between 1150 to 1250. We dont want any motor spinnning
- * 		Thus, ADC_FOR_NO_SPIN = 1300. normalized adc value = 0
- * 2. Foot on throttle
- * 		This zone is > 1300 up to 1830. Based on experiment we found that putting the pedal so that its tip intersects 
- * 		with the brake cable give us a highest ADC value of 1830. Thus, ADC_MIN_FOR_FULL_THROTTLE = 1830.
- * 		normalized adc value scales linearly from 0 to 1.
- * 3. Full Throttle:
- * 		This zone is > 1830 up to 2000. This is at 1 inch past the intersection of the brake cable. 
- * 		Experiment shows 1 inch past brake cable is 1930 to 1966. Thus, ADC_MAX_FOR_FULL_THROTTLE = 2000
- * 		normalized adc value = 1.0
- * 4. Out of Range:
- * 		To protect against shorts, we will consider any value above 2000 as out of range. 
- * 		This means normalized adc values = 0.
- */
 
 /*
  * Sends MCB diagnostics over CAN
@@ -351,15 +329,20 @@ void SendCANMotorCommand(MotorCommand motorCommand)
  */
 float normalize_adc_value(uint16_t value)
 {
-	if(value > ADC_MAX || value < ADC_MIN)
-	{
+	if (value <= ADC_LOWER_DEADZONE || value > ADC_MAX_FOR_FULL_THROTTLE) {					// Shorted to ground or beyond pedal compression
 		input_flags.throttle_ADC_out_of_range = true;
 		return 0.0;
+	} else if (value > ADC_FOR_NO_SPIN && value < ADC_MIN_FOR_FULL_THROTTLE) {				// Pedal compressed between initial and at brake cable
+		input_flags.throttle_ADC_out_of_range = false;
+		float normalized_value = (float)((float)(value - ADC_FOR_NO_SPIN) / (float)(ADC_MIN_FOR_FULL_THROTTLE - ADC_FOR_NO_SPIN));
+		return normalized_value;
+	} else if (value >= ADC_MIN_FOR_FULL_THROTTLE && value <= ADC_MAX_FOR_FULL_THROTTLE) {	// Pedal compressed between brake cable to 1 inch past cable
+		input_flags.throttle_ADC_out_of_range = false;
+		return 1.0;
+	} else {																				// Default should NEVER go here
+		input_flags.throttle_ADC_out_of_range = false;
+		return 0.0;
 	}
-	float normalized_value = (float)((float)(value - ADC_MIN) / (float)(ADC_MAX - ADC_MIN));
-	input_flags.throttle_ADC_out_of_range = false;
-
-	return normalized_value;
 }
 
 /*

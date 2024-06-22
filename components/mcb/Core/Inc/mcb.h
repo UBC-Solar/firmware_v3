@@ -20,7 +20,7 @@
 
 #define CAN_DATA_LENGTH 8			  // Length of a CAN message in bytes
 
-#define P1 0.3						  // TODO find proper value for this
+#define P1 0						  // TODO find proper value for this
 
 #define DELAY_MCB_STATE_MACHINE 50	  // Main mcb state machine delay time in ms
 
@@ -41,6 +41,30 @@
 #define BATTERY_SOC_THRESHOLD 90	  // Max battery state of charge for regenerative braking to be enabled.
 #define BATTERY_SOC_FULL 100		  // Full battery
 #define BATTERY_SOC_EMPTY 0			  // Empty battery
+
+
+/**
+ * Zones of Operation:
+ * 1. No foot on throttle/not moved from rest
+ * 	  	In this Zone the ADC values were between 1150 to 1250. We dont want any motor spinnning
+ * 		Thus, ADC_FOR_NO_SPIN = 1300. normalized adc value = 0
+ * 2. Foot on throttle
+ * 		This zone is > 1300 up to 1830. Based on experiment we found that putting the pedal so that its tip intersects 
+ * 		with the brake cable give us a highest ADC value of 1830. Thus, ADC_MIN_FOR_FULL_THROTTLE = 1830.
+ * 		normalized adc value scales linearly from 0 to 1.
+ * 3. Full Throttle:
+ * 		This zone is > 1830 up to 2000. This is at 1 inch past the intersection of the brake cable. 
+ * 		Experiment shows 1 inch past brake cable is 1930 to 1966. Thus, ADC_MAX_FOR_FULL_THROTTLE = 2000
+ * 		normalized adc value = 1.0
+ * 4. Out of Range:
+ * 		To protect against shorts, we will consider any value above 2000 as out of range. 
+ * 		This means normalized adc values = 0.
+ * Note: ADC_LOWER_DEADZONE is set to 900 because nothing lower than that has been seen. This is to protect against short to GND.
+ */
+#define ADC_LOWER_DEADZONE            900
+#define ADC_FOR_NO_SPIN               1300    
+#define ADC_MIN_FOR_FULL_THROTTLE     1830
+#define ADC_MAX_FOR_FULL_THROTTLE     2000
 
 
 #define SETBIT(x, bitpos) (x |= (1 << bitpos))
