@@ -38,11 +38,6 @@
 #define CRUISE_MIN 5 				  // Min cruise speed	in m/s
 #define CRUISE_THROTTLE 0.3            // Base line throttle in cruise control (0-1)
 
-#define BATTERY_SOC_THRESHOLD 90	  // Max battery state of charge for regenerative braking to be enabled.
-#define BATTERY_SOC_FULL 100		  // Full battery
-#define BATTERY_SOC_EMPTY 0			  // Empty battery
-
-
 /**
  * Zones of Operation:
  * 1. No foot on throttle/not moved from rest
@@ -94,8 +89,7 @@ typedef struct InputFlags {
   volatile bool cruise_enabled;
   volatile bool mech_brake_pressed;
   volatile bool regen_enabled;
-  volatile bool battery_SOC_under_threshold;
-  volatile bool battery_temp_under_threshold;
+  volatile bool battery_regen_disabled;
   volatile bool velocity_under_threshold;
   volatile bool switch_pos_drive;
   volatile bool switch_pos_reverse;

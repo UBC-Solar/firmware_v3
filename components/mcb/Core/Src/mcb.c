@@ -120,9 +120,9 @@ MotorCommand DoStateDRIVE( InputFlags input_flags )
 		return GetMotorCommand(0.0, 0.0);
 
 	// Check if regen is enabled
-	if ( input_flags.regen_enabled && input_flags.battery_SOC_under_threshold && input_flags.battery_temp_under_threshold )
+	if (input_flags.regen_enabled && !input_flags.battery_regen_disabled) // regen switch on and battery isn't requesting regen to be turned off
 	{
-		if( g_throttle == 0.0 )
+		if( g_throttle == 0.0 ) // if throttle 
 			return GetMotorCommand(g_throttle, 0.0);
 		if( g_throttle > 0.0 )
 			return GetMotorCommand(g_throttle, 100.0);
@@ -226,16 +226,6 @@ void UpdateInputFlags(InputFlags * input_flags)
 	GetSwitchState(input_flags);
 }
 
-
-/*
- *  Parses CAN message for battery state of charge
- */
-void ParseCANBatterySOC(uint8_t * CANMessageData)
-{
-	uint8_t batterySOC = CANMessageData[0];
-	input_flags.battery_SOC_under_threshold = batterySOC < BATTERY_SOC_THRESHOLD;
-}
-
 /*
  *  Parses CAN message for velocity
  */
@@ -250,11 +240,11 @@ void ParseCANVelocity(uint8_t * CANMessageData)
 }
 
 /*
- *  Parses CAN message for battery temp
+ *  Parse battery status CAN message
  */
-void ParseCANBatteryTemp(uint8_t * CANMessageData)
+void ParseCANBatteryStatus(uint8_t * CANMessageData)
 {
-	input_flags.battery_temp_under_threshold = isBitSetFromArray(CANMessageData, 17); // regen_disable bit is stored in bit 17
+	input_flags.battery_regen_disabled = isBitSetFromArray(CANMessageData, 17); // regen_disable bit is stored in bit 17
 }
 
 /*
@@ -280,17 +270,13 @@ void TaskGetCANMessage()
 		
 		if (xQueueReceive(CAN_rx_queue, &CAN_msg, portMAX_DELAY) == pdTRUE)
 		{
-			if (CAN_msg.header.StdId == CAN_ID_BATTERY_SOC)
-			{
-				ParseCANBatterySOC(CAN_msg.data);
-			}
-			else if (CAN_msg.header.StdId == CAN_ID_VELOCITY)
+			if (CAN_msg.header.StdId == CAN_ID_VELOCITY)
 			{
 				ParseCANVelocity(CAN_msg.data);
 			}
 			else if (CAN_msg.header.StdId == CAN_ID_BATTERY_TEMP)
 			{
-				ParseCANBatteryTemp(CAN_msg.data);
+				ParseCANBatteryStatus(CAN_msg.data);
 			}
 		}
 	}
