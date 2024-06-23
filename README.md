@@ -34,4 +34,4 @@ Team members create branches directly on this repository (rather than repository
 
 where the values delimited by `<>` should be replaced by your information. **No spaces please.** You may use your first name or your GitHub username for `<name>`. For example, `user/a2k-hanlon/bms/fsm`.
 
-Once your contributions are error-free and ready to add to the master branch, submit a pull request so that another team member can review and approve your work, allowing you you merge it.
+Once your contributions are error-free and ready to add to the master branch, create a PR with the default PR template and submit it to another team member to review and approve your work, allowing you you merge it.
