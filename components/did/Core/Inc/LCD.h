@@ -27,7 +27,7 @@ Header file containing all constants and function declarations to the LCD
 #define SPEED_YPOS 0
 #define SPEED_DATA_XPOS 15
 #define SPEED_DATA_YPOS 0
-#define SPEED_UNIT_XPOS 38
+#define SPEED_UNIT_XPOS 32
 #define SPEED_UNIT_YPOS 0
 // Battery state of charge
 #define SOC_XPOS 0
