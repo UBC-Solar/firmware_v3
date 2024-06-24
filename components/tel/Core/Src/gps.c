@@ -123,6 +123,7 @@ static void check_GPS_fix_for_send(GPS* gps_data) {
     }
     else
     {
+        osDelay(GPS_SINGLE_MSG_DELAY * 3 + GPS_NEXT_MSG_DELAY);              // 10000 ms (10 seconds) delay
     	g_tel_diagnostics.gps_fix = false;
     }
 }

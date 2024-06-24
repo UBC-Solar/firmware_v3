@@ -57,9 +57,10 @@ static void copy_timestamp(uint8_t* buffer, CAN_Radio_msg_t *tx_CAN_msg) {
 */
 static void copy_CAN_id(uint8_t* source, CAN_Radio_msg_t *tx_CAN_msg, uint32_t can_id_type) {
     uint8_t num_bytes_id = (can_id_type == CAN_ID_STD) ? NUM_STD_ID_BYTES : NUM_EXT_ID_BYTES;
+    uint32_t can_id = (can_id_type == CAN_ID_STD) ? tx_CAN_msg->header.StdId : tx_CAN_msg->header.ExtId;
 
     for (uint8_t byte_idx = 0; byte_idx < num_bytes_id; byte_idx++) {                   // Fill in reverse order
-        source[CAN_ID_INDEX_END - byte_idx] = MASK_8_BITS & (tx_CAN_msg->header.StdId >> (byte_idx * BITS_IN_BYTE));
+        source[CAN_ID_INDEX_END - byte_idx] = MASK_8_BITS & (can_id >> (byte_idx * BITS_IN_BYTE));
     }
 }
 
