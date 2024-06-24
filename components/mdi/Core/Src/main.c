@@ -256,7 +256,7 @@ int main(void)
       TxHeader.DLC = 1;
       // Send_Test_Message(TxData, 7, 7); //request all frames
     	// Send_Test_Message(TxData, 5, 5); //request frame 0 and 2
-      TxData[0] = 0b0000111 // request all frames
+      TxData[0] = 0b0000111; // request all frames
     	HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
 
     	//txData 0x501
