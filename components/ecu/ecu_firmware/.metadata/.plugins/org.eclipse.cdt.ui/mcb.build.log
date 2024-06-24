@@ -1,0 +1,10 @@
+03:04:20 **** Incremental Build of configuration Mitsuba - Debug for project mcb ****
+make -j16 all 
+arm-none-eabi-size   mcb.elf 
+   text	   data	    bss	    dec	    hex	filename
+  22004	    124	  15372	  37500	   927c	mcb.elf
+Finished building: default.size.stdout
+ 
+
+03:04:21 Build Finished. 0 errors, 0 warnings. (took 332ms)
+
