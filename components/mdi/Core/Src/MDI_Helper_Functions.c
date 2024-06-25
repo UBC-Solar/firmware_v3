@@ -72,3 +72,19 @@ void split_32_bit_number(uint32_t number, uint8_t *bytes){
     bytes[2] = (number >> 8) & 0xFF;
     bytes[3] = number & 0xFF;
 }
+
+void split_float_number(float number, uint8_t* bytes)
+{
+    union {
+        float float_val;
+        uint8_t bytes[4];
+    } number_union;
+
+    number_union.float_val = number;
+
+    for (int i = 0; i < 4; i++)
+    {
+        bytes[i] = number_union.bytes[3 - i];
+    }
+
+}

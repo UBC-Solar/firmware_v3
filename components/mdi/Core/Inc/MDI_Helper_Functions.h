@@ -16,3 +16,5 @@ void CopyRxData(uint8_t* globalRxData, uint8_t* localRxData);
 void Send_Voltage(float parsed_voltage, uint8_t DAC_ADDR, I2C_HandleTypeDef *hi2c2);
 
 uint16_t Parse_Acceleration(uint32_t pedal_data);
+
+void split_float_number(float number, uint8_t* bytes);

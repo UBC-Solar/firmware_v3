@@ -215,9 +215,9 @@ void get503(uint8_t* message503, CAN_message_t CanMessage)
 {
 
  	uint8_t motorVelocitySplit[4];
- 	split_32_bit_number(CanMessage.motorVelocity, motorVelocitySplit);
+ 	split_float_number(CanMessage.motorVelocity, motorVelocitySplit);
  	uint8_t vehicleVelocitytSplit[4];
- 	split_32_bit_number(CanMessage.vehicleVelocity, vehicleVelocitytSplit);
+ 	split_float_number(CanMessage.vehicleVelocity, vehicleVelocitytSplit);
 
  	message503[3] = motorVelocitySplit[0];
  	message503[2] = motorVelocitySplit[1];
