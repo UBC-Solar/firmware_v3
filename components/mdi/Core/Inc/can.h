@@ -26,7 +26,7 @@
 
 //Eco mode would be standard operation and maximum efficiency
 //Power mode would be for passing or when we need a boost up a hill
-#define POWER_MODE_OFF 0
+#define ECO_MODE_ON 0
 #define POWER_MODE_ON 1
 
 

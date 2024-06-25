@@ -20,8 +20,6 @@
 
 #define CAN_DATA_LENGTH 8			  // Length of a CAN message in bytes
 
-#define P1 0.3						  // TODO find proper value for this
-
 #define DELAY_MCB_STATE_MACHINE 50	  // Main mcb state machine delay time in ms
 
 #define DELAY_GET_CAN_MESSAGES 10	  // Delay for getting CAN messages task
@@ -38,9 +36,33 @@
 #define CRUISE_MIN 5 				  // Min cruise speed	in m/s
 #define CRUISE_THROTTLE 0.3            // Base line throttle in cruise control (0-1)
 
-#define BATTERY_SOC_THRESHOLD 90	  // Max battery state of charge for regenerative braking to be enabled.
-#define BATTERY_SOC_FULL 100		  // Full battery
-#define BATTERY_SOC_EMPTY 0			  // Empty battery
+// TODO: refactor
+#define VELOCITY_FORWARD 100.0
+#define VELOCITY_REVERSE -100.0
+#define VELOCITY_REGEN_DISABLED 0.0
+
+/**
+ * Zones of Operation:
+ * 1. No foot on throttle/not moved from rest
+ * 	  	In this Zone the ADC values were between 1150 to 1250. We dont want any motor spinnning
+ * 		Thus, ADC_FOR_NO_SPIN is defined below. normalized adc value = 0
+ * 2. Foot on throttle
+ * 		This zone is > ADC_FOR_NO_SPIN up to ADC_MIN_FOR_FULL_THROTTLE. Based on experiment we found that putting the pedal so that its tip intersects 
+ * 		with the brake cable give us a highest ADC value of 1830. Thus, ADC_MIN_FOR_FULL_THROTTLE is defined below
+ * 		normalized adc value scales linearly from 0 to 1.
+ * 3. Full Throttle:
+ * 		This zone is > ADC_MIN_FOR_FULL_THROTTLE up to ADC_MAX_FOR_FULL_THROTTLE. This is at 1 inch past the intersection of the brake cable. 
+ * 		Experiment shows 1 inch past brake cable is 1930 to 1966. Thus, ADC_MAX_FOR_FULL_THROTTLE is defined below
+ * 		normalized adc value = 1.0
+ * 4. Out of Range:
+ * 		To protect against shorts, we will consider any value above ADC_MAX_FOR_FULL_THROTTLE as out of range. 
+ * 		This means normalized adc values = 0.
+ * Note: ADC_LOWER_DEADZONE is defined based on an ADC reading that is lower than anything we have seen. This is to protect against short to GND.
+ */
+#define ADC_LOWER_DEADZONE            900
+#define ADC_FOR_NO_SPIN               1300    
+#define ADC_MIN_FOR_FULL_THROTTLE     1830
+#define ADC_MAX_FOR_FULL_THROTTLE     2000
 
 
 #define SETBIT(x, bitpos) (x |= (1 << bitpos))
@@ -70,8 +92,7 @@ typedef struct InputFlags {
   volatile bool cruise_enabled;
   volatile bool mech_brake_pressed;
   volatile bool regen_enabled;
-  volatile bool battery_SOC_under_threshold;
-  volatile bool battery_temp_under_threshold;
+  volatile bool battery_regen_disabled;
   volatile bool velocity_under_threshold;
   volatile bool switch_pos_drive;
   volatile bool switch_pos_reverse;

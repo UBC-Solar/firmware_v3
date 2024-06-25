@@ -42,9 +42,9 @@ void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg)
 	CAN_msg -> acceleration = u.float_velocity;
 
 	if (CAN_msg->velocity == 0){
-		//enter regen operation mode
-		CAN_msg->regen = REGEN_TRUE;
-		CAN_msg->FWD_direction = FORWARD_TRUE; //NOTE: does this need forward or reverse when in regen?
+		// regen switch on MCB off, still moving forward
+		CAN_msg->regen = REGEN_FALSE;
+		CAN_msg->FWD_direction = FORWARD_TRUE;
 	}
 	else if(CAN_msg->velocity == -100){
 		//enter reverse operation mode
@@ -54,7 +54,7 @@ void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg)
 	else if((CAN_msg->velocity == 100)){
 		//Forward operation mode
 		CAN_msg->FWD_direction = FORWARD_TRUE;
-		CAN_msg->regen = REGEN_FALSE;
+		CAN_msg->regen = REGEN_TRUE;
 	}
 	else if(CAN_msg ->cruise_control_enable == TRUE){
 		//enter cruise control
@@ -66,10 +66,9 @@ void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg)
 		CAN_msg->regen = REGEN_FALSE;
 		CAN_msg ->acceleration = 0;
 	}
-
-
+	
 	//set power mode. It should always be in PWR mode
-	CAN_msg->PWR_mode_on = POWER_MODE_ON;
+	CAN_msg->PWR_mode_on = ECO_MODE_ON;
 	return;
 } //end of decode_CAN_velocity_msg
 
@@ -216,9 +215,9 @@ void get503(uint8_t* message503, CAN_message_t CanMessage)
 {
 
  	uint8_t motorVelocitySplit[4];
- 	split_32_bit_number(CanMessage.motorVelocity, motorVelocitySplit);
+ 	split_float_number(CanMessage.motorVelocity, motorVelocitySplit);
  	uint8_t vehicleVelocitytSplit[4];
- 	split_32_bit_number(CanMessage.vehicleVelocity, vehicleVelocitytSplit);
+ 	split_float_number(CanMessage.vehicleVelocity, vehicleVelocitytSplit);
 
  	message503[3] = motorVelocitySplit[0];
  	message503[2] = motorVelocitySplit[1];

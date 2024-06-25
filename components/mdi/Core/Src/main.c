@@ -221,21 +221,23 @@ int main(void)
     	else
     		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
 
-    	 //send power/eco
-    	 //According to data sheet: OPEN Switch = ECO_MODE / CLOSED Switch = POWER MODE
-    	 //GPIO Must Be Open Drain
-    	 if(msg0.PWR_mode_on == POWER_MODE_ON)
-    		 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
-    	 else
-    		 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+      //SEND POWER/ECO
+      //According to data sheet: OPEN Switch = ECO_MODE / CLOSED Switch = POWER MODE
+      //GPIO Must Be Open Drain
+      if(msg0.PWR_mode_on == POWER_MODE_ON)
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+      else
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
 
-      //send acceleration current to motor
+      //SEND ACCELERATION
+      Send_Voltage(msg0.acceleration, DAC_ACC_ADDR, &hi2c2);
+      
+      //SEND REGEN
       if(msg0.regen == REGEN_TRUE) {
-        Send_Voltage(msg0.acceleration, DAC_REGEN_ADDR, &hi2c2);
+        Send_Voltage(REGEN_MAX, DAC_REGEN_ADDR, &hi2c2); // always desire 100% regen
       }
-      else{
-        parsed_acceleration = msg0.acceleration;
-        Send_Voltage(parsed_acceleration, DAC_ACC_ADDR, &hi2c2);
+      else{ // no regen
+        Send_Voltage(0, DAC_REGEN_ADDR, &hi2c2);
       }
 
       //reset flag
@@ -251,8 +253,10 @@ int main(void)
     	//send request for data from MC
     	TxHeader.IDE = CAN_ID_EXT; //type of id being sent ext or simple
     	TxHeader.ExtId = 0x08F89540; //request frame ExtId
-    	//Send_Test_Message(TxData, 7, 7); //request all frames
-    	Send_Test_Message(TxData, 5, 5); //request frame 0 and 2
+      // TxHeader.DLC = 1;
+      Send_Test_Message(TxData, 7, 7); //request all frames
+    	// Send_Test_Message(TxData, 5, 5); //request frame 0 and 2
+      // TxData[0] = 0b0000111; // request all frames
     	HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
 
     	//txData 0x501

@@ -27,8 +27,7 @@ void drive_state_machine_handler()
 {
 	UpdateInputFlags(&input_flags);
 
-	uint16_t g_throttle_ADC = ReadADC(&hadc1);
-
+	g_throttle_ADC = ReadADC(&hadc1);
 	g_throttle = normalize_adc_value(g_throttle_ADC);
 
 	switch(state)
@@ -48,17 +47,21 @@ void drive_state_machine_handler()
 			TransitionPARKstate(input_flags, &state);
 		break;
 
-		case CRUISE:
-			motorCommand = DoStateCRUISE(input_flags);
-			TransitionCRUISEstate(input_flags, &state);
-		break;
+		// TODO: Cruise disabled
+		// case CRUISE:
+		// 	motorCommand = DoStateCRUISE(input_flags);
+		// 	TransitionCRUISEstate(input_flags, &state);
+		// break;
 
+		// Invalid state, send 0.0 throttle and 0.0
 		default:
 			motorCommand = GetMotorCommand(0.0, 0.0);
 	}
 
 	SendCANMotorCommand(motorCommand);
 }
+
+
 
 /*
  * Sends MCB diagnostics over CAN
@@ -73,6 +76,7 @@ void send_mcb_diagnostics()
 
 	data_send[0] = g_throttle_ADC & 0xFF;
 	data_send[1] = (g_throttle_ADC >> 8) & 0xFF;
+
 
 	if (input_flags.throttle_ADC_out_of_range == true)	
 	{
@@ -104,7 +108,6 @@ void send_mcb_diagnostics()
  */
 void send_mcb_githash()
 {
-	//HAL_Delay(10);
 	uint8_t data_send[CAN_DATA_LENGTH];
 	strncpy((char*)data_send, GITHASH, CAN_DATA_LENGTH);
 	HAL_CAN_AddTxMessage(&hcan, &mcb_githash, data_send, &can_mailbox);
@@ -115,44 +118,25 @@ MotorCommand DoStateDRIVE( InputFlags input_flags )
 {
 	// Check if mech brake is pressed
 	if ( input_flags.mech_brake_pressed )
-		return GetMotorCommand(0.0, 0.0);
+		return GetMotorCommand(0.0, VELOCITY_REGEN_DISABLED);
 
 	// Check if regen is enabled
-	if ( input_flags.regen_enabled && input_flags.battery_SOC_under_threshold && input_flags.battery_temp_under_threshold )
+	if (input_flags.regen_enabled) // regen switch on and battery isn't requesting regen to be turned off
 	{
-		if( g_throttle == 0.0 )
-			return GetMotorCommand(g_throttle, 0.0);
-		if( g_throttle > 0.0 )
-			return GetMotorCommand(g_throttle, 100.0);
+		return GetMotorCommand(g_throttle, VELOCITY_FORWARD);
 	}
-
-	// Regen disabled
-	#ifdef MITSUBA
-		if( g_throttle == 0.0 )
-			return GetMotorCommand(g_throttle, 0.0);
-		if( g_throttle < P1 )
-			return GetMotorCommand(P1, 100.0);
-		if( g_throttle > P1)
-			return GetMotorCommand(g_throttle, 100.0);
-	#endif
-	#ifdef TRITIUM
-		if( g_throttle == 0.0 )
-			return GetMotorCommand( 0.0, 100.0 );
-		if( g_throttle > 0.0 )
-			return GetMotorCommand( g_throttle, 100.0 );
-	#endif
-
-	return GetMotorCommand(0.0,0.0);
+	else // Regen disable
+	{
+		return GetMotorCommand(g_throttle, VELOCITY_REGEN_DISABLED);
+	}
 }
 
 void TransitionDRIVEstate( InputFlags input_flags, DriveState * state)
 {
-	if( input_flags.switch_pos_reverse && input_flags.velocity_under_threshold )
+	if( input_flags.switch_pos_reverse && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 		*state = REVERSE;
-	else if( input_flags.switch_pos_park && input_flags.velocity_under_threshold )
+	else if( input_flags.switch_pos_park && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 		*state = PARK;
-	else if( input_flags.cruise_enabled )
-		*state = CRUISE;
 }
 
 
@@ -160,53 +144,38 @@ MotorCommand DoStateREVERSE(InputFlags input_flags)
 {
 	// Check if mech brake is pressed
 	if ( input_flags.mech_brake_pressed )
-		return GetMotorCommand(0.0, 0.0);
+		return GetMotorCommand(0.0, VELOCITY_REGEN_DISABLED);
 
-	// Regen disabled
-	#ifdef MITSUBA
-		if( g_throttle == 0.0 )
-			return GetMotorCommand(g_throttle, 0.0);
-		if( g_throttle < P1 )
-			return GetMotorCommand(P1, -100.0);
-		if( g_throttle > P1)
-			return GetMotorCommand(g_throttle, -100.0);
-	#endif
-	#ifdef TRITIUM
-		if( g_throttle == 0.0 )
-			return GetMotorCommand( 0.0, -100.0 );
-		if( g_throttle > 0.0 )
-			return GetMotorCommand( g_throttle, -100.0 );
-	#endif
-
-	return GetMotorCommand(0.0,0.0);
+	// Regen disabled in reverse on MDI, dont need to check input_flags.regen_enabled
+	return GetMotorCommand(g_throttle, VELOCITY_REVERSE);
 }
 
 void TransitionREVERSEstate(InputFlags input_flags, DriveState * state)
 {
-	if ( input_flags.switch_pos_drive && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+	if ( input_flags.switch_pos_drive && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 		*state = DRIVE;
-	else if ( input_flags.switch_pos_park && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+	else if ( input_flags.switch_pos_park && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 		*state = PARK;
 }
 
 MotorCommand DoStatePARK()
 {
-	return GetMotorCommand(1.0, 0.0);
+	return GetMotorCommand(0.0, VELOCITY_REGEN_DISABLED);		// COASTING
 }
 
 void TransitionPARKstate(InputFlags input_flags, DriveState * state)
 {
-	if ( input_flags.switch_pos_drive && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+	if ( input_flags.switch_pos_drive && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed )
 		*state = DRIVE;
-	else if ( input_flags.switch_pos_reverse && input_flags.mech_brake_pressed && input_flags.velocity_under_threshold )
+	else if ( input_flags.switch_pos_reverse && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 		*state = REVERSE;
 }
 
+// TODO: Cruise not implimented
 MotorCommand DoStateCRUISE()
 {
 	return GetMotorCommand(CRUISE_THROTTLE, cruiseVelocity);
 }
-
 void TransitionCRUISEstate(InputFlags input_flags, DriveState * state)
 {
 	if ( input_flags.mech_brake_pressed || !input_flags.cruise_enabled )
@@ -219,19 +188,9 @@ void TransitionCRUISEstate(InputFlags input_flags, DriveState * state)
 void UpdateInputFlags(InputFlags * input_flags)
 {
 	input_flags->mech_brake_pressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
-	input_flags->regen_enabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+	input_flags->regen_enabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin) && !input_flags->battery_regen_disabled;
 	input_flags->velocity_under_threshold = velocityOfCar < VELOCITY_THRESHOLD;
 	GetSwitchState(input_flags);
-}
-
-
-/*
- *  Parses CAN message for battery state of charge
- */
-void ParseCANBatterySOC(uint8_t * CANMessageData)
-{
-	uint8_t batterySOC = CANMessageData[0];
-	input_flags.battery_SOC_under_threshold = batterySOC < BATTERY_SOC_THRESHOLD;
 }
 
 /*
@@ -248,11 +207,11 @@ void ParseCANVelocity(uint8_t * CANMessageData)
 }
 
 /*
- *  Parses CAN message for battery temp
+ *  Parse battery status CAN message
  */
-void ParseCANBatteryTemp(uint8_t * CANMessageData)
+void ParseCANBatteryStatus(uint8_t * CANMessageData)
 {
-	input_flags.battery_temp_under_threshold = isBitSetFromArray(CANMessageData, 17); // regen_disable bit is stored in bit 17
+	input_flags.battery_regen_disabled = isBitSetFromArray(CANMessageData, 17); // regen_disable bit is stored in bit 17
 }
 
 /*
@@ -278,17 +237,13 @@ void TaskGetCANMessage()
 		
 		if (xQueueReceive(CAN_rx_queue, &CAN_msg, portMAX_DELAY) == pdTRUE)
 		{
-			if (CAN_msg.header.StdId == CAN_ID_BATTERY_SOC)
-			{
-				ParseCANBatterySOC(CAN_msg.data);
-			}
-			else if (CAN_msg.header.StdId == CAN_ID_VELOCITY)
+			if (CAN_msg.header.StdId == CAN_ID_VELOCITY)
 			{
 				ParseCANVelocity(CAN_msg.data);
 			}
 			else if (CAN_msg.header.StdId == CAN_ID_BATTERY_TEMP)
 			{
-				ParseCANBatteryTemp(CAN_msg.data);
+				ParseCANBatteryStatus(CAN_msg.data);
 			}
 		}
 	}
@@ -327,15 +282,21 @@ void SendCANMotorCommand(MotorCommand motorCommand)
  */
 float normalize_adc_value(uint16_t value)
 {
-	if(value > ADC_MAX || value < ADC_MIN)
-	{
+	// TODO: Use a case statement + clean up
+	if (value <= ADC_LOWER_DEADZONE || value > ADC_MAX_FOR_FULL_THROTTLE) {					// Shorted to ground or beyond pedal compression
 		input_flags.throttle_ADC_out_of_range = true;
 		return 0.0;
+	} else if (value > ADC_FOR_NO_SPIN && value < ADC_MIN_FOR_FULL_THROTTLE) {				// Pedal compressed between initial and at brake cable
+		input_flags.throttle_ADC_out_of_range = false;
+		float normalized_value = (float)((float)(value - ADC_FOR_NO_SPIN) / (float)(ADC_MIN_FOR_FULL_THROTTLE - ADC_FOR_NO_SPIN));
+		return normalized_value;
+	} else if (value >= ADC_MIN_FOR_FULL_THROTTLE && value <= ADC_MAX_FOR_FULL_THROTTLE) {	// Pedal compressed between brake cable to 1 inch past cable
+		input_flags.throttle_ADC_out_of_range = false;
+		return 1.0;
+	} else {																				// Default If pedal is not pressed
+		input_flags.throttle_ADC_out_of_range = false;
+		return 0.0;
 	}
-	float normalized_value = (float)((float)(value - ADC_MIN) / (float)(ADC_MAX - ADC_MIN));
-	input_flags.throttle_ADC_out_of_range = false;
-
-	return normalized_value;
 }
 
 /*
@@ -362,6 +323,7 @@ void GetSwitchState(InputFlags * input_flags)
 {
 	if( !HAL_GPIO_ReadPin(SWITCH_IN1_GPIO_Port, SWITCH_IN1_Pin) && !HAL_GPIO_ReadPin(SWITCH_IN2_GPIO_Port, SWITCH_IN2_Pin) )
 	{
+		// Todo: Change to enum instead of a bool for each one
 		input_flags->switch_pos_drive = false;
 		input_flags->switch_pos_reverse = true;
 		input_flags->switch_pos_park = false;
