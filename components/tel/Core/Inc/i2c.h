@@ -96,11 +96,6 @@ enum AccelType {
 
 void initIMU(void);
 
-/* GPS -----------------------------------------------------------------------*/
-typedef struct{
-  uint8_t data[150];
-} GPS_msg_t;
-
 
 /* USER CODE END Prototypes */
 

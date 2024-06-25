@@ -135,7 +135,6 @@ static void check_GPS_fix_for_send(GPS* gps_data) {
 void GPS_delayed_rx_and_tx_as_CAN() {
     uint8_t receive_buffer[GPS_RCV_BUFFER_SIZE];
     GPS gps_data;
-    GPS_msg_t gps_message;
     uint8_t gps_buffer[GPS_MESSAGE_LEN] = {UNINITIALIZED};
     
     read_in_NMEA_data(&gps_data, receive_buffer);           // read in NMEA data into gps struct
@@ -149,7 +148,6 @@ void GPS_delayed_rx_and_tx_as_CAN() {
 void GPS_wait_for_fix() {
     uint8_t receive_buffer[GPS_RCV_BUFFER_SIZE];
     GPS gps_data;
-    GPS_msg_t gps_message;
     uint8_t gps_buffer[GPS_MESSAGE_LEN] = {UNINITIALIZED};
     
     uint32_t gps_sync_start_time = HAL_GetTick();
