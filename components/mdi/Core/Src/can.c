@@ -42,9 +42,9 @@ void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg)
 	CAN_msg -> acceleration = u.float_velocity;
 
 	if (CAN_msg->velocity == 0){
-		//enter regen operation mode
+		// regen switch on MCB off, still moving forward
 		CAN_msg->regen = REGEN_FALSE;
-		CAN_msg->FWD_direction = FORWARD_TRUE; //NOTE: does this need forward or reverse when in regen?
+		CAN_msg->FWD_direction = FORWARD_TRUE;
 	}
 	else if(CAN_msg->velocity == -100){
 		//enter reverse operation mode
