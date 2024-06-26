@@ -376,7 +376,7 @@ void UpdateScreenTitles(uint8_t pageNum) {
 		case PAGE_0:
 			/* Titles */
 			OutputString("SOC", SOC_XPOS, SOC_YPOS);
-			OutputString("CRUZE", CRUISE_XPOS, CRUISE_YPOS);
+			OutputString("REGEN", REGEN_XPOS, REGEN_YPOS);
 			OutputString("SPEED", SPEED_XPOS, SPEED_YPOS);
 			OutputString("STATE", STATE_XPOS, STATE_YPOS);
             OutputString("TAR", TARGET_XPOS, TARGET_YPOS);

@@ -25,7 +25,7 @@ Header file containing all constants and function declarations to the LCD
 // SPEED
 #define SPEED_XPOS 0
 #define SPEED_YPOS 0
-#define SPEED_DATA_XPOS 15
+#define SPEED_DATA_XPOS 18
 #define SPEED_DATA_YPOS 0
 #define SPEED_UNIT_XPOS 32
 #define SPEED_UNIT_YPOS 0
@@ -39,13 +39,13 @@ Header file containing all constants and function declarations to the LCD
 // MCB Drive State
 #define STATE_XPOS 0
 #define STATE_YPOS 6
-#define STATE_DATA_XPOS 20
+#define STATE_DATA_XPOS 24
 #define STATE_DATA_YPOS 6
-// Target Cruise Speed
-#define CRUISE_XPOS 0
-#define CRUISE_YPOS 9
-#define CRUISE_DATA_XPOS 20
-#define CRUISE_DATA_YPOS 9
+// Regen Enabled
+#define REGEN_XPOS 0
+#define REGEN_YPOS 9
+#define REGEN_DATA_XPOS 20
+#define REGEN_DATA_YPOS 9
 #define CRUISE_UNIT_XPOS 20
 #define CRUISE_UNIT_YPOS 9
 // Simulation Target Speed

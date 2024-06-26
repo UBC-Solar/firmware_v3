@@ -23,6 +23,7 @@ CREATE_CYCLIC_DATA_U8( data_battery_SOC, MAX_CYCLE_TIME_BATTERY_SOC );
 CREATE_CYCLIC_DATA_FLOAT( data_target_velocity, MAX_CYCLE_TIME_MOTOR_COMMAND );
 CREATE_CYCLIC_DATA_FLOAT( data_vehicle_velocity, MAX_CYCLE_TIME_VEHICLE_VELOCITY );
 CREATE_CYCLIC_DATA_U8( data_MCB_drive_state, MAX_CYCLE_TIME_MCB_DRIVE_STATE );
+CREATE_CYCLIC_DATA_U8( data_MCB_regen_enabled, MAX_CYCLE_TIME_MCB_REGEN_ENABLED );
 CREATE_CYCLIC_DATA_FLOAT( data_motor_current, MAX_CYCLE_TIME_MOTOR_CURRENT );
 CREATE_CYCLIC_DATA_FLOAT( data_array_current, MAX_CYCLE_TIME_ARRAY_CURRENT );
 CREATE_CYCLIC_DATA_U16( data_pack_current, MAX_CYCLE_TIME_PACK_CURRENT );
@@ -116,6 +117,14 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID )
 			break;
 
 		/*
+		 *  MCB Diagnostics
+		 */
+		case CAN_ID_MCB_REGEN_ENABLED:
+			uint8_t regen_enabled = GETBIT(CAN_rx_data[3], 1);
+			SET_CYCLIC_DATA( data_MCB_regen_enabled, regen_enabled);
+			break;
+
+		/*
 		 *  Motor Current
 		 */
 		case CAN_ID_MOTOR_CURRENT:
@@ -195,20 +204,20 @@ void update_DID_screen()
 			UpdateScreenTitles(PAGE_0);
 
 			// Get pointers to cyclic data variables
-			float* simulation_speed = GET_CYCLIC_DATA( data_simulation_speed );
+			float* vehicle_velocity = GET_CYCLIC_DATA( data_vehicle_velocity );
 			uint8_t* battery_soc = GET_CYCLIC_DATA( data_battery_SOC );
 			uint8_t* MCB_drive_state = GET_CYCLIC_DATA( data_MCB_drive_state );
-			float* target_velocity = GET_CYCLIC_DATA( data_target_velocity );
-			float* vehicle_velocity = GET_CYCLIC_DATA( data_vehicle_velocity );
+			uint8_t* MCB_regen_enabled = GET_CYCLIC_DATA (data_MCB_regen_enabled);
+			float* simulation_speed = GET_CYCLIC_DATA( data_simulation_speed );
 
-			// Simulation target speed
-			if( simulation_speed != NULL )
+			// Vehicle Velocity
+			if ( vehicle_velocity != NULL )
 			{
-				UpdateScreenParameter(TARGET_DATA_XPOS, TARGET_DATA_YPOS, (uint32_t)(*simulation_speed), 0, FALSE);
+				UpdateScreenParameter(SPEED_DATA_XPOS, SPEED_DATA_YPOS, (int32_t)(*vehicle_velocity), 0, FALSE);
 			}
 			else
 			{
-				OutputString("---", TARGET_DATA_XPOS, TARGET_DATA_YPOS);
+				OutputString("---", SPEED_DATA_XPOS, SPEED_DATA_YPOS);
 			}
 
 			// Battery SOC
@@ -219,16 +228,6 @@ void update_DID_screen()
 			else
 			{
 				OutputString("---", SOC_DATA_XPOS, SOC_DATA_YPOS);
-			}
-
-			// Vehicle Velocity
-			if ( vehicle_velocity != NULL )
-			{
-				UpdateScreenParameter(SPEED_DATA_XPOS, SPEED_DATA_YPOS, (int32_t)(*vehicle_velocity), 0, FALSE);
-			}
-			else
-			{
-				OutputString("---", SPEED_DATA_XPOS, SPEED_DATA_YPOS);
 			}
 
 			// MCB drive state
@@ -250,22 +249,32 @@ void update_DID_screen()
 				OutputString("---", STATE_DATA_XPOS, STATE_DATA_YPOS);
 			}
 
-			// Target cruise
-			if ( target_velocity != NULL && MCB_drive_state != NULL )
+			// Regen Enable
+			if ( MCB_regen_enabled != NULL )
 			{
-				if ( *MCB_drive_state == 0x02 )
-				{
-					UpdateScreenParameter(CRUISE_DATA_XPOS, CRUISE_DATA_YPOS, (uint32_t)(*target_velocity), 0, FALSE);
-				}
-				else
-				{
-					OutputString("OFF", CRUISE_DATA_XPOS, CRUISE_DATA_YPOS);
+				if (*MCB_regen_enabled == 0x01) {
+					OutputString("   ", REGEN_DATA_XPOS, REGEN_DATA_YPOS);
+					OutputString("ON", REGEN_DATA_XPOS, REGEN_DATA_YPOS);
+				} else {
+					OutputString("   ", REGEN_DATA_XPOS, REGEN_DATA_YPOS);
+					OutputString("OFF", REGEN_DATA_XPOS, REGEN_DATA_YPOS);
 				}
 			}
 			else
 			{
-				OutputString("---", CRUISE_DATA_XPOS, CRUISE_DATA_YPOS);
+				OutputString("---", REGEN_DATA_XPOS, REGEN_DATA_YPOS);
 			}
+
+			// Simulation target speed
+			if( simulation_speed != NULL )
+			{
+				UpdateScreenParameter(TARGET_DATA_XPOS, TARGET_DATA_YPOS, (uint32_t)(*simulation_speed), 0, FALSE);
+			}
+			else
+			{
+				OutputString("---", TARGET_DATA_XPOS, TARGET_DATA_YPOS);
+			}
+
 			break;
 
 		case PAGE_1:
