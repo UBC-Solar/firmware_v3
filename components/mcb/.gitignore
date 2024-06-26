@@ -76,3 +76,6 @@ Doxyfile-firmwarev3
 Release/
 Debug/
 Drivers/
+
+# Environment
+.settings/

@@ -11,3 +11,6 @@ STM32F103RCTX_FLASH.ld
 # PlatformIO Build Outputs
 .pio
 .vscode/*
+
+# Environment files
+.settings/
