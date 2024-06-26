@@ -39,7 +39,7 @@ Header file containing all constants and function declarations to the LCD
 // MCB Drive State
 #define STATE_XPOS 0
 #define STATE_YPOS 6
-#define STATE_DATA_XPOS 15
+#define STATE_DATA_XPOS 20
 #define STATE_DATA_YPOS 6
 // Target Cruise Speed
 #define CRUISE_XPOS 0
