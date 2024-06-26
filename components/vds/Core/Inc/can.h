@@ -44,6 +44,14 @@ extern CAN_HandleTypeDef hcan2;
 
 #define CAN_DATA_LENGTH 			8
 
+// For Brake Pressure conversion
+#define BRAKE_PRESSURE_MULTIPLIER 24.55
+#define BRAKE_PRESSURE_OFFSET 1.925
+
+// For Shock Travel conversion
+#define SHOCK_TRAVEL_MULTIPLIER 0.1595
+#define SHOCK_TRAVEL_OFFSET 2.3875
+
 typedef struct {
     CAN_TxHeaderTypeDef header;
     uint8_t data[8];
