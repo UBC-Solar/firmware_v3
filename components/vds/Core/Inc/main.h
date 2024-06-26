@@ -73,6 +73,8 @@ void Error_Handler(void);
 #define BP_3_GPIO_Port GPIOA
 #define SA_1_Pin GPIO_PIN_7
 #define SA_1_GPIO_Port GPIOA
+#define Debugging_Pin GPIO_PIN_9
+#define Debugging_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 
@@ -84,6 +86,11 @@ void Error_Handler(void);
 
 /*Number of ADC Channels Total */
 #define NUM_ADC_CHANNELS_TOTAL 16
+
+/* Buffer length configuration */
+#define ADC1_NUM_ANALOG_CHANNELS 8
+#define ADC1_BUF_LENGTH_PER_CHANNEL 100
+#define ADC1_BUF_LENGTH 16
 
 /* Sensor ADC Channel Assignments (0-7 IN USE)*/
 #define BP_1 0

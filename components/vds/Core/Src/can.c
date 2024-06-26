@@ -19,7 +19,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
-#include "adc.h"
 
 /* USER CODE BEGIN 0 */
 

@@ -103,7 +103,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  HAL_Delay(100); // Delay for 100ms to allow peripherals to initialize
+//  HAL_Delay(100); // Delay for 100ms to allow peripherals to initialize
 
   /* USER CODE END 1 */
 
@@ -146,8 +146,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_CAN_Start(&hcan1);
   HAL_CAN_Start(&hcan2);
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, NUM_ADC_CHANNELS_TOTAL); // Start ADC1 in DMA mode
-  HAL_TIM_Base_Start(&htim3);
+//  HAL_ADC_Start_IT(&hadc1);
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, ADC1_BUF_LENGTH); // Start ADC1 in DMA mode
+  HAL_TIM_Base_Start_IT(&htim3);
 
   /* USER CODE END 2 */
 
@@ -156,8 +157,11 @@ int main(void)
   while (1)
   {
 	  //Independent watchdog timer and
+//	  HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 1);
+//	  HAL_Delay(100);
+//	  HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 0);
 	  HAL_IWDG_Refresh(&hiwdg);
-	  CAN_processMessages();
+//	  CAN_processMessages();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -234,6 +238,8 @@ Notes on how to do conversion:
 
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
 {
+
+  HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 1);
   if (hadc == &hadc1){
     //Process ADC1 readings
     averageADCValues(0);
@@ -242,6 +248,8 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
   brake_steering_counter++;
   shock_travel_counter++;
   diagnostic_counter++;
+
+  HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 0);
 }
 
 // Conversion full complete DMA interrupt callback for ADCs
@@ -285,6 +293,11 @@ void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
     averageADCValues(0); // Retry with ADC half 0
     averageADCValues(1); // Retry with ADC half 1
   }
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
+{
+//    HAL_GPIO_TogglePin(Debugging_GPIO_Port, Debugging_Pin);
 }
 
 /* USER CODE END 4 */
