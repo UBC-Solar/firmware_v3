@@ -98,6 +98,7 @@ typedef struct InputFlags {
   volatile bool switch_pos_reverse;
   volatile bool switch_pos_park;
   volatile bool throttle_ADC_out_of_range;
+  volatile bool MDI_communication_fault;
 } InputFlags;
 
 /*
