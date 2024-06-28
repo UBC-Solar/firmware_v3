@@ -104,6 +104,11 @@ void send_mcb_diagnostics()
 		SETBIT(data_send[2], 3);
 	}
 
+	if (input_flags.MDI_communication_fault == true)
+	{
+		SETBIT(data_send[2], 4);
+	}
+
 	HAL_CAN_AddTxMessage(&hcan, &mcb_diagnostics, data_send, &can_mailbox);
 
 	return;
@@ -200,6 +205,7 @@ void UpdateInputFlags(InputFlags * input_flags)
 	if (velocity != NULL)
 	{
 		input_flags->velocity_under_threshold = *velocity < VELOCITY_THRESHOLD;
+		input_flags->MDI_communication_fault = false;rtos
 	}
 	else
 	{
