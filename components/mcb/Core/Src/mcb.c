@@ -205,7 +205,7 @@ void UpdateInputFlags(InputFlags * input_flags)
 	if (velocity != NULL)
 	{
 		input_flags->velocity_under_threshold = *velocity < VELOCITY_THRESHOLD;
-		input_flags->MDI_communication_fault = false;rtos
+		input_flags->MDI_communication_fault = false;
 	}
 	else
 	{
