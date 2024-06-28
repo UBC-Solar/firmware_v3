@@ -49,7 +49,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-volatile uint16_t adc1_buf[NUM_ADC_CHANNELS_TOTAL] = {0}; // Initialize ADC buffer
+volatile uint16_t adc1_buf[ADC1_BUF_LENGTH] = {0}; // Initialize ADC buffer
 VDS_Data_t vds_data = {0}; // Initialize VDS data structure
 
 uint32_t brake_steering_counter = 0;
@@ -63,6 +63,7 @@ volatile int ADC1_DMA_fault_flag = 0; //flag that indicates the DMA interrupt if
 float sum[NUM_ADC_CHANNELS_USED] = {0.0};
 uint32_t counters[NUM_ADC_CHANNELS_USED] = {0};
 volatile VDS_ADC_AVERAGES adc_averages = {0};
+volatile int count = 0;
 
 /* USER CODE END PV */
 
@@ -80,18 +81,30 @@ void convertADCValue(void);
 void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
 { // Analog watchdog 
   /*TODO: Implement error handling here */
-  if(hadc == &hadc1)
-  {
-    ADC1_setFaultStatus(1);
-    HAL_Delay(1); // Delay for 1ms
-  }
+	 if (hadc == &hadc1)
+	    {
+	        ADC1_setFaultStatus(1);
+
+	        // Stop ADC before restarting it to avoid continuous interrupts
+	        HAL_ADC_Stop(hadc);
+
+	        // Restart ADC in interrupt mode
+	        if (HAL_ADC_Start_IT(hadc) != HAL_OK)
+	        {
+	        	/* TODO: diagnostic message api here */
+	        }
+
+	        // Reset the watchdog timer
+	        HAL_IWDG_Refresh(&hiwdg);
+	    }
 }
 
 /*============================================================================*/
 /* GPIO INTERRUPT CALLBACKS */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  /*TODO: Implement error handling here */  
+  /*TODO: Implement error handling here */
+	ADC1_setFaultStatus(1);
 }
 /* USER CODE END 0 */
 
@@ -142,7 +155,7 @@ int main(void)
   MX_CAN2_Init();
   MX_ADC1_Init();
   MX_TIM3_Init();
-  MX_IWDG_Init();
+//  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   HAL_CAN_Start(&hcan1);
   HAL_CAN_Start(&hcan2);
@@ -160,7 +173,7 @@ int main(void)
 //	  HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 1);
 //	  HAL_Delay(100);
 //	  HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 0);
-	  HAL_IWDG_Refresh(&hiwdg);
+//	  HAL_IWDG_Refresh(&hiwdg);
 //	  CAN_processMessages();
     /* USER CODE END WHILE */
 
@@ -240,6 +253,7 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
 {
 
   HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 1);
+  count++;
   if (hadc == &hadc1){
     //Process ADC1 readings
     averageADCValues(0);
