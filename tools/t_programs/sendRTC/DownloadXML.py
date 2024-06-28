@@ -12,9 +12,7 @@ import os
 
 
 CAN_CHANNEL_1           = 0
-XML_CONFIG_FILE         = "sendRTC.xml"
-PATH_TO_SEND_RTC_DIR    = "tools\\t_programs\\sendRTC"
-XML_CONFIG_FULL_PATH    = os.getcwd() + "\\" + PATH_TO_SEND_RTC_DIR + "\\" + XML_CONFIG_FILE
+XML_CONFIG_FULL_PATH    = "<ENTER_YOUR_FULL_ABSOLUTE_PATH_TO_XML_CONFIG_FILE>"    # Example: "C:/Users/my_username/Documents/sendRTC.xml"
 
 
 def getEAN():
