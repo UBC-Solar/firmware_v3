@@ -1,4 +1,3 @@
-
 # Prerequisites
 *.d
 
@@ -73,4 +72,5 @@ Doxyfile-firmwarev3
 *.list
 
 # Build Folders
-components/mdi/mdi_v1_0/Debug/
+Debug/
+Release/
