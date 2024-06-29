@@ -15,7 +15,7 @@
 #include "../../../../libraries/githash/githash.h" // TODO: Add this library to the project instead of using the relative path
 
 
-#define MAX_CYCLE_TIME_VEHICLE_VELOCITY 1000 // Max time(ms) of not receive vehicle velocity from MDI before setting a flaut in the mcb diagnosics MCB message
+#define MAX_CYCLE_TIME_VEHICLE_VELOCITY 1000 // Max time(ms) of not receive vehicle velocity from MDI before setting a fault in the mcb diagnosics MCB message
 
 float cruiseVelocity = 0.0;		// Velocity for cruise control
 
