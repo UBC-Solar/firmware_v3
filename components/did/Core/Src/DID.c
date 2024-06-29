@@ -120,7 +120,7 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID )
 		 *  MCB Diagnostics
 		 */
 		case CAN_ID_MCB_REGEN_ENABLED:
-			uint8_t regen_enabled = GETBIT(CAN_rx_data[3], 1);
+			uint8_t regen_enabled = GETBIT(CAN_rx_data[2], 1);
 			SET_CYCLIC_DATA( data_MCB_regen_enabled, regen_enabled);
 			break;
 
