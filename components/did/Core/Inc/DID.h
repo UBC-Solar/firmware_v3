@@ -80,6 +80,9 @@
 #define ENABLED 0x01
 #define DISABLED 0x00
 
+#define PACK_VOLTAGE_DIVISOR 468
+#define PACK_CURRENT_DIVISOR 65.535
+
 /*
  *  Typedefs
  */

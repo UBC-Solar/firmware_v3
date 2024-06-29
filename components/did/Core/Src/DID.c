@@ -26,7 +26,7 @@ CREATE_CYCLIC_DATA_U8( data_MCB_drive_state, MAX_CYCLE_TIME_MCB_DRIVE_STATE );
 CREATE_CYCLIC_DATA_U8( data_MCB_regen_enabled, MAX_CYCLE_TIME_MCB_REGEN_ENABLED );
 CREATE_CYCLIC_DATA_FLOAT( data_motor_current, MAX_CYCLE_TIME_MOTOR_CURRENT );
 CREATE_CYCLIC_DATA_FLOAT( data_array_current, MAX_CYCLE_TIME_ARRAY_CURRENT );
-CREATE_CYCLIC_DATA_U16( data_pack_current, MAX_CYCLE_TIME_PACK_CURRENT );
+CREATE_CYCLIC_DATA_FLOAT( data_pack_current, MAX_CYCLE_TIME_PACK_CURRENT );
 CREATE_CYCLIC_DATA_U16( data_pack_voltage, MAX_CYCLE_TIME_PACK_VOLTAGE );
 CREATE_CYCLIC_DATA_S8( data_pack_temperature, MAX_CYCLE_TIME_PACK_TEMPERATURE );
 
@@ -155,11 +155,12 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID )
 		 */
 		case CAN_ID_PACK_CURRENT:
 			U16Bytes temp_pack_current;
+			FloatBytes pack_current_float;
 			temp_pack_current.bytes[0] = CAN_rx_data[0];
 			temp_pack_current.bytes[1] = CAN_rx_data[1];
-			temp_pack_current.U16_value = temp_pack_current.U16_value / UINT16_MAX;
+			pack_current_float.float_value = temp_pack_current.U16_value / PACK_CURRENT_DIVISOR;
 	
-			SET_CYCLIC_DATA( data_pack_current, temp_pack_current.U16_value );
+			SET_CYCLIC_DATA( data_pack_current, pack_current_float.float_value );
 			break;
 
 		/*
@@ -169,7 +170,7 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID )
 			U16Bytes temp_pack_voltage;
 			temp_pack_voltage.bytes[0] = CAN_rx_data[0];
 			temp_pack_voltage.bytes[1] = CAN_rx_data[1];
-			temp_pack_voltage.U16_value = temp_pack_voltage.U16_value / 468;
+			temp_pack_voltage.U16_value = temp_pack_voltage.U16_value / PACK_VOLTAGE_DIVISOR;
 
 			SET_CYCLIC_DATA( data_pack_voltage, temp_pack_voltage.U16_value );
 			break;
@@ -210,7 +211,7 @@ void update_DID_screen()
 			uint8_t* MCB_drive_state = GET_CYCLIC_DATA( data_MCB_drive_state );
 			uint8_t* MCB_regen_enabled = GET_CYCLIC_DATA (data_MCB_regen_enabled);
 //			float* simulation_speed = GET_CYCLIC_DATA( data_simulation_speed );
-			uint16_t* pack_current = GET_CYCLIC_DATA( data_pack_current );
+			float* pack_current = GET_CYCLIC_DATA( data_pack_current );
 
 			// Vehicle Velocity
 			if ( vehicle_velocity != NULL )
@@ -291,7 +292,7 @@ void update_DID_screen()
 			// Pack Current
 			if ( pack_current != NULL )
 			{
-				UpdateScreenParameter(PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS, (uint32_t)(*pack_current), 0, FALSE);
+				UpdateScreenParameter(PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS, (uint32_t)(*pack_current), ((uint8_t)((*pack_current) * 10) % 10), TRUE);
 			}
 			else
 			{
