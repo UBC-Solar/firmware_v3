@@ -68,6 +68,7 @@ void Error_Handler(void);
 #define REVs_TICK_INPUT_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
 
+#define REGEN_MAX 1 // percentage between 0 (none) and 1
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

@@ -7,3 +7,4 @@ components/ecu/ecu_firmware/build
 components/ecu/ecu_firmware/Drivers
 components/ecu/ecu_firmware/.vscode
 libraries/githash/githash.h
+*.launch

@@ -6,7 +6,6 @@ Release/
 .mxproject
 
 # Debug Configuration
-#
 *.cfg
 *.launch
 
@@ -61,6 +60,7 @@ dkms.conf
 RemoteSystemsTempFiles*
 .settings/*
 **/Backup/
+.settings/
 # Compiled binaries
 *.elf
 *.bin
