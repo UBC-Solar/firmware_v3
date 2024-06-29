@@ -76,6 +76,10 @@
 
 #define MS_TO_KM(ms) (ms * 3.6)
 #define MS_TO_MPH(ms) (ms * 2.23694)
+
+#define ENABLED 0x01
+#define DISABLED 0x00
+
 /*
  *  Typedefs
  */

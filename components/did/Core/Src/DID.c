@@ -252,7 +252,7 @@ void update_DID_screen()
 			// Regen Enable
 			if ( MCB_regen_enabled != NULL )
 			{
-				if (*MCB_regen_enabled == 0x01) {
+				if (*MCB_regen_enabled == ENABLED) {
 					OutputString("   ", REGEN_DATA_XPOS, REGEN_DATA_YPOS);
 					OutputString("ON", REGEN_DATA_XPOS, REGEN_DATA_YPOS);
 				} else {
