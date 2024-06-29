@@ -42,14 +42,14 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID )
 		/*
 		 *	DID next page
 		 */
-		case CAN_ID_DID_NEXT_PAGE:
-			if ( CAN_rx_data[0] != 0 ) 
-			{
-				current_page = current_page + 1; 	// Increment page
-				if (current_page == NUM_PAGES) 		// Reset to 0 if changing from last page
-					current_page = 0; 				
-			}
-			break;
+//		case CAN_ID_DID_NEXT_PAGE:
+//			if ( CAN_rx_data[0] != 0 )
+//			{
+//				current_page = current_page + 1; 	// Increment page
+//				if (current_page == NUM_PAGES) 		// Reset to 0 if changing from last page
+//					current_page = 0;
+//			}
+//			break;
 
 		/* Parse Warnings and Faults if received CAN message is 0x622
 		 * and set GPIO output for fault lights accordingly
