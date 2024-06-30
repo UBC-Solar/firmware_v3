@@ -71,7 +71,7 @@ typedef enum
 
 #define DOC_WARNING_THRESHOLD 55000 // mA
 #define COC_WARNING_THRESHOLD -18000 // mA
-
+#define AWDG_TRIP_THRESHOLD 18 // no faults at 24 or greater
 /*============================================================================*/
 /* STATE MACHINE FUNCTIONS */
 
@@ -125,6 +125,7 @@ void FSM_Init();
 void FSM_run();
 
 // ADC
+void FSM_ADC_WindowedAWDGCallback();
 void FSM_ADC_LevelOutOfWindowCallback();
 void FSM_ESTOPActivedCallback();
 

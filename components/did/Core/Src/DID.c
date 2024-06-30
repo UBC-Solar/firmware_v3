@@ -23,9 +23,10 @@ CREATE_CYCLIC_DATA_U8( data_battery_SOC, MAX_CYCLE_TIME_BATTERY_SOC );
 CREATE_CYCLIC_DATA_FLOAT( data_target_velocity, MAX_CYCLE_TIME_MOTOR_COMMAND );
 CREATE_CYCLIC_DATA_FLOAT( data_vehicle_velocity, MAX_CYCLE_TIME_VEHICLE_VELOCITY );
 CREATE_CYCLIC_DATA_U8( data_MCB_drive_state, MAX_CYCLE_TIME_MCB_DRIVE_STATE );
+CREATE_CYCLIC_DATA_U8( data_MCB_regen_enabled, MAX_CYCLE_TIME_MCB_REGEN_ENABLED );
 CREATE_CYCLIC_DATA_FLOAT( data_motor_current, MAX_CYCLE_TIME_MOTOR_CURRENT );
 CREATE_CYCLIC_DATA_FLOAT( data_array_current, MAX_CYCLE_TIME_ARRAY_CURRENT );
-CREATE_CYCLIC_DATA_U16( data_pack_current, MAX_CYCLE_TIME_PACK_CURRENT );
+CREATE_CYCLIC_DATA_FLOAT( data_pack_current, MAX_CYCLE_TIME_PACK_CURRENT );
 CREATE_CYCLIC_DATA_U16( data_pack_voltage, MAX_CYCLE_TIME_PACK_VOLTAGE );
 CREATE_CYCLIC_DATA_S8( data_pack_temperature, MAX_CYCLE_TIME_PACK_TEMPERATURE );
 
@@ -41,14 +42,14 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID )
 		/*
 		 *	DID next page
 		 */
-		case CAN_ID_DID_NEXT_PAGE:
-			if ( CAN_rx_data[0] != 0 ) 
-			{
-				current_page = current_page + 1; 	// Increment page
-				if (current_page == NUM_PAGES) 		// Reset to 0 if changing from last page
-					current_page = 0; 				
-			}
-			break;
+//		case CAN_ID_DID_NEXT_PAGE:
+//			if ( CAN_rx_data[0] != 0 )
+//			{
+//				current_page = current_page + 1; 	// Increment page
+//				if (current_page == NUM_PAGES) 		// Reset to 0 if changing from last page
+//					current_page = 0;
+//			}
+//			break;
 
 		/* Parse Warnings and Faults if received CAN message is 0x622
 		 * and set GPIO output for fault lights accordingly
@@ -116,6 +117,14 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID )
 			break;
 
 		/*
+		 *  MCB Diagnostics
+		 */
+		case CAN_ID_MCB_REGEN_ENABLED:
+			uint8_t regen_enabled = GETBIT(CAN_rx_data[2], 1);
+			SET_CYCLIC_DATA( data_MCB_regen_enabled, regen_enabled);
+			break;
+
+		/*
 		 *  Motor Current
 		 */
 		case CAN_ID_MOTOR_CURRENT:
@@ -146,11 +155,12 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID )
 		 */
 		case CAN_ID_PACK_CURRENT:
 			U16Bytes temp_pack_current;
+			FloatBytes pack_current_float;
 			temp_pack_current.bytes[0] = CAN_rx_data[0];
 			temp_pack_current.bytes[1] = CAN_rx_data[1];
-			temp_pack_current.U16_value = temp_pack_current.U16_value / UINT16_MAX;
+			pack_current_float.float_value = temp_pack_current.U16_value / PACK_CURRENT_DIVISOR;
 	
-			SET_CYCLIC_DATA( data_pack_current, temp_pack_current.U16_value );
+			SET_CYCLIC_DATA( data_pack_current, pack_current_float.float_value );
 			break;
 
 		/*
@@ -160,7 +170,7 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID )
 			U16Bytes temp_pack_voltage;
 			temp_pack_voltage.bytes[0] = CAN_rx_data[0];
 			temp_pack_voltage.bytes[1] = CAN_rx_data[1];
-			temp_pack_voltage.U16_value = temp_pack_voltage.U16_value / 468;
+			temp_pack_voltage.U16_value = temp_pack_voltage.U16_value / PACK_VOLTAGE_DIVISOR;
 
 			SET_CYCLIC_DATA( data_pack_voltage, temp_pack_voltage.U16_value );
 			break;
@@ -195,31 +205,13 @@ void update_DID_screen()
 			UpdateScreenTitles(PAGE_0);
 
 			// Get pointers to cyclic data variables
-			float* simulation_speed = GET_CYCLIC_DATA( data_simulation_speed );
-			uint8_t* battery_soc = GET_CYCLIC_DATA( data_battery_SOC );
-			uint8_t* MCB_drive_state = GET_CYCLIC_DATA( data_MCB_drive_state );
-			float* target_velocity = GET_CYCLIC_DATA( data_target_velocity );
 			float* vehicle_velocity = GET_CYCLIC_DATA( data_vehicle_velocity );
-
-			// Simulation target speed
-			if( simulation_speed != NULL )
-			{
-				UpdateScreenParameter(TARGET_DATA_XPOS, TARGET_DATA_YPOS, (uint32_t)(*simulation_speed), 0, FALSE);
-			}
-			else
-			{
-				OutputString("---", TARGET_DATA_XPOS, TARGET_DATA_YPOS);
-			}
-
-			// Battery SOC
-			if( battery_soc != NULL )
-			{
-				UpdateScreenParameter(SOC_DATA_XPOS, SOC_DATA_YPOS, (uint32_t)(*battery_soc), 0, FALSE);
-			}
-			else
-			{
-				OutputString("---", SOC_DATA_XPOS, SOC_DATA_YPOS);
-			}
+			uint16_t* pack_voltage = GET_CYCLIC_DATA( data_pack_voltage );
+//			uint8_t* battery_soc = GET_CYCLIC_DATA( data_battery_SOC );
+			uint8_t* MCB_drive_state = GET_CYCLIC_DATA( data_MCB_drive_state );
+			uint8_t* MCB_regen_enabled = GET_CYCLIC_DATA (data_MCB_regen_enabled);
+//			float* simulation_speed = GET_CYCLIC_DATA( data_simulation_speed );
+			float* pack_current = GET_CYCLIC_DATA( data_pack_current );
 
 			// Vehicle Velocity
 			if ( vehicle_velocity != NULL )
@@ -250,22 +242,44 @@ void update_DID_screen()
 				OutputString("---", STATE_DATA_XPOS, STATE_DATA_YPOS);
 			}
 
-			// Target cruise
-			if ( target_velocity != NULL && MCB_drive_state != NULL )
+			// Regen Enable
+			if ( MCB_regen_enabled != NULL )
 			{
-				if ( *MCB_drive_state == 0x02 )
-				{
-					UpdateScreenParameter(CRUISE_DATA_XPOS, CRUISE_DATA_YPOS, (uint32_t)(*target_velocity), 0, FALSE);
-				}
-				else
-				{
-					OutputString("OFF", CRUISE_DATA_XPOS, CRUISE_DATA_YPOS);
+				if (*MCB_regen_enabled == ENABLED) {
+					OutputString("   ", REGEN_DATA_XPOS, REGEN_DATA_YPOS);
+					OutputString("ON", REGEN_DATA_XPOS, REGEN_DATA_YPOS);
+				} else {
+					OutputString("   ", REGEN_DATA_XPOS, REGEN_DATA_YPOS);
+					OutputString("OFF", REGEN_DATA_XPOS, REGEN_DATA_YPOS);
 				}
 			}
 			else
 			{
-				OutputString("---", CRUISE_DATA_XPOS, CRUISE_DATA_YPOS);
+				OutputString("---", REGEN_DATA_XPOS, REGEN_DATA_YPOS);
 			}
+
+			// Pack Voltage
+			if( pack_voltage != NULL )
+			{
+				UpdateScreenParameter(PACK_VOLT_DATA_XPOS, PACK_VOLT_DATA_YPOS, (uint32_t)(*pack_voltage), 0, FALSE);
+			}
+			else
+			{
+				OutputString("---", PACK_VOLT_DATA_XPOS, PACK_VOLT_DATA_YPOS);
+			}
+
+			// Pack Current
+			if ( pack_current != NULL )
+			{
+				// % 10 to get the decimal place.
+				UpdateScreenParameter(PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS, (uint32_t)(*pack_current), ((uint8_t)((*pack_current) * 10) % 10), TRUE);
+			}
+			else
+			{
+				// Using 4 dashes as the floating point requires more space.
+				OutputString("----", PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS);
+			}
+
 			break;
 
 		case PAGE_1:
@@ -305,7 +319,7 @@ void update_DID_screen()
 			// Get pointers to cyclic data variables
 			float* motor_current = GET_CYCLIC_DATA( data_motor_current );
 			float* array_current = GET_CYCLIC_DATA( data_array_current );
-			uint16_t* pack_current = GET_CYCLIC_DATA( data_pack_current );
+//			uint16_t* pack_current = GET_CYCLIC_DATA( data_pack_current );
 
 			// Motor Current
 			if( motor_current != NULL )
@@ -327,32 +341,32 @@ void update_DID_screen()
 				OutputString("---", ARRAY_CURRENT_DATA_XPOS, ARRAY_CURRENT_DATA_YPOS);
 			}
 
-			// Pack Current
-			if ( pack_current != NULL )
-			{
-				UpdateScreenParameter(PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS, (uint32_t)(*pack_current), 0, FALSE);
-			}
-			else 
-			{
-				OutputString("---", PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS);
-			}
-			break;
+//			// Pack Current
+//			if ( pack_current != NULL )
+//			{
+//				UpdateScreenParameter(PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS, (uint32_t)(*pack_current), 0, FALSE);
+//			}
+//			else
+//			{
+//				OutputString("---", PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS);
+//			}
+//			break;
 
 			case PAGE_3:
 				UpdateScreenTitles(PAGE_3);
 				// Get pointers to cyclic data variables
-				uint16_t* pack_voltage = GET_CYCLIC_DATA( data_pack_voltage );
+//				uint16_t* pack_voltage = GET_CYCLIC_DATA( data_pack_voltage );
 				int8_t* pack_temperature = GET_CYCLIC_DATA( data_pack_temperature ); 
 
 				// Pack Voltage
-				if( pack_voltage != NULL )
-				{
-					UpdateScreenParameter(PACK_VOLT_DATA_XPOS, PACK_VOLT_DATA_YPOS, (uint32_t)(*pack_voltage), 0, FALSE);
-				}
-				else
-				{
-					OutputString("---", PACK_VOLT_DATA_XPOS, PACK_VOLT_DATA_YPOS);
-				}
+//				if( pack_voltage != NULL )
+//				{
+//					UpdateScreenParameter(PACK_VOLT_DATA_XPOS, PACK_VOLT_DATA_YPOS, (uint32_t)(*pack_voltage), 0, FALSE);
+//				}
+//				else
+//				{
+//					OutputString("---", PACK_VOLT_DATA_XPOS, PACK_VOLT_DATA_YPOS);
+//				}
 
 				// Pack Temperature
 				if( pack_temperature != NULL)

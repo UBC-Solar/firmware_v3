@@ -61,9 +61,8 @@
  */
 #define ADC_LOWER_DEADZONE            900
 #define ADC_FOR_NO_SPIN               1300    
-#define ADC_MIN_FOR_FULL_THROTTLE     1830
-#define ADC_MAX_FOR_FULL_THROTTLE     2000
-
+#define ADC_MIN_FOR_FULL_THROTTLE     2000
+#define ADC_MAX_FOR_FULL_THROTTLE     2600
 
 #define SETBIT(x, bitpos) (x |= (1 << bitpos))
 #define GETBIT(x, bitpos) ((x >> bitpos) & 1)
@@ -98,6 +97,7 @@ typedef struct InputFlags {
   volatile bool switch_pos_reverse;
   volatile bool switch_pos_park;
   volatile bool throttle_ADC_out_of_range;
+  volatile bool MDI_communication_fault;
 } InputFlags;
 
 /*

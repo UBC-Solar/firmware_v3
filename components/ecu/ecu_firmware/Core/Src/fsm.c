@@ -36,6 +36,7 @@ static bool LVS_ALREADY_ON = false;
 static bool startup_complete = false; // set true when first reach monitoring state
 static bool last_HLIM_status;
 static bool last_LLIM_status;
+static volatile uint8_t count_awdg_faults = 0;
 
 /*============================================================================*/
 /* PRIVATE FUNCTION IMPLEMENTATIONS */
@@ -625,17 +626,28 @@ void fault()
 }
  
 /*============================================================================*/
-/* NON-STATE FUNCTIONS */
+/* INTERRUPT CALLBACK FUNCTIONS */
 
+// Windowed AWDG Fault Check, triggered on TIM2 interrupt
+void FSM_ADC_WindowedAWDGCallback(){
+    
+    if(count_awdg_faults >= AWDG_TRIP_THRESHOLD){
+        ecu_data.status.bits.fault_charge_overcurrent = true;
+        ecu_data.status.bits.fault_discharge_overcurrent = true;
+
+        HAL_GPIO_WritePin(DOC_COC_LED_GPIO_Port, DOC_COC_LED_Pin, HIGH);
+
+        FSM_state = FAULT;
+        FSM_run(); // Immediately transition to fault state
+    }
+
+    count_awdg_faults = 0;
+}
+
+// Analog Watchdog (AWDG) Callback
 void FSM_ADC_LevelOutOfWindowCallback()
 {
-    ecu_data.status.bits.fault_charge_overcurrent = true;
-    ecu_data.status.bits.fault_discharge_overcurrent = true;
-
-    HAL_GPIO_WritePin(DOC_COC_LED_GPIO_Port, DOC_COC_LED_Pin, HIGH);
-
-    FSM_state = FAULT;
-    FSM_run(); // Immediately transition to fault state
+    count_awdg_faults++;
 }
 
 void FSM_ESTOPActivedCallback()
