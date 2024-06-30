@@ -296,7 +296,7 @@ void update_DID_screen()
 			}
 			else
 			{
-				OutputString("---", PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS);
+				OutputString("----", PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS);
 			}
 
 			break;

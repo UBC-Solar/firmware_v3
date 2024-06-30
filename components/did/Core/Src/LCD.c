@@ -267,7 +267,7 @@ void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t decimal_en, uint8_t x
     if (!decimal_en) return;
 
     //Output 1 decimal place
-    OutputString(".", x + 12, y);
+    OutputString("-", x + 12, y);
 
     dec = dec % 10;
 
