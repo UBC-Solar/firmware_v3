@@ -21,7 +21,8 @@
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
-
+#include "common.h"
+#include "main.h"
 
 // CAN message headers for VDS
 
@@ -48,13 +49,13 @@ CAN_TxHeaderTypeDef vds_diagnostic_header = {
 
 uint32_t can_mailbox;
 
-void CAN_SendShockTravel(VDS_Data_t *vds_data)
+void CAN_SendShockTravel(VDS_Data_t *can_data)
 {
     CAN_Message_t message;
     message.header = shock_travel_header;
 
     ADC_Value_t adc_value;
-    uint16_t *shock_travel_ptr = (uint16_t*)&vds_data->adc_data.ADC_shock_travel_1;
+    uint16_t *shock_travel_ptr = (uint16_t*)&can_data->adc_data.ADC_shock_travel_1;
 
     for (int i = 0; i < 4; ++i)
     {
@@ -67,17 +68,17 @@ void CAN_SendShockTravel(VDS_Data_t *vds_data)
 }
 
 
-void CAN_SendBrakeAndSteering(VDS_Data_t *vds_data)
+void CAN_SendBrakeAndSteering(VDS_Data_t *can_data)
 {
     CAN_Message_t message;
     message.header = brake_and_steering_header;
 
     ADC_Value_t adc_value;
     volatile uint16_t *sensor_data[] = {
-        &vds_data->adc_data.ADC_brake_pressure_1,
-        &vds_data->adc_data.ADC_brake_pressure_2,
-        &vds_data->adc_data.ADC_brake_pressure_3,
-        &vds_data->adc_data.ADC_steering_angle
+        &can_data->adc_data.ADC_brake_pressure_1,
+        &can_data->adc_data.ADC_brake_pressure_2,
+        &can_data->adc_data.ADC_brake_pressure_3,
+        &can_data->adc_data.ADC_steering_angle
     };
 
     for (int i = 0; i < 4; ++i)
@@ -99,18 +100,25 @@ void CAN_SendVDSDiagnostic(VDS_Data_t *vds_status){
 
 void CAN_processMessages(void)
 {
+	//Copy the data from VDS_Data to avoid data races
+	VDS_Data_t can_data = vds_data;
+
+	//Update timers
+	vds_data.currentTick_1 = HAL_GetTick();
+	vds_data.currentTick_100 = HAL_GetTick();
+
 
 	float sensor_temps[NUM_ADC_CHANNELS_USED];
 	float converted_values[NUM_ADC_CHANNELS_USED] = {0};
 
-	converted_values[0] = (BRAKE_PRESSURE_MULTIPLIER * vds_data.adc_data.ADC_brake_pressure_1) + BRAKE_PRESSURE_OFFSET;
-	converted_values[1] = (BRAKE_PRESSURE_MULTIPLIER * vds_data.adc_data.ADC_brake_pressure_2) + BRAKE_PRESSURE_OFFSET;
-	converted_values[2] = (BRAKE_PRESSURE_MULTIPLIER * vds_data.adc_data.ADC_brake_pressure_3) + BRAKE_PRESSURE_OFFSET;
-	converted_values[3] = vds_data.adc_data.ADC_steering_angle;
-	converted_values[4] = (SHOCK_TRAVEL_MULTIPLIER * vds_data.adc_data.ADC_shock_travel_1) + SHOCK_TRAVEL_OFFSET;
-	converted_values[5] = (SHOCK_TRAVEL_MULTIPLIER * vds_data.adc_data.ADC_shock_travel_2) + SHOCK_TRAVEL_OFFSET;
-	converted_values[6] = (SHOCK_TRAVEL_MULTIPLIER * vds_data.adc_data.ADC_shock_travel_3) + SHOCK_TRAVEL_OFFSET;
-	converted_values[7] = (SHOCK_TRAVEL_MULTIPLIER * vds_data.adc_data.ADC_shock_travel_4) + SHOCK_TRAVEL_OFFSET;
+	converted_values[0] = (float) (BRAKE_PRESSURE_MULTIPLIER * can_data.adc_data.ADC_brake_pressure_1) + BRAKE_PRESSURE_OFFSET;
+	converted_values[1] = (float) (BRAKE_PRESSURE_MULTIPLIER * can_data.adc_data.ADC_brake_pressure_2) + BRAKE_PRESSURE_OFFSET;
+	converted_values[2] = (float) (BRAKE_PRESSURE_MULTIPLIER * can_data.adc_data.ADC_brake_pressure_3) + BRAKE_PRESSURE_OFFSET;
+	converted_values[3] =  can_data.adc_data.ADC_steering_angle;
+	converted_values[4] = (float) (SHOCK_TRAVEL_MULTIPLIER * can_data.adc_data.ADC_shock_travel_1) + SHOCK_TRAVEL_OFFSET;
+	converted_values[5] = (float) (SHOCK_TRAVEL_MULTIPLIER * can_data.adc_data.ADC_shock_travel_2) + SHOCK_TRAVEL_OFFSET;
+	converted_values[6] = (float) (SHOCK_TRAVEL_MULTIPLIER * can_data.adc_data.ADC_shock_travel_3) + SHOCK_TRAVEL_OFFSET;
+	converted_values[7] = (float) (SHOCK_TRAVEL_MULTIPLIER * can_data.adc_data.ADC_shock_travel_4) + SHOCK_TRAVEL_OFFSET;
 
 
 	for(int i = 0; i <= NUM_ADC_CHANNELS_USED - 1; i++){
@@ -118,28 +126,38 @@ void CAN_processMessages(void)
 	}
 
 	// Send brake and steering message at 10Hz (every 100ms)
-	if (brake_steering_counter >= 100)
-	{
-		vds_data.adc_data.ADC_brake_pressure_1 = sensor_temps[0] / brake_steering_counter;
-		vds_data.adc_data.ADC_brake_pressure_2 = sensor_temps[1] / brake_steering_counter;
-		vds_data.adc_data.ADC_brake_pressure_3 = sensor_temps[2] / brake_steering_counter;
-		vds_data.adc_data.ADC_steering_angle = sensor_temps[3] / brake_steering_counter;
+	 if (vds_data.currentTick_100 - vds_data.previousTick_100 >= 100) {  // 100 ms has passed
+		 vds_data.previousTick_100 = vds_data.currentTick_100;
+		 can_data.adc_data.ADC_brake_pressure_1 = sensor_temps[0] / brake_steering_counter;
+		 can_data.adc_data.ADC_brake_pressure_2 = sensor_temps[1] / brake_steering_counter;
+		 can_data.adc_data.ADC_brake_pressure_3 = sensor_temps[2] / brake_steering_counter;
+		 can_data.adc_data.ADC_steering_angle = sensor_temps[3] / brake_steering_counter;
 
 
-		CAN_SendBrakeAndSteering(&vds_data);
+		CAN_SendBrakeAndSteering(&can_data);
 		brake_steering_counter = 0; // Reset counter
+		sensor_temps[0] = 0;
+		sensor_temps[1] = 0;
+		sensor_temps[2] = 0;
+		sensor_temps[3] = 0;
+
 	}
 
 	// Send shock travel message at 1Khz
-	if (shock_travel_counter >= 1){
-		vds_data.adc_data.ADC_shock_travel_1 = sensor_temps[4] / shock_travel_counter;
-		vds_data.adc_data.ADC_shock_travel_2 = sensor_temps[5] / shock_travel_counter;
-		vds_data.adc_data.ADC_shock_travel_3 = sensor_temps[6] / shock_travel_counter;
-		vds_data.adc_data.ADC_shock_travel_4 = sensor_temps[7] / shock_travel_counter;
+	 if (vds_data.currentTick_1 - vds_data.previousTick_1 >= 1) {  // 1 ms has passed
+		 vds_data.previousTick_1 = vds_data.currentTick_1;
+		 can_data.adc_data.ADC_shock_travel_1 = sensor_temps[4] / shock_travel_counter;
+		 can_data.adc_data.ADC_shock_travel_2 = sensor_temps[5] / shock_travel_counter;
+		 can_data.adc_data.ADC_shock_travel_3 = sensor_temps[6] / shock_travel_counter;
+		 can_data.adc_data.ADC_shock_travel_4 = sensor_temps[7] / shock_travel_counter;
 
-		CAN_SendShockTravel(&vds_data);
+		CAN_SendShockTravel(&can_data);
 		shock_travel_counter = 0;
-	}
+		sensor_temps[4] = 0;
+		sensor_temps[5] = 0;
+		sensor_temps[6] = 0;
+		sensor_temps[7] = 0;
+}
 
 	//TODO: Implement VDS diagnostic once ready
 }

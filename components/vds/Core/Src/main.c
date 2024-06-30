@@ -84,7 +84,6 @@ void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
 	 if (hadc == &hadc1)
 	    {
 	        ADC1_setFaultStatus(1);
-
 	        // Stop ADC before restarting it to avoid continuous interrupts
 	        HAL_ADC_Stop(hadc);
 
@@ -126,18 +125,17 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+   vds_data.status.raw = 0;
+   vds_data.adc_data.ADC_brake_pressure_1 = 0;
+   vds_data.adc_data.ADC_brake_pressure_2 = 0;
+   vds_data.adc_data.ADC_brake_pressure_3 = 0;
+   vds_data.adc_data.ADC_shock_travel_1 = 0;
+   vds_data.adc_data.ADC_shock_travel_2 = 0;
+   vds_data.adc_data.ADC_shock_travel_3 = 0;
+   vds_data.adc_data.ADC_shock_travel_4 = 0;
+   vds_data.adc_data.ADC_steering_angle = 0;
+   vds_data.status.bits.adc_fault = 0;
 
-  //Reset all adc flags
-  vds_data.status.raw = 0;
-  vds_data.adc_data.ADC_brake_pressure_1 = 0;
-  vds_data.adc_data.ADC_brake_pressure_2 = 0;
-  vds_data.adc_data.ADC_brake_pressure_3 = 0;
-  vds_data.adc_data.ADC_shock_travel_1 = 0;
-  vds_data.adc_data.ADC_shock_travel_2 = 0;
-  vds_data.adc_data.ADC_shock_travel_3 = 0;
-  vds_data.adc_data.ADC_shock_travel_4 = 0;
-  vds_data.adc_data.ADC_steering_angle = 0;
-  vds_data.status.bits.adc_fault = 0;
 
   /* USER CODE END Init */
 
@@ -174,7 +172,7 @@ int main(void)
 //	  HAL_Delay(100);
 //	  HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 0);
 //	  HAL_IWDG_Refresh(&hiwdg);
-//	  CAN_processMessages();
+	  CAN_processMessages();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -270,7 +268,6 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
   if (hadc == &hadc1){
-    //This half is not in use for the VDS
     averageADCValues(1);
   }
 
@@ -303,9 +300,9 @@ void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
   if (hadc == &hadc1)
   {
     ADC1_setFaultStatus(1);
-    HAL_Delay(1); // Delay for 1ms
-    averageADCValues(0); // Retry with ADC half 0
-    averageADCValues(1); // Retry with ADC half 1
+//    HAL_Delay(1); // Delay for 1ms
+//    averageADCValues(0); // Retry with ADC half 0
+//    averageADCValues(1); // Retry with ADC half 1
   }
 }
 

@@ -83,8 +83,12 @@ typedef struct{
 
 
 typedef struct{
-    VDS_StatusCode_t status;
-    VDS_ADC_Data_t adc_data;
+	uint32_t currentTick_1;
+	uint32_t previousTick_1;
+	uint32_t currentTick_100;
+	uint32_t previousTick_100;
+    volatile VDS_StatusCode_t status;
+    volatile VDS_ADC_Data_t adc_data;
 } VDS_Data_t;
 
 
