@@ -205,10 +205,12 @@ void update_DID_screen()
 
 			// Get pointers to cyclic data variables
 			float* vehicle_velocity = GET_CYCLIC_DATA( data_vehicle_velocity );
-			uint8_t* battery_soc = GET_CYCLIC_DATA( data_battery_SOC );
+			uint16_t* pack_voltage = GET_CYCLIC_DATA( data_pack_voltage );
+//			uint8_t* battery_soc = GET_CYCLIC_DATA( data_battery_SOC );
 			uint8_t* MCB_drive_state = GET_CYCLIC_DATA( data_MCB_drive_state );
 			uint8_t* MCB_regen_enabled = GET_CYCLIC_DATA (data_MCB_regen_enabled);
-			float* simulation_speed = GET_CYCLIC_DATA( data_simulation_speed );
+//			float* simulation_speed = GET_CYCLIC_DATA( data_simulation_speed );
+			uint16_t* pack_current = GET_CYCLIC_DATA( data_pack_current );
 
 			// Vehicle Velocity
 			if ( vehicle_velocity != NULL )
@@ -221,14 +223,14 @@ void update_DID_screen()
 			}
 
 			// Battery SOC
-			if( battery_soc != NULL )
-			{
-				UpdateScreenParameter(SOC_DATA_XPOS, SOC_DATA_YPOS, (uint32_t)(*battery_soc), 0, FALSE);
-			}
-			else
-			{
-				OutputString("---", SOC_DATA_XPOS, SOC_DATA_YPOS);
-			}
+//			if( battery_soc != NULL )
+//			{
+//				UpdateScreenParameter(SOC_DATA_XPOS, SOC_DATA_YPOS, (uint32_t)(*battery_soc), 0, FALSE);
+//			}
+//			else
+//			{
+//				OutputString("---", SOC_DATA_XPOS, SOC_DATA_YPOS);
+//			}
 
 			// MCB drive state
 			if ( MCB_drive_state != NULL )
@@ -265,14 +267,35 @@ void update_DID_screen()
 				OutputString("---", REGEN_DATA_XPOS, REGEN_DATA_YPOS);
 			}
 
-			// Simulation target speed
-			if( simulation_speed != NULL )
+			// Pack Voltage
+			if( pack_voltage != NULL )
 			{
-				UpdateScreenParameter(TARGET_DATA_XPOS, TARGET_DATA_YPOS, (uint32_t)(*simulation_speed), 0, FALSE);
+				UpdateScreenParameter(PACK_VOLT_DATA_XPOS, PACK_VOLT_DATA_YPOS, (uint32_t)(*pack_voltage), 0, FALSE);
 			}
 			else
 			{
-				OutputString("---", TARGET_DATA_XPOS, TARGET_DATA_YPOS);
+				OutputString("---", PACK_VOLT_DATA_XPOS, PACK_VOLT_DATA_YPOS);
+			}
+
+
+//			// Simulation target speed
+//			if( simulation_speed != NULL )
+//			{
+//				UpdateScreenParameter(TARGET_DATA_XPOS, TARGET_DATA_YPOS, (uint32_t)(*simulation_speed), 0, FALSE);
+//			}
+//			else
+//			{
+//				OutputString("---", TARGET_DATA_XPOS, TARGET_DATA_YPOS);
+//			}
+
+			// Pack Current
+			if ( pack_current != NULL )
+			{
+				UpdateScreenParameter(PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS, (uint32_t)(*pack_current), 0, FALSE);
+			}
+			else
+			{
+				OutputString("---", PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS);
 			}
 
 			break;
@@ -314,7 +337,7 @@ void update_DID_screen()
 			// Get pointers to cyclic data variables
 			float* motor_current = GET_CYCLIC_DATA( data_motor_current );
 			float* array_current = GET_CYCLIC_DATA( data_array_current );
-			uint16_t* pack_current = GET_CYCLIC_DATA( data_pack_current );
+//			uint16_t* pack_current = GET_CYCLIC_DATA( data_pack_current );
 
 			// Motor Current
 			if( motor_current != NULL )
@@ -336,32 +359,32 @@ void update_DID_screen()
 				OutputString("---", ARRAY_CURRENT_DATA_XPOS, ARRAY_CURRENT_DATA_YPOS);
 			}
 
-			// Pack Current
-			if ( pack_current != NULL )
-			{
-				UpdateScreenParameter(PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS, (uint32_t)(*pack_current), 0, FALSE);
-			}
-			else 
-			{
-				OutputString("---", PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS);
-			}
-			break;
+//			// Pack Current
+//			if ( pack_current != NULL )
+//			{
+//				UpdateScreenParameter(PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS, (uint32_t)(*pack_current), 0, FALSE);
+//			}
+//			else
+//			{
+//				OutputString("---", PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS);
+//			}
+//			break;
 
 			case PAGE_3:
 				UpdateScreenTitles(PAGE_3);
 				// Get pointers to cyclic data variables
-				uint16_t* pack_voltage = GET_CYCLIC_DATA( data_pack_voltage );
+//				uint16_t* pack_voltage = GET_CYCLIC_DATA( data_pack_voltage );
 				int8_t* pack_temperature = GET_CYCLIC_DATA( data_pack_temperature ); 
 
 				// Pack Voltage
-				if( pack_voltage != NULL )
-				{
-					UpdateScreenParameter(PACK_VOLT_DATA_XPOS, PACK_VOLT_DATA_YPOS, (uint32_t)(*pack_voltage), 0, FALSE);
-				}
-				else
-				{
-					OutputString("---", PACK_VOLT_DATA_XPOS, PACK_VOLT_DATA_YPOS);
-				}
+//				if( pack_voltage != NULL )
+//				{
+//					UpdateScreenParameter(PACK_VOLT_DATA_XPOS, PACK_VOLT_DATA_YPOS, (uint32_t)(*pack_voltage), 0, FALSE);
+//				}
+//				else
+//				{
+//					OutputString("---", PACK_VOLT_DATA_XPOS, PACK_VOLT_DATA_YPOS);
+//				}
 
 				// Pack Temperature
 				if( pack_temperature != NULL)

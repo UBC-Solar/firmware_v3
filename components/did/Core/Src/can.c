@@ -76,8 +76,8 @@ void CanFilterSetup()
     CAN_filter3.FilterIdHigh = (uint16_t) (0x702 << 5);
     CAN_filter3.FilterMaskIdHigh = (uint16_t) (0x702<< 5);
 
-	CAN_filter3.FilterIdLow = (uint16_t) (0x702 << 5);
-    CAN_filter3.FilterMaskIdLow = (uint16_t) (0x702 << 5);
+	CAN_filter3.FilterIdLow = (uint16_t) (0x404 << 5);
+    CAN_filter3.FilterMaskIdLow = (uint16_t) (0x404 << 5);
 
     CAN_filter3.FilterFIFOAssignment = CAN_FILTER_FIFO0;
     CAN_filter3.FilterBank = (uint32_t) 3;

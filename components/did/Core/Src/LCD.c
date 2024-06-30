@@ -375,16 +375,21 @@ void UpdateScreenTitles(uint8_t pageNum) {
 	{
 		case PAGE_0:
 			/* Titles */
-			OutputString("SOC", SOC_XPOS, SOC_YPOS);
-			OutputString("REGEN", REGEN_XPOS, REGEN_YPOS);
 			OutputString("SPEED", SPEED_XPOS, SPEED_YPOS);
+//			OutputString("SOC", SOC_XPOS, SOC_YPOS);
 			OutputString("STATE", STATE_XPOS, STATE_YPOS);
-            OutputString("TAR", TARGET_XPOS, TARGET_YPOS);
+			OutputString("REGEN", REGEN_XPOS, REGEN_YPOS);
+			OutputString("PACK V", PACK_VOLT_XPOS, PACK_VOLT_YPOS);
+//            OutputString("TAR", TARGET_XPOS, TARGET_YPOS);
+			OutputString("PACK C", PACK_CURRENT_XPOS, PACK_CURRENT_YPOS);
+
 			/* Units */
-			OutputString("%", SOC_UNIT_XPOS, SOC_UNIT_YPOS);
-			OutputString("MPH", CRUISE_UNIT_XPOS, CRUISE_UNIT_YPOS);
+            //			OutputString("%", SOC_UNIT_XPOS, SOC_UNIT_YPOS);
+//			OutputString("MPH", CRUISE_UNIT_XPOS, CRUISE_UNIT_YPOS);
 			OutputString("MPH", SPEED_UNIT_XPOS, SPEED_UNIT_YPOS);
-            OutputString("MPH", TARGET_UNIT_XPOS, TARGET_UNIT_YPOS);
+            OutputString("V", PACK_VOLT_UNIT_XPOS, PACK_VOLT_UNIT_YPOS);
+//            OutputString("MPH", TARGET_UNIT_XPOS, TARGET_UNIT_YPOS);
+            OutputString("A", PACK_CURRENT_UNIT_XPOS, PACK_CURRENT_UNIT_YPOS);
 			break;
 		case PAGE_1:
 			/* Titles */

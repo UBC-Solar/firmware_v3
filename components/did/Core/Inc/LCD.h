@@ -38,14 +38,14 @@ Header file containing all constants and function declarations to the LCD
 #define SOC_UNIT_YPOS 3
 // MCB Drive State
 #define STATE_XPOS 0
-#define STATE_YPOS 6
-#define STATE_DATA_XPOS 24
-#define STATE_DATA_YPOS 6
+#define STATE_YPOS 3
+#define STATE_DATA_XPOS 21
+#define STATE_DATA_YPOS 3
 // Regen Enabled
 #define REGEN_XPOS 0
-#define REGEN_YPOS 9
-#define REGEN_DATA_XPOS 20
-#define REGEN_DATA_YPOS 9
+#define REGEN_YPOS 6
+#define REGEN_DATA_XPOS 21
+#define REGEN_DATA_YPOS 6
 #define CRUISE_UNIT_XPOS 20
 #define CRUISE_UNIT_YPOS 9
 // Simulation Target Speed
@@ -55,6 +55,7 @@ Header file containing all constants and function declarations to the LCD
 #define TARGET_DATA_YPOS 12
 #define TARGET_UNIT_XPOS 32
 #define TARGET_UNIT_YPOS 12
+
 // Warning flag
 #define WARNING_XPOS 38
 #define WARNING_YPOS 12
@@ -107,11 +108,11 @@ Header file containing all constants and function declarations to the LCD
 #define LV_CURRENT_UNIT_YPOS 9
 // BUS Current (Total)
 #define PACK_CURRENT_XPOS 0
-#define PACK_CURRENT_YPOS 6
-#define PACK_CURRENT_DATA_XPOS 15
-#define PACK_CURRENT_DATA_YPOS 6
+#define PACK_CURRENT_YPOS 12
+#define PACK_CURRENT_DATA_XPOS 21
+#define PACK_CURRENT_DATA_YPOS 12
 #define PACK_CURRENT_UNIT_XPOS 37
-#define PACK_CURRENT_UNIT_YPOS 6
+#define PACK_CURRENT_UNIT_YPOS 12
 
 /* Page 3 */
 // Pack Temperature
@@ -123,11 +124,11 @@ Header file containing all constants and function declarations to the LCD
 #define PACK_TEMP_UNIT_YPOS 0
 // Pack Voltage
 #define PACK_VOLT_XPOS 0
-#define PACK_VOLT_YPOS 3
-#define PACK_VOLT_DATA_XPOS 15
-#define PACK_VOLT_DATA_YPOS 3
+#define PACK_VOLT_YPOS 9
+#define PACK_VOLT_DATA_XPOS 21
+#define PACK_VOLT_DATA_YPOS 9
 #define PACK_VOLT_UNIT_XPOS 37
-#define PACK_VOLT_UNIT_YPOS 3
+#define PACK_VOLT_UNIT_YPOS 9
 // Voltage of Lowest Charged Cell
 #define CELL_LV_XPOS 0
 #define CELL_LV_YPOS 6
