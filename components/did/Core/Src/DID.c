@@ -292,10 +292,12 @@ void update_DID_screen()
 			// Pack Current
 			if ( pack_current != NULL )
 			{
+				// % 10 to get the decimal place.
 				UpdateScreenParameter(PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS, (uint32_t)(*pack_current), ((uint8_t)((*pack_current) * 10) % 10), TRUE);
 			}
 			else
 			{
+				// Using 4 dashes as the floating point requires more space.
 				OutputString("----", PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS);
 			}
 
