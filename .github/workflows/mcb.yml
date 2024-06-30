@@ -17,33 +17,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Install toolchain (arm-none-eabi)
-      run: |
-        sudo apt-get update
-        sudo apt-get install gcc-arm-none-eabi
+    # - uses: actions/checkout@v3
+    # - name: Install toolchain (arm-none-eabi)
+    #   run: |
+    #     sudo apt-get update
+    #     sudo apt-get install gcc-arm-none-eabi
       
-    - name: Build debug target
-      run: | 
-        cd components/mcb/mcb_main/Debug/
-        make -j$(nproc) all 
-        arm-none-eabi-objcopy -O binary mcb_main.elf mcb_main.bin
+    # - name: Build debug target
+    #   run: | 
+    #     cd components/mcb/mcb_main/Debug/
+    #     make -j$(nproc) all 
+    #     arm-none-eabi-objcopy -O binary mcb_main.elf mcb_main.bin
       
-    - name: Get branch name and commit hash
-      run: |
-        echo "branch_name=mcb" >> $GITHUB_ENV
-        echo "commit_hash=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+    # - name: Get branch name and commit hash
+    #   run: |
+    #     echo "branch_name=mcb" >> $GITHUB_ENV
+    #     echo "commit_hash=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
-    - name: Collect build artifacts
-      run: |
-        mkdir build
-        cd build
-        mkdir debug
-        cd ..
-        cp components/mcb/mcb_main/Debug/*.* build/debug
+    # - name: Collect build artifacts
+    #   run: |
+    #     mkdir build
+    #     cd build
+    #     mkdir debug
+    #     cd ..
+    #     cp components/mcb/mcb_main/Debug/*.* build/debug
       
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: build-${{ env.branch_name }}-${{ env.commit_hash }}
-        path: build
+    # - name: Upload build artifacts
+    #   uses: actions/upload-artifact@v3
+    #   with:
+    #     name: build-${{ env.branch_name }}-${{ env.commit_hash }}
+    #     path: build
