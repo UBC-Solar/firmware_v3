@@ -223,16 +223,6 @@ void update_DID_screen()
 				OutputString("---", SPEED_DATA_XPOS, SPEED_DATA_YPOS);
 			}
 
-			// Battery SOC
-//			if( battery_soc != NULL )
-//			{
-//				UpdateScreenParameter(SOC_DATA_XPOS, SOC_DATA_YPOS, (uint32_t)(*battery_soc), 0, FALSE);
-//			}
-//			else
-//			{
-//				OutputString("---", SOC_DATA_XPOS, SOC_DATA_YPOS);
-//			}
-
 			// MCB drive state
 			if ( MCB_drive_state != NULL )
 			{
@@ -277,17 +267,6 @@ void update_DID_screen()
 			{
 				OutputString("---", PACK_VOLT_DATA_XPOS, PACK_VOLT_DATA_YPOS);
 			}
-
-
-//			// Simulation target speed
-//			if( simulation_speed != NULL )
-//			{
-//				UpdateScreenParameter(TARGET_DATA_XPOS, TARGET_DATA_YPOS, (uint32_t)(*simulation_speed), 0, FALSE);
-//			}
-//			else
-//			{
-//				OutputString("---", TARGET_DATA_XPOS, TARGET_DATA_YPOS);
-//			}
 
 			// Pack Current
 			if ( pack_current != NULL )
