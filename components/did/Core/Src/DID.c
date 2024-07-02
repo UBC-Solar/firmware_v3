@@ -154,11 +154,11 @@ void parse_can_message( uint8_t* CAN_rx_data, uint32_t CAN_ID )
 		 *	Pack Current
 		 */
 		case CAN_ID_PACK_CURRENT:
-			U16Bytes temp_pack_current;
+			Int16Bytes temp_pack_current;
 			FloatBytes pack_current_float;
 			temp_pack_current.bytes[0] = CAN_rx_data[0];
 			temp_pack_current.bytes[1] = CAN_rx_data[1];
-			pack_current_float.float_value = temp_pack_current.U16_value / PACK_CURRENT_DIVISOR;
+			pack_current_float.float_value = temp_pack_current.Int16_value / PACK_CURRENT_DIVISOR;
 	
 			SET_CYCLIC_DATA( data_pack_current, pack_current_float.float_value );
 			break;
@@ -272,7 +272,7 @@ void update_DID_screen()
 			if ( pack_current != NULL )
 			{
 				// % 10 to get the decimal place.
-				UpdateScreenParameter(PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS, (uint32_t)(*pack_current), ((uint8_t)((*pack_current) * 10) % 10), TRUE);
+				UpdateScreenParameter(PACK_CURRENT_DATA_XPOS, PACK_CURRENT_DATA_YPOS, (int32_t)(*pack_current), ((uint8_t)((*pack_current) * 10) % 10), TRUE);
 			}
 			else
 			{

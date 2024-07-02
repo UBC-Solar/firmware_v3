@@ -109,7 +109,7 @@ Header file containing all constants and function declarations to the LCD
 // BUS Current (Total)
 #define PACK_CURRENT_XPOS 0
 #define PACK_CURRENT_YPOS 12
-#define PACK_CURRENT_DATA_XPOS 18
+#define PACK_CURRENT_DATA_XPOS 15
 #define PACK_CURRENT_DATA_YPOS 12
 #define PACK_CURRENT_UNIT_XPOS 37
 #define PACK_CURRENT_UNIT_YPOS 12

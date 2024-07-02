@@ -96,6 +96,11 @@ typedef union U16Bytes {
 	uint8_t bytes[2];
 } U16Bytes;
 
+typedef union Int16Bytes {
+	int16_t Int16_value;
+	int8_t bytes[2];
+} Int16Bytes;
+
 typedef union S8Byte {
 	int8_t S8_value;
 	uint8_t byte;
