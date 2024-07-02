@@ -381,7 +381,7 @@ void UpdateScreenTitles(uint8_t pageNum) {
 			OutputString("REGEN", REGEN_XPOS, REGEN_YPOS);
 			OutputString("PACK V", PACK_VOLT_XPOS, PACK_VOLT_YPOS);
 //            OutputString("TAR", TARGET_XPOS, TARGET_YPOS);
-			OutputString("PACK C", PACK_CURRENT_XPOS, PACK_CURRENT_YPOS);
+			OutputString("PCK C", PACK_CURRENT_XPOS, PACK_CURRENT_YPOS);
 
 			/* Units */
             //			OutputString("%", SOC_UNIT_XPOS, SOC_UNIT_YPOS);
