@@ -72,6 +72,10 @@ void CAN_SendShockTravel(VDS_Data_t *adc_data);
 void CAN_SendBrakeAndSteering(VDS_Data_t *adc_data);
 void CAN_SendDiagnostics(VDS_StatusCode_t *status);
 void CAN_processMessages(void);
+void CAN1_setBusyStatus(int flag_value);
+void CAN2_setBusyStatus(int flag_value);
+int CAN1_getBusyStatus();
+int CAN2_getBusyStatus();
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

@@ -71,14 +71,14 @@ typedef union {
 } VDS_StatusCode_t;
 
 typedef struct{
-    volatile uint16_t ADC_brake_pressure_1; // mV
-    volatile uint16_t ADC_brake_pressure_2; // mV
-    volatile uint16_t ADC_brake_pressure_3; // mV
-    volatile uint16_t ADC_shock_travel_1; // mV
-    volatile uint16_t ADC_shock_travel_2; // mV
-    volatile uint16_t ADC_shock_travel_3; // mV
-    volatile uint16_t ADC_shock_travel_4; // mV
-    volatile uint16_t ADC_steering_angle; // mV
+     uint16_t ADC_brake_pressure_1; // mV
+     uint16_t ADC_brake_pressure_2; // mV
+     uint16_t ADC_brake_pressure_3; // mV
+     uint16_t ADC_shock_travel_1; // mV
+     uint16_t ADC_shock_travel_2; // mV
+     uint16_t ADC_shock_travel_3; // mV
+     uint16_t ADC_shock_travel_4; // mV
+     uint16_t ADC_steering_angle; // mV
 } VDS_ADC_Data_t;
 
 
@@ -109,6 +109,9 @@ typedef union {
 extern VDS_Data_t vds_data;
 extern volatile int ADC1_DMA_in_process_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is in process
 extern volatile int ADC1_DMA_fault_flag; //flag that indicates the DMA interrupt if ADC1 has been called and is at fault
+
+extern volatile int CAN1_DMA_busy_flag;
+extern volatile int CAN2_DMA_busy_flag;
 
 extern volatile VDS_ADC_AVERAGES adc_averages;
 

@@ -288,6 +288,7 @@ void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float resul
 	vds_data.adc_data.ADC_shock_travel_3 = adc1_buf[start_index + ST_3];
 	vds_data.adc_data.ADC_shock_travel_4 = adc1_buf[start_index + ST_4];
 	vds_data.adc_data.ADC_steering_angle = adc1_buf[start_index + SA_1];
+
 	ADC1_setBusyStatus(0);
 }
 

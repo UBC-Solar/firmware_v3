@@ -58,7 +58,8 @@ uint32_t diagnostic_counter = 0;
 //Initialise global variables for the VDS data structure and ADC readings
 volatile int ADC1_DMA_in_process_flag = 0; //flag that indicates the DMA interrupt if ADC1 has been called and is in process
 volatile int ADC1_DMA_fault_flag = 0; //flag that indicates the DMA interrupt if ADC1 has been called and is at fault
-
+volatile int CAN1_DMA_busy_flag = 0;
+volatile int CAN2_DMA_busy_flag = 0;
 //keeping track of averages
 float sum[NUM_ADC_CHANNELS_USED] = {0.0};
 uint32_t counters[NUM_ADC_CHANNELS_USED] = {0};
@@ -121,8 +122,7 @@ int main(void)
 
   /* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */  HAL_Init();
 
   /* USER CODE BEGIN Init */
    vds_data.status.raw = 0;
@@ -135,6 +135,7 @@ int main(void)
    vds_data.adc_data.ADC_shock_travel_4 = 0;
    vds_data.adc_data.ADC_steering_angle = 0;
    vds_data.status.bits.adc_fault = 0;
+
 
 
   /* USER CODE END Init */
@@ -173,6 +174,7 @@ int main(void)
 //	  HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 0);
 //	  HAL_IWDG_Refresh(&hiwdg);
 	  CAN_processMessages();
+//	  HAL_Delay(1);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -255,6 +257,8 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
   if (hadc == &hadc1){
     //Process ADC1 readings
     averageADCValues(0);
+//    CAN_processMessages();
+
   }
 
   brake_steering_counter++;
@@ -269,6 +273,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
   if (hadc == &hadc1){
     averageADCValues(1);
+//    CAN_processMessages();
   }
 
   brake_steering_counter++;
