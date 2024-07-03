@@ -111,15 +111,14 @@ void CAN_processMessages(void)
 	float sensor_temps[NUM_ADC_CHANNELS_USED];
 	float converted_values[NUM_ADC_CHANNELS_USED] = {0};
 
-	converted_values[0] = (float) (BRAKE_PRESSURE_MULTIPLIER * can_data.adc_data.ADC_brake_pressure_1) + BRAKE_PRESSURE_OFFSET;
-	converted_values[1] = (float) (BRAKE_PRESSURE_MULTIPLIER * can_data.adc_data.ADC_brake_pressure_2) + BRAKE_PRESSURE_OFFSET;
-	converted_values[2] = (float) (BRAKE_PRESSURE_MULTIPLIER * can_data.adc_data.ADC_brake_pressure_3) + BRAKE_PRESSURE_OFFSET;
+	converted_values[0] = (float) (((BRAKE_PRESSURE_MULTIPLIER * (((can_data.adc_data.ADC_brake_pressure_1 / ADC_TO_VOLTAGE_DIVISOR) * ADC_TO_VOLTAGE_MULTIPLIER )) * MV_TO_V_MULTIPLIER) + BRAKE_PRESSURE_OFFSET) / BRAKE_PRESSURE_SURFACE_AREA) * PSI_CONVERSION_FACTOR;
+	converted_values[1] = (float) (((BRAKE_PRESSURE_MULTIPLIER * (((can_data.adc_data.ADC_brake_pressure_1 / ADC_TO_VOLTAGE_DIVISOR) * ADC_TO_VOLTAGE_MULTIPLIER )) * MV_TO_V_MULTIPLIER) + BRAKE_PRESSURE_OFFSET) / BRAKE_PRESSURE_SURFACE_AREA) * PSI_CONVERSION_FACTOR;
+	converted_values[2] = (float) (((BRAKE_PRESSURE_MULTIPLIER * (((can_data.adc_data.ADC_brake_pressure_1 / ADC_TO_VOLTAGE_DIVISOR) * ADC_TO_VOLTAGE_MULTIPLIER )) * MV_TO_V_MULTIPLIER) + BRAKE_PRESSURE_OFFSET) / BRAKE_PRESSURE_SURFACE_AREA) * PSI_CONVERSION_FACTOR;
 	converted_values[3] =  can_data.adc_data.ADC_steering_angle;
-	converted_values[4] = (float) (SHOCK_TRAVEL_MULTIPLIER * can_data.adc_data.ADC_shock_travel_1) + SHOCK_TRAVEL_OFFSET;
-	converted_values[5] = (float) (SHOCK_TRAVEL_MULTIPLIER * can_data.adc_data.ADC_shock_travel_2) + SHOCK_TRAVEL_OFFSET;
-	converted_values[6] = (float) (SHOCK_TRAVEL_MULTIPLIER * can_data.adc_data.ADC_shock_travel_3) + SHOCK_TRAVEL_OFFSET;
-	converted_values[7] = (float) (SHOCK_TRAVEL_MULTIPLIER * can_data.adc_data.ADC_shock_travel_4) + SHOCK_TRAVEL_OFFSET;
-
+	converted_values[4] = (float) (SHOCK_TRAVEL_MULTIPLIER * can_data.adc_data.ADC_shock_travel_1) - SHOCK_TRAVEL_OFFSET;
+	converted_values[5] = (float) (SHOCK_TRAVEL_MULTIPLIER * can_data.adc_data.ADC_shock_travel_2) - SHOCK_TRAVEL_OFFSET;
+	converted_values[6] = (float) (SHOCK_TRAVEL_MULTIPLIER * can_data.adc_data.ADC_shock_travel_3) - SHOCK_TRAVEL_OFFSET;
+	converted_values[7] = (float) (SHOCK_TRAVEL_MULTIPLIER * can_data.adc_data.ADC_shock_travel_4) - SHOCK_TRAVEL_OFFSET;
 
 	for(int i = 0; i <= NUM_ADC_CHANNELS_USED - 1; i++){
 		sensor_temps[i] += converted_values[i];
