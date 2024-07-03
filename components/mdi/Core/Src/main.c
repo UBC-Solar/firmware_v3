@@ -42,6 +42,9 @@
 #define DAC_REGEN_ADDR  (0b0001101 << 1) //I2C address for the regen DAC
 
 #define MCB_COMMUNICATION_TIMEOUT 500 // Time in ms to wait for a motor command from MCB before setting a fault
+#define MDI_DIAGNOSTICS_CAN_ID 0x50F // CAN ID for MDI diagnostics message
+
+#define SETBIT(x, bitpos) (x |= (1 << bitpos))
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -321,6 +324,34 @@ int main(void)
     		}
     		HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
     		SendSlowMessage = 0;
+
+        // MDI diagnostics 0x50F
+        TxHeader.StdId = MDI_DIAGNOSTICS_CAN_ID;
+        TxHeader.IDE = CAN_ID_STD;
+        TxHeader.DLC = 1;
+        TxData[0] = 0; // Clear TxData[0]
+
+        if(1 == mcb_communication_fault)
+        {
+          SETBIT(TxData[0], 0);
+        }
+
+        if(FORWARD_TRUE == msg0.FWD_direction)
+        {
+          SETBIT(TxData[0], 1);
+        }
+
+        if(POWER_MODE_ON == msg0.PWR_mode_on)
+        {
+          SETBIT(TxData[0], 2);
+        }
+
+        if(REGEN_TRUE == msg0.regen)
+        {
+          SETBIT(TxData[0], 3);
+        }
+
+        HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
       }
     	SendMessageTimerInterrupt = 0;
     }
