@@ -31,7 +31,6 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 #include "common.h"
 #include "gpio.h"
-#include "dma.h"
 #include "can.h"
 #include <stdio.h>
 /* USER CODE END Includes */
@@ -39,7 +38,6 @@ extern "C" {
 extern ADC_HandleTypeDef hadc1;
 
 /* USER CODE BEGIN Private defines */
-#define NUMBER_ADC_SAMPLES  100
 #define DMA_BUFFER_START 0
 #define DMA_BUFFER_END 7
 
@@ -72,6 +70,8 @@ int ADC_getReading(int adc_channel);
 void ADC_setReading(float adc_reading, uint8_t adc_channel);
 
 void ADC_convertRawValues(void);
+void ADC_Select(uint8_t channel);
+void read_all_sensors(void);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

@@ -1,26 +1,25 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2024 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
 #include "can.h"
-#include "dma.h"
 #include "iwdg.h"
 #include "tim.h"
 #include "gpio.h"
@@ -50,17 +49,17 @@
 
 /* USER CODE BEGIN PV */
 volatile uint16_t adc1_buf[ADC1_BUF_LENGTH] = {0}; // Initialize ADC buffer
-VDS_Data_t vds_data = {0}; // Initialize VDS data structure
+VDS_Data_t vds_data = {0};                         // Initialize VDS data structure
 
 uint32_t brake_steering_counter = 0;
 uint32_t shock_travel_counter = 0;
 uint32_t diagnostic_counter = 0;
-//Initialise global variables for the VDS data structure and ADC readings
-volatile int ADC1_DMA_in_process_flag = 0; //flag that indicates the DMA interrupt if ADC1 has been called and is in process
-volatile int ADC1_DMA_fault_flag = 0; //flag that indicates the DMA interrupt if ADC1 has been called and is at fault
+// Initialise global variables for the VDS data structure and ADC readings
+volatile int ADC1_DMA_in_process_flag = 0; // flag that indicates the DMA interrupt if ADC1 has been called and is in process
+volatile int ADC1_DMA_fault_flag = 0;      // flag that indicates the DMA interrupt if ADC1 has been called and is at fault
 volatile int CAN1_DMA_busy_flag = 0;
 volatile int CAN2_DMA_busy_flag = 0;
-//keeping track of averages
+// keeping track of averages
 float sum[NUM_ADC_CHANNELS_USED] = {0.0};
 uint32_t counters[NUM_ADC_CHANNELS_USED] = {0};
 volatile VDS_ADC_AVERAGES adc_averages = {0};
@@ -80,23 +79,23 @@ void convertADCValue(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
-{ // Analog watchdog 
+{ // Analog watchdog
   /*TODO: Implement error handling here */
-	 if (hadc == &hadc1)
-	    {
-	        ADC1_setFaultStatus(1);
-	        // Stop ADC before restarting it to avoid continuous interrupts
-	        HAL_ADC_Stop(hadc);
+  if (hadc == &hadc1)
+  {
+    ADC1_setFaultStatus(1);
+    // Stop ADC before restarting it to avoid continuous interrupts
+    HAL_ADC_Stop(hadc);
 
-	        // Restart ADC in interrupt mode
-	        if (HAL_ADC_Start_IT(hadc) != HAL_OK)
-	        {
-	        	/* TODO: diagnostic message api here */
-	        }
+    // Restart ADC in interrupt mode
+    if (HAL_ADC_Start_IT(hadc) != HAL_OK)
+    {
+      /* TODO: diagnostic message api here */
+    }
 
-	        // Reset the watchdog timer
-	        HAL_IWDG_Refresh(&hiwdg);
-	    }
+    // Reset the watchdog timer
+    HAL_IWDG_Refresh(&hiwdg);
+  }
 }
 
 /*============================================================================*/
@@ -104,7 +103,7 @@ void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef *hadc)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   /*TODO: Implement error handling here */
-	ADC1_setFaultStatus(1);
+  ADC1_setFaultStatus(1);
 }
 /* USER CODE END 0 */
 
@@ -116,27 +115,26 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-//  HAL_Delay(100); // Delay for 100ms to allow peripherals to initialize
+  //  HAL_Delay(100); // Delay for 100ms to allow peripherals to initialize
 
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */  HAL_Init();
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
 
   /* USER CODE BEGIN Init */
-   vds_data.status.raw = 0;
-   vds_data.adc_data.ADC_brake_pressure_1 = 0;
-   vds_data.adc_data.ADC_brake_pressure_2 = 0;
-   vds_data.adc_data.ADC_brake_pressure_3 = 0;
-   vds_data.adc_data.ADC_shock_travel_1 = 0;
-   vds_data.adc_data.ADC_shock_travel_2 = 0;
-   vds_data.adc_data.ADC_shock_travel_3 = 0;
-   vds_data.adc_data.ADC_shock_travel_4 = 0;
-   vds_data.adc_data.ADC_steering_angle = 0;
-   vds_data.status.bits.adc_fault = 0;
-
-
+  vds_data.status.raw = 0;
+  vds_data.adc_data.ADC_brake_pressure_1 = 0;
+  vds_data.adc_data.ADC_brake_pressure_2 = 0;
+  vds_data.adc_data.ADC_brake_pressure_3 = 0;
+  vds_data.adc_data.ADC_shock_travel_1 = 0;
+  vds_data.adc_data.ADC_shock_travel_2 = 0;
+  vds_data.adc_data.ADC_shock_travel_3 = 0;
+  vds_data.adc_data.ADC_shock_travel_4 = 0;
+  vds_data.adc_data.ADC_steering_angle = 0;
+  vds_data.status.bits.adc_fault = 0;
 
   /* USER CODE END Init */
 
@@ -149,18 +147,18 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
   MX_CAN1_Init();
   MX_CAN2_Init();
   MX_ADC1_Init();
   MX_TIM3_Init();
-//  MX_IWDG_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   HAL_CAN_Start(&hcan1);
   HAL_CAN_Start(&hcan2);
-//  HAL_ADC_Start_IT(&hadc1);
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, ADC1_BUF_LENGTH); // Start ADC1 in DMA mode
-  HAL_TIM_Base_Start_IT(&htim3);
+  //  HAL_ADC_Start_IT(&hadc1);
+  HAL_ADC_Start(&hadc1);
+  //  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, ADC1_BUF_LENGTH); // Start ADC1 in DMA mode
+  //  HAL_TIM_Base_Start_IT(&htim3);
 
   /* USER CODE END 2 */
 
@@ -168,13 +166,57 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  //Independent watchdog timer and
-//	  HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 1);
-//	  HAL_Delay(100);
-//	  HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 0);
-//	  HAL_IWDG_Refresh(&hiwdg);
-	  CAN_processMessages();
-//	  HAL_Delay(1);
+    // Independent watchdog timer and
+    //	  HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 1);
+    //	  HAL_Delay(100);
+    //	  HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 0);
+    //	  HAL_IWDG_Refresh(&hiwdg);
+    // Read all the sensors
+    // #define BP_1 0
+    // #define BP_2 1
+    // #define BP_3 2
+    // #define ST_1 3
+    // #define ST_2 4
+    // #define ST_3 5
+    // #define ST_4 6
+    // #define SA_1 7
+    //
+
+    ADC_Select((uint8_t)BP_1);
+    HAL_ADC_PollForConversion(&hadc1, 1000);
+    vds_data.adc_data.ADC_brake_pressure_1 = HAL_ADC_GetValue(&hadc1);
+
+    ADC_Select((uint8_t)BP_2);
+    HAL_ADC_PollForConversion(&hadc1, 1000);
+    vds_data.adc_data.ADC_brake_pressure_2 = HAL_ADC_GetValue(&hadc1);
+
+    ADC_Select((uint8_t)BP_3);
+    HAL_ADC_PollForConversion(&hadc1, 1000);
+    vds_data.adc_data.ADC_brake_pressure_3 = HAL_ADC_GetValue(&hadc1);
+
+    ADC_Select((uint8_t)ST_1);
+    HAL_ADC_PollForConversion(&hadc1, 1000);
+    vds_data.adc_data.ADC_shock_travel_1 = HAL_ADC_GetValue(&hadc1);
+
+    ADC_Select((uint8_t)ST_2);
+    HAL_ADC_PollForConversion(&hadc1, 1000);
+    vds_data.adc_data.ADC_shock_travel_2 = HAL_ADC_GetValue(&hadc1);
+
+    ADC_Select((uint8_t)ST_3);
+    HAL_ADC_PollForConversion(&hadc1, 1000);
+    vds_data.adc_data.ADC_shock_travel_3 = HAL_ADC_GetValue(&hadc1);
+
+    ADC_Select((uint8_t)ST_4);
+    HAL_ADC_PollForConversion(&hadc1, 1000);
+    vds_data.adc_data.ADC_shock_travel_4 = HAL_ADC_GetValue(&hadc1);
+
+    ADC_Select((uint8_t)SA_1);
+    HAL_ADC_PollForConversion(&hadc1, 1000);
+    vds_data.adc_data.ADC_steering_angle = HAL_ADC_GetValue(&hadc1);
+
+    // read_all_sensors();
+    CAN_processMessages();
+    //	  HAL_Delay(1);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -239,7 +281,7 @@ void SystemClock_Config(void)
 
 /*
 Notes on how to do conversion:
-1: lower half of ADC 
+1: lower half of ADC
 2: upper half of ADC
 
 -pass which half needs to be processed as a parameter to processing methods
@@ -254,11 +296,11 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
 
   HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 1);
   count++;
-  if (hadc == &hadc1){
-    //Process ADC1 readings
+  if (hadc == &hadc1)
+  {
+    // Process ADC1 readings
     averageADCValues(0);
-//    CAN_processMessages();
-
+    //    CAN_processMessages();
   }
 
   brake_steering_counter++;
@@ -271,9 +313,10 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
 // Conversion full complete DMA interrupt callback for ADCs
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
-  if (hadc == &hadc1){
+  if (hadc == &hadc1)
+  {
     averageADCValues(1);
-//    CAN_processMessages();
+    //    CAN_processMessages();
   }
 
   brake_steering_counter++;
@@ -282,38 +325,38 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 }
 
 void averageADCValues(int adc_half)
-{ //TODO: Modify this function to process and save ADC1 readings for VDS
+{ // TODO: Modify this function to process and save ADC1 readings for VDS
 
   if (!ADC1_getBusyStatus())
   {
     ADC1_setBusyStatus(1);
-    static float result[NUM_ADC_CHANNELS_TOTAL]; //stores averaged results
-    ADC1_processRawReadings(adc_half, adc1_buf, result); //function to process values from ADC1 and update vds struct
+    static float result[NUM_ADC_CHANNELS_TOTAL];         // stores averaged results
+    ADC1_processRawReadings(adc_half, adc1_buf, result); // function to process values from ADC1 and update vds struct
     ADC1_setBusyStatus(0);
   }
   else
   {
     ADC1_setFaultStatus(1);
-    HAL_Delay(1); // Delay for 1ms
+    HAL_Delay(1);               // Delay for 1ms
     averageADCValues(adc_half); // Retry
   }
 }
 
-//ADC error callback
+// ADC error callback
 void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
 {
   if (hadc == &hadc1)
   {
     ADC1_setFaultStatus(1);
-//    HAL_Delay(1); // Delay for 1ms
-//    averageADCValues(0); // Retry with ADC half 0
-//    averageADCValues(1); // Retry with ADC half 1
+    //    HAL_Delay(1); // Delay for 1ms
+    //    averageADCValues(0); // Retry with ADC half 0
+    //    averageADCValues(1); // Retry with ADC half 1
   }
 }
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-//    HAL_GPIO_TogglePin(Debugging_GPIO_Port, Debugging_Pin);
+  //    HAL_GPIO_TogglePin(Debugging_GPIO_Port, Debugging_Pin);
 }
 
 /* USER CODE END 4 */

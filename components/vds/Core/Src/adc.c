@@ -23,10 +23,16 @@
 /* USER CODE BEGIN 0 */
 #include <stdint.h>
 #include "common.h"
+
+
+// Defined values from documentation below
+// https://www.disca.upv.es/aperles/arm_cortex_m3/llibre/st/STM32F439xx_User_Manual/group__adc__sampling__times.html
+#define ADC_SAMPLETIME_28CYCLES ((uint32_t)ADC_SMPR1_SMP10_1)
+#define ADC_SAMPLETIME_84CYCLES ((uint32_t)ADC_SMPR1_SMP10_2)
+#define ADC_SAMPLETIME_112CYCLES ((uint32_t)(ADC_SMPR1_SMP10_2 | ADC_SMPR1_SMP10_0))
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
-DMA_HandleTypeDef hdma_adc1;
 
 /* ADC1 init function */
 void MX_ADC1_Init(void)
@@ -45,12 +51,12 @@ void MX_ADC1_Init(void)
   /** Common config
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
+  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T3_TRGO;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 8;
+  hadc1.Init.NbrOfConversion = 1;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();
@@ -61,69 +67,6 @@ void MX_ADC1_Init(void)
   sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_1;
-  sConfig.Rank = ADC_REGULAR_RANK_2;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_2;
-  sConfig.Rank = ADC_REGULAR_RANK_3;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_3;
-  sConfig.Rank = ADC_REGULAR_RANK_4;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_4;
-  sConfig.Rank = ADC_REGULAR_RANK_5;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_5;
-  sConfig.Rank = ADC_REGULAR_RANK_6;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_6;
-  sConfig.Rank = ADC_REGULAR_RANK_7;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_7;
-  sConfig.Rank = ADC_REGULAR_RANK_8;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -154,35 +97,10 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     __HAL_RCC_GPIOA_CLK_ENABLE();
     /**ADC1 GPIO Configuration
     PA0-WKUP     ------> ADC1_IN0
-    PA1     ------> ADC1_IN1
-    PA2     ------> ADC1_IN2
-    PA3     ------> ADC1_IN3
-    PA4     ------> ADC1_IN4
-    PA5     ------> ADC1_IN5
-    PA6     ------> ADC1_IN6
-    PA7     ------> ADC1_IN7
     */
-    GPIO_InitStruct.Pin = ST_1_Pin|ST_2_Pin|ST_3_Pin|ST_4_Pin
-                          |BP_1_Pin|BP_2_Pin|BP_3_Pin|SA_1_Pin;
+    GPIO_InitStruct.Pin = ST_1_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-    /* ADC1 DMA Init */
-    /* ADC1 Init */
-    hdma_adc1.Instance = DMA1_Channel1;
-    hdma_adc1.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    hdma_adc1.Init.PeriphInc = DMA_PINC_DISABLE;
-    hdma_adc1.Init.MemInc = DMA_MINC_ENABLE;
-    hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-    hdma_adc1.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
-    hdma_adc1.Init.Mode = DMA_CIRCULAR;
-    hdma_adc1.Init.Priority = DMA_PRIORITY_LOW;
-    if (HAL_DMA_Init(&hdma_adc1) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    __HAL_LINKDMA(adcHandle,DMA_Handle,hdma_adc1);
+    HAL_GPIO_Init(ST_1_GPIO_Port, &GPIO_InitStruct);
 
     /* ADC1 interrupt Init */
     HAL_NVIC_SetPriority(ADC1_2_IRQn, 0, 0);
@@ -206,19 +124,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 
     /**ADC1 GPIO Configuration
     PA0-WKUP     ------> ADC1_IN0
-    PA1     ------> ADC1_IN1
-    PA2     ------> ADC1_IN2
-    PA3     ------> ADC1_IN3
-    PA4     ------> ADC1_IN4
-    PA5     ------> ADC1_IN5
-    PA6     ------> ADC1_IN6
-    PA7     ------> ADC1_IN7
     */
-    HAL_GPIO_DeInit(GPIOA, ST_1_Pin|ST_2_Pin|ST_3_Pin|ST_4_Pin
-                          |BP_1_Pin|BP_2_Pin|BP_3_Pin|SA_1_Pin);
-
-    /* ADC1 DMA DeInit */
-    HAL_DMA_DeInit(adcHandle->DMA_Handle);
+    HAL_GPIO_DeInit(ST_1_GPIO_Port, ST_1_Pin);
 
     /* ADC1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(ADC1_2_IRQn);
@@ -291,6 +198,78 @@ void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float resul
 
 	ADC1_setBusyStatus(0);
 }
+
+//testing
+void ADC_Select(uint8_t channel)
+{
+    ADC_ChannelConfTypeDef sConfig = {0};
+
+    switch(channel) {
+        case BP_1:
+            sConfig.Channel = ADC_CHANNEL_0;
+            break;
+        case BP_2:
+            sConfig.Channel = ADC_CHANNEL_1;
+            break;
+        case BP_3:
+            sConfig.Channel = ADC_CHANNEL_2;
+            break;
+        case ST_1:
+            sConfig.Channel = ADC_CHANNEL_3;
+            break;
+        case ST_2:
+            sConfig.Channel = ADC_CHANNEL_4;
+            break;
+        case ST_3:
+            sConfig.Channel = ADC_CHANNEL_5;
+            break;
+        case ST_4:
+            sConfig.Channel = ADC_CHANNEL_6;
+            break;
+        case SA_1:
+            sConfig.Channel = ADC_CHANNEL_7;
+            break;
+        default:
+            // Handle cases where channel does not correspond to a valid sensor
+            // You may want to add error handling or a default case here
+            break;
+    }
+
+    sConfig.Rank = 1;
+    sConfig.SamplingTime = ADC_SAMPLETIME_28CYCLES;
+
+    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+    {
+        Error_Handler();  // Replace with your error handling function
+    }
+}
+
+
+
+// Function to poll and read ADC values for all sensors and update vds_data
+void read_all_sensors(void) {
+    uint16_t ADC_VALUES[8];   // Adjust size based on your sensor count
+
+    // Iterate through each sensor and read its ADC value
+    for (uint8_t sensor = 0; sensor < 8; sensor++) {
+        ADC_Select(sensor);  // Select ADC channel for the sensor
+
+        HAL_ADC_PollForConversion(&hadc1, 1000);  // Poll for ADC conversion
+        ADC_VALUES[sensor] = HAL_ADC_GetValue(&hadc1);  // Get ADC value and store it
+    }
+
+    // Update vds_data struct with ADC values
+    vds_data.adc_data.ADC_brake_pressure_1 = ADC_VALUES[BP_1];
+    vds_data.adc_data.ADC_brake_pressure_2 = ADC_VALUES[BP_2];
+    vds_data.adc_data.ADC_brake_pressure_3 = ADC_VALUES[BP_3];
+    vds_data.adc_data.ADC_shock_travel_1 = ADC_VALUES[ST_1];
+    vds_data.adc_data.ADC_shock_travel_2 = ADC_VALUES[ST_2];
+    vds_data.adc_data.ADC_shock_travel_3 = ADC_VALUES[ST_3];
+    vds_data.adc_data.ADC_shock_travel_4 = ADC_VALUES[ST_4];
+    vds_data.adc_data.ADC_steering_angle = ADC_VALUES[SA_1];
+}
+
+
 
 /**
  * @brief sets the Fault flag in the global variable ADC1_DMA_fault_flag

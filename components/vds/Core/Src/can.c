@@ -112,6 +112,7 @@ void CAN_SendVDSDiagnostic(VDS_Data_t *vds_status){
 
 void CAN_processMessages(void)
 {
+//	__disable_irq();
 	//Copy the data from VDS_Data to avoid data races
 	memcpy(&can_incoming_data, (void *)&vds_data, sizeof(VDS_Data_t));
 
@@ -178,6 +179,7 @@ void CAN_processMessages(void)
 	    memset(&can_data, 0, sizeof(VDS_Data_t));
 	    memset(&can_data_2, 0, sizeof(VDS_Data_t));
 	    memset(&can_incoming_data, 0, sizeof(VDS_Data_t));
+//	    __enable_irq();
 }
 
 void CAN1_setBusyStatus(int flag_value)
