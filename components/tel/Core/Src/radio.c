@@ -89,7 +89,7 @@ void RADIO_tx_API_Packager(uint8_t api_buffer[], uint16_t api_buffer_position)
  XBEE_calculate_length(api_packet, api_packet_size);
  XBEE_calculate_checksum(api_packet, api_packet_size);
 
- HAL_UART_Transmit(&huart1, api_packet, sizeof(api_packet), CAN_TRANSMIT_TIMEOUT);                     /* Transmit over UART */
+ HAL_UART_Transmit(&huart1, api_packet, sizeof(api_packet), CAN_TRANSMIT_TIMEOUT);
 }
 
 
@@ -101,7 +101,6 @@ void RADIO_tx_API_Packager(uint8_t api_buffer[], uint16_t api_buffer_position)
 */
 void RADIO_tx_API_Accumulator(uint8_t radio_message[])
 {
-
   for (int i = 0; i<CAN_BUFFER_LEN; i++){
 	  api_buffer[i+api_buffer_position] = radio_message[i];
   }
@@ -136,7 +135,5 @@ void RADIO_tx_CAN_msg(CAN_Radio_msg_t *tx_CAN_msg)
   radio_buffer[CAN_NEW_LINE_INDEX] = '\n';                                                   /* NEW LINE */
 
   RADIO_tx_API_Accumulator(radio_buffer);
-
-  // HAL_UART_Transmit(&huart1, radio_buffer, sizeof(radio_buffer), CAN_TRANSMIT_TIMEOUT);                     /* Transmit over UART */
 }
 

@@ -36,8 +36,8 @@ uint16_t XBEE_sum_bytes (uint8_t api_packet[], uint16_t packet_length)
 */
 void XBEE_api_overhead_setup(uint8_t api_packet[])
 {
-
-  uint8_t BIT_ADDRESS_64[] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+  //0013A200418C9CBD
+  uint8_t BIT_ADDRESS_64[] = {0x00,0x13,0xA2,0x00,0x41,0x8C,0x9C,0xBD};
   api_packet[START_DELIMITER_POSITION] = START_DELIMITER;
   api_packet[FRAME_TYPE_POSITION] = FRAME_TYPE;
   api_packet[FRAME_ID_POSITION] = FRAME_ID;
@@ -67,10 +67,10 @@ void XBEE_api_overhead_setup(uint8_t api_packet[])
 void XBEE_calculate_length(uint8_t api_packet[], uint16_t packet_length)
 {
  uint16_t total_bytes = packet_length - CHECKSUM_LENGTH_SIZE;
- uint16_t lsb;
- uint16_t msb;
- lsb = total_bytes % 256;
- msb = (uint16_t)(floor(total_bytes / 256));
+ uint8_t lsb;
+ uint8_t msb;
+ lsb = (uint8_t)(total_bytes % 256);
+ msb = (uint8_t)(total_bytes / 256);
  api_packet[MSB_POSITION] = msb;
  api_packet[LSB_POSITION] = lsb;
 }
