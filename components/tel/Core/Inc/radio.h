@@ -14,6 +14,8 @@
 #include "can.h"
 #include "usart.h"
 #include "rtc.h"
+#include "xbee.h"
+
 
 /* RADIO BUFFER BYTE LENGTHS */
 #define CAN_BUFFER_LEN                      24
@@ -42,6 +44,17 @@
 
 /* TIMING CONSTANTS */
 #define CAN_TRANSMIT_TIMEOUT                1000                // 1 second timeout
+
+/*XBee API Packet CONSTANTS*/
+#define API_BUFFER_SIZE 					300 			    //number of bytes in api_buffer array
+#define API_MAX_MSGS  						10 					//number of messages in each api packet
+#define API_OVERHEAD_SIZE 					20 					//number of bytes in api Overhead
+
+
+
+
+
+
 
 void RADIO_tx_CAN_msg(CAN_Radio_msg_t *tx_CAN_msg);
 
