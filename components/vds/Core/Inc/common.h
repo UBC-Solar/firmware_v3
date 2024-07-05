@@ -15,7 +15,7 @@
 #include "main.h"
 
 //Define the number of ADC samples to be taken
-#define NUMBER_ADC_SAMPLES  1024
+#define NUMBER_ADC_SAMPLES 100
 
 /*============================================================================*/
 /* STRUCTURES */
@@ -23,15 +23,6 @@
 // Type definition for the ADC sensor averages
 typedef struct
 {
-    // FIFO queue to track the last 1024 samples of each sensor
-    struct
-    {
-        uint16_t ADC_brake_pressure_1[NUMBER_ADC_SAMPLES];
-        uint16_t ADC_brake_pressure_2[NUMBER_ADC_SAMPLES];
-        uint16_t ADC_brake_pressure_3[NUMBER_ADC_SAMPLES];
-        uint16_t ADC_steering_angle[NUMBER_ADC_SAMPLES];
-    } values;
-
     struct
     {
         // Use to track current number of sensors in the FIFO
@@ -48,9 +39,14 @@ typedef struct
         uint32_t ADC_brake_pressure_2;
         uint32_t ADC_brake_pressure_3;
         uint32_t ADC_steering_angle;
-    } previous_sum;
+    } sum;
+
 } VDS_ADC_AVERAGES;
 
+typedef union {
+	uint8_t uint8_arr[2];
+	uint16_t uint16_num;
+} uint16_uint8_t;
 
 typedef union {
     struct {

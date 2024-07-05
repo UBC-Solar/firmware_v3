@@ -151,14 +151,14 @@ int main(void)
   MX_CAN2_Init();
   MX_ADC1_Init();
   MX_TIM3_Init();
-  MX_IWDG_Init();
+//  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   HAL_CAN_Start(&hcan1);
   HAL_CAN_Start(&hcan2);
-  //  HAL_ADC_Start_IT(&hadc1);
+  //HAL_ADC_Start_IT(&hadc1);
   HAL_ADC_Start(&hadc1);
-  //  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, ADC1_BUF_LENGTH); // Start ADC1 in DMA mode
-  //  HAL_TIM_Base_Start_IT(&htim3);
+  //HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buf, ADC1_BUF_LENGTH); // Start ADC1 in DMA mode
+  HAL_TIM_Base_Start_IT(&htim3);
 
   /* USER CODE END 2 */
 
@@ -166,57 +166,50 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    // Independent watchdog timer and
-    //	  HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 1);
-    //	  HAL_Delay(100);
-    //	  HAL_GPIO_WritePin(Debugging_GPIO_Port, Debugging_Pin, 0);
-    //	  HAL_IWDG_Refresh(&hiwdg);
-    // Read all the sensors
-    // #define BP_1 0
-    // #define BP_2 1
-    // #define BP_3 2
-    // #define ST_1 3
-    // #define ST_2 4
-    // #define ST_3 5
-    // #define ST_4 6
-    // #define SA_1 7
-    //
-
     ADC_Select((uint8_t)BP_1);
     HAL_ADC_PollForConversion(&hadc1, 1000);
     vds_data.adc_data.ADC_brake_pressure_1 = HAL_ADC_GetValue(&hadc1);
+    adc_averages.counter.ADC_brake_pressure_1++;
+    HAL_ADC_Stop(&hadc1);
 
     ADC_Select((uint8_t)BP_2);
     HAL_ADC_PollForConversion(&hadc1, 1000);
     vds_data.adc_data.ADC_brake_pressure_2 = HAL_ADC_GetValue(&hadc1);
+    adc_averages.counter.ADC_brake_pressure_2++;
+    HAL_ADC_Stop(&hadc1);
 
     ADC_Select((uint8_t)BP_3);
     HAL_ADC_PollForConversion(&hadc1, 1000);
     vds_data.adc_data.ADC_brake_pressure_3 = HAL_ADC_GetValue(&hadc1);
+    adc_averages.counter.ADC_brake_pressure_3++;
+    HAL_ADC_Stop(&hadc1);
 
-    ADC_Select((uint8_t)ST_1);
-    HAL_ADC_PollForConversion(&hadc1, 1000);
-    vds_data.adc_data.ADC_shock_travel_1 = HAL_ADC_GetValue(&hadc1);
+//    ADC_Select((uint8_t)ST_1);
+//    HAL_ADC_PollForConversion(&hadc1, 1000);
+//    vds_data.adc_data.ADC_shock_travel_1 = HAL_ADC_GetValue(&hadc1);
+//    HAL_ADC_Stop(&hadc1);
+//
+//    ADC_Select((uint8_t)ST_2);
+//    HAL_ADC_PollForConversion(&hadc1, 1000);
+//    vds_data.adc_data.ADC_shock_travel_2 = HAL_ADC_GetValue(&hadc1);
+//    HAL_ADC_Stop(&hadc1);
+//
+//    ADC_Select((uint8_t)ST_3);
+//    HAL_ADC_PollForConversion(&hadc1, 1000);
+//    vds_data.adc_data.ADC_shock_travel_3 = HAL_ADC_GetValue(&hadc1);
+//    HAL_ADC_Stop(&hadc1);
+//
+//    ADC_Select((uint8_t)ST_4);
+//    HAL_ADC_PollForConversion(&hadc1, 1000);
+//    vds_data.adc_data.ADC_shock_travel_4 = HAL_ADC_GetValue(&hadc1);
+//    HAL_ADC_Stop(&hadc1);
+//
+//    ADC_Select((uint8_t)SA_1);
+//    HAL_ADC_PollForConversion(&hadc1, 1000);
+//    vds_data.adc_data.ADC_steering_angle = HAL_ADC_GetValue(&hadc1);
+//    HAL_ADC_Stop(&hadc1);
 
-    ADC_Select((uint8_t)ST_2);
-    HAL_ADC_PollForConversion(&hadc1, 1000);
-    vds_data.adc_data.ADC_shock_travel_2 = HAL_ADC_GetValue(&hadc1);
-
-    ADC_Select((uint8_t)ST_3);
-    HAL_ADC_PollForConversion(&hadc1, 1000);
-    vds_data.adc_data.ADC_shock_travel_3 = HAL_ADC_GetValue(&hadc1);
-
-    ADC_Select((uint8_t)ST_4);
-    HAL_ADC_PollForConversion(&hadc1, 1000);
-    vds_data.adc_data.ADC_shock_travel_4 = HAL_ADC_GetValue(&hadc1);
-
-    ADC_Select((uint8_t)SA_1);
-    HAL_ADC_PollForConversion(&hadc1, 1000);
-    vds_data.adc_data.ADC_steering_angle = HAL_ADC_GetValue(&hadc1);
-
-    // read_all_sensors();
     CAN_processMessages();
-    //	  HAL_Delay(1);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -356,6 +349,7 @@ void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
+//  CAN_processMessages();
   //    HAL_GPIO_TogglePin(Debugging_GPIO_Port, Debugging_Pin);
 }
 

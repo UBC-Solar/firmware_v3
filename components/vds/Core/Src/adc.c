@@ -202,6 +202,7 @@ void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float resul
 //testing
 void ADC_Select(uint8_t channel)
 {
+	HAL_ADC_Start(&hadc1);
     ADC_ChannelConfTypeDef sConfig = {0};
 
     switch(channel) {
@@ -231,7 +232,6 @@ void ADC_Select(uint8_t channel)
             break;
         default:
             // Handle cases where channel does not correspond to a valid sensor
-            // You may want to add error handling or a default case here
             break;
     }
 

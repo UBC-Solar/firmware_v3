@@ -44,13 +44,22 @@ extern CAN_HandleTypeDef hcan2;
 
 #define CAN_DATA_LENGTH 			8
 
-// For Brake Pressure conversion
-#define BRAKE_PRESSURE_MULTIPLIER 24.55
-#define BRAKE_PRESSURE_OFFSET 1.925
+//// For Brake Pressure conversion
+//#define BRAKE_PRESSURE_MULTIPLIER 24.55
+//#define BRAKE_PRESSURE_OFFSET 1.925
 
 // For Shock Travel conversion
 #define SHOCK_TRAVEL_MULTIPLIER 0.1595
 #define SHOCK_TRAVEL_OFFSET 2.3875
+
+
+#define BRAKE_PRESSURE_MULTIPLIER 24.55
+#define BRAKE_PRESSURE_OFFSET 1.925
+#define BRAKE_PRESSURE_SURFACE_AREA 0.00023716
+#define PSI_CONVERSION_FACTOR 0.0001453077
+#define ADC_TO_VOLTAGE_DIVISOR 4095
+#define ADC_TO_VOLTAGE_MULTIPLIER 3.3
+#define MV_TO_V_MULTIPLIER 1000
 
 typedef struct {
     CAN_TxHeaderTypeDef header;
@@ -76,6 +85,7 @@ void CAN1_setBusyStatus(int flag_value);
 void CAN2_setBusyStatus(int flag_value);
 int CAN1_getBusyStatus();
 int CAN2_getBusyStatus();
+float CAN_Convert_BP_Value(uint16_t raw_adc_value);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
