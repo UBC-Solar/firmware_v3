@@ -329,7 +329,9 @@ int main(void)
         TxHeader.StdId = MDI_DIAGNOSTICS_CAN_ID;
         TxHeader.IDE = CAN_ID_STD;
         TxHeader.DLC = 1;
-        TxData[0] = 0; // Clear TxData[0]
+        for(int i = 0; i < 8; i++){   // Clear TxData
+          TxData[i] = 0;
+        }
 
         if(1 == mcb_communication_fault)
         {
