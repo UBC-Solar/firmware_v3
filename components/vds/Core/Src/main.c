@@ -151,7 +151,7 @@ int main(void)
   MX_CAN2_Init();
   MX_ADC1_Init();
   MX_TIM3_Init();
-//  MX_IWDG_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   HAL_CAN_Start(&hcan1);
   HAL_CAN_Start(&hcan2);
@@ -183,6 +183,10 @@ int main(void)
     vds_data.adc_data.ADC_brake_pressure_3 = HAL_ADC_GetValue(&hadc1);
     adc_averages.counter.ADC_brake_pressure_3++;
     HAL_ADC_Stop(&hadc1);
+
+   #ifndef DEBUG
+	  HAL_IWDG_Refresh(&hiwdg);
+   #endif
 
 //    ADC_Select((uint8_t)ST_1);
 //    HAL_ADC_PollForConversion(&hadc1, 1000);
