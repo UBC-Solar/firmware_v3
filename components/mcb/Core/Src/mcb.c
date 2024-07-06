@@ -296,7 +296,7 @@ void SendCANMotorCommand(MotorCommand motorCommand)
 	}
 	
 	if (HAL_CAN_AddTxMessage(&hcan, &drive_command_header, data_send, &can_mailbox) == HAL_OK) {
-		HAL_GPIO_TogglePin(LED_OUT1_GPIO_Port, LED_OUT1_Pin);
+		HAL_GPIO_TogglePin(LED_OUT2_GPIO_Port, LED_OUT2_Pin);
 	}
 	
 }
