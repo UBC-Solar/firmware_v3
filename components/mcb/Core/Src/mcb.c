@@ -127,10 +127,6 @@ void send_mcb_githash()
 
 MotorCommand DoStateDRIVE( InputFlags input_flags )
 {
-	// Check if mech brake is pressed
-	if ( input_flags.mech_brake_pressed )
-		return GetMotorCommand(0.0, VELOCITY_REGEN_DISABLED);
-
 	// Check if regen is enabled
 	if (input_flags.regen_enabled) // regen switch on and battery isn't requesting regen to be turned off
 	{
@@ -144,28 +140,24 @@ MotorCommand DoStateDRIVE( InputFlags input_flags )
 
 void TransitionDRIVEstate( InputFlags input_flags, DriveState * state)
 {
-	if( input_flags.switch_pos_reverse && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+	if( input_flags.switch_pos_reverse && input_flags.velocity_under_threshold)
 		*state = REVERSE;
-	else if( input_flags.switch_pos_park && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+	else if( input_flags.switch_pos_park && input_flags.velocity_under_threshold)
 		*state = PARK;
 }
 
 
 MotorCommand DoStateREVERSE(InputFlags input_flags)
 {
-	// Check if mech brake is pressed
-	if ( input_flags.mech_brake_pressed )
-		return GetMotorCommand(0.0, VELOCITY_REGEN_DISABLED);
-
 	// Regen disabled in reverse on MDI, dont need to check input_flags.regen_enabled
 	return GetMotorCommand(g_throttle, VELOCITY_REVERSE);
 }
 
 void TransitionREVERSEstate(InputFlags input_flags, DriveState * state)
 {
-	if ( input_flags.switch_pos_drive && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+	if ( input_flags.switch_pos_drive && input_flags.velocity_under_threshold)
 		*state = DRIVE;
-	else if ( input_flags.switch_pos_park && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+	else if ( input_flags.switch_pos_park && input_flags.velocity_under_threshold)
 		*state = PARK;
 }
 
@@ -176,9 +168,9 @@ MotorCommand DoStatePARK()
 
 void TransitionPARKstate(InputFlags input_flags, DriveState * state)
 {
-	if ( input_flags.switch_pos_drive && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed )
+	if ( input_flags.switch_pos_drive && input_flags.velocity_under_threshold)
 		*state = DRIVE;
-	else if ( input_flags.switch_pos_reverse && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+	else if ( input_flags.switch_pos_reverse && input_flags.velocity_under_threshold)
 		*state = REVERSE;
 }
 
