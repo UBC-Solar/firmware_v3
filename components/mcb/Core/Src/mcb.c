@@ -129,7 +129,7 @@ MotorCommand DoStateDRIVE( InputFlags input_flags )
 {
 	// Check if mech brake is pressed
 	if ( input_flags.mech_brake_pressed )
-		return GetMotorCommand(0.0, VELOCITY_REGEN_DISABLED);
+		return GetMotorCommand(0.0, VELOCITY_FORWARD);
 
 	// Check if regen is enabled
 	if (input_flags.regen_enabled) // regen switch on and battery isn't requesting regen to be turned off
