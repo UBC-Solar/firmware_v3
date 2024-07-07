@@ -26,7 +26,7 @@
 #define FLT_SHORT_THRESHOLD 5000U           // 0.5000 V
 #define FLT_TEMP_RANGE_LOW_THRESHOLD 0.0    // degrees C
 #define FLT_TEMP_RANGE_HIGH_THRESHOLD 150.0 // degrees C
-#define FLT_OT_THRESHOLD 65.0               // degrees C
+#define FLT_OT_THRESHOLD 61.0               // degrees C
 
 // Trips
 #define TRIP_HLIM_THRESHOLD 42000U    // 4.2000 V
