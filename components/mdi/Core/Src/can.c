@@ -19,6 +19,8 @@
 */
 void CAN_Decode_Velocity_Message(uint8_t localRxData[], CAN_message_t* CAN_msg)
 {
+	// Update the last rx time
+	CAN_msg->last_rx_time = HAL_GetTick();
 
 	union { //union struct to convert the input stream of 32-bits into IEEE float
 		uint32_t concatenated_bits;

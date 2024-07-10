@@ -40,6 +40,11 @@
 /* USER CODE BEGIN PM */
 #define DAC_ACC_ADDR    (0b0001110 << 1) //I2C address for the acceleration DAC
 #define DAC_REGEN_ADDR  (0b0001101 << 1) //I2C address for the regen DAC
+
+#define MCB_COMMUNICATION_TIMEOUT 500 // Time in ms to wait for a motor command from MCB before setting a fault
+#define MDI_DIAGNOSTICS_CAN_ID 0x50F // CAN ID for MDI diagnostics message
+
+#define SETBIT(x, bitpos) (x |= (1 << bitpos))
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -97,6 +102,7 @@ bool parse_frame0 = 0;
 bool parse_frame1 = 0;
 bool parse_frame2 = 0;
 bool TriggerBlinky = 0;
+bool mcb_communication_fault = 0; // True if MDI has not received a motor command from the MCB in >MCB_COMMUNICATION_TIMEOUT
 
 
 //Variables for HALL speed calculations
@@ -186,6 +192,7 @@ int main(void)
       Parse_Data_Flag = 0; //reset parse flag
       send_data_flag = 1; //send updated data to motor flag
 
+      mcb_communication_fault = 0;
     }
     
     if(parse_frame0 == 1) //Parse the frame based on info we want
@@ -211,7 +218,21 @@ int main(void)
     //////////////////////////////////////
     // SEND SIGNALS TO MOTOR CONTROLLER //
     //////////////////////////////////////
-    if( (send_data_flag == 1 ) && (Parse_Data_Flag == 0) )
+
+    // Check for mcb timeout
+    if(HAL_GetTick() > msg0.last_rx_time + MCB_COMMUNICATION_TIMEOUT)
+    {
+      if(0 == mcb_communication_fault)
+      {
+        // Send 0.0f acceleration
+        Send_Voltage(0.0f, DAC_ACC_ADDR, &hi2c2);
+        // Send 0.0f regen
+        Send_Voltage(0.0f, DAC_REGEN_ADDR, &hi2c2);
+
+        mcb_communication_fault = 1;
+      }
+    }
+    else if( (send_data_flag == 1 ) && (Parse_Data_Flag == 0) )
     {
     	//send direction
     	//According to data sheet: OPEN Switch = Forward / CLOSED Switch = Reverse
@@ -303,6 +324,36 @@ int main(void)
     		}
     		HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
     		SendSlowMessage = 0;
+
+        // MDI diagnostics 0x50F
+        TxHeader.StdId = MDI_DIAGNOSTICS_CAN_ID;
+        TxHeader.IDE = CAN_ID_STD;
+        TxHeader.DLC = 1;
+        for(int i = 0; i < 8; i++){   // Clear TxData
+          TxData[i] = 0;
+        }
+
+        if(1 == mcb_communication_fault)
+        {
+          SETBIT(TxData[0], 0);
+        }
+
+        if(FORWARD_TRUE == msg0.FWD_direction)
+        {
+          SETBIT(TxData[0], 1);
+        }
+
+        if(POWER_MODE_ON == msg0.PWR_mode_on)
+        {
+          SETBIT(TxData[0], 2);
+        }
+
+        if(REGEN_TRUE == msg0.regen)
+        {
+          SETBIT(TxData[0], 3);
+        }
+
+        HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, TxMailbox);
       }
     	SendMessageTimerInterrupt = 0;
     }

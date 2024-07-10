@@ -46,6 +46,7 @@ typedef struct
 	bool PWR_mode_on;
 	bool regen;
 	bool cruise_control_enable;
+	uint32_t last_rx_time;
 
 	//0x501
 	uint8_t motorCurrentFlag;
