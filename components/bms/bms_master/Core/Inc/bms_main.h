@@ -11,6 +11,9 @@
 #define INC_BMS_MAIN_H_
 
 #include "pack.h"
+#include "can.h"
+
+extern ECU_Data_t ecu_data;
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */

@@ -7,6 +7,7 @@
  */
 
 #include "analysis.h"
+#include "bms_main.h"
 
 /*============================================================================*/
 /* PRIVATE FUNCTION IMPLEMENTATIONS */
@@ -61,8 +62,12 @@ void findModuleTempState(Pack_BatteryStatusCode_t *status, float temperature)
     // Some conditionals here have no else because faults don't clear
 
     // Faults
-    if (temperature >= FLT_OT_THRESHOLD)
+    if (temperature >= FLT_OT_DCH_THRESHOLD)
     {
+        status->bits.fault_over_temperature = true;
+    }
+
+    if (temperature >= FLT_OT_CH_THRESHOLD && ecu_data.is_charging == true){
         status->bits.fault_over_temperature = true;
     }
 

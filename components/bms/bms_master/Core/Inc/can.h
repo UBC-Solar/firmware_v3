@@ -51,6 +51,7 @@ typedef struct{
 
     ECU_StatusCode_t status;
     ECU_ADC_Data_t adc_data;
+    bool is_charging; // true means charging
 
 } ECU_Data_t;
 
