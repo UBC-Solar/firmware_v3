@@ -46,17 +46,8 @@ static volatile uint8_t count_awdg_faults = 0;
  */
 void FSM_Init()
 {
-    uint32_t reset_flags = RCC->CSR;
-
-    if (reset_flags & RCC_CSR_IWDGRSTF) {
-        //IWDG triggered
-        printf("watchdog-triggered software reset \r\n");
-        ecu_data.status.bits.reset_from_watchdog = 1; //CAN_message now knows watchdog event has occured
-        FSM_state = FAULT;
-    }
-    else {
-        FSM_state = FSM_RESET;
-    }
+    ecu_data.status.bits.reset_from_watchdog = 0;
+    FSM_state = FSM_RESET;
 
     return;
 }
