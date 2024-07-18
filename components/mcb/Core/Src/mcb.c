@@ -176,7 +176,7 @@ MotorCommand DoStatePARK()
 
 void TransitionPARKstate(InputFlags input_flags, DriveState * state)
 {
-	if ( input_flags.switch_pos_drive && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed )
+	if ( input_flags.switch_pos_drive)
 		*state = DRIVE;
 	else if ( input_flags.switch_pos_reverse && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 		*state = REVERSE;
