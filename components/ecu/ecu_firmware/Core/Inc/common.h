@@ -26,7 +26,9 @@ typedef union {
         bool reset_from_watchdog : 1;
         bool estop : 1;                               // Active High: ESTOP pressed
 
-        uint8_t _reserved : 2;
+        bool flt_bms : 1;
+
+        uint8_t _reserved : 1;
     } bits;
     uint8_t raw;
 

@@ -37,6 +37,7 @@ static bool startup_complete = false; // set true when first reach monitoring st
 static bool last_HLIM_status;
 static bool last_LLIM_status;
 static volatile uint8_t count_awdg_faults = 0;
+static volatile uint8_t count_bms_flts = 0;
 
 /*============================================================================*/
 /* PRIVATE FUNCTION IMPLEMENTATIONS */
@@ -46,18 +47,7 @@ static volatile uint8_t count_awdg_faults = 0;
  */
 void FSM_Init()
 {
-    uint32_t reset_flags = RCC->CSR;
-
-    if (reset_flags & RCC_CSR_IWDGRSTF) {
-        //IWDG triggered
-        printf("watchdog-triggered software reset \r\n");
-        ecu_data.status.bits.reset_from_watchdog = 1; //CAN_message now knows watchdog event has occured
-        FSM_state = FAULT;
-    }
-    else {
-        FSM_state = FSM_RESET;
-    }
-
+    FSM_state = MONITORING; 
     return;
 }
 
@@ -518,12 +508,9 @@ void ECU_monitor()
     /*************************
     BMS Fault Checking
     **************************/
-    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH ||
-        HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH ||
-        HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH)
+    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH)
     {
-        FSM_state = FAULT;
-        return;
+        count_bms_flts++;
     }
 
     /*************************
@@ -584,6 +571,9 @@ void ECU_monitor()
  */
 void fault()
 {
+
+    __disable_irq(); // disable all interrupts that might take us out of fault state
+
     printf("Fault Start\r\n");
     /*************************
     Put Pack in Safe State
@@ -657,6 +647,18 @@ void FSM_ESTOPActivedCallback()
     
     FSM_state = FAULT;
     FSM_run(); // Immediately transition to fault state
+}
+
+void FSM_FLTActivatedCallback(){
+
+    if(count_bms_flts >= BMS_FLT_THRESHOLD){
+        ecu_data.status.bits.flt_bms = true;
+
+        FSM_state = FAULT;
+        FSM_run(); // Immediately transition to fault state
+    }
+
+    count_bms_flts = 0; // if didn't get enough faults to exceed threshold, 
 }
 
 /*============================================================================*/

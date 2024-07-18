@@ -72,6 +72,8 @@ typedef enum
 #define DOC_WARNING_THRESHOLD 55000 // mA
 #define COC_WARNING_THRESHOLD -18000 // mA
 #define AWDG_TRIP_THRESHOLD 18 // no faults at 24 or greater
+#define BMS_FLT_THRESHOLD 10 // faults in 100ms (timer period)
+
 /*============================================================================*/
 /* STATE MACHINE FUNCTIONS */
 
@@ -120,7 +122,7 @@ static void (*FSM_state_table[])(void) = {
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
-// FSM
+// FSM Helpers
 void FSM_Init();
 void FSM_run();
 
@@ -128,5 +130,8 @@ void FSM_run();
 void FSM_ADC_WindowedAWDGCallback();
 void FSM_ADC_LevelOutOfWindowCallback();
 void FSM_ESTOPActivedCallback();
+
+// FLT
+void FSM_FLTActivatedCallback(); 
 
 #endif /* __FSM_H */

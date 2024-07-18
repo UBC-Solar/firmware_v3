@@ -58,8 +58,6 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define GPIO_BMS_Pin GPIO_PIN_13
-#define GPIO_BMS_GPIO_Port GPIOC
 #define SUPP_LOW_Pin GPIO_PIN_0
 #define SUPP_LOW_GPIO_Port GPIOC
 #define PACK_FANS_CTRL_Pin GPIO_PIN_1
@@ -131,12 +129,6 @@ void Error_Handler(void);
 #define LLIM_BMS_GPIO_Port GPIOB
 #define FLT_BMS_Pin GPIO_PIN_4
 #define FLT_BMS_GPIO_Port GPIOB
-#define COM_BMS_Pin GPIO_PIN_5
-#define COM_BMS_GPIO_Port GPIOB
-#define BAL_BMS_Pin GPIO_PIN_6
-#define BAL_BMS_GPIO_Port GPIOB
-#define OT_BMS_Pin GPIO_PIN_7
-#define OT_BMS_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
