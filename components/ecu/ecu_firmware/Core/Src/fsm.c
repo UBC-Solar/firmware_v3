@@ -518,9 +518,7 @@ void ECU_monitor()
     /*************************
     BMS Fault Checking
     **************************/
-    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH ||
-        HAL_GPIO_ReadPin(COM_BMS_GPIO_Port, COM_BMS_Pin) == HIGH ||
-        HAL_GPIO_ReadPin(OT_BMS_GPIO_Port, OT_BMS_Pin) == HIGH)
+    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH && HAL_GPIO_ReadPin(BAL_BMS_GPIO_Port, BAL_BMS_Pin) == LOW)
     {
         FSM_state = FAULT;
         return;

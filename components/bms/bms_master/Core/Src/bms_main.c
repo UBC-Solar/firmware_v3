@@ -221,16 +221,17 @@ void BMS_MAIN_driveOutputs(Pack_t *pack)
     if (PACK_ANY_FAULTS_SET(pack->status) || ecu_data.status.bits.estop == true)
     {
         CONT_FLT_switch(true);
+        CONT_BAL_switch(false); // complement of above
+
         CONT_COM_switch(pack->status.bits.fault_communications);
         CONT_OT_switch(pack->status.bits.fault_over_temperature);
         stopBalancing(pack);
-        CONT_BAL_switch(pack->status.bits.balancing_active);
         CONT_FAN_PWM_set(FAN_FULL);
     }
     else // no fault; balance modules, drive control signals and fans
     {
         BAL_updateBalancing(pack); // write bal settings, send bal commands
-        CONT_BAL_switch(pack->status.bits.balancing_active);
+        // CONT_BAL_switch(pack->status.bits.balancing_active);
 
         // HLIM active if TRIP_HLIM or TRIP_CHARGE_OT are active
         CONT_HLIM_switch(pack->status.bits.hlim || pack->status.bits.charge_over_temperature_limit);
