@@ -12,6 +12,7 @@
 #include "main.h"
 #include <float.h>
 #include <string.h>
+#include "analysis.h"
 
 /*============================================================================*/
 /* DEFINITIONS */
@@ -465,6 +466,12 @@ bool CAN_GetMessage0x450Data(uint32_t *rx_timestamp, ECU_Data_t *ecu_data)
         ecu_data->status.raw = CAN_data.rx_message_0x450.data[5];
         *rx_timestamp = CAN_data.rx_message_0x450.timestamp;
 
+        if((float)(ecu_data->adc_data.batt_current) / 65.535 < 0){
+            ecu_data->is_charging = true;
+        }
+        else{
+            ecu_data->is_charging = false;
+        }
     }
     
     HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn); // Start critical section

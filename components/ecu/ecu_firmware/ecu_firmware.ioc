@@ -1,7 +1,7 @@
 #MicroXplorer Configuration settings - do not modify
 ADC1.AWD1HighThreshold=2710
 ADC1.AWD1ITMode=ENABLE
-ADC1.AWD1LowThreshold=2071
+ADC1.AWD1LowThreshold=2105
 ADC1.Channel-0\#ChannelRegularConversion=ADC_CHANNEL_5
 ADC1.Channel-1\#ChannelRegularConversion=ADC_CHANNEL_6
 ADC1.Channel-2\#ChannelRegularConversion=ADC_CHANNEL_7
@@ -358,7 +358,7 @@ ProjectManager.ToolChainLocation=
 ProjectManager.UAScriptAfterPath=
 ProjectManager.UAScriptBeforePath=
 ProjectManager.UnderRoot=true
-ProjectManager.functionlistsort=1-MX_GPIO_Init-GPIO-false-HAL-true,2-SystemClock_Config-RCC-false-HAL-false,3-MX_DMA_Init-DMA-false-HAL-true,4-MX_ADC1_Init-ADC1-false-HAL-true,5-MX_CAN_Init-CAN-false-HAL-true,6-MX_UART5_Init-UART5-false-HAL-true,7-MX_TIM3_Init-TIM3-false-HAL-true,8-MX_IWDG_Init-IWDG-false-HAL-true
+ProjectManager.functionlistsort=1-MX_GPIO_Init-GPIO-false-HAL-true,2-SystemClock_Config-RCC-false-HAL-false,3-MX_DMA_Init-DMA-false-HAL-true,4-MX_ADC1_Init-ADC1-false-HAL-true,5-MX_CAN_Init-CAN-false-HAL-true,6-MX_UART5_Init-UART5-false-HAL-true,7-MX_TIM3_Init-TIM3-false-HAL-true,8-MX_IWDG_Init-IWDG-false-HAL-true,9-MX_TIM2_Init-TIM2-false-HAL-true
 RCC.ADCFreqValue=12000000
 RCC.ADCPresc=RCC_ADCPCLK2_DIV6
 RCC.AHBFreq_Value=72000000

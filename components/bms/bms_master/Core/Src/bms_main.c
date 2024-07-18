@@ -25,7 +25,7 @@
 
 /*============================================================================*/
 /* PRIVATE VARIABLES */
-static ECU_Data_t ecu_data = {0};
+ECU_Data_t ecu_data = {0};
 
 /*============================================================================*/
 /* PRIVATE FUNCTION DEFINITIONS */
@@ -166,6 +166,8 @@ void BMS_MAIN_updatePackData(Pack_t *pack)
     {
         pack->status.bits.fault_over_current = true; // set FLT_DOC_COC bit
     }
+
+    printf("ecu current direction: %d\r\n", ecu_data.is_charging);
 
     pack->status.bits.warning_no_ecu_message = !new_ecu_can_message_received;
 
