@@ -32,7 +32,7 @@ void CONT_init(TIM_HandleTypeDef *timer_handle, uint32_t timer_pwm_channel)
     CONT_data.timer_handle = timer_handle;
     CONT_data.timer_pwm_channel = timer_pwm_channel;
 
-    CONT_BAL_switch(false);
+    CONT_BAL_switch(true); // high when no fault
     CONT_COM_switch(false);
     CONT_FLT_switch(false);          // ECU expects it to be HIGH on startup
     CONT_HLIM_switch(false);
