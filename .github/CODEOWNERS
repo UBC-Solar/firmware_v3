@@ -1,0 +1,8 @@
+# CODEOWNERS
+
+# embd exec gets notifications for everything
+* @UBC-Solar/embd_exec
+
+# embd sub team get notified about everything but bms and ecu
+* @UBC-Solar/embd
+
