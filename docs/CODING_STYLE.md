@@ -13,7 +13,8 @@ The sections below include
 	* [Example of a Translation Unit](#example-of-a-translation-unit)
 	* [The One Definition Rule (ODR) and its Application](#the-one-definition-rule-odr-and-its-application)
 * [Abstracting Functionality](#abstracting-functionality)
-	* [Example of Abstracting Functionality](#example-of-abstra	cting-functionality)
+	* [Example of Abstracting Functionality](#example-of-abstracting-functionality)
+  * [Abstract Functionality with a Purpose](#abstract-functionality-with-a-purpose)
 * [Creating a Software Component (Module)](#creating-a-software-component-module)
 	* [Identify the Functionality](#1-identify-the-functionality)
 		* **Single Responsibility Principle**
@@ -110,19 +111,23 @@ if(g_tel_diagnostics.watchdog_reset)
 ```
 This can be abstracted into a function:
 ```c
-void UTIL_set_bit_on_flag(uint8_t *byte, uint8_t bit_idx, bool condition) {
+void BITOPS_set_bit_on_flag(uint8_t *byte, uint8_t bit_idx, bool condition) {
 	if (condition) {
 		SET_BIT(*byte, FLAG_HIGH << bit_idx);
 	}
 }
 
 // Usage
-UTIL_set_bit_on_flag(&data_send, RTC_RESET_BIT     , g_tel_diagnostics.rtc_reset);
-UTIL_set_bit_on_flag(&data_send, GPS_FIX_BIT       , g_tel_diagnostics.gps_fix);
-UTIL_set_bit_on_flag(&data_send, IMU_FAIL_BIT      , g_tel_diagnostics.imu_fail);
-UTIL_set_bit_on_flag(&data_send, WATCHDOG_RESET_BIT, g_tel_diagnostics.watchdog_reset);
+BITOPS_set_bit_on_flag(&data_send, RTC_RESET_BIT     , g_tel_diagnostics.rtc_reset);
+BITOPS_set_bit_on_flag(&data_send, GPS_FIX_BIT       , g_tel_diagnostics.gps_fix);
+BITOPS_set_bit_on_flag(&data_send, IMU_FAIL_BIT      , g_tel_diagnostics.imu_fail);
+BITOPS_set_bit_on_flag(&data_send, WATCHDOG_RESET_BIT, g_tel_diagnostics.watchdog_reset);
 ```
-Now, you can call this function four times, making your code more concise and easier to maintain. Additionally, since this is a generic function, you can reuse it in other parts of your codebase by making it a public utility function. *Note: The function header is not shown in this, however, should be there*.
+Now, you can call this function four times, making your code more concise and easier to maintain. Additionally, since this is a generic function, you can reuse it in other parts of your codebase by making it a public function part of the `BITOPS` module. *Note: The function header is not shown in this, however, should be there*.
+
+#### Abstract Functionality with a Purpose
+One issue when abstracting a commonly used function (Ex. the `BITOPS_set_bit_on_flag` function) is that you might tempted to call it a 'util' function. Essentially, widely used functions that do bit operations or maybe copy values into arrays often get lumped together as 'utility functions' because they have a wide ranging use. *Why is this a problem and who cares?*. Firstly, calling something a 'util' immedietely means you do not know the use for it. It just says 'this function is probably useful to somebody'. Thing is, *lots* of functions are useful, so we cannot just clump *all* these into a `UTILS` module. Instead, consider the core use for the function. In the example above, the logic in the function `BITOPS_set_bit_on_flag` simply sets specific bits of a byte. This kind of bitwise functionality is useful to group with other bitwise functionality because you know where to find these kinds of functions  and because these functions are likely dependent on each other. Thus, creating a `BITOPS` module is a good idea to abstract this functionality *and* make it portable. 
+
 
 ### Creating a Software Component (Module)
 
@@ -210,7 +215,6 @@ With this distinction aside lets discuss various naming conventions that pop up 
   - Both `.c` and `.h` files should be named after the module, using `snake_case` and lowercase.
   - Examples:
     - If abstracting LCD screen functionality: `lcd.c` and `lcd.h`.
-    - If creating a utility functions module: `utils.c` and `utils.h`.
     - Multiple words: `sd_logger.c` and `sd_logger.h`.
   - Generally, both the `.c` and `.h` file should share the same name.
 
@@ -365,7 +369,7 @@ The sections below will explain the following
         uint8_t data_send = INITIAL_FLAGS;                  // We set all variables here. Note we dont actually comment this.
         CAN_Radio_msg_t diagnostics_msg;
         diagnostics_msg.header = tel_diagnostics_header;
-        union Utils_DoubleBytes_t current_timestamp;
+        union DoubleBytes_t current_timestamp;
 
         current_timestamp.double_value = get_current_timestamp();
         diagnostics_msg.timestamp = current_timestamp;
@@ -457,7 +461,7 @@ The sections below will explain the following
     uint8_t data_send = INITIAL_FLAGS;
     CAN_Radio_msg_t diagnostics_msg;
     diagnostics_msg.header = tel_diagnostics_header;
-    union Utils_DoubleBytes_t current_timestamp;
+    union DoubleBytes_t current_timestamp;
 
     current_timestamp.double_value = get_current_timestamp();
     diagnostics_msg.timestamp = current_timestamp;
