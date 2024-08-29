@@ -68,18 +68,27 @@ void myFunction(void);
 #include "module.h"
 #include <stdio.h>
 
-void myFunction(void) {
+void myHelperFunction(void);
+
+void myFunction(void) 
+{
+    myHelperFunction();
     printf("Hello from myFunction!\n");
 }
-```
 
-In this example:
+void myHelperFunction(void) 
+{
+  // Important code
+}
+```
 
 - **`main.c`** is a source file that includes the header file `module.h` and calls the function `myFunction`.
 - **`module.h`** is a header file that *declares* the function `myFunction`.
 - **`module.c`** is a source file that *defines* the function `myFunction`.
 
 When you compile the code, each source file (`main.c` and `module.c`) is *treated as a separate translation unit*. The preprocessor will replace `#include "module.h"` with the contents of `module.h`, and then the compiler will process each translation unit independently.
+
+Note that in this example, we have `myHelperFunction()`. This function is only used in the module.c and should NOT be defined in the header file.
 
 #### The One Definition Rule (ODR) and its Application
 
@@ -218,6 +227,7 @@ With this distinction aside lets discuss various naming conventions that pop up 
     - Multiple words: `sd_logger.c` and `sd_logger.h`.
   - Generally, both the `.c` and `.h` file should share the same name.
 
+
 #### Function Names
 - **Public Functions:**
   - For multiple distinct features, use `<MODULE_NAME_CAPITALIZED>_<FEATURE>_<function_name>`.
@@ -228,7 +238,7 @@ With this distinction aside lets discuss various naming conventions that pop up 
 - **Private Functions:**
   - Name private functions without the module name, using only `<function_name>`.
     - Example: If `RTC_get_current_timestamp()` calls private functions, name them `get_date_epoch_seconds()` and `get_time_epoch_seconds()`.
-    - *Note: Do **not** add a `_` prefix to private funciton names*. 
+    - *Note: Do **not** add a `_` prefix to private function names*. 
 
 #### Type Names
 - **Naming Convention:**
@@ -248,8 +258,9 @@ With this distinction aside lets discuss various naming conventions that pop up 
 - **Naming Convention:**
   - Local variables should be named using `snake_case` and be as descriptive as possible without becoming overly verbose.
   - Since local variables are scoped within a function or block, there's no need to prefix them with the module name.
-  - Ex:
-    - `gps_data`, `can_msg`, `curr_timestamp`.
+  - Ex: `gps_data`, `can_msg`, `current_timestamp`.
+  - Avoid unnecessarily shortening words as they could cause confusion.
+  - Ex: `float -> flt` and `fault -> flt`
 
 #### Constants
 - **Naming Convention:**
@@ -277,10 +288,15 @@ uint32_t start_of_second = 0;
 ```
 Now, it makes more sense why this variable even exists; its goal is to reduce the TEL board's clock drift from affecting measurements taken over the whole board's runtime (could be hours during competition) down to only impacting 1 second.
 
-The sections below will explain the following
-* Function Headers
-* General Commenting Rules
 
+#### File Headers
+Add this comment to the top of every `.c` and `.h` created by UBC Solar.
+```
+  /******************************************************************************
+  * @file    module_name.c/h
+  * @brief   Brief description of the file.
+  ******************************************************************************/
+```
 
 #### Function Headers
 - **Naming Convention:**
@@ -365,7 +381,8 @@ The sections below will explain the following
   - Initialize all variables at the top of the function. Even if they are used later.
   - Example:
     ```c
-    void CAN_diagnostic_msg_tx_radio_bus() {
+    void CAN_diagnostic_msg_tx_radio_bus() 
+    {
         uint8_t data_send = INITIAL_FLAGS;                  // We set all variables here. Note we dont actually comment this.
         CAN_Radio_msg_t diagnostics_msg;
         diagnostics_msg.header = tel_diagnostics_header;
@@ -386,18 +403,21 @@ The sections below will explain the following
         diagnostics_msg.data[FIRST_DATA_BYTE] = data_send;
     }
     ```
-    
+
 #### Indentation
 - **Indentation Style:**
   - Use 4 spaces for indentation. STM32CubeIDE might default to 2 spaces.
     - Change this by following: Window -> Preferences -> C/C++ -> Code Style -> Formatter -> Edit -> Indentation -> Tab policy -> Spaces only -> Indentation size -> 4. 
   - Example:
     ```c
-    void example_function() {
-        if (condition) {
+    void example_function() 
+    {
+        if (condition) 
+        {
             // Do something
         } 
-        else {
+        else 
+        {
             // Do something else
         }
     }
@@ -424,17 +444,25 @@ The sections below will explain the following
     sum++;
     ```
 
+- **Pointers**
+  - When declaring a pointer, ensure there is no space between the type and the *, but include a space between the * and the pointer variable name.
+    - Ex: `int* myPointer;`
+  - When dereferencing a pointer, place a space before the * and avoid any space between the * and the pointer variable.
+    - Ex: `some_int = *myPointer;`
+
 - **Spacing Inside Parentheses:**
   - Do not add spaces immediately inside parentheses, brackets, or braces.
     - Do this:
       ```c
-      if (condition) {
+      if (condition) 
+      {
           array[index] = value;
       }
       ```
     - Not this:
       ```c
-      if ( condition ) {
+      if ( condition ) 
+      {
           array[ index ] = value;
       }
       ```
@@ -445,10 +473,12 @@ The sections below will explain the following
     int array[] = {1, 2, 3, 4};
     ```
 - **Spacing After Conditions**
-  - Use a single space after the `if`, `else`, `for`, `while`, and `switch` keywords. Also a single space after the condition which comes before the `{`.
+  - Use a single space after the `if`, `else`, `for`, `while`, and `switch` keywords. 
+  The start curly bracket should be on a new line `{`.
   - Example:
     ```c
-    if (condition) {
+    if (condition) 
+    {
         // Do something
     }
     ```
