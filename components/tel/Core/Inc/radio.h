@@ -13,7 +13,18 @@
 
 #include "can.h"
 #include "usart.h"
-#include "rtc.h"
+#include "rtc.h"]
+
+/* RADIO MESSAGE TYPEDEF */
+typedef struct {
+    double timestamp;
+    char ID_DELIMETER;
+    uint32_t can_id_reversed;
+    uint8_t data[MAX_CAN_DATA_LEN];
+    uint8_t data_len;
+    char CARRIAGE_RETURN;
+    char NEW_LINE;
+} CAN_RadioMsg_TypeDef;
 
 /* RADIO BUFFER BYTE LENGTHS */
 #define CAN_BUFFER_LEN                      24

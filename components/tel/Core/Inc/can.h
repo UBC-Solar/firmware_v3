@@ -30,9 +30,6 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 
-#include "cmsis_os.h"
-#include "utils.h"
-
 /* USER CODE END Includes */
 
 extern CAN_HandleTypeDef hcan;
@@ -42,13 +39,6 @@ extern CAN_HandleTypeDef hcan;
 #define CAN_READY (uint32_t) 0x0001
 #define RTC_TIMESTAMP_MSG_ID 0x300
 #define TEL_DIAGNOSTICS_ID 0x750
-#define IMU_X_AXIS 0x752
-#define IMU_Y_AXIS 0x753
-#define IMU_Z_AXIS 0x754
-#define GPS_latitude_ID 0x755
-#define GPS_longitude_ID 0x756
-#define GPS_altitude_hdop_ID 0x757
-#define GPS_side_count_ID 0x758
 
 #define CAN_DATA_LENGTH 8
 #define CAN_TIMESTAMP_LENGTH 8
@@ -66,10 +56,6 @@ extern CAN_TxHeaderTypeDef GPS_latitude_header;
 extern CAN_TxHeaderTypeDef GPS_longitude_header;
 extern CAN_TxHeaderTypeDef GPS_altitude_hdop_header;
 extern CAN_TxHeaderTypeDef GPS_side_count_header;
-
-
-
-
 extern uint32_t can_mailbox;
 
 /* USER CODE END Private defines */
@@ -79,24 +65,16 @@ void MX_CAN_Init(void);
 /* USER CODE BEGIN Prototypes */
 
 typedef struct {
-  CAN_RxHeaderTypeDef header;
-  uint8_t data[8];
-  union Utils_DoubleBytes_t timestamp;
-} CAN_msg_t;
-
-typedef struct {
-  CAN_TxHeaderTypeDef header;
-  uint8_t data[8];
-  union Utils_DoubleBytes_t timestamp;
-} CAN_Radio_msg_t;
+    uint8_t data[MAX_CAN_DATA_LEN];
+    uint32_t can_id;
+    uint8_t data_len;
+} CAN_FIFORxMsg_TypeDef;
 
 void CanFilterSetup(void);
 void CAN_Init(void);
 void CAN_radio_and_bus_transmit(CAN_HandleTypeDef* hcan, CAN_Radio_msg_t* tx_CAN_msg, uint32_t* can_mailbox);
 void CAN_rx_to_radio(CAN_msg_t* rx_CAN_msg, CAN_Radio_msg_t* tx_CAN_msg);
 void CAN_diagnostic_msg_tx_radio_bus();
-
-extern osThreadId readCANTaskHandle;
 
 /* USER CODE END Prototypes */
 
