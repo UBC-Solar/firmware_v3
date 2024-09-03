@@ -82,12 +82,6 @@ void Error_Handler(void);
 #define SDL_CD_GPIO_Port GPIOA
 #define SDL_CS_Pin GPIO_PIN_4
 #define SDL_CS_GPIO_Port GPIOA
-#define SDL_CLK_Pin GPIO_PIN_5
-#define SDL_CLK_GPIO_Port GPIOA
-#define SDL_MISO_Pin GPIO_PIN_6
-#define SDL_MISO_GPIO_Port GPIOA
-#define SDL_MOSI_Pin GPIO_PIN_7
-#define SDL_MOSI_GPIO_Port GPIOA
 #define RADIO_GPIO_DIO9_SLEEP_Pin GPIO_PIN_4
 #define RADIO_GPIO_DIO9_SLEEP_GPIO_Port GPIOC
 #define RADIO_GPIO_DIO11_Pin GPIO_PIN_5
