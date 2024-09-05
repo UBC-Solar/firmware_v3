@@ -225,6 +225,8 @@ void CAN_Init(void)
   (void) can_notification_status;
 }
 
+
+
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
   //HAL_StatusTypeDef status = HAL_CAN_DeactivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
@@ -235,9 +237,83 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   uint8_t can_data[8];
   CAN_msg_t *new_CAN_msg;
 
+    my_local_queue_idx = global_queue_idx;
+		if (rx_queue[my_local_queue_idx].sent == true)
+    {
+      my_local_queue_idx = (my_local_queue_idx + 1) % RX_QUEUE_SIZE;
+    }
+    else
+		{
+			HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   // Blink LED to indicate CAN message received
+
+			RTC_check_and_sync_rtc(CAN_rx_data.StdId);                     // Sync RTC with memorator message. Also sets rtc reset
+
+			CAN_Radio_msg_t tx_CAN_msg;
+			CAN_rx_to_radio(rx_CAN_msg, &tx_CAN_msg);               // Convert CAN message to radio message
+			RADIO_tx_CAN_msg(&tx_CAN_msg);                          // Send CAN on radio
+		}
+    
+
+Callback Psuedo Code:
+
+if the CAN struct at the current global_queue_idx is not sent:
+  error this in diagnostic message
+else:
+  rxed_can_msg;
+  current_queue_message = rx_queue[global_queue_idx];
+
+  HAL_CAN_GetRxMessage(<necessary args like rxed_can_msg>)
+
+  current_queue_message.can_id = rxed_can_msg.header.StdId;
+  current_queue_message.data_len = rxed_can_msg.header.DLC;
+  current_queue_message.data = make_copy_of(rxed_can_msg.data);
+  current_queue_message.is_sent = false;
+
+CIRCULAR_INCREMENT(&global_queue_idx, MAX_QUEUE_SIZE);
+
+
+Super Loop Psuedo Code:
+
+while(1) 
+{
+    my_local_queue_idx = global_queue_idx;
+    message_to_send = rx_queue[my_local_queue_idx];
+
+		if (message_to_send.is_sent == true)
+    {
+      CIRCULAR_INCREMENT(&my_local_queue_idx, MAX_QUEUE_SIZE);
+    }
+    else
+		{
+			HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);  
+
+      wait_for_uart_dma_complete();
+
+      uart_dma_tx(message_to_send);
+		}
+}
+
 
   /* Get CAN message */
     HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can_rx_header, can_data);  // TODO: Put can_rx_header and can_data into a data structure able to be accessed in the freertos task
+    
+    new_CAN_msg.can_id = can_rx_header.StdId;
+    new_CAN_msg.data = copy(can_data);
+    new_CAN_msg.data_len = can_rx_header.DLC;
+    new_CAN_msg.sent = false;
+
+    if (rx_queue[queue_idx].sent == false)
+    {
+      // Set Diagnostic fault
+    }
+    else
+    {
+      rx_queue[queue_idx] = &new_CAN_msg;
+      global_queue_idx = queue_idx;
+    }
+    queue_idx = (queue_idx + 1) % RX_QUEUE_SIZE;
+
+
     /* Put CAN message in the Queue */
     new_CAN_msg = osPoolAlloc(CAN_MSG_memory_pool);
     new_CAN_msg->header = can_rx_header;

@@ -48,6 +48,14 @@ typedef struct {
 #define MASK_8_BITS                         0xFF
 #define MASK_4_BITS                         0xF
 
+#define CONST_UINT32_BYTE_REVERSE(num)      ((((num) & 0x000000FF) << 24) | (((num) & 0x0000FF00) << 8) | (((num) & 0x00FF0000) >> 8) | (((num) & 0xFF000000) >> 24))
+#define ID_DELIMITER                        '#'
+#define CARRIAGE_RETURN_CHAR                '\r'
+#define NEW_LINE_CHAR                       '\n'
+#define CAN_QUEUE_MAX_SIZE                  60          // See https://ubcsolar.monday.com/boards/7156006167/pulses/7338021958
+#define MAX_CAN_DATA_LEN                    8
+
+
 /* MSG CONSTANTS */
 #define CAN_MESSAGE_IDENTIFIER              '#'
 

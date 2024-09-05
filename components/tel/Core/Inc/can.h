@@ -63,13 +63,6 @@ extern uint32_t can_mailbox;
 void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
-typedef struct {
-    uint8_t data[MAX_CAN_DATA_LEN];
-    uint32_t can_id;
-    uint8_t data_len;
-} CAN_FIFORxMsg_TypeDef;
-
 void CanFilterSetup(void);
 void CAN_Init(void);
 void CAN_radio_and_bus_transmit(CAN_HandleTypeDef* hcan, CAN_Radio_msg_t* tx_CAN_msg, uint32_t* can_mailbox);
