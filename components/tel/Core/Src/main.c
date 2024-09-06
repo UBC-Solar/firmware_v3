@@ -25,6 +25,7 @@
 #include "usart.h"
 #include "gpio.h"
 #include "radio.h"
+#include "debug_io.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -53,7 +54,7 @@
 
 /* Diagnostics */
 
-tel_diagnostics g_tel_diagnostics = {false, false, false, false, false};
+tel_diagnostics g_tel_diagnostics = {false, false, false, false};
 
 /* CAN Filters */
 CAN_FilterTypeDef CAN_filter0;
@@ -125,7 +126,7 @@ int main(void)
     DebugIO_Init(&huart5);
 
     // Determine if RTC is reset and set diagnostic rtc_reset appropriately. Note we dont use the ret val
-    checkAndSetRTCReset();
+    RTC_check_and_set_reset_flag();
 
 	/* USER CODE END 2 */
 
@@ -135,26 +136,24 @@ int main(void)
 
 	while (1)
 	{
-		local_queue_index = g_rx_queue_index;		// Start Txing at the first saved CAN message in the queue to not miss it
+		local_queue_index = g_rx_queue_index;   // Start Txing at the first saved CAN message in the queue instead of waitng to loop to it
 		CAN_QueueMsg_TypeDef* current_can_msg_ptr = &g_rx_queue[local_queue_index];	
 		
-		// Check for a CAN message
-		if (current_can_msg_ptr->is_sent == true)
+		if (RADIO_is_msg_sent(current_can_msg_ptr))		
 		{
 			local_queue_index = CIRCULAR_INCREMENT_SET(local_queue_index, MAX_RX_QUEUE_SIZE);	// Move to the next message in the queue
 		}
-		else
+		else	// If radio message is not sent then send it and set its sent flag to true
 		{
-			RADIO_CANMsg_TypeDef* can_radio_msg = &(current_can_msg_ptr->can_radio_msg);
+			CAN_RadioMSG_TypeDef* can_radio_msg = &(current_can_msg_ptr->can_radio_msg);
 
 			HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   				  // Blink LED to indicate CAN message received
 
-			// Sync RTC if memorator message. Also sets rtc reset
 			uint32_t can_id = CONST_UINT32_BYTE_REVERSE(can_radio_msg->can_id_reversed);	// get ID back to LSB
-			RTC_check_and_sync_rtc(can_id, &(can_radio_msg->data[START_OF_ARRAY])); 
+			RTC_check_and_sync_rtc(can_id, &(can_radio_msg->data[START_OF_ARRAY])); 	    // Sync RTC if RTC Timestamp msg rxed. 
 
 			/* Perform any expensive operations outside of interrupt */
-			can_radio_msg->timestamp = get_current_timestamp();
+			can_radio_msg->timestamp = RTC_get_current_timestamp();
 
 			// wait for dma complete
 
@@ -163,7 +162,7 @@ int main(void)
 			current_can_msg_ptr->is_sent = true;	// Mark the message as sent
 		}
 
-		IWDG_refresh();
+		IWDG_refresh();	
 
 		/* USER CODE END WHILE */
 

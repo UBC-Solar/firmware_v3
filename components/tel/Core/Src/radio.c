@@ -9,3 +9,7 @@
 
 #include "radio.h"
 
+bool RADIO_is_msg_sent(CAN_QueueMsg_TypeDef* queue_msg)
+{
+	return queue_msg->is_sent;
+}

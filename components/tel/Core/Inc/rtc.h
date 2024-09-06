@@ -38,20 +38,22 @@ extern RTC_HandleTypeDef hrtc;
 
 /* USER CODE BEGIN Private defines */
 
-#define TIMETYPEDEF_SECONDS_IDX     0
-#define TIMETYPEDEF_MINUTES_IDX     1
-#define TIMETYPEDEF_HOURS_IDX       2
-#define TIMETYPEDEF_DAY_IDX         3
-#define TIMETYPEDEF_MONTH_IDX       4   
-#define TIMETYPEDEF_YEAR_IDX        5
+#define TIMETYPEDEF_SECONDS_IDX             0
+#define TIMETYPEDEF_MINUTES_IDX             1
+#define TIMETYPEDEF_HOURS_IDX               2
+#define TIMETYPEDEF_DAY_IDX                 3
+#define TIMETYPEDEF_MONTH_IDX               4   
+#define TIMETYPEDEF_YEAR_IDX                5
+#define TEL_TO_MEMORATOR_RTC_YEAR_OFFSET    100    // Year since 1900, so add 100 to the year from the RTC (which starts at 2000).
+#define MILLIS_IN_SECOND                    1000
+
 
 /* USER CODE END Private defines */
-
 void MX_RTC_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-double get_current_timestamp();
-bool checkAndSetRTCReset();
+double RTC_get_current_timestamp();
+bool RTC_check_and_set_reset_flag();
 void RTC_check_and_sync_rtc(uint32_t can_id, uint8_t *data);
 
 /* USER CODE END Prototypes */

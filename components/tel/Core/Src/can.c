@@ -24,7 +24,11 @@
 #include "rtc.h"
 #include "stdint.h"
 #include "string.h"
+#include "radio.h"
 
+/* GLOBALS */
+uint8_t g_rx_queue_index = 0;
+CAN_QueueMsg_TypeDef g_rx_queue[MAX_RX_QUEUE_SIZE] = {0};
 
 /* USER CODE END 0 */
 
@@ -146,29 +150,11 @@ void CanFilterSetup(void)
 }
 
 
-/*
- * CAN set-up: Sets up the filters, Starts CAN with HAL, and Activates notifications for interrupts.
+/**
+ * @brief Initializes the RX queue elements with necessary constants
+ *        that sunlink requires (the ID_DELIMETER) and printing requires (\r\n).
  */
-void CAN_Init(void)
-{
-  HAL_StatusTypeDef can_start;
-  CAN_queue_init();                     // Add the #, \r, \n characters to the messages in the queue
-  
-  CanFilterSetup();
-  can_start = HAL_CAN_Start(&hcan);
-  assert_param(can_start == HAL_OK);
-
-  HAL_StatusTypeDef can_notification_status = HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
-  assert_param(can_notification_status == HAL_OK);
-
-  /* To avoid warning of unused variable */
-  (void) can_notification_status;
-}
-
-uint8_t g_rx_queue_index = 0;
-CAN_QueueMsg_TypeDef g_rx_queue[MAX_RX_QUEUE_SIZE] = {0};
-
-void CAN_queue_init()
+void g_rx_queue_init()
 {
   for (uint8_t i = 0; i < MAX_RX_QUEUE_SIZE; ++i)
   {
@@ -180,22 +166,49 @@ void CAN_queue_init()
   }
 }
 
+
+/**
+ * @brief CAN set-up: Sets up the filters, Starts CAN with HAL, and Activates notifications for interrupts.
+ */
+void CAN_Init(void)
+{
+  HAL_StatusTypeDef can_start;
+  g_rx_queue_init();                     // Add the #, \r, \n characters to the messages in the queue
+  
+  CanFilterSetup();
+  can_start = HAL_CAN_Start(&hcan);
+  assert_param(can_start == HAL_OK);
+
+  HAL_StatusTypeDef can_notification_status = HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+  assert_param(can_notification_status == HAL_OK);
+
+  /* To avoid warning of unused variable */
+  (void) can_notification_status;
+  (void) can_start;
+}
+
+
+/**
+ * @brief Callback function for when a CAN message is received in the FIFO0
+ */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
   CAN_RxHeaderTypeDef can_rx_header;
-  uint8_t can_data[CAN_DATA_LENGTH];
+  uint8_t can_data[MAX_CAN_DATA_LENGTH];
   CAN_QueueMsg_TypeDef* current_queue_message = &g_rx_queue[g_rx_queue_index];
 
-  if (current_queue_message->is_sent == false)  // CAN error for Messgae not Txed because the message was not sent
+  if (!RADIO_is_msg_sent(current_queue_message))  // CAN error for Message not Txed because the message was not sent
   {
   }
   else                                              // 'Empty' position in queue. So fill it.   
   {
     HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can_rx_header, &can_data[START_OF_ARRAY]);       
 
-    current_queue_message->can_radio_msg.can_id_reversed = CONST_UINT32_BYTE_REVERSE(can_rx_header.StdId);
-    memcpy(&(current_queue_message->can_radio_msg.data[START_OF_ARRAY]), &can_data[START_OF_ARRAY], CAN_DATA_LENGTH);
-    current_queue_message->can_radio_msg.data_len = can_rx_header.DLC;
+    uint32_t can_id = (can_rx_header.IDE == CAN_ID_STD) ? can_rx_header.StdId : can_rx_header.ExtId;
+
+    current_queue_message->can_radio_msg.can_id_reversed = CONST_UINT32_BYTE_REVERSE(can_id);
+    memcpy(&(current_queue_message->can_radio_msg.data[START_OF_ARRAY]), &can_data[START_OF_ARRAY], MAX_CAN_DATA_LENGTH);
+    current_queue_message->can_radio_msg.data_len = can_rx_header.DLC & MASK_4_BITS;
     current_queue_message->is_sent = false;
   }
   
