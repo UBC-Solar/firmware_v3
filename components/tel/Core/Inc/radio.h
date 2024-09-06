@@ -11,17 +11,10 @@
 #ifndef __RADIO_TRANSNIT_H__
 #define __RADIO_TRANSNIT_H__
 
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+#include "stdint.h"
 
-/* RADIO MESSAGE TYPEDEF */
-typedef struct {
-    double timestamp;   
-    char ID_DELIMETER;
-    uint32_t can_id_reversed;
-    uint8_t data[MAX_CAN_DATA_LEN];
-    uint8_t data_len;
-    char CARRIAGE_RETURN;
-    char NEW_LINE;
-} RADIO_CANMsg_TypeDef;
 
 /* RADIO BUFFER BYTE LENGTHS */
 #define CAN_BUFFER_LEN                      24
@@ -59,6 +52,15 @@ typedef struct {
 /* TIMING CONSTANTS */
 #define CAN_TRANSMIT_TIMEOUT                1000                // 1 second timeout
 
-void RADIO_tx_CAN_msg(CAN_Radio_msg_t *tx_CAN_msg);
+/* RADIO MESSAGE TYPEDEF */
+typedef struct {
+    double timestamp;   
+    char ID_DELIMETER;
+    uint32_t can_id_reversed;
+    uint8_t data[MAX_CAN_DATA_LEN];
+    uint8_t data_len;
+    char CARRIAGE_RETURN;
+    char NEW_LINE;
+} RADIO_CANMsg_TypeDef;
 
 #endif /* __RADIO_H__ */

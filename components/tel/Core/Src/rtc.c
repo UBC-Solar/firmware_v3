@@ -124,21 +124,6 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 
 /* USER CODE BEGIN 1 */
 
-double get_current_timestamp()
-{
-  /* Initialize Time and Date objects */
-  // double milliseconds = (HAL_GetTick() - start_of_second) / 1000.0;
-  double milliseconds = HAL_GetTick() / 1000.0;
-  RTC_TimeTypeDef sTime;
-  RTC_DateTypeDef sDate;
-
-  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-  double epochTime = convertToEpochTime(&sTime, &sDate, milliseconds);
-
-  /* Return the resulting epoch time */
-  return epochTime;
-}
 
 /* Used to get current time stamp */
 double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate, double milliseconds)
@@ -160,6 +145,22 @@ double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate, double
 
     /* Convert to double and add milliseconds with GetTick() */
     return (double)epoch_secs + milliseconds;
+}
+
+double get_current_timestamp()
+{
+  /* Initialize Time and Date objects */
+  // double milliseconds = (HAL_GetTick() - start_of_second) / 1000.0;
+  double milliseconds = HAL_GetTick() / 1000.0;
+  RTC_TimeTypeDef sTime;
+  RTC_DateTypeDef sDate;
+
+  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+  double epochTime = convertToEpochTime(&sTime, &sDate, milliseconds);
+
+  /* Return the resulting epoch time */
+  return epochTime;
 }
 
 /**
@@ -250,7 +251,7 @@ void RTC_check_and_sync_rtc(uint32_t can_id, uint8_t *data) {
     /* Perform rtc syncing check if the message is 0x300 and if RTC is reset to 2000-01-01 */
     if (can_id == RTC_TIMESTAMP_MSG_ID && checkAndSetRTCReset())
     {
-        sync_memorator_rtc(rx_CAN_msg);
+        sync_memorator_rtc(data);
     }
 }
 

@@ -154,7 +154,7 @@ int main(void)
 			RTC_check_and_sync_rtc(can_id, &(can_radio_msg->data[START_OF_ARRAY])); 
 
 			/* Perform any expensive operations outside of interrupt */
-			can_radio_msg.timestamp = get_current_timestamp();
+			can_radio_msg->timestamp = get_current_timestamp();
 
 			// wait for dma complete
 

@@ -22,10 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 #include "rtc.h"
-#include "main.h"
 #include "stdint.h"
 #include "string.h"
-#include "radio.h"
 
 
 /* USER CODE END 0 */
@@ -176,7 +174,7 @@ void CAN_queue_init()
   {
     g_rx_queue[i].is_sent = true;
 
-    g_rx_queue[i].can_radio_msg.ID_DELIMITER = ID_DELIMITER_CHAR;
+    g_rx_queue[i].can_radio_msg.ID_DELIMETER = ID_DELIMITER_CHAR;
     g_rx_queue[i].can_radio_msg.CARRIAGE_RETURN = CARRIAGE_RETURN_CHAR;
     g_rx_queue[i].can_radio_msg.NEW_LINE = NEW_LINE_CHAR;
   }
