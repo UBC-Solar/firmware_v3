@@ -11,20 +11,17 @@
 #ifndef __RADIO_TRANSNIT_H__
 #define __RADIO_TRANSNIT_H__
 
-#include "can.h"
-#include "usart.h"
-#include "rtc.h"]
 
 /* RADIO MESSAGE TYPEDEF */
 typedef struct {
-    double timestamp;
+    double timestamp;   
     char ID_DELIMETER;
     uint32_t can_id_reversed;
     uint8_t data[MAX_CAN_DATA_LEN];
     uint8_t data_len;
     char CARRIAGE_RETURN;
     char NEW_LINE;
-} CAN_RadioMsg_TypeDef;
+} RADIO_CANMsg_TypeDef;
 
 /* RADIO BUFFER BYTE LENGTHS */
 #define CAN_BUFFER_LEN                      24
@@ -49,7 +46,7 @@ typedef struct {
 #define MASK_4_BITS                         0xF
 
 #define CONST_UINT32_BYTE_REVERSE(num)      ((((num) & 0x000000FF) << 24) | (((num) & 0x0000FF00) << 8) | (((num) & 0x00FF0000) >> 8) | (((num) & 0xFF000000) >> 24))
-#define ID_DELIMITER                        '#'
+#define ID_DELIMITER_CHAR                   '#'
 #define CARRIAGE_RETURN_CHAR                '\r'
 #define NEW_LINE_CHAR                       '\n'
 #define CAN_QUEUE_MAX_SIZE                  60          // See https://ubcsolar.monday.com/boards/7156006167/pulses/7338021958

@@ -8,6 +8,9 @@
  */
 
 #include "radio.h"
+#include "can.h"
+#include "usart.h"
+#include "rtc.h"]
 
 // 0-7: Timestamp
 // 8: '#'

@@ -24,7 +24,6 @@
 #include <time.h>
 #include "i2c.h"
 #include "main.h"
-#include "nmea_parse.h"
 
 #define GPS_RCV_BUFFER_SIZE 512
 //#define GPS_SYNC_TIMEOUT 60000 * 5 // 5 minutes
@@ -128,7 +127,8 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 double get_current_timestamp()
 {
   /* Initialize Time and Date objects */
-  double milliseconds = (HAL_GetTick() - start_of_second) / 1000.0;
+  // double milliseconds = (HAL_GetTick() - start_of_second) / 1000.0;
+  double milliseconds = HAL_GetTick() / 1000.0;
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
 
@@ -155,46 +155,12 @@ double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate, double
     t.tm_sec = sTime->Seconds;
     t.tm_isdst = 0;                // Disable daylight saving time adjustments.
 
-    /* Subtract 8 hours with roll-back feature */
-//    t.tm_hour -= 8;
-//    if (t.tm_hour < 0) {
-//        t.tm_hour += 24;  // Adjust the hour to ensure it's not less than 0.
-//        t.tm_mday--;      // Decrement the day to reflect the day change.
-//
-//        /* Adjust the month and year if needed when day rolls below 1 */
-//        if (t.tm_mday < 1) {
-//            t.tm_mon--;  // Decrement the month.
-//            if (t.tm_mon < 0) { // If month rolls below January
-//                t.tm_mon = 11; // Set month to December
-//                t.tm_year--;   // Decrement the year
-//            }
-//            /* Set day to last day of the new month */
-//            t.tm_mday = lastDayOfMonth(t.tm_mon, t.tm_year + 1900);
-//        }
-//    }
-
     /* Convert to epoch time - Function from time.h library */
     long int epoch_secs = (long int) mktime(&t);
 
     /* Convert to double and add milliseconds with GetTick() */
     return (double)epoch_secs + milliseconds;
 }
-
-/* Function to return the last day of a month */
-int lastDayOfMonth(int month, int year)
-{
-  /* Array to hold the number of days in each month */
-  int daysInMonth[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-
-  /* Check for leap year in February */
-  if (month == 1) { // February case
-    if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
-      return 29;
-    }
-  }
-  return daysInMonth[month];
-}
-
 
 /**
  * @brief Will check the current RTC time on the TEL board. If it is 2000-01-01
@@ -262,13 +228,13 @@ static void setRTCDate(uint8_t* data)
  * @param rx_CAN_msg: Pointer to a CAN_msg_t
  * @return None
 */
-static void sync_memorator_rtc(CAN_msg_t* rx_CAN_msg)
+static void sync_memorator_rtc(uint8_t* data)
 {
     /* Only perform syncing if RTC was reset */
     if (g_tel_diagnostics.rtc_reset) {
         /* Set the RTC time and date based on the CAN data */
-        setRTCTime(rx_CAN_msg->data);
-        setRTCDate(rx_CAN_msg->data);
+        setRTCTime(data);
+        setRTCDate(data);
 
         /* Set the flag to indicate that the RTC has been sync'd */
         g_tel_diagnostics.rtc_reset = false;
@@ -280,9 +246,9 @@ static void sync_memorator_rtc(CAN_msg_t* rx_CAN_msg)
  * @param rx_CAN_msg The received CAN message
  * @return void
 */
-void RTC_check_and_sync_rtc(CAN_msg_t* rx_CAN_msg) {
+void RTC_check_and_sync_rtc(uint32_t can_id, uint8_t *data) {
     /* Perform rtc syncing check if the message is 0x300 and if RTC is reset to 2000-01-01 */
-    if (rx_CAN_msg->header.StdId == RTC_TIMESTAMP_MSG_ID && checkAndSetRTCReset())
+    if (can_id == RTC_TIMESTAMP_MSG_ID && checkAndSetRTCReset())
     {
         sync_memorator_rtc(rx_CAN_msg);
     }

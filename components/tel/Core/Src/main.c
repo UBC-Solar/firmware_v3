@@ -61,11 +61,6 @@ CAN_FilterTypeDef CAN_filter1;
 
 uint32_t start_of_second = 0;
 
-/* HAL Status */
-HAL_StatusTypeDef rx_status;
-CAN_RxHeaderTypeDef CAN_rx_header;
-uint8_t CAN_rx_data[8];
-
 
 /* USER CODE END PV */
 
@@ -87,6 +82,7 @@ void SystemClock_Config(void);
 int main(void)
 {
 	/* USER CODE BEGIN 1 */
+
 
 	/* USER CODE END 1 */
 
@@ -131,33 +127,46 @@ int main(void)
     // Determine if RTC is reset and set diagnostic rtc_reset appropriately. Note we dont use the ret val
     checkAndSetRTCReset();
 
-    CAN_RadioMsg_TypeDef current_CAN_rx = {0};                  	// 0 it.
-    uint8_t queue_index = 0;
-        
-    current_CAN_rx.ID_DELIMETER     = ID_DELIMITER;             	// Set all the constant fields
-    current_CAN_rx.CARRIAGE_RETURN  = CARRIAGE_RETURN_CHAR;
-    current_CAN_rx.NEW_LINE         = NEW_LINE_CHAR;
-
-
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
+	uint8_t local_queue_index = 0;
+
 	while (1)
 	{
+		local_queue_index = g_rx_queue_index;		// Start Txing at the first saved CAN message in the queue to not miss it
+		CAN_QueueMsg_TypeDef* current_can_msg_ptr = &g_rx_queue[local_queue_index];	
+		
+		// Check for a CAN message
+		if (current_can_msg_ptr->is_sent == true)
+		{
+			local_queue_index = CIRCULAR_INCREMENT_SET(local_queue_index, MAX_RX_QUEUE_SIZE);	// Move to the next message in the queue
+		}
+		else
+		{
+			RADIO_CANMsg_TypeDef* can_radio_msg = &(current_can_msg_ptr->can_radio_msg);
+
+			HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   				  // Blink LED to indicate CAN message received
+
+			// Sync RTC if memorator message. Also sets rtc reset
+			uint32_t can_id = CONST_UINT32_BYTE_REVERSE(can_radio_msg->can_id_reversed);	// get ID back to LSB
+			RTC_check_and_sync_rtc(can_id, &(can_radio_msg->data[START_OF_ARRAY])); 
+
+			/* Perform any expensive operations outside of interrupt */
+			can_radio_msg.timestamp = get_current_timestamp();
+
+			// wait for dma complete
+
+			// uart dma tx
+
+			current_can_msg_ptr->is_sent = true;	// Mark the message as sent
+		}
+
+		IWDG_refresh();
+
 		/* USER CODE END WHILE */
 
-		// Check for a CAN message
-		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0 && HAL_OK == HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data))
-		{
-			HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   // Blink LED to indicate CAN message received
-
-			RTC_check_and_sync_rtc(CAN_rx_data.StdId);                     // Sync RTC with memorator message. Also sets rtc reset
-
-			CAN_Radio_msg_t tx_CAN_msg;
-			CAN_rx_to_radio(rx_CAN_msg, &tx_CAN_msg);               // Convert CAN message to radio message
-			RADIO_tx_CAN_msg(&tx_CAN_msg);                          // Send CAN on radio
-		}
 	}
 	/* USER CODE END 3 */
 }

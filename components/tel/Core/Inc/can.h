@@ -35,8 +35,11 @@ extern "C" {
 extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
+typedef struct {
+    RADIO_CANMsg_TypeDef can_radio_msg;
+    bool is_sent;
+} CAN_QueueMsg_TypeDef;
 
-#define CAN_READY (uint32_t) 0x0001
 #define RTC_TIMESTAMP_MSG_ID 0x300
 #define TEL_DIAGNOSTICS_ID 0x750
 
@@ -47,16 +50,13 @@ extern CAN_HandleTypeDef hcan;
 #define INITIAL_FLAGS                       0x00
 #define FLAG_HIGH                           1
 #define FIRST_DATA_BYTE                     0
+#define MAX_RX_QUEUE_SIZE                   60
+#define START_OF_ARRAY                      0
+#define CIRCULAR_INCREMENT_SET(index, max_size) (((index) + 1) % (max_size))
 
-extern CAN_TxHeaderTypeDef tel_diagnostics_header;
-extern CAN_TxHeaderTypeDef IMU_x_axis_header;
-extern CAN_TxHeaderTypeDef IMU_y_axis_header;
-extern CAN_TxHeaderTypeDef IMU_z_axis_header;
-extern CAN_TxHeaderTypeDef GPS_latitude_header;
-extern CAN_TxHeaderTypeDef GPS_longitude_header;
-extern CAN_TxHeaderTypeDef GPS_altitude_hdop_header;
-extern CAN_TxHeaderTypeDef GPS_side_count_header;
-extern uint32_t can_mailbox;
+extern uint8_t g_rx_queue_index;
+extern CAN_QueueMsg_TypeDef g_rx_queue[MAX_RX_QUEUE_SIZE];
+
 
 /* USER CODE END Private defines */
 
@@ -65,9 +65,7 @@ void MX_CAN_Init(void);
 /* USER CODE BEGIN Prototypes */
 void CanFilterSetup(void);
 void CAN_Init(void);
-void CAN_radio_and_bus_transmit(CAN_HandleTypeDef* hcan, CAN_Radio_msg_t* tx_CAN_msg, uint32_t* can_mailbox);
-void CAN_rx_to_radio(CAN_msg_t* rx_CAN_msg, CAN_Radio_msg_t* tx_CAN_msg);
-void CAN_diagnostic_msg_tx_radio_bus();
+
 
 /* USER CODE END Prototypes */
 

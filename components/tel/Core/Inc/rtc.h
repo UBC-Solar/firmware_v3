@@ -50,12 +50,9 @@ extern RTC_HandleTypeDef hrtc;
 void MX_RTC_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-void getGPSDateTime(uint8_t *buffer, char *GPSTime, char *GPSDate, uint8_t *RTC_Sync_Flag);
 double get_current_timestamp();
-double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate, double milliseconds);
-int lastDayOfMonth(int month, int year);
 bool checkAndSetRTCReset();
-void RTC_check_and_sync_rtc( can_id);
+void RTC_check_and_sync_rtc(uint32_t can_id, uint8_t *data);
 
 /* USER CODE END Prototypes */
 

@@ -59,7 +59,6 @@ extern CAN_TxHeaderTypeDef drive_state_header;
 extern CAN_TxHeaderTypeDef mcb_diagnostics;
 extern CAN_TxHeaderTypeDef mcb_githash;
 extern uint32_t can_mailbox;
-extern CAN_RxHeaderTypeDef can_rx_header;
 extern xQueueHandle CAN_rx_queue;
 
 typedef struct {
