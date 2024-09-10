@@ -37,7 +37,7 @@ extern UART_HandleTypeDef huart5;
 extern UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN Private defines */
-
+#define UART_SEQUENTIAL_TX_TIMEOUT_MS     2
 /* USER CODE END Private defines */
 
 void MX_UART5_Init(void);
