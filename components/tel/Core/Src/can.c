@@ -199,6 +199,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
   if (!RADIO_is_msg_sent(current_queue_message))  // CAN error for Message not Txed because the message was not sent
   {
+    
   }
   else                                              // 'Empty' position in queue. So fill it.   
   {
