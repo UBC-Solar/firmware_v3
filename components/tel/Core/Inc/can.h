@@ -65,6 +65,7 @@ extern uint8_t g_rx_queue_index;
 extern CAN_QueueMsg_TypeDef g_rx_queue[MAX_RX_QUEUE_SIZE];
 
 /* USER CODE END Private defines */
+
 void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
