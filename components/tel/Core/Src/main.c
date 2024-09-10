@@ -19,14 +19,11 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "can.h"
-#include "dma.h"
 #include "i2c.h"
 #include "iwdg.h"
 #include "rtc.h"
 #include "usart.h"
 #include "gpio.h"
-#include "debug_io.h"
-#include "radio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -107,7 +104,6 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
   MX_CAN_Init();
   MX_UART5_Init();
   MX_I2C1_Init();
@@ -158,9 +154,8 @@ int main(void)
 			/* Perform any expensive operations outside of interrupt */
 			can_radio_msg->timestamp = RTC_get_current_timestamp();
 
-
 			UART_blocking_wait_dma_tx_complete();									// Wait for the previous DMA to complete	
-			HAL_UART_Transmit_DMA(&huart1, (uint8_t*)can_radio_msg, sizeof(CAN_RadioMSG_TypeDef));
+			HAL_UART_Transmit_IT(&huart1, (uint8_t*)can_radio_msg, sizeof(CAN_RadioMSG_TypeDef));
 
 			current_can_msg_ptr->is_sent = true;	// Mark the message as sent
 		}
