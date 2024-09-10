@@ -131,39 +131,45 @@ int main(void)
     // Determine if RTC is reset and set diagnostic rtc_reset appropriately. Note we dont use the ret val
     RTC_check_and_set_reset_flag();
 
-  /* USER CODE END 2 */
+	/* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
 	uint8_t local_queue_index = 0;
+
+	CAN_Init(); 			// Activate CAN and its notifications right before we are ready to receive them
 
 	while (1)
 	{
 		local_queue_index = g_rx_queue_index;   // Start Txing at the first saved CAN message in the queue instead of waitng to loop to it
 		CAN_QueueMsg_TypeDef* current_can_msg_ptr = &g_rx_queue[local_queue_index];	
+
+		/* TESTING UART REMOVE AFTER */
+		char random[13] = "Hello World!";
+		UART_blocking_wait_dma_tx_complete();									// Wait for the previous DMA to complete	
+		HAL_UART_Transmit_DMA(&huart1, (uint8_t*)random, sizeof(random));
 		
-		if (RADIO_is_msg_sent(current_can_msg_ptr))		
-		{
-			local_queue_index = CIRCULAR_INCREMENT_SET(local_queue_index, MAX_RX_QUEUE_SIZE);	// Move to the next message in the queue
-		}
-		else	// If radio message is not sent then send it and set its sent flag to true
-		{
-			CAN_RadioMSG_TypeDef* can_radio_msg = &(current_can_msg_ptr->can_radio_msg);
+		// if (RADIO_is_msg_sent(current_can_msg_ptr))		
+		// {
+		// 	local_queue_index = CIRCULAR_INCREMENT_SET(local_queue_index, MAX_RX_QUEUE_SIZE);	// Move to the next message in the queue
+		// }
+		// else	// If radio message is not sent then send it and set its sent flag to true
+		// {
+		// 	CAN_RadioMSG_TypeDef* can_radio_msg = &(current_can_msg_ptr->can_radio_msg);
 
-			HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   				  // Blink LED to indicate CAN message received
+		// 	HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   				  // Blink LED to indicate CAN message received
 
-			uint32_t can_id = CONST_UINT32_BYTE_REVERSE(can_radio_msg->can_id_reversed);	// get ID back to LSB
-			RTC_check_and_sync_rtc(can_id, &(can_radio_msg->data[START_OF_ARRAY])); 	    // Sync RTC if RTC Timestamp msg rxed. 
+		// 	uint32_t can_id = CONST_UINT32_BYTE_REVERSE(can_radio_msg->can_id_reversed);	// get ID back to LSB
+		// 	RTC_check_and_sync_rtc(can_id, &(can_radio_msg->data[START_OF_ARRAY])); 	    // Sync RTC if RTC Timestamp msg rxed. 
 
-			/* Perform any expensive operations outside of interrupt */
-			can_radio_msg->timestamp = RTC_get_current_timestamp();
+		// 	/* Perform any expensive operations outside of interrupt */
+		// 	can_radio_msg->timestamp = RTC_get_current_timestamp();
 
+		// 	UART_blocking_wait_dma_tx_complete();									// Wait for the previous DMA to complete	
+		// 	HAL_UART_Transmit_DMA(&huart1, (uint8_t*)can_radio_msg, sizeof(CAN_RadioMSG_TypeDef));
 
-			UART_blocking_wait_dma_tx_complete();									// Wait for the previous DMA to complete	
-			HAL_UART_Transmit_DMA(&huart1, (uint8_t*)can_radio_msg, sizeof(CAN_RadioMSG_TypeDef));
-
-			current_can_msg_ptr->is_sent = true;	// Mark the message as sent
-		}
+		// 	current_can_msg_ptr->is_sent = true;	// Mark the message as sent
+		// }
 
 		IWDG_refresh();	
 
@@ -175,7 +181,7 @@ int main(void)
 }
 
 /**
-  * @brief System Clock Configuration
+  * @brief System Clock ConfigurationChristopher
   * @retval None
   */
 void SystemClock_Config(void)
