@@ -24,6 +24,9 @@
 #include "rtc.h"
 #include "main.h"
 
+//debugging only
+uint64_t count = 0;
+
 HAL_StatusTypeDef can_start;
 
 CAN_TxHeaderTypeDef tel_diagnostics_header = {
@@ -232,6 +235,7 @@ void CAN_Init(void)
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
+	count++;
   //HAL_StatusTypeDef status = HAL_CAN_DeactivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
 
   /* Assert the status */
