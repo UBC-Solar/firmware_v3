@@ -257,8 +257,8 @@ void TaskGetCANMessage()
 	/* Infinite loop */
 	CAN_msg_t CAN_msg;
 	for(;;)
-	{
-		
+	{void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+
 		if (xQueueReceive(CAN_rx_queue, &CAN_msg, portMAX_DELAY) == pdTRUE)
 		{
 			if (CAN_msg.header.StdId == CAN_ID_VELOCITY)
