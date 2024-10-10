@@ -46,7 +46,7 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-
+#define CONST_UINT32_BYTE_REVERSE(num)      ((((num) & 0x000000FF) << 24) | (((num) & 0x0000FF00) << 8) | (((num) & 0x00FF0000) >> 8) | (((num) & 0xFF000000) >> 24))
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
@@ -57,6 +57,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define USER_LED_Pin GPIO_PIN_1
+#define USER_LED_GPIO_Port GPIOA
 #define RADIO_TX_Pin GPIO_PIN_9
 #define RADIO_TX_GPIO_Port GPIOA
 #define RADIO_RX_Pin GPIO_PIN_10

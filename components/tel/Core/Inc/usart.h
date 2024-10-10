@@ -29,13 +29,13 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 extern UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN Private defines */
-
+extern volatile bool done_uart_tx;
 /* USER CODE END Private defines */
 
 void MX_USART1_UART_Init(void);

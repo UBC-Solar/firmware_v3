@@ -21,7 +21,7 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
-
+volatile bool done_uart_tx = true;
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart1;
@@ -139,5 +139,11 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
-
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{ 
+    if (huart->Instance == USART1)
+    {
+      done_uart_tx = true;
+    }
+}
 /* USER CODE END 1 */
