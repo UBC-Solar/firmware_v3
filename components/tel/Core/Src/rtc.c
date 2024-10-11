@@ -19,10 +19,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "rtc.h"
-#include <time.h>
 
 /* USER CODE BEGIN 0 */
-
+#include <time.h>
 /* USER CODE END 0 */
 
 RTC_HandleTypeDef hrtc;
