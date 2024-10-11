@@ -29,6 +29,7 @@
 #include "usart.h"
 #include "rtc.h"
 #include "bitops.h"
+#include "iwdg.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -127,6 +128,8 @@ void StartDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
+    IWDG_Refresh(&hiwdg);	                                                      // Refresh the IWDG
+
 		CAN_QueueMsg_TypeDef* current_can_msg_ptr = &g_rx_queue[g_tx_queue_index];	
 
 		if (!current_can_msg_ptr->is_sent)		

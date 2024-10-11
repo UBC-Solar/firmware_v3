@@ -29,7 +29,7 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 extern IWDG_HandleTypeDef hiwdg;
@@ -41,7 +41,9 @@ extern IWDG_HandleTypeDef hiwdg;
 void MX_IWDG_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
+void IWDG_Refresh(IWDG_HandleTypeDef* hiwdg);
+bool IWDG_is_reset();
+void IWDG_perform_reset_led();
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

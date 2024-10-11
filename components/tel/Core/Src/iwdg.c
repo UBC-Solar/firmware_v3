@@ -38,7 +38,7 @@ void MX_IWDG_Init(void)
 
   /* USER CODE END IWDG_Init 1 */
   hiwdg.Instance = IWDG;
-  hiwdg.Init.Prescaler = IWDG_PRESCALER_256;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
   hiwdg.Init.Reload = 4095;
   if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
   {
@@ -52,4 +52,45 @@ void MX_IWDG_Init(void)
 
 /* USER CODE BEGIN 1 */
 
+/**
+ * @brief Refresh the IWDG.
+ * @param hiwdg pointer to a IWDG_HandleTypeDef
+ */
+void IWDG_Refresh(IWDG_HandleTypeDef* hiwdg)
+{
+  #ifndef DEBUG
+    HAL_IWDG_Refresh(hiwdg);
+  #endif
+}
+
+
+/**
+ * @brief Check if the IWDG reset occurred
+ * 
+ * @return true if the IWDG reset occurred
+ */
+bool IWDG_is_reset()
+{
+  if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET)
+  {
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+    return true;
+  }
+}
+
+
+/**
+ * @brief Perform a reset LED sequence if the IWDG reset occurred
+ */
+void IWDG_perform_reset_led()
+{
+  if (IWDG_is_reset())
+  {
+    for (int i = 0; i < 5; i++)
+    {
+      HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+      HAL_Delay(200);
+    }
+  }
+}
 /* USER CODE END 1 */
