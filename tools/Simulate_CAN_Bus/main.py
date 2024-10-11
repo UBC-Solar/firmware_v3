@@ -9,7 +9,7 @@ from pathlib import Path
 ANSI_YELLOW = "\033[33m"
 ANSI_RESET = "\033[0m"
 
-RATE_SCALER = 4
+RATE_SCALER = 1
 MSG_COUNT_IDX = 3
 
 global can_messages 
@@ -36,9 +36,13 @@ def load_can_messages(filename):
 # Signal handler for graceful shutdown
 def signal_handler(sig, frame):
     print(ANSI_YELLOW + "\nExiting... Here are the message counts:" + ANSI_RESET)
+    total_count = 0
     for can_id, message_data in can_messages.items():
         count = message_data[MSG_COUNT_IDX]
+        total_count += count
         print(ANSI_YELLOW  + f"ID: {can_id}, Count: {count}" + ANSI_RESET)
+
+    print(ANSI_YELLOW + f"Total count: {total_count}" + ANSI_RESET)
     exit(0)
 
 # Function to send a specific CAN message
