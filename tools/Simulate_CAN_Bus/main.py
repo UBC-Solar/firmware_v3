@@ -4,6 +4,8 @@ import yaml
 from threading import Thread
 from pathlib import Path
 
+RATE_SCALER = 4
+
 def load_can_messages(filename):
     # Use Path to handle the file path
     path = Path(__file__).parent / filename
@@ -25,14 +27,16 @@ def load_can_messages(filename):
 
 # Function to send a specific CAN message
 def send_message(bus, can_id, data, rate, dlc):
-    message = can.Message(arbitration_id=int(can_id, 16), data=data[:dlc], is_extended_id=False)
+    is_extended = False if len(can_id) <= 3 else True
+
+    message = can.Message(arbitration_id=int(can_id, 16), data=data[:dlc], is_extended_id=is_extended)
     while True:
         try:
             bus.send(message)
             print(f"Message sent: ID: {can_id}, Data: {message.data.hex()}, DLC: {dlc}")
         except can.CanError as e:
             print(f"Message NOT sent {e}")
-        time.sleep(rate)
+        time.sleep(rate * RATE_SCALER)
 
 def send_can_messages():
     bus = can.interface.Bus(channel='can0', bustype='socketcan')
