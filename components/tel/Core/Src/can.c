@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include "string.h"
 #include "radio.h"
+#include "bitops.h"
 
 /* GLOBALS */
 static volatile uint8_t g_rx_queue_index = 0;
@@ -214,7 +215,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
     uint32_t can_id = (can_rx_header.IDE == CAN_ID_STD) ? can_rx_header.StdId : can_rx_header.ExtId;
 
-    current_queue_message->can_radio_msg.can_id_reversed = CONST_UINT32_BYTE_REVERSE(can_id);
+    current_queue_message->can_radio_msg.can_id_reversed = BITOPS_32BIT_REVERSE(can_id);
     memcpy(&(current_queue_message->can_radio_msg.data[START_OF_ARRAY]), &can_data[START_OF_ARRAY], MAX_CAN_DATA_LENGTH);
     current_queue_message->can_radio_msg.data_len = can_rx_header.DLC & MASK_4_BITS;
     current_queue_message->is_sent = false;

@@ -139,6 +139,15 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+/**
+ * @brief  Tx Transfer completed callback for UART. Triggered by DMA when final byte is sent
+ * 
+ * If the uart is USART1, set the done_uart_tx flag to true so that next transmit over radio can occur
+ * 
+ * @param  huart: UART handle
+ * 
+ */
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 { 
     if (huart->Instance == USART1)

@@ -27,6 +27,8 @@
 /* USER CODE BEGIN Includes */
 #include "can.h"
 #include "usart.h"
+#include "rtc.h"
+#include "bitops.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -129,19 +131,23 @@ void StartDefaultTask(void const * argument)
 
 		if (!current_can_msg_ptr->is_sent)		
 		{
-			CAN_RadioMSG_TypeDef* can_radio_msg = &(current_can_msg_ptr->can_radio_msg);
-      HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	
+      double t = RTC_get_timestamp_secs();	                                    // Get the timestamp immediately before ANY ops
+      DoubleBytes timestamp;
+      timestamp.d = t;	                   
 
-      while (!done_uart_tx);	                        // Wait for the previous message to be sent
-      done_uart_tx = false;	                        // Reset the flag
+      HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	                    // Visual confirmation
+
+			CAN_RadioMSG_TypeDef* can_radio_msg = &(current_can_msg_ptr->can_radio_msg);
+      can_radio_msg->timestamp = BITOPS_64BIT_REVERSE(timestamp.u);	            // Set timestamp
+
+      while (!done_uart_tx);	                                                  // Wait for the previous message to be sent
+      done_uart_tx = false;	                                                    // Reset the flag
       HAL_UART_Transmit_DMA(&huart1, (uint8_t*)can_radio_msg, sizeof(CAN_RadioMSG_TypeDef));	
 
-			current_can_msg_ptr->is_sent = true;	// Mark the message as sent
+			current_can_msg_ptr->is_sent = true;	                                    // Mark the message as sent
 		}
     
     g_tx_queue_index = CIRCULAR_INCREMENT_SET(g_tx_queue_index, MAX_RX_QUEUE_SIZE);	// Move to the next message in the queue
-
-    osDelay(1);
   }
   /* USER CODE END StartDefaultTask */
 }

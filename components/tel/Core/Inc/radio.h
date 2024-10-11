@@ -1,4 +1,3 @@
-
 /**
  *  @file radio.h
  *  @brief header file for radio.c. Define buffer lengths

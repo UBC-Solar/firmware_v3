@@ -30,6 +30,7 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 #include <stdbool.h>
+#include <stdint.h> 
 /* USER CODE END Includes */
 
 extern CAN_HandleTypeDef hcan;
@@ -46,7 +47,7 @@ extern CAN_HandleTypeDef hcan;
 #define CIRCULAR_INCREMENT_SET(index, max_size) (((index) + 1) % (max_size))
 
 typedef struct {
-    double timestamp;   
+    uint64_t timestamp;   
     char ID_DELIMETER;
     uint32_t can_id_reversed;
     uint8_t data[MAX_CAN_DATA_LENGTH];
