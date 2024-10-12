@@ -122,7 +122,7 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
-    /* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN StartDefaultTask */
 
     /* Infinite loop */
     for(;;)
@@ -133,7 +133,7 @@ void StartDefaultTask(void const * argument)
         RADIO_send_msg_uart(timestamp);	
     }
 
-    /* USER CODE END StartDefaultTask */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
