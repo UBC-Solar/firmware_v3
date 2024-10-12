@@ -257,8 +257,8 @@ void TaskGetCANMessage()
 	/* Infinite loop */
 	CAN_msg_t CAN_msg;
 	for(;;)
-	{void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
-
+	{
+		
 		if (xQueueReceive(CAN_rx_queue, &CAN_msg, portMAX_DELAY) == pdTRUE)
 		{
 			if (CAN_msg.header.StdId == CAN_ID_VELOCITY)
@@ -378,5 +378,3 @@ bool isBitSetFromArray(uint8_t * num, int pos)
 	int remainder = pos % 8;
 	return isBitSet(num[index], remainder);
 }
-
-
