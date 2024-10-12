@@ -30,17 +30,19 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 #include <stdbool.h>
+#include "radio.h"
 /* USER CODE END Includes */
 
 extern UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN Private defines */
-extern volatile bool done_uart_tx;
 /* USER CODE END Private defines */
 
 void MX_USART1_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
+void UART_radio_transmit(RADIO_Msg_TypeDef* can_radio_msg);
 
 /* USER CODE END Prototypes */
 

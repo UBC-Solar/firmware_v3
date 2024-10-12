@@ -144,4 +144,5 @@ double RTC_get_timestamp_secs()
   
   return (double)epoch_secs + milliseconds;  
 }
+
 /* USER CODE END 1 */

@@ -22,14 +22,10 @@
 
 /* USER CODE BEGIN 0 */
 #include <stdint.h>
-#include "string.h"
-#include "radio.h"
+#include <stdbool.h>
 #include "bitops.h"
+#include "radio.h"
 
-/* GLOBALS */
-static volatile uint8_t g_rx_queue_index = 0;
-volatile uint8_t g_tx_queue_index = 0;
-CAN_QueueMsg_TypeDef g_rx_queue[MAX_RX_QUEUE_SIZE] = {0};
 
 /* USER CODE END 0 */
 
@@ -133,6 +129,9 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 
 /* USER CODE BEGIN 1 */
 
+/**
+ * @brief Allows all messages to be received
+ */
 void CanFilterSetup(void)
 {
   /* TODO: Review Filter Implementation */
@@ -159,40 +158,38 @@ void CanFilterSetup(void)
 
 
 /**
- * @brief Initializes the RX queue elements with necessary constants
- *        that sunlink requires (the ID_DELIMETER) and printing requires (\r\n).
- */
-void g_rx_queue_init()
-{
-  for (uint8_t i = 0; i < MAX_RX_QUEUE_SIZE; ++i)
-  {
-    g_rx_queue[i].is_sent = true;
-
-    g_rx_queue[i].can_radio_msg.ID_DELIMETER      = ID_DELIMITER_CHAR;
-    g_rx_queue[i].can_radio_msg.CARRIAGE_RETURN   = CARRIAGE_RETURN_CHAR;
-    g_rx_queue[i].can_radio_msg.NEW_LINE          = NEW_LINE_CHAR;
-  }
-}
-
-
-/**
  * @brief CAN set-up: Sets up the filters, Starts CAN with HAL, and Activates notifications for interrupts.
  */
 void CAN_Init(void)
 {
-  HAL_StatusTypeDef can_start;
-  g_rx_queue_init();                     // Add the #, \r, \n characters to the messages in the queue
-  
-  CanFilterSetup();
-  can_start = HAL_CAN_Start(&hcan);
-  assert_param(can_start == HAL_OK);
+   HAL_StatusTypeDef can_start;
 
-  HAL_StatusTypeDef can_notification_status = HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
-  assert_param(can_notification_status == HAL_OK);
+   RADIO_queue_init();                  // Set constant fields like delimeters and new lines
 
-  /* To avoid warning of unused variable */
-  (void) can_notification_status;
-  (void) can_start;
+   CanFilterSetup();                    // Allows all msgs
+
+   can_start = HAL_CAN_Start(&hcan);
+   assert_param(can_start == HAL_OK);
+
+   HAL_StatusTypeDef can_notification_status = HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+   assert_param(can_notification_status == HAL_OK);
+
+   /* To avoid warning of unused variable */
+   (void) can_notification_status;
+   (void) can_start;
+}
+
+
+/**
+ * @brief Getter for the CAN ID from the CAN Rx header
+ * 
+ * @param can_rx_header The CAN Rx header
+ * 
+ * @return The CAN ID as a 32-bit unsigned integer to account for both standard and extended IDs
+ */
+uint32_t get_can_id(CAN_RxHeaderTypeDef* can_rx_header)
+{
+    return (can_rx_header->IDE == CAN_ID_STD) ? can_rx_header->StdId : can_rx_header->ExtId;
 }
 
 
@@ -201,28 +198,14 @@ void CAN_Init(void)
  */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-  CAN_RxHeaderTypeDef can_rx_header;
-  uint8_t can_data[MAX_CAN_DATA_LENGTH];
-  CAN_QueueMsg_TypeDef* current_queue_message = &g_rx_queue[g_rx_queue_index];
+    CAN_RxHeaderTypeDef can_rx_header;                        
+    uint8_t can_data[MAX_CAN_DATA_LENGTH];
 
-  if (!RADIO_is_msg_sent(current_queue_message))  // CAN error for Message not Txed because the message was not sent
-  {
-    
-  }
-  else                                              // 'Empty' position in queue. So fill it.   
-  {
+    HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	    // Visual Confirmation of CAN working
+
     HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can_rx_header, &can_data[START_OF_ARRAY]);       
-
-    uint32_t can_id = (can_rx_header.IDE == CAN_ID_STD) ? can_rx_header.StdId : can_rx_header.ExtId;
-
-    current_queue_message->can_radio_msg.can_id_reversed = BITOPS_32BIT_REVERSE(can_id);
-    memcpy(&(current_queue_message->can_radio_msg.data[START_OF_ARRAY]), &can_data[START_OF_ARRAY], MAX_CAN_DATA_LENGTH);
-    current_queue_message->can_radio_msg.data_len = can_rx_header.DLC & MASK_4_BITS;
-    current_queue_message->is_sent = false;
-  }
-  
-  g_tx_queue_index = g_rx_queue_index;
-  g_rx_queue_index = CIRCULAR_INCREMENT_SET(g_rx_queue_index, MAX_RX_QUEUE_SIZE);
+    uint32_t can_id = get_can_id(&can_rx_header);
+    RADIO_set_rx_msg(can_id, can_data, can_rx_header.DLC);      // Queues Rxed CAN message for radio Tx   
 }
 
 /* USER CODE END 1 */

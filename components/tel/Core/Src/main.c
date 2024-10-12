@@ -98,8 +98,10 @@ int main(void)
   MX_RTC_Init();
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
-  CAN_Init();
-  IWDG_perform_reset_led();
+
+  CAN_Init();                         // Radio MSG Queue Init, set CAN Rx callback, CAN filters
+  IWDG_perform_reset_sequence();      
+
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in cmsis_os2.c) */

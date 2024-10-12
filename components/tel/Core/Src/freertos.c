@@ -25,11 +25,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "can.h"
-#include "usart.h"
 #include "rtc.h"
-#include "bitops.h"
 #include "iwdg.h"
+#include "radio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -124,35 +122,18 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
-  /* USER CODE BEGIN StartDefaultTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    IWDG_Refresh(&hiwdg);	                                                      // Refresh the IWDG
+    /* USER CODE BEGIN StartDefaultTask */
 
-		CAN_QueueMsg_TypeDef* current_can_msg_ptr = &g_rx_queue[g_tx_queue_index];	
+    /* Infinite loop */
+    for(;;)
+    {
+        IWDG_Refresh(&hiwdg);	                                 // Refresh the IWDG to ensure no reset occurs
 
-		if (!current_can_msg_ptr->is_sent)		
-		{
-      double t = RTC_get_timestamp_secs();	                                    // Get the timestamp immediately before ANY ops
-      DoubleBytes timestamp;
-      timestamp.d = t;	                   
+        double timestamp = RTC_get_timestamp_secs();             // Get the timestamp immediately before ANY ops
+        RADIO_send_msg_uart(timestamp);	
+    }
 
-      HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	                    // Visual confirmation
-
-			CAN_RadioMSG_TypeDef* can_radio_msg = &(current_can_msg_ptr->can_radio_msg);
-      can_radio_msg->timestamp = BITOPS_64BIT_REVERSE(timestamp.u);	            // Set timestamp
-
-      while (!done_uart_tx);	                                                  // Wait for the previous message to be sent
-      done_uart_tx = false;	                                                    // Reset the flag
-      HAL_UART_Transmit_DMA(&huart1, (uint8_t*)can_radio_msg, sizeof(CAN_RadioMSG_TypeDef));	
-
-			current_can_msg_ptr->is_sent = true;	                                    // Mark the message as sent
-		}
-    
-    g_tx_queue_index = CIRCULAR_INCREMENT_SET(g_tx_queue_index, MAX_RX_QUEUE_SIZE);	// Move to the next message in the queue
-  }
-  /* USER CODE END StartDefaultTask */
+    /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/

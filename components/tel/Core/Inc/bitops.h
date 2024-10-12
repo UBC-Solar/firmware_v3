@@ -34,10 +34,10 @@ extern "C" {
      (((num) & 0x00FF000000000000UL) >> 40U) | \
      (((num) & 0xFF00000000000000UL) >> 56U))
 
-typedef union {
+typedef union {                 // Union to interpret doubles to an integral
     double d;
     uint64_t u;
-} DoubleBytes;
+} DoubleAsUint64;
 
 
 #endif /* __BITOPS_H__ */

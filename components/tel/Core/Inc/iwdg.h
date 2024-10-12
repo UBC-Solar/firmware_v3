@@ -41,9 +41,11 @@ extern IWDG_HandleTypeDef hiwdg;
 void MX_IWDG_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
 void IWDG_Refresh(IWDG_HandleTypeDef* hiwdg);
 bool IWDG_is_reset();
-void IWDG_perform_reset_led();
+void IWDG_perform_reset_sequence();
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

@@ -21,7 +21,9 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
-volatile bool done_uart_tx = true;
+
+volatile static bool done_uart_tx = true;
+
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart1;
@@ -155,4 +157,20 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
       done_uart_tx = true;
     }
 }
+
+
+/**
+ * @brief Transmit a CAN message over radio using UART and DMA
+ * 
+ * @param can_radio_msg The message to transmit of type RADIO_Msg_TypeDef
+ * 
+ * @note This function WILL BLOCK until the DMA Complete callback occurs.
+ */
+void UART_radio_transmit(RADIO_Msg_TypeDef* can_radio_msg)
+{
+    while (!done_uart_tx) {};	                                                  // Wait for the previous message to be sent
+    done_uart_tx = false;	                                                      // Reset the flag
+    HAL_UART_Transmit_DMA(&huart1, (uint8_t*)can_radio_msg, sizeof(RADIO_Msg_TypeDef));	
+}
+
 /* USER CODE END 1 */
