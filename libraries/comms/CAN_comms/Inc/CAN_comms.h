@@ -7,11 +7,10 @@
 #include "task.h"
 #include "can.h"
 #include "stm32f1xx_hal.h"
+#include "cmsis_os2.h"
 
 
 #define CAN_DATA_SIZE 8
-#define CAN_QUEUE_SIZE 16
-
 /* Typedefs */
 typedef struct {
   CAN_RxHeaderTypeDef header;
@@ -25,7 +24,7 @@ typedef struct {
 typedef struct {
     CAN_HandleTypeDef* hcan;
     uint8_t RX_FIFO;
-    void (*CAN_comms_handle_Rx)(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg);
+    void (*CAN_comms_Rx_callback)(CAN_comms_Rx_msg_t);
 
 } CAN_comms_config_t;
 

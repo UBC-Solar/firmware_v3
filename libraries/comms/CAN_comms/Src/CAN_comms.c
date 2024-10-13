@@ -16,17 +16,20 @@
 
 #define CAN_RX_TASK_STACK_SIZE 512
 
+#define CAN_RX_QUEUE_SIZE 16
+#define CAN_RX_STRUCT_SIZE sizeof(CAN_comms_Rx_msg_t)
+
+
 /* Private varibles */
 CAN_comms_config_t CAN_comms_config;
+osMessageQueueId_t CAN_comms_Rx_queue;
+osThreadId_t task_CAN_comms_Rx_handle;
 
-/* Create memory pool */
-
-
-osMessageQDef(CAN_comms_Rx_queue, CAN_QUEUE_SIZE, CAN_comms_Rx_msg_t);
-osMessageQId CAN_comms_Rx_queue;
-
-
-osThreadId task_CAN_comms_Rx_handle;
+const osThreadAttr_t task_CAN_comms_Rx_attributes = {
+  .name = "task_CAN_comms_Rx",
+  .stack_size = CAN_RX_TASK_STACK_SIZE,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 
 /* Private function prototypes */
 void task_CAN_comms_Rx(void const* argument);
@@ -47,22 +50,24 @@ void CAN_comms_init(CAN_comms_config_t* config)
     /* Check config is not NULL */
     if (config == NULL)
     {
-        return; // TODO: Error handle
+        return; // TODO: Error handle5
     }
 
     /* Set config */
     CAN_comms_config = *config;
 
     /* Create queues */
-    CAN_comms_Rx_queue = osMessageCreate(osMessageQ(CAN_comms_Rx_queue), NULL);
+    CAN_comms_Rx_queue = osMessageQueueNew(CAN_RX_QUEUE_SIZE, CAN_RX_STRUCT_SIZE, NULL);
 
     /* Create tasks */
-    osThreadDef(Task_CAN_comms_Rx, task_CAN_comms_Rx, osPriorityNormal, 0, CAN_RX_TASK_STACK_SIZE);
-    task_CAN_comms_Rx_handle = osThreadCreate(osThread(Task_CAN_comms_Rx), NULL);
+    task_CAN_comms_Rx_handle = osThreadNew(task_CAN_comms_Rx, NULL, &task_CAN_comms_Rx_attributes);
 }
 
 /**
  * @brief  Interrupt Service Routine for CAN Rx FIFO
+ * This function gets the CAN message from the CAN Rx FIFO and adds it to the CAN_comms_Rx_queue.
+ * 
+ * @attention This function needs to be added to the CAN Rx FIFO interrupt handler.
  * 
  * @param  None
  * @return None
@@ -78,30 +83,40 @@ void ISR_CAN_comms_Rx()
     }
 
     /* Populate CAN_Rx_msg */
-    CAN_comms_Rx_msg_t* CAN_Rx_msg = osPoolAlloc(CAN_Rx_msg_pool);
+    CAN_comms_Rx_msg_t CAN_Rx_msg;
     CAN_Rx_msg.header = CAN_Rx_header;
     memcpy(CAN_Rx_msg.data, CAN_Rx_data, CAN_DATA_SIZE);
 
+
     /* Add CAN message to the queue */
-    osMessagePut(CAN_comms_Rx_queue, CAN_Rx_msg, osWaitForever); // TODO: Overflow check
+    if(osOK != osMessageQueuePut(CAN_comms_Rx_queue, &CAN_Rx_msg, 0, 0))
+    {
+        return; // TODO: Error handle
+    }
 }
 
-
+/**
+ * @brief Task for handling CAN Rx messages
+ * This task waits for a message in the CAN_comms_Rx_queue and calls the callback function from the config struct.
+ * 
+ * @param argument: Unused
+ * @return None
+ */
 void task_CAN_comms_Rx(void const* argument)
 {
     /* Infinite loop */
-    while (true) 
+    while (true)
     {
         /* Wait until there is a message in the queue */ 
-        osEvent event = osMessageGet(CAN_comms_Rx_queue, osWaitForever);
-
-        if (event.status == osEventMessage)
+        CAN_comms_Rx_msg_t CAN_comms_Rx_msg;
+        if (osOK == osMessageQueueGet(CAN_comms_Rx_queue, &CAN_comms_Rx_msg, NULL, osWaitForever))
         {
-            /* Get the CAN message */
-            CAN_comms_Rx_msg_t Rx_CAN_msg; = event.value.p;
-
             /* Call the handle function pointer */
-            CAN_comms_config.CAN_comms_handle_Rx(Rx_CAN_msg);
+            CAN_comms_config.CAN_comms_Rx_callback(CAN_comms_Rx_msg);
+        }
+        else
+        {
+            // TODO: Error handle
         }
     }
 }
