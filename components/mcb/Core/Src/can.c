@@ -79,6 +79,22 @@ CAN_TxHeaderTypeDef mcb_githash = {
 
 
 uint32_t can_mailbox;
+uint32_t can_count = 0;
+uint32_t can_total_bits = 0;
+uint32_t average_window_bits =0;
+float bus_load = 0;
+uint32_t can_window_average = 0;
+uint32_t can_bus_load = 0;
+uint32_t t0 = 0;
+uint32_t t1 = 0;
+uint32_t t1_prev = 0;
+
+uint8_t currentIdx = 0;
+uint32_t sum = 0;
+uint32_t last = 0;
+uint32_t circularBuffer[CAN_WINDOW_SIZE] = {0};
+uint8_t isFirstWindow = 1;
+
 
 CAN_RxHeaderTypeDef can_rx_header;    /**< Stores the header information for CAN messages read from the RX (receive) buffer */
 
@@ -95,17 +111,30 @@ void CanFilterSetup()
 	// Can Filter set up for MCB
 
 		// one filter in mask mode for 0x503, 0x622, 0x626 messages.
-	    CAN_filter0.FilterIdHigh = (uint16_t) (0x503 << 5);
-	    CAN_filter0.FilterMaskIdHigh = (uint16_t) (0x503 << 5);
+//	    CAN_filter0.FilterIdHigh = (uint16_t) (0x503 << 5);
+//	    CAN_filter0.FilterMaskIdHigh = (uint16_t) (0x503 << 5);
+//
+//	    CAN_filter0.FilterIdLow = (uint16_t) (0x622 << 5);
+//	    CAN_filter0.FilterMaskIdLow = (uint16_t) (0x626 << 5);
+//
+//	    CAN_filter0.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+//	    CAN_filter0.FilterBank = (uint32_t) 0;
+//	    CAN_filter0.FilterMode = CAN_FILTERMODE_IDLIST;
+//	    CAN_filter0.FilterScale = CAN_FILTERSCALE_16BIT;
+//	    CAN_filter0.FilterActivation = CAN_FILTER_ENABLE;
 
-	    CAN_filter0.FilterIdLow = (uint16_t) (0x622 << 5);
-	    CAN_filter0.FilterMaskIdLow = (uint16_t) (0x626 << 5);
+	  // Accept everything on the bus
+	  CAN_filter0.FilterIdHigh = 0x0000;
+	  CAN_filter0.FilterMaskIdHigh = 0x0000;
 
-	    CAN_filter0.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-	    CAN_filter0.FilterBank = (uint32_t) 0;
-	    CAN_filter0.FilterMode = CAN_FILTERMODE_IDLIST;
-	    CAN_filter0.FilterScale = CAN_FILTERSCALE_16BIT;
-	    CAN_filter0.FilterActivation = CAN_FILTER_ENABLE;
+	  CAN_filter0.FilterIdLow = 0x0000;
+	  CAN_filter0.FilterMaskIdLow = 0x0000;
+
+	  CAN_filter0.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	  CAN_filter0.FilterBank = (uint32_t) 0;
+	  CAN_filter0.FilterMode = CAN_FILTERMODE_IDMASK;
+	  CAN_filter0.FilterScale = CAN_FILTERSCALE_16BIT;
+	  CAN_filter0.FilterActivation = CAN_FILTER_ENABLE;
 
 		// Configure reception filters
 	    HAL_CAN_ConfigFilter(&hcan, &CAN_filter0);
@@ -132,11 +161,11 @@ void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
-  hcan.Init.Prescaler = 4;
+  hcan.Init.Prescaler = 2;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_2TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_1TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
   hcan.Init.AutoWakeUp = DISABLE;
@@ -235,6 +264,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     new_CAN_msg.data[i] = can_data[i];
   }
 
+  /* Calculate bus load */
+   uint32_t curr_msg_bits = calculate_CAN_message_bits(&new_CAN_msg);
+   can_total_bits += curr_msg_bits;
+
+   can_count++;
+
   // Add a message to the queue
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   xQueueSendFromISR(CAN_rx_queue, &new_CAN_msg, &xHigherPriorityTaskWoken);
@@ -242,5 +277,94 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
   /* Set the Flag to CAN_READY */
 }
+
+uint32_t calculate_CAN_message_bits(CAN_msg_t* msg) {
+
+uint32_t bits = 0;
+
+bits += 1; // SOF (Start of Frame)
+
+if (msg->header.DLC == 0) {
+
+bits += 11; // Standard ID
+
+} else {
+
+bits += 29; // Extended ID
+
+bits += 1; // SRR (Substitute Remote Request)
+
+bits += 1; // Reserved bit (r1)
+
+}
+
+bits += 1; // RTR (Remote Transmission Request)
+
+bits += 1; // IDE (Identifier Extension)
+
+bits += 1; // Reserved bit (r0)
+
+bits += 4; // DLC (Data Length Code)
+
+bits += msg->header.DLC * 8; // Data Length Code field (msg->DLC * 8 bits)
+
+bits += 15; // CRC field
+
+bits += 1; // CRC delimiter
+
+bits += 1; // ACK slot
+
+bits += 1; // ACK delimiter
+
+bits += 7; // EOF (End of Frame)
+
+bits += 3; // IFS (Interframe Space)
+
+return bits;
+
+}
+
+void slidingWindowAverage(uint32_t bits)
+{
+    // index of 'stale' element to be removed
+    uint8_t removeIdx = currentIdx % CAN_WINDOW_SIZE;
+    sum -= circularBuffer[removeIdx];
+
+    // add new element to the buffer
+    circularBuffer[removeIdx] = bits;
+
+    // add new element to the sum
+    sum += bits;
+
+    currentIdx++;
+
+//    // calculate and print the average
+//    if (isFirstWindow && currentIdx == CAN_WINDOW_SIZE)
+//    {
+////        printf("Window avg: %f\n", (float)sum / (float)CAN_WINDOW_SIZE);
+//        isFirstWindow = 0;
+//        return (float) sum / (float) CAN_WINDOW_SIZE;
+//    }
+//    else if (!isFirstWindow)
+//    {
+////        printf("Window avg: %f\n", (float)sum / (float)CAN_WINDOW_SIZE);
+//        return (float)sum / (float) CAN_WINDOW_SIZE;
+//    }else{
+//    	//Error
+//    	return 0;
+//    }
+}
+
+float getSlidingWindowAverage(){
+	uint32_t sliding_sum = 0;
+
+	for(uint8_t i=0; i < CAN_WINDOW_SIZE; i++){
+		sliding_sum += circularBuffer[i];
+	}
+
+	return (float) sliding_sum / (float) CAN_WINDOW_SIZE;
+}
+
+
 
 /* USER CODE END 1 */
