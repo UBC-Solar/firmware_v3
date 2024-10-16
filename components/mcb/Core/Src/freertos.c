@@ -168,6 +168,25 @@ void StartDefaultTask(void *argument)
 	  HAL_IWDG_Refresh(&hiwdg);
     #endif
 	  osDelay(100);
+
+	  static uint64_t counter_window = 0;
+
+	  if(counter_window % 10 == 0){
+		  //will run every 1 second
+		  slidingWindowAverage(can_total_bits);
+		  can_total_bits = 0;
+	  }
+
+	  if(counter_window % 50 == 0){
+		  //will run every 5 seconds
+		 average_window_bits = getSlidingWindowAverage();
+		 bus_load = (float) average_window_bits / ((float) CAN_WINDOW_SIZE * (float) CAN_BIT_RATE) * 100.0;
+
+//		 bus_load = (float) ( average_window_bits / (CAN_WINDOW_SIZE * CAN_BIT_RATE) ) * 100.0;
+		 bus_load;
+	  }
+
+
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -187,7 +206,7 @@ void task_drive_state_machine(void *argument)
   {
     taskENTER_CRITICAL();
 
-    drive_state_machine_handler();
+//    drive_state_machine_handler();
 
     taskEXIT_CRITICAL();
 	  osDelay(DELAY_MCB_STATE_MACHINE);
@@ -225,17 +244,18 @@ void task_generic_100ms(void *argument)
   for(;;)
   {
     // Sends MCB drive state
-    SendCANDIDDriveState();
+//    SendCANDIDDriveState();
 
     // Sends MCB diagnostics
-    send_mcb_diagnostics();
+//    send_mcb_diagnostics();
 
     osDelay(10); // We need a small delay in between sending since the tx buffer is only 2 message
     // Send MCB githash every 10000ms
     if(counter % 100 == 0)
     {
-      send_mcb_githash();
+//      send_mcb_githash();
     }
+
 
     counter++;
     osDelay(90);
