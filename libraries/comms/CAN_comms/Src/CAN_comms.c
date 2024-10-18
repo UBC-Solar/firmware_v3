@@ -1,30 +1,26 @@
 /**
  * @file CAN_comms.c
  * @author Kyle Groulx
- * @brief 
+ * @brief This file contains the implementation for the CAN communications layer. 
+ * See README.md for how to implement this library.
  * 
  * @copyright Copyright (c) 2024
  * 
  */
-
 
 /* Includes */
 #include "CAN_comms.h"
 
 
 /* Private defines */
-
 #define CAN_RX_TASK_STACK_SIZE 512
-
 #define CAN_RX_QUEUE_SIZE 16
 #define CAN_RX_STRUCT_SIZE sizeof(CAN_comms_Rx_msg_t)
-
 
 /* Private varibles */
 CAN_comms_config_t CAN_comms_config;
 osMessageQueueId_t CAN_comms_Rx_queue;
 osThreadId_t task_CAN_comms_Rx_handle;
-
 const osThreadAttr_t task_CAN_comms_Rx_attributes = {
   .name = "task_CAN_comms_Rx",
   .stack_size = CAN_RX_TASK_STACK_SIZE,

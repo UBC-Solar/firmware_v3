@@ -40,6 +40,7 @@
 #include "iwdg.h"
 #include "sd_logger.h"
 #include "radio.h"
+#include "CAN_comms.h"
 
 /* USER CODE END Includes */
 
@@ -113,6 +114,8 @@ void startDefaultTask(void *argument);
 void read_IMU_task(void *argument);
 void read_GPS_task(void *argument);
 void transmit_Diagnostics_task(void *argument);
+void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t CAN_comms_Rx_msg);
+
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -123,7 +126,12 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-
+  const CAN_comms_config_t CAN_comms_config = {
+    .hcan = &hcan,
+    .RX_FIFO = CAN_RX_FIFO0,
+    .CAN_comms_Rx_callback = CAN_comms_Rx_callback
+  };
+  CAN_comms_init(&CAN_comms_config);
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -201,7 +209,7 @@ void read_IMU_task(void *argument)
   {
     HAL_StatusTypeDef imu_status = HAL_OK;
 
-    IMU_send_as_CAN_msg_single_delay(&imu_status);                // Send IMU data as CAN message
+    //IMU_send_as_CAN_msg_single_delay(&imu_status);                // Send IMU data as CAN message
     g_tel_diagnostics.imu_fail = (imu_status != HAL_OK);        // Update diagnostics
     osDelay(IMU_SINGLE_DELAY);
   }
@@ -219,11 +227,12 @@ void read_IMU_task(void *argument)
 void read_GPS_task(void *argument)
 {
   /* USER CODE BEGIN read_GPS_task */
-  GPS_wait_for_fix();                     // Try to get a fix first.
+  //GPS_wait_for_fix();                     // Try to get a fix first.
 
   /* Infinite loop */
   while(1) {
-    GPS_delayed_rx_and_tx_as_CAN();       // Once a fix is obtained create and send GPS message as CAN
+    //GPS_delayed_rx_and_tx_as_CAN();       // Once a fix is obtained create and send GPS message as CAN
+	  osDelay(1000);
   }
 
   /* USER CODE END read_GPS_task */
@@ -250,6 +259,11 @@ void transmit_Diagnostics_task(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
+
+void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t CAN_comms_Rx_msg)
+{
+  return; // Code for parsing the CAN RX msg
+}
 
 /* USER CODE END Application */
 

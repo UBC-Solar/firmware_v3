@@ -232,7 +232,7 @@ void CAN_Init(void)
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-	// TODO:
+  ISR_CAN_comms_Rx();
 }
 
 
