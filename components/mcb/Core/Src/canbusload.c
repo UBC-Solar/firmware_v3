@@ -5,7 +5,6 @@
  *      Author: makac
  */
 
-#include "can.h"
 #include "canbusload.h"
 
 uint32_t can_count = 0;
@@ -26,44 +25,30 @@ uint32_t calculate_CAN_message_bits(CAN_msg_t *msg)
 
     uint32_t bits = 0;
 
-    bits += 1; // SOF (Start of Frame)
+    bits += CAN_SOF_BITS; // SOF (Start of Frame)
 
     if (msg->header.DLC == 0)
     {
-
-        bits += 11; // Standard ID
+        bits += CAN_STANDARD_ID_BITS; // Standard ID
     }
     else
     {
-
-        bits += 29; // Extended ID
-
-        bits += 1; // SRR (Substitute Remote Request)
-
-        bits += 1; // Reserved bit (r1)
+        bits += CAN_EXTENDED_ID_BITS; // Extended ID
+        bits += CAN_SRR_BITS;         // SRR (Substitute Remote Request)
+        bits += CAN_RESERVED_BIT_R1;  // Reserved bit (r1)
     }
 
-    bits += 1; // RTR (Remote Transmission Request)
-
-    bits += 1; // IDE (Identifier Extension)
-
-    bits += 1; // Reserved bit (r0)
-
-    bits += 4; // DLC (Data Length Code)
-
-    bits += msg->header.DLC * 8; // Data Length Code field (msg->DLC * 8 bits)
-
-    bits += 15; // CRC field
-
-    bits += 1; // CRC delimiter
-
-    bits += 1; // ACK slot
-
-    bits += 1; // ACK delimiter
-
-    bits += 7; // EOF (End of Frame)
-
-    bits += 3; // IFS (Interframe Space)
+    bits += CAN_RTR_BITS;           // RTR (Remote Transmission Request)
+    bits += CAN_IDE_BITS;           // IDE (Identifier Extension)
+    bits += CAN_RESERVED_BIT_R0;    // Reserved bit (r0)
+    bits += CAN_DLC_BITS;           // DLC (Data Length Code)
+    bits += msg->header.DLC * 8;    // Data Length Code field (msg->DLC * 8 bits)
+    bits += CAN_CRC_BITS;           // CRC field
+    bits += CAN_CRC_DELIMITER_BITS; // CRC delimiter
+    bits += CAN_ACK_SLOT_BITS;      // ACK slot
+    bits += CAN_ACK_DELIMITER_BITS; // ACK delimiter
+    bits += CAN_EOF_BITS;           // EOF (End of Frame)
+    bits += CAN_IFS_BITS;           // IFS (Interframe Space)
 
     return bits;
 }
@@ -79,6 +64,8 @@ void slidingWindowAverage(uint32_t bits)
 
     // add new element to the sum
     sum += bits;
+
+    can_total_bits = 0;
 
     currentIdx++;
 }
@@ -99,7 +86,7 @@ float getCANBusLoad()
 {
 
     average_window_bits = getSlidingWindowAverage();
-    bus_load = ((float)average_window_bits / ((float)CAN_WINDOW_SIZE * (float)CAN_BIT_RATE)) * 100.0;
+    bus_load = ((float) average_window_bits / ((float)CAN_WINDOW_SIZE * (float)CAN_BIT_RATE)) * 100.0;
 
     return bus_load;
 }

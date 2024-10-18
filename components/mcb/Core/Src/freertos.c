@@ -29,6 +29,7 @@
 #include "mcb.h"
 #include "can.h"
 #include "iwdg.h"
+#include "canbusload.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -174,20 +175,20 @@ void StartDefaultTask(void *argument)
 	  if(counter_window % 10 == 0){
 		  //will run every 1 second
 		  slidingWindowAverage(can_total_bits);
-		  can_total_bits = 0;
+//		  can_total_bits = 0;
 	  }
 
 	  if(counter_window % 50 == 0){
 		  //will run every 5 seconds
-		 average_window_bits = getSlidingWindowAverage();
-		 bus_load = ((float) average_window_bits / ((float) CAN_WINDOW_SIZE * (float) CAN_BIT_RATE)) * 100.0;
-//		 bus_load = (float) ( average_window_bits / (CAN_WINDOW_SIZE * CAN_BIT_RATE) ) * 100.0;
-		 bus_load;
+
+		 uint64_t current_bus_load = getCANBusLoad();
+//		 average_window_bits = getSlidingWindowAverage();
+//		 bus_load = ((float) average_window_bits / ((float) CAN_WINDOW_SIZE * (float) CAN_BIT_RATE)) * 100.0;
+////		 bus_load = (float) ( average_window_bits / (CAN_WINDOW_SIZE * CAN_BIT_RATE) ) * 100.0;
+//		 bus_load;
 	  }
 
 	  counter_window++;
-
-
   }
   /* USER CODE END StartDefaultTask */
 }
