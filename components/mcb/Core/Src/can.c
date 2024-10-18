@@ -89,7 +89,7 @@ uint32_t t0 = 0;
 uint32_t t1 = 0;
 uint32_t t1_prev = 0;
 
-uint8_t currentIdx = 0;
+uint32_t currentIdx = 0;
 uint32_t sum = 0;
 uint32_t last = 0;
 uint32_t circularBuffer[CAN_WINDOW_SIZE] = {0};
@@ -362,7 +362,7 @@ float getSlidingWindowAverage(){
 		sliding_sum += circularBuffer[i];
 	}
 
-	return (float) sliding_sum / (float) CAN_WINDOW_SIZE;
+	return (float) sliding_sum;
 }
 
 

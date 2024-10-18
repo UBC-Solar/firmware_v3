@@ -180,11 +180,12 @@ void StartDefaultTask(void *argument)
 	  if(counter_window % 50 == 0){
 		  //will run every 5 seconds
 		 average_window_bits = getSlidingWindowAverage();
-		 bus_load = (float) average_window_bits / ((float) CAN_WINDOW_SIZE * (float) CAN_BIT_RATE) * 100.0;
-
+		 bus_load = ((float) average_window_bits / ((float) CAN_WINDOW_SIZE * (float) CAN_BIT_RATE)) * 100.0;
 //		 bus_load = (float) ( average_window_bits / (CAN_WINDOW_SIZE * CAN_BIT_RATE) ) * 100.0;
 		 bus_load;
 	  }
+
+	  counter_window++;
 
 
   }
