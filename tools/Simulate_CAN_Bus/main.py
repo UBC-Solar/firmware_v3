@@ -29,9 +29,10 @@ def load_can_messages(filename):
         # Convert hex string data to a byte list
         data = [int(msg['data'][i:i+2], 16) for i in range(0, len(msg['data']), 2)]
         dlc = msg['dlc']  # Data Length Code
+        board_delay = msg['board_delay'] / 1000.0
 
         count = 0
-        can_messages[can_id] = [interval, data, dlc, count]
+        can_messages[can_id] = [interval, data, dlc, count, board_delay]
 
 # Signal handler for graceful shutdown
 def signal_handler(sig, frame):
@@ -64,7 +65,8 @@ def send_can_messages():
     load_can_messages('can_messages.yaml')
 
     threads = []
-    for can_id, [interval, data, dlc, count] in can_messages.items():
+    for can_id, [interval, data, dlc, count, board_delay] in can_messages.items():
+        time.sleep(board_delay)
         thread = threading.Thread(target=send_message, args=(bus, can_id, data, interval, dlc))
         thread.start()
         threads.append(thread)
