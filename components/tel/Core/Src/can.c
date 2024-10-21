@@ -230,11 +230,6 @@ void CAN_Init(void)
   (void) can_notification_status;
 }
 
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
-{
-  ISR_CAN_comms_Rx();
-}
-
 
 /**
  * @brief Function to transmit the TEL diagnostic message containing rtc reset, gps fix, imu fail, and watchdog reset flags
