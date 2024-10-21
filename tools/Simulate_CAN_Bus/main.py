@@ -47,7 +47,9 @@ def signal_handler(sig, frame):
     exit(0)
 
 # Function to send a specific CAN message
-def send_message(bus, can_id, data, rate, dlc):
+def send_message(bus, can_id, data, rate, dlc, board_delay):    
+    time.sleep(board_delay)
+
     is_extended = False if len(can_id) <= 3 else True
 
     message = can.Message(arbitration_id=int(can_id, 16), data=data[:dlc], is_extended_id=is_extended)
@@ -66,8 +68,7 @@ def send_can_messages():
 
     threads = []
     for can_id, [interval, data, dlc, count, board_delay] in can_messages.items():
-        time.sleep(board_delay)
-        thread = threading.Thread(target=send_message, args=(bus, can_id, data, interval, dlc))
+        thread = threading.Thread(target=send_message, args=(bus, can_id, data, interval, dlc, board_delay))
         thread.start()
         threads.append(thread)
     

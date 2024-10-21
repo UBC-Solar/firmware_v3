@@ -38,7 +38,7 @@
   interval: 1000
   data: "0000000000"
   dlc: 5
-  board_delay: 1000
+  board_delay: 0
 
 - ID: "0x626"
   interval: 1000
