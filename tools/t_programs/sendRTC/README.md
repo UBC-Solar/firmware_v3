@@ -59,6 +59,17 @@ Here is how to set up configuration and wiring for the memorator:
 6. You should see the CAN 1 channel LED blinking at the rate of messages being sent by the memorator
 7. If you have radio connected and sunlink running on the serial port you should see the 0x300 messages come through. The command to show only RTC timestamp messages in the terminal is: `./link_telemetry -p /dev/ttyUSB0 -b 230400 --table-on 0x300 --no-write`
 
+## Using the Memorator 
+There are two ways you will use the memorator:
+1. For programming using the TRX IDE 
+2. Configuring CAN bus and logging parameters.
+
+### For programming using the TRX IDE
+TODO
+
+### Configuring CAN bus and logging parameters
+To do this you will use the memorator config tool. 
+
 
 [**Here is Monday Update of all the work/debugging in the memorator for more detail**](https://ubcsolar.monday.com/boards/3313681052/pulses/6563392826?term=memor&termColumns=XQAAAAJvAAAAAAAAAABBKoJ4MRmOSvlPTDV2Qow42wcHf67VzsBdKlCbBGsDUWUe9ZBNkdE8anb-D9z8-b1wBiZRkBInPvJQFM9-LnxSVAbsA45GP2YL3_0uWUA)
 
