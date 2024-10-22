@@ -86,6 +86,7 @@ bool IWDG_is_reset()
 }
 
 
+
 /**
  * @brief Perform a reset LED sequence if the IWDG reset occurred.
  * 
@@ -93,12 +94,14 @@ bool IWDG_is_reset()
  */
 void IWDG_perform_reset_sequence()
 {
+  // TODO: Add diagnostic logic
+
   if (IWDG_is_reset())
   {
     for (int i = 0; i < 5; i++)
     {
       HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-      HAL_Delay(200);
+      HAL_Delay(RESET_SEQUENCE_DELAY);
     }
   }
 }

@@ -129,10 +129,7 @@ void StartDefaultTask(void const * argument)
     {
         IWDG_Refresh(&hiwdg);	                                 // Refresh the IWDG to ensure no reset occurs
 
-        // double timestamp = RTC_get_timestamp_secs();             // Get the timestamp immediately before ANY ops
-        // RADIO_send_msg_uart(timestamp);	
-
-        osDelay(100);
+        RADIO_send_msg_uart();	
     }
 
   /* USER CODE END StartDefaultTask */

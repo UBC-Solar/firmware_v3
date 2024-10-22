@@ -28,6 +28,8 @@
 #define NEW_LINE_CHAR                               '\n'
 #define START_OF_ARRAY                              0
 #define MASK_4_BITS                                 0xF
+#define MSG_READY_TO_SEND 		                    1U
+#define MSG_NOT_READY_TO_SEND 	                    0U
 
 
 /* MACROS */
@@ -38,7 +40,7 @@
 typedef struct {                                            // Standardized to CAN fields to simplify CAN Rx callback code                          
     uint64_t timestamp;   
     char ID_DELIMETER;
-    uint32_t can_id_reversed;
+    uint32_t can_id;
     uint8_t data[RADIO_DATA_LENGTH];
     uint8_t data_len;
     char CARRIAGE_RETURN;
@@ -47,15 +49,18 @@ typedef struct {                                            // Standardized to C
 
 
 typedef struct {
-    RADIO_Msg_TypeDef radio_msg;
-    bool is_sent;
+    CAN_RxHeaderTypeDef header;
+    uint8_t data[RADIO_DATA_LENGTH];
+    bool needs_sending;
 } RADIO_QueueMsg_TypeDef;
 
 
 /* PROTOTYPES */
-void RADIO_send_msg_uart(double timestamp);	
-void RADIO_queue_init();
-void RADIO_set_rx_msg(uint32_t can_id, uint8_t* can_data, uint32_t DLC);
+void RADIO_init();
+bool RADIO_needs_sending(RADIO_QueueMsg_TypeDef* queue_msg);
+void RADIO_send_msg_uart();	
+RADIO_QueueMsg_TypeDef* RADIO_get_rx_msg();
+void RADIO_increment_rx_queue_index();
 
 
 #endif /* __RADIO_H__ */

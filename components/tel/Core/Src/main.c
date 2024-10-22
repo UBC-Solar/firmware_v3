@@ -25,6 +25,7 @@
 #include "rtc.h"
 #include "usart.h"
 #include "gpio.h"
+#include "radio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -99,8 +100,10 @@ int main(void)
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
+  RADIO_init();                       // Inits sending queue.
   CAN_Init();                         // Radio MSG Queue Init, set CAN Rx callback, CAN filters
-  IWDG_perform_reset_sequence();      
+
+  IWDG_perform_reset_sequence();      // Check for IWDG reset    
 
   /* USER CODE END 2 */
 

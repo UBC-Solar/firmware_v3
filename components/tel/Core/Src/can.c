@@ -164,8 +164,6 @@ void CAN_Init(void)
 {
    HAL_StatusTypeDef can_start;
 
-   RADIO_queue_init();                  // Set constant fields like delimeters and new lines
-
    CanFilterSetup();                    // Allows all msgs
 
    can_start = HAL_CAN_Start(&hcan);
@@ -183,20 +181,13 @@ void CAN_Init(void)
 
 
 /**
- * @brief Getter for the CAN ID from the CAN Rx header
+ * @brief Callback function for when a CAN error occurs
  * 
- * @param can_rx_header The CAN Rx header
- * 
- * @return The CAN ID as a 32-bit unsigned integer to account for both standard and extended IDs
+ * Currently only toggles the user LED upon a RX FIFO overrun
  */
-uint32_t get_can_id(CAN_RxHeaderTypeDef* can_rx_header)
-{
-    return (can_rx_header->IDE == CAN_ID_STD) ? can_rx_header->StdId : can_rx_header->ExtId;
-}
-
-
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
 {
+    // TODO: Add diagnostics. Dont toggle LED if you already do in Rx
     if (hcan->ErrorCode & HAL_CAN_ERROR_RX_FOV1)
     {
         HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
@@ -204,22 +195,18 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
 }
 
 
-static uint64_t can_msg_counter = 0;
-
 /**
  * @brief Callback function for when a CAN message is received in the FIFO0
  */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-    ++can_msg_counter;
-    // CAN_RxHeaderTypeDef can_rx_header;                        
-    // uint8_t can_data[MAX_CAN_DATA_LENGTH];
+    HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	    // Visual Confirmation of CAN working
 
-    // HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	    // Visual Confirmation of CAN working
+    RADIO_QueueMsg_TypeDef* queue_msg_to_set = RADIO_get_rx_msg();    
+    HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &(queue_msg_to_set->header), &(queue_msg_to_set->data[START_OF_ARRAY])); 
 
-    // HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can_rx_header, &can_data[START_OF_ARRAY]);       
-    // uint32_t can_id = get_can_id(&can_rx_header);
-    // RADIO_set_rx_msg(can_id, can_data, can_rx_header.DLC);      // Queues Rxed CAN message for radio Tx   
+    queue_msg_to_set->needs_sending = true;		                            // 'Notify' to Tx function to send this message      
+    RADIO_increment_rx_queue_index();		
 }
 
 /* USER CODE END 1 */

@@ -36,6 +36,8 @@ extern IWDG_HandleTypeDef hiwdg;
 
 /* USER CODE BEGIN Private defines */
 
+#define RESET_SEQUENCE_DELAY      200
+
 /* USER CODE END Private defines */
 
 void MX_IWDG_Init(void);
