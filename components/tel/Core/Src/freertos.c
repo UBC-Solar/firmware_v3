@@ -126,11 +126,25 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-  const CAN_comms_config_t CAN_comms_config = {
+
+  CAN_FilterTypeDef CAN_filter = {
+    .FilterIdHigh = 0x0000,
+    .FilterMaskIdHigh = 0x0000,
+    .FilterIdLow = 0x0000,
+    .FilterMaskIdLow = 0x0000,
+    .FilterFIFOAssignment = CAN_FILTER_FIFO0,
+    .FilterBank = 0,
+    .FilterMode = CAN_FILTERMODE_IDMASK,
+    .FilterScale = CAN_FILTERSCALE_16BIT,
+    .FilterActivation = CAN_FILTER_ENABLE
+  }
+
+  CAN_comms_config_t CAN_comms_config = {
     .hcan = &hcan,
-    .RX_FIFO = CAN_RX_FIFO0,
+    .CAN_Filter = CAN_filter,
     .CAN_comms_Rx_callback = CAN_comms_Rx_callback
   };
+
   CAN_comms_init(&CAN_comms_config);
   /* USER CODE END Init */
 
