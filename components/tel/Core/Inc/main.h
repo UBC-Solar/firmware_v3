@@ -59,6 +59,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define USER_LED_Pin GPIO_PIN_1
 #define USER_LED_GPIO_Port GPIOA
+#define TEST_POINT_Pin GPIO_PIN_5
+#define TEST_POINT_GPIO_Port GPIOC
 #define RADIO_TX_Pin GPIO_PIN_9
 #define RADIO_TX_GPIO_Port GPIOA
 #define RADIO_RX_Pin GPIO_PIN_10

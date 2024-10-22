@@ -173,6 +173,8 @@ void CAN_Init(void)
 
    HAL_StatusTypeDef can_notification_status = HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
    assert_param(can_notification_status == HAL_OK);
+   can_notification_status = HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_OVERRUN);
+   assert_param(can_notification_status == HAL_OK);
 
    /* To avoid warning of unused variable */
    (void) can_notification_status;
@@ -193,19 +195,31 @@ uint32_t get_can_id(CAN_RxHeaderTypeDef* can_rx_header)
 }
 
 
+void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
+{
+    if (hcan->ErrorCode & HAL_CAN_ERROR_RX_FOV1)
+    {
+        HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+    }
+}
+
+
+static uint64_t can_msg_counter = 0;
+
 /**
  * @brief Callback function for when a CAN message is received in the FIFO0
  */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-    CAN_RxHeaderTypeDef can_rx_header;                        
-    uint8_t can_data[MAX_CAN_DATA_LENGTH];
+    ++can_msg_counter;
+    // CAN_RxHeaderTypeDef can_rx_header;                        
+    // uint8_t can_data[MAX_CAN_DATA_LENGTH];
 
-    HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	    // Visual Confirmation of CAN working
+    // HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	    // Visual Confirmation of CAN working
 
-    HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can_rx_header, &can_data[START_OF_ARRAY]);       
-    uint32_t can_id = get_can_id(&can_rx_header);
-    RADIO_set_rx_msg(can_id, can_data, can_rx_header.DLC);      // Queues Rxed CAN message for radio Tx   
+    // HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can_rx_header, &can_data[START_OF_ARRAY]);       
+    // uint32_t can_id = get_can_id(&can_rx_header);
+    // RADIO_set_rx_msg(can_id, can_data, can_rx_header.DLC);      // Queues Rxed CAN message for radio Tx   
 }
 
 /* USER CODE END 1 */
