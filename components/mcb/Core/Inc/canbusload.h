@@ -36,7 +36,7 @@ extern float bus_load;
 
 uint32_t calculate_CAN_message_bits(CAN_msg_t* msg);
 void slidingWindowAverage(uint32_t bits);
-float getSlidingWindowAverage();
+float getSlidingWindowTotalBits();
 float getCANBusLoad();
 
 
