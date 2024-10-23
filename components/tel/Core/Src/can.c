@@ -230,6 +230,41 @@ void CAN_Init(void)
   (void) can_notification_status;
 }
 
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  //HAL_StatusTypeDef status = HAL_CAN_DeactivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+
+  /* Assert the status */
+  //assert_param(status == HAL_OK);
+  CAN_RxHeaderTypeDef can_rx_header;
+  uint8_t can_data[8];
+  CAN_msg_t *new_CAN_msg;
+
+
+  /* Get CAN message */
+    HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can_rx_header, can_data);  // TODO: Put can_rx_header and can_data into a data structure able to be accessed in the freertos task
+    /* Put CAN message in the Queue */
+    new_CAN_msg = osPoolAlloc(CAN_MSG_memory_pool);
+    new_CAN_msg->header = can_rx_header;
+    for(int i = 0; i < CAN_DATA_LENGTH; i++) {
+      new_CAN_msg->data[i] = can_data[i];
+    }
+
+    /* Perform rtc syncing check if the message is 0x300 and if RTC is reset to 2000-01-01 */
+    if (new_CAN_msg->header.StdId == RTC_TIMESTAMP_MSG_ID)
+    {
+      start_of_second = HAL_GetTick();
+    }
+
+    new_CAN_msg->timestamp.double_value = get_current_timestamp();
+    osMessagePut(CAN_MSG_Rx_Queue, new_CAN_msg, osWaitForever);
+
+  /* Set the Flag to CAN_READY */
+  osSignalSet(readCANTaskHandle, CAN_READY);
+
+  /* To avoid warning of unused variable */
+}
+
 
 /**
  * @brief Function to transmit the TEL diagnostic message containing rtc reset, gps fix, imu fail, and watchdog reset flags

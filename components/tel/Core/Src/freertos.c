@@ -40,7 +40,6 @@
 #include "iwdg.h"
 #include "sd_logger.h"
 #include "radio.h"
-#include "CAN_comms.h"
 
 /* USER CODE END Includes */
 
@@ -64,6 +63,10 @@
 
 CAN_msg_t msg_t;
 
+/* Define Memory Pool for the CAN_MSG queue data */
+osPoolDef (CAN_MSG_memory_pool, MAX_CAN_MSGS_IN_POOL, CAN_msg_t);  // Declare memory pool
+osPoolId  CAN_MSG_memory_pool;                 // Memory pool ID
+
 /* Create the Queue */
 // https://community.st.com/t5/stm32-mcus-products/osmessageget-crashing/td-p/257324
 // See this link for issues why osMessageGet may crash
@@ -72,34 +75,11 @@ osMessageQDef(CAN_MSG_Rx_Queue, MAX_CAN_MSGS_IN_POOL, &msg_t);              // D
 osMessageQId  CAN_MSG_Rx_Queue;
 
 /* USER CODE END Variables */
-/* Definitions for StartDefaultTask */
-osThreadId_t StartDefaultTaskHandle;
-const osThreadAttr_t StartDefaultTask_attributes = {
-  .name = "StartDefaultTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for readIMUTask */
-osThreadId_t readIMUTaskHandle;
-const osThreadAttr_t readIMUTask_attributes = {
-  .name = "readIMUTask",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for readGPSTask */
-osThreadId_t readGPSTaskHandle;
-const osThreadAttr_t readGPSTask_attributes = {
-  .name = "readGPSTask",
-  .stack_size = 1536 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for transmitDiagnosticsTask */
-osThreadId_t transmitDiagnosticsTaskHandle;
-const osThreadAttr_t transmitDiagnosticsTask_attributes = {
-  .name = "transmitDiagnosticsTask",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
+osThreadId StartDefaultTaskHandle;
+osThreadId readCANTaskHandle;
+osThreadId readIMUTaskHandle;
+osThreadId readGPSTaskHandle;
+osThreadId transmitDiagnosticsTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -110,14 +90,29 @@ void send_CAN_Radio(CAN_Radio_msg_t *tx_CAN_msg);
 
 /* USER CODE END FunctionPrototypes */
 
-void startDefaultTask(void *argument);
-void read_IMU_task(void *argument);
-void read_GPS_task(void *argument);
-void transmit_Diagnostics_task(void *argument);
-void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t CAN_comms_Rx_msg);
-
+void startDefaultTask(void const * argument);
+void read_CAN_task(void const * argument);
+void read_IMU_task(void const * argument);
+void read_GPS_task(void const * argument);
+void transmit_Diagnostics_task(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+
+/* GetIdleTaskMemory prototype (linked to static allocation support) */
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
+
+/* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
+static StaticTask_t xIdleTaskTCBBuffer;
+static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
+
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
+{
+  *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
+  *ppxIdleTaskStackBuffer = &xIdleStack[0];
+  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+  /* place for user code */
+}
+/* USER CODE END GET_IDLE_TASK_MEMORY */
 
 /**
   * @brief  FreeRTOS initialization
@@ -127,25 +122,6 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
-  CAN_FilterTypeDef CAN_filter = {
-    .FilterIdHigh = 0x0000,
-    .FilterMaskIdHigh = 0x0000,
-    .FilterIdLow = 0x0000,
-    .FilterMaskIdLow = 0x0000,
-    .FilterFIFOAssignment = CAN_FILTER_FIFO0,
-    .FilterBank = 0,
-    .FilterMode = CAN_FILTERMODE_IDMASK,
-    .FilterScale = CAN_FILTERSCALE_16BIT,
-    .FilterActivation = CAN_FILTER_ENABLE
-  };
-
-  CAN_comms_config_t CAN_comms_config = {
-    .hcan = &hcan,
-    .CAN_Filter = CAN_filter,
-    .CAN_comms_Rx_callback = CAN_comms_Rx_callback
-  };
-
-  CAN_comms_init(&CAN_comms_config);
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -164,28 +140,36 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
 
+  CAN_MSG_memory_pool = osPoolCreate(osPool(CAN_MSG_memory_pool));                 // create memory pool
+  CAN_MSG_Rx_Queue = osMessageCreate(osMessageQ(CAN_MSG_Rx_Queue), NULL);  // create msg queue
+
+
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of StartDefaultTask */
-  StartDefaultTaskHandle = osThreadNew(startDefaultTask, NULL, &StartDefaultTask_attributes);
+  /* definition and creation of StartDefaultTask */
+  osThreadDef(StartDefaultTask, startDefaultTask, osPriorityLow, 0, 128);
+  StartDefaultTaskHandle = osThreadCreate(osThread(StartDefaultTask), NULL);
 
-  /* creation of readIMUTask */
-  readIMUTaskHandle = osThreadNew(read_IMU_task, NULL, &readIMUTask_attributes);
+  /* definition and creation of readCANTask */
+  osThreadDef(readCANTask, read_CAN_task, osPriorityNormal, 0, 512);
+  readCANTaskHandle = osThreadCreate(osThread(readCANTask), NULL);
+  
+  /* definition and creation of readIMUTask */
+  osThreadDef(readIMUTask, read_IMU_task, osPriorityNormal, 0, 512);
+  readIMUTaskHandle = osThreadCreate(osThread(readIMUTask), NULL);
 
-  /* creation of readGPSTask */
-  readGPSTaskHandle = osThreadNew(read_GPS_task, NULL, &readGPSTask_attributes);
+  /* definition and creation of readGPSTask */
+  osThreadDef(readGPSTask, read_GPS_task, osPriorityNormal, 0, 1536);
+  readGPSTaskHandle = osThreadCreate(osThread(readGPSTask), NULL);
 
-  /* creation of transmitDiagnosticsTask */
-  transmitDiagnosticsTaskHandle = osThreadNew(transmit_Diagnostics_task, NULL, &transmitDiagnosticsTask_attributes);
+  /* definition and creation of transmitDiagnosticsTask */
+  osThreadDef(transmitDiagnosticsTask, transmit_Diagnostics_task, osPriorityNormal, 0, 512);
+  transmitDiagnosticsTaskHandle = osThreadCreate(osThread(transmitDiagnosticsTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
-
-  /* USER CODE BEGIN RTOS_EVENTS */
-  /* add events, ... */
-  /* USER CODE END RTOS_EVENTS */
 
 }
 
@@ -196,7 +180,7 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_startDefaultTask */
-void startDefaultTask(void *argument)
+void startDefaultTask(void const * argument)
 {
   /* USER CODE BEGIN startDefaultTask */
   CAN_Init();
@@ -207,6 +191,47 @@ void startDefaultTask(void *argument)
   /* USER CODE END startDefaultTask */
 }
 
+/* USER CODE BEGIN Header_read_CAN_task */
+/**
+* @brief Function implementing the readCANTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_read_CAN_task */
+void read_CAN_task(void const * argument)
+{
+  /* USER CODE BEGIN read_CAN_task */
+  CAN_msg_t *rx_CAN_msg;
+  osEvent evt;
+
+  /* Infinite loop */
+  while (true) {
+    /* Wait for thread flags to be set in the CAN Rx FIFO0 Interrupt Callback */
+    osSignalWait(CAN_READY, osWaitForever);
+    
+    IWDG_refresh();
+
+    /*
+     * Control Flow:
+     * Wait for Flag from Interrupt
+     * After flag occurs, read messages from queue repeatedly until it is empty
+     * Once empty,    // HAL_StatusTypeDef imu_status = HAL_OK;
+
+    /* Get CAN Message from Queue */
+    while(true) {
+      evt = osMessageGet(CAN_MSG_Rx_Queue, osWaitForever);
+
+      if (evt.status == osEventMessage) {
+        rx_CAN_msg = evt.value.p;                       // Get pointer to CAN message from the queue union
+        CAN_handle_rx_msg(rx_CAN_msg);                 // Handle the CAN message  
+      }
+      else break;
+    }
+  }
+
+  /* USER CODE END read_CAN_task */
+}
+
 /* USER CODE BEGIN Header_read_IMU_task */
 /**
 * @brief Function implementing the readIMUTask thread.
@@ -214,7 +239,7 @@ void startDefaultTask(void *argument)
 * @retval None
 */
 /* USER CODE END Header_read_IMU_task */
-void read_IMU_task(void *argument)
+void read_IMU_task(void const * argument)
 {
   /* USER CODE BEGIN read_IMU_task */
 
@@ -223,7 +248,7 @@ void read_IMU_task(void *argument)
   {
     HAL_StatusTypeDef imu_status = HAL_OK;
 
-    //IMU_send_as_CAN_msg_single_delay(&imu_status);                // Send IMU data as CAN message
+    IMU_send_as_CAN_msg_single_delay(&imu_status);                // Send IMU data as CAN message
     g_tel_diagnostics.imu_fail = (imu_status != HAL_OK);        // Update diagnostics
     osDelay(IMU_SINGLE_DELAY);
   }
@@ -238,15 +263,14 @@ void read_IMU_task(void *argument)
 * @retval None
 */
 /* USER CODE END Header_read_GPS_task */
-void read_GPS_task(void *argument)
+void read_GPS_task(void const * argument)
 {
   /* USER CODE BEGIN read_GPS_task */
-  //GPS_wait_for_fix();                     // Try to get a fix first.
+  GPS_wait_for_fix();                     // Try to get a fix first.
 
   /* Infinite loop */
   while(1) {
-    //GPS_delayed_rx_and_tx_as_CAN();       // Once a fix is obtained create and send GPS message as CAN
-	  osDelay(1000);
+    GPS_delayed_rx_and_tx_as_CAN();       // Once a fix is obtained create and send GPS message as CAN
   }
 
   /* USER CODE END read_GPS_task */
@@ -259,7 +283,7 @@ void read_GPS_task(void *argument)
 * @retval None
 */
 /* USER CODE END Header_transmit_Diagnostics_task */
-void transmit_Diagnostics_task(void *argument)
+void transmit_Diagnostics_task(void const * argument)
 {
   /* USER CODE BEGIN transmit_Diagnostics_task */
   /* Infinite loop */
@@ -273,11 +297,6 @@ void transmit_Diagnostics_task(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-
-void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
-{
-  return; // Code for parsing the CAN RX msg
-}
 
 /* USER CODE END Application */
 
