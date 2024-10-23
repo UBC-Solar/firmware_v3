@@ -9,7 +9,7 @@
 
 uint32_t can_count = 0;
 uint32_t can_total_bits = 0;
-uint32_t average_window_bits = 0;
+uint32_t total_window_bits = 0;
 float bus_load = 0;
 uint32_t can_window_average = 0;
 uint32_t can_bus_load = 0;
@@ -70,7 +70,7 @@ void slidingWindowAverage(uint32_t bits)
     currentIdx++;
 }
 
-float getSlidingWindowAverage()
+float getSlidingWindowTotalBits()
 {
     uint32_t sliding_sum = 0;
 
@@ -79,14 +79,14 @@ float getSlidingWindowAverage()
         sliding_sum += circularBuffer[i];
     }
 
-    return (float)sliding_sum;
+    return (float) sliding_sum;
 }
 
 float getCANBusLoad()
 {
 
-    average_window_bits = getSlidingWindowAverage();
-    bus_load = ((float) average_window_bits / ((float)CAN_WINDOW_SIZE * (float)CAN_BIT_RATE)) * 100.0;
+    total_window_bits = getSlidingWindowTotalBits();
+    bus_load = ((float) total_window_bits / ((float)CAN_WINDOW_SIZE * (float)CAN_BIT_RATE)) * 100.0;
 
     return bus_load;
 }
