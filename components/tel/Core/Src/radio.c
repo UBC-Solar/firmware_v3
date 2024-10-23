@@ -70,6 +70,7 @@ void RADIO_send_msg_uart()
 			can_msg_counter += (uint32_t)needs_sending;
 
 			set_radio_msg(current_queue_msg_ptr, timestamp);			      // Standardize to match sunlink
+
 			// UART_radio_transmit(&(current_queue_msg_ptr->radio_msg));	  // Sending to Module via DMA
 
 			current_queue_msg_ptr->needs_sending = false;

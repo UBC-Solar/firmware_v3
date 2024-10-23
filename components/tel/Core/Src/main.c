@@ -25,10 +25,11 @@
 #include "rtc.h"
 #include "usart.h"
 #include "gpio.h"
-#include "radio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include "radio.h"
 
 /* USER CODE END Includes */
 
@@ -106,6 +107,9 @@ int main(void)
   IWDG_perform_reset_sequence();      // Check for IWDG reset    
 
   /* USER CODE END 2 */
+
+  /* Init scheduler */
+  osKernelInitialize();
 
   /* Call init function for freertos objects (in cmsis_os2.c) */
   MX_FREERTOS_Init();
