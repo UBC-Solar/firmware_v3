@@ -1,2 +1,2 @@
-# Main Control Board (MCB) Overview
+# Telemetry (TEL) Overview
 See our [Wiki.js](https://wiki.ubcsolar.com/subteams/embedded/system-overview) for the overview!
