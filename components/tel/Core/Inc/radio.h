@@ -48,19 +48,9 @@ typedef struct {                                            // Standardized to C
 } __attribute__((packed)) RADIO_Msg_TypeDef;    
 
 
-typedef struct {
-    CAN_RxHeaderTypeDef header;
-    uint8_t data[RADIO_DATA_LENGTH];
-    bool needs_sending;
-} RADIO_QueueMsg_TypeDef;
-
-
 /* PROTOTYPES */
 void RADIO_init();
-bool RADIO_needs_sending(RADIO_QueueMsg_TypeDef* queue_msg);
-void RADIO_send_msg_uart();	
-RADIO_QueueMsg_TypeDef* RADIO_get_rx_msg();
-void RADIO_increment_rx_queue_index();
+void RADIO_send_msg_uart(CAN_RxHeaderTypeDef* header, uint8_t* data);
 
 
 #endif /* __RADIO_H__ */

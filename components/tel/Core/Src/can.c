@@ -21,11 +21,12 @@
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
+
+/* PRIVATE INCLUDES */
 #include <stdint.h>
 #include <stdbool.h>
 #include "bitops.h"
 #include "radio.h"
-
 
 /* USER CODE END 0 */
 
@@ -135,51 +136,22 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 /**
  * @brief Allows all messages to be received
  */
-void CanFilterSetup(void)
+void CAN_filter_init(CAN_FilterTypeDef* can_filter)
 {
-  /* TODO: Review Filter Implementation */
-  // Use mask and list mode to filter IDs from the CAN ID BOM
+    /* TODO: Review Filter Implementation */
+    // Use mask and list mode to filter IDs from the CAN ID BOM
 
-  // Filter for 0x500 and 0x600 IDs
-  CAN_FilterTypeDef CAN_filter0;
+    can_filter->FilterIdHigh = 0x0000;
+    can_filter->FilterMaskIdHigh = 0x0000;
 
-  CAN_filter0.FilterIdHigh = 0x0000;
-  CAN_filter0.FilterMaskIdHigh = 0x0000;
+    can_filter->FilterIdLow = 0x0000;
+    can_filter->FilterMaskIdLow = 0x0000;
 
-  CAN_filter0.FilterIdLow = 0x0000;
-  CAN_filter0.FilterMaskIdLow = 0x0000;
-
-  CAN_filter0.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-  CAN_filter0.FilterBank = (uint32_t) 0;
-  CAN_filter0.FilterMode = CAN_FILTERMODE_IDMASK;
-  CAN_filter0.FilterScale = CAN_FILTERSCALE_16BIT;
-  CAN_filter0.FilterActivation = CAN_FILTER_ENABLE;
-
-  // Configure reception filters
-  HAL_CAN_ConfigFilter(&hcan, &CAN_filter0);
-}
-
-
-/**
- * @brief CAN set-up: Sets up the filters, Starts CAN with HAL, and Activates notifications for interrupts.
- */
-void CAN_Init(void)
-{
-   HAL_StatusTypeDef can_start;
-
-   CanFilterSetup();                    // Allows all msgs
-
-   can_start = HAL_CAN_Start(&hcan);
-   assert_param(can_start == HAL_OK);
-
-   HAL_StatusTypeDef can_notification_status = HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
-   assert_param(can_notification_status == HAL_OK);
-   can_notification_status = HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_OVERRUN);
-   assert_param(can_notification_status == HAL_OK);
-
-   /* To avoid warning of unused variable */
-   (void) can_notification_status;
-   (void) can_start;
+    can_filter->FilterFIFOAssignment = CAN_FILTER_FIFO0;
+    can_filter->FilterBank = (uint32_t) 0;
+    can_filter->FilterMode = CAN_FILTERMODE_IDMASK;
+    can_filter->FilterScale = CAN_FILTERSCALE_16BIT;
+    can_filter->FilterActivation = CAN_FILTER_ENABLE;
 }
 
 
@@ -195,21 +167,6 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
     {
         HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
     }
-}
-
-
-/**
- * @brief Callback function for when a CAN message is received in the FIFO0
- */
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
-{
-    HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	    // Visual Confirmation of CAN working
-
-    RADIO_QueueMsg_TypeDef* queue_msg_to_set = RADIO_get_rx_msg();    
-    HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &(queue_msg_to_set->header), &(queue_msg_to_set->data[START_OF_ARRAY])); 
-
-    queue_msg_to_set->needs_sending = true;		                            // 'Notify' to Tx function to send this message      
-    RADIO_increment_rx_queue_index();		
 }
 
 /* USER CODE END 1 */

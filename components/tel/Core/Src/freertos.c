@@ -25,9 +25,11 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
 #include "rtc.h"
 #include "iwdg.h"
 #include "radio.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -121,8 +123,7 @@ void StartDefaultTask(void *argument)
     for(;;)
     {
         IWDG_Refresh(&hiwdg);	                                 // Refresh the IWDG to ensure no reset occurs
-
-        RADIO_send_msg_uart();	
+        osDelay(REFRESH_DELAY);
     }
 
   /* USER CODE END StartDefaultTask */
