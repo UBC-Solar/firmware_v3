@@ -34,12 +34,12 @@ osSemaphoreId_t CAN_comms_Tx_mailbox_semaphore;
 const osThreadAttr_t CAN_comms_Rx_task_attributes = {
     .name = "CAN_comms_Rx_task",
     .stack_size = CAN_RX_TASK_STACK_SIZE,
-    .priority = (osPriority_t) osPriorityHigh,
+    .priority = (osPriority_t) osPriorityLow,
 };
 const osThreadAttr_t CAN_comms_Tx_task_attributes = {
     .name = "CAN_comms_Tx_task",
     .stack_size = CAN_TX_TASK_STACK_SIZE,
-    .priority = (osPriority_t) osPriorityHigh,
+    .priority = (osPriority_t) osPriorityLow,
 };
 
 
@@ -83,7 +83,7 @@ void CAN_comms_init(CAN_comms_config_t* config)
 
 /**
  * @brief Initializes CAN filters, activates notifications and starts CAN
- * This function is called once at the start of the CAN_comms_Tx_task RTOS task.
+ * This function is called once at the start of the CAN_comms_Rx_task RTOS task.
  * 
  * @attention THis function needs to be called after the FreeRTOS kernel has started. So it cannot
  * be called in the CAN_comms_init function.
@@ -95,6 +95,8 @@ void CAN_comms_init(CAN_comms_config_t* config)
 
     /* Activate notifications */
     HAL_CAN_ActivateNotification(CAN_comms_config.hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+    HAL_CAN_ActivateNotification(CAN_comms_config.hcan, CAN_IT_TX_MAILBOX_EMPTY);
+
 
     /* Start CAN */
     HAL_CAN_Start(CAN_comms_config.hcan);
@@ -233,10 +235,10 @@ void CAN_comms_Tx_mailbox_complete_ISR()
   */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-    if (hcan->Instance == CAN_comms_config.hcan->Instance)
-    {
-        CAN_comms_Rx_message_pending_ISR();
-    }
+   if (hcan->Instance == CAN_comms_config.hcan->Instance)
+   {
+       CAN_comms_Rx_message_pending_ISR();
+   }
 }
 
 
@@ -250,7 +252,7 @@ void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
 {
     if (hcan->Instance == CAN_comms_config.hcan->Instance)
     {
-        CAN_comms_Tx_mailbox_complete_ISR();
+        osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
     }
 }
 
@@ -265,7 +267,7 @@ void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan)
 {
     if (hcan->Instance == CAN_comms_config.hcan->Instance)
     {
-        CAN_comms_Tx_mailbox_complete_ISR();
+        osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
     }
 }
 
@@ -280,6 +282,6 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
 {
     if (hcan->Instance == CAN_comms_config.hcan->Instance)
     {
-        CAN_comms_Tx_mailbox_complete_ISR();
+        osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
     }
 }
