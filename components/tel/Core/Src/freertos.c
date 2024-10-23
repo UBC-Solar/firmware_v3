@@ -137,7 +137,7 @@ void MX_FREERTOS_Init(void) {
     .FilterMode = CAN_FILTERMODE_IDMASK,
     .FilterScale = CAN_FILTERSCALE_16BIT,
     .FilterActivation = CAN_FILTER_ENABLE
-  }
+  };
 
   CAN_comms_config_t CAN_comms_config = {
     .hcan = &hcan,
@@ -274,7 +274,7 @@ void transmit_Diagnostics_task(void *argument)
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
-void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t CAN_comms_Rx_msg)
+void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
   return; // Code for parsing the CAN RX msg
 }

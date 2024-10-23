@@ -25,12 +25,12 @@
 typedef struct 
 {
   CAN_RxHeaderTypeDef header;
-  uint8_t data[CAN_DATA_SIZE];
+  uint8_t data[CAN_DATA_SIZE];  // TODO: Dynamically change CAN data size based on DLC
 } CAN_comms_Rx_msg_t;
 
 typedef struct {
   CAN_TxHeaderTypeDef header;
-  uint8_t data[CAN_DATA_SIZE];
+  uint8_t data[CAN_DATA_SIZE];  // TODO: Dynamically change CAN data size based on DLC
 } CAN_comms_Tx_msg_t;
 
 
@@ -47,7 +47,7 @@ typedef struct {
 
     CAN_FilterTypeDef CAN_Filter;
 
-    void (*CAN_comms_Rx_callback)(CAN_comms_Rx_msg_t);
+    void (*CAN_comms_Rx_callback)(CAN_comms_Rx_msg_t*);
 } CAN_comms_config_t;
 
 

@@ -85,10 +85,10 @@ void CAN_comms_init(CAN_comms_config_t* config)
  * @brief Initializes CAN filters, activates notifications and starts CAN
  * This function is called once at the start of the CAN_comms_Tx_task RTOS task.
  * 
- * @attention THis function needs to be called after the freeRTOS kernel has started. So it cannot
+ * @attention THis function needs to be called after the FreeRTOS kernel has started. So it cannot
  * be called in the CAN_comms_init function.
  */
- void CAN_comms_init_HAL_CAN()
+ void CAN_comms_HAL_CAN_init()
  {
     /* Configure CAN filter */
     HAL_CAN_ConfigFilter(CAN_comms_config.hcan, &CAN_comms_config.CAN_Filter);
@@ -164,7 +164,7 @@ void CAN_comms_Rx_task(void* argument)
     UNUSED(argument);
 
     /* Initialize HAL_CAN */
-    CAN_comms_init_HAL_CAN();
+    CAN_comms_HAL_CAN_init();
 
     /* Infinite loop */
     for(;;)
@@ -174,7 +174,7 @@ void CAN_comms_Rx_task(void* argument)
         if (osOK == osMessageQueueGet(CAN_comms_Rx_queue, &CAN_comms_Rx_msg, NULL, osWaitForever))
         {
             /* Call the handle function pointer */
-            CAN_comms_config.CAN_comms_Rx_callback(CAN_comms_Rx_msg);
+            CAN_comms_config.CAN_comms_Rx_callback(&CAN_comms_Rx_msg);
         }
         else
         {
@@ -213,7 +213,7 @@ void CAN_comms_Rx_message_pending_ISR()
  * 
  * @attention This function needs to be added to each CAN mailbox complete callback function
  */
-void CAN_comms_mailbox_complete_ISR()
+void CAN_comms_Tx_mailbox_complete_ISR()
 {
     osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
 }
@@ -233,8 +233,10 @@ void CAN_comms_mailbox_complete_ISR()
   */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-    UNUSED(hcan);
-    CAN_comms_Rx_message_pending_ISR();
+    if (hcan->Instance == CAN_comms_config.hcan->Instance)
+    {
+        CAN_comms_Rx_message_pending_ISR();
+    }
 }
 
 
@@ -246,8 +248,10 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   */
 void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
 {
-    UNUSED(hcan);
-    CAN_comms_mailbox_complete_ISR();
+    if (hcan->Instance == CAN_comms_config.hcan->Instance)
+    {
+        CAN_comms_Tx_mailbox_complete_ISR();
+    }
 }
 
 
@@ -259,8 +263,10 @@ void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
   */
 void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan)
 {
-    UNUSED(hcan);
-    CAN_comms_mailbox_complete_ISR();
+    if (hcan->Instance == CAN_comms_config.hcan->Instance)
+    {
+        CAN_comms_Tx_mailbox_complete_ISR();
+    }
 }
 
 
@@ -272,6 +278,8 @@ void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan)
   */
 void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
 {
-    UNUSED(hcan);
-    CAN_comms_mailbox_complete_ISR();
+    if (hcan->Instance == CAN_comms_config.hcan->Instance)
+    {
+        CAN_comms_Tx_mailbox_complete_ISR();
+    }
 }
