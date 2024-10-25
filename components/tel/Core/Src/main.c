@@ -30,6 +30,7 @@
 /* USER CODE BEGIN Includes */
 
 #include "radio.h"
+#include "CAN_comms.h"
 
 /* USER CODE END Includes */
 
@@ -57,6 +58,8 @@
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
+
+void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg);
 
 /* USER CODE END PFP */
 
@@ -101,6 +104,15 @@ int main(void)
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
+  CAN_FilterTypeDef CAN_filter = {0};
+  CAN_filter_init(&CAN_filter);
+
+  CAN_comms_config_t CAN_comms_config = {
+      .hcan = &hcan,
+      .CAN_Filter = CAN_filter,
+      .CAN_comms_Rx_callback = CAN_comms_Rx_callback
+  };
+
   RADIO_init();                       // Inits sending queue.
   IWDG_perform_reset_sequence();      // Check for IWDG reset    
 
@@ -111,6 +123,7 @@ int main(void)
 
   /* Call init function for freertos objects (in cmsis_os2.c) */
   MX_FREERTOS_Init();
+  CAN_comms_init(&CAN_comms_config);  // Inits CAN comms
 
   /* Start scheduler */
   osKernelStart();
@@ -176,6 +189,18 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/**
+ * @brief Callback from CAN comms to send a message over UART
+ * 
+ * @param CAN_comms_Rx_msg The CAN message received
+ */
+void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
+{
+    HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	    // Visual Confirmation of CAN working
+
+    RADIO_send_msg_uart(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data);
+}
 
 /* USER CODE END 4 */
 

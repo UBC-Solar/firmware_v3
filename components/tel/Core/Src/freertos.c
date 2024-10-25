@@ -75,8 +75,6 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
-  CAN_rx_and_tx_init();
-
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
