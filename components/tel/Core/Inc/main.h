@@ -57,6 +57,9 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define RADIO_CTS_IT_Pin GPIO_PIN_3
+#define RADIO_CTS_IT_GPIO_Port GPIOC
+#define RADIO_CTS_IT_EXTI_IRQn EXTI3_IRQn
 #define USER_LED_Pin GPIO_PIN_1
 #define USER_LED_GPIO_Port GPIOA
 #define TEST_POINT_Pin GPIO_PIN_5
