@@ -10,34 +10,30 @@
 
 #include "can.h"
 
-#define CAN_BIT_RATE 500000
-#define CAN_WINDOW_SIZE 5
+#define CANLOAD_BIT_RATE 500000
+#ifndef CANLOAD_WINDOW_SIZE
+    #define CANLOAD_WINDOW_SIZE 5
+#endif
 
-#define CAN_SOF_BITS 1
-#define CAN_STANDARD_ID_BITS 11
-#define CAN_EXTENDED_ID_BITS 29
-#define CAN_SRR_BITS 1
-#define CAN_RESERVED_BIT_R1 1
-#define CAN_RTR_BITS 1
-#define CAN_IDE_BITS 1
-#define CAN_RESERVED_BIT_R0 1
-#define CAN_DLC_BITS 4
-#define CAN_CRC_BITS 15
-#define CAN_CRC_DELIMITER_BITS 1
-#define CAN_ACK_SLOT_BITS 1
-#define CAN_ACK_DELIMITER_BITS 1
-#define CAN_EOF_BITS 7
-#define CAN_IFS_BITS 3
+#define WINDOW_SIZE 50     // Number of samples for the sliding window
+#define TASK_INTERVAL 100  // Task interval in milliseconds (100ms)
 
-extern uint32_t can_total_bits;
-extern uint32_t can_count;
-extern uint32_t average_window_bits;
-extern float bus_load;
+#define CANLOAD_SOF_BITS 1
+#define CANLOAD_STANDARD_ID_BITS 11
+#define CANLOAD_EXTENDED_ID_BITS 29
+#define CANLOAD_SRR_BITS 1
+#define CANLOAD_RESERVED_BIT_R1 1
+#define CANLOAD_RTR_BITS 1
+#define CANLOAD_IDE_BITS 1
+#define CANLOAD_RESERVED_BIT_R0 1
+#define CANLOAD_DLC_BITS 4
+#define CANLOAD_CRC_BITS 15
+#define CANLOAD_CRC_DELIMITER_BITS 1
+#define CANLOAD_ACK_SLOT_BITS 1
+#define CANLOAD_ACK_DELIMITER_BITS 1
+#define CANLOAD_EOF_BITS 7
+#define CANLOAD_IFS_BITS 3
 
-uint32_t calculate_CAN_message_bits(CAN_msg_t* msg);
-void slidingWindowAverage(uint32_t bits);
-float getSlidingWindowAverage();
-float getCANBusLoad();
-
+float CANLOAD_get_bus_load();
 
 #endif /* INC_CANBUSLOAD_H_ */

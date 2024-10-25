@@ -7,86 +7,73 @@
 
 #include "canbusload.h"
 
-uint32_t can_count = 0;
 uint32_t can_total_bits = 0;
-uint32_t average_window_bits = 0;
-float bus_load = 0;
-uint32_t can_window_average = 0;
-uint32_t can_bus_load = 0;
-
+static uint64_t counter_window = 0;
+uint64_t current_bus_load = 0;
 uint32_t currentIdx = 0;
-uint32_t sum = 0;
-uint32_t last = 0;
-uint32_t circularBuffer[CAN_WINDOW_SIZE] = {0};
-uint8_t isFirstWindow = 1;
+uint32_t circularBuffer[CANLOAD_WINDOW_SIZE] = {0};
 
 uint32_t calculate_CAN_message_bits(CAN_msg_t *msg)
 {
-
     uint32_t bits = 0;
-
-    bits += CAN_SOF_BITS; // SOF (Start of Frame)
-
+    bits += CANLOAD_SOF_BITS;
     if (msg->header.DLC == 0)
     {
-        bits += CAN_STANDARD_ID_BITS; // Standard ID
+        bits += CANLOAD_STANDARD_ID_BITS;
     }
     else
     {
-        bits += CAN_EXTENDED_ID_BITS; // Extended ID
-        bits += CAN_SRR_BITS;         // SRR (Substitute Remote Request)
-        bits += CAN_RESERVED_BIT_R1;  // Reserved bit (r1)
+        bits += CANLOAD_EXTENDED_ID_BITS;
+        bits += CANLOAD_SRR_BITS;
+        bits += CANLOAD_RESERVED_BIT_R1;
     }
-
-    bits += CAN_RTR_BITS;           // RTR (Remote Transmission Request)
-    bits += CAN_IDE_BITS;           // IDE (Identifier Extension)
-    bits += CAN_RESERVED_BIT_R0;    // Reserved bit (r0)
-    bits += CAN_DLC_BITS;           // DLC (Data Length Code)
-    bits += msg->header.DLC * 8;    // Data Length Code field (msg->DLC * 8 bits)
-    bits += CAN_CRC_BITS;           // CRC field
-    bits += CAN_CRC_DELIMITER_BITS; // CRC delimiter
-    bits += CAN_ACK_SLOT_BITS;      // ACK slot
-    bits += CAN_ACK_DELIMITER_BITS; // ACK delimiter
-    bits += CAN_EOF_BITS;           // EOF (End of Frame)
-    bits += CAN_IFS_BITS;           // IFS (Interframe Space)
-
+    bits += CANLOAD_RTR_BITS;
+    bits += CANLOAD_IDE_BITS;
+    bits += CANLOAD_RESERVED_BIT_R0;
+    bits += CANLOAD_DLC_BITS;
+    bits += msg->header.DLC * 8;
+    bits += CANLOAD_CRC_BITS;
+    bits += CANLOAD_CRC_DELIMITER_BITS;
+    bits += CANLOAD_ACK_SLOT_BITS;      
+    bits += CANLOAD_ACK_DELIMITER_BITS;
+    bits += CANLOAD_EOF_BITS;
+    bits += CANLOAD_IFS_BITS;
     return bits;
 }
 
-void slidingWindowAverage(uint32_t bits)
+void update_sliding_window(uint32_t bits)
 {
-    // index of 'stale' element to be removed
-    uint8_t removeIdx = currentIdx % CAN_WINDOW_SIZE;
-    sum -= circularBuffer[removeIdx];
-
-    // add new element to the buffer
+    uint8_t removeIdx = currentIdx % CANLOAD_WINDOW_SIZE;
     circularBuffer[removeIdx] = bits;
-
-    // add new element to the sum
-    sum += bits;
-
     can_total_bits = 0;
-
     currentIdx++;
 }
 
-float getSlidingWindowAverage()
+float calculate_total_bits()
 {
     uint32_t sliding_sum = 0;
-
-    for (uint8_t i = 0; i < CAN_WINDOW_SIZE; i++)
+    for (uint8_t i = 0; i < CANLOAD_WINDOW_SIZE; i++)
     {
         sliding_sum += circularBuffer[i];
     }
-
-    return (float)sliding_sum;
+    return (float) sliding_sum;
 }
 
-float getCANBusLoad()
+float calculate_bus_load()
 {
+    return ((float) calculate_total_bits() / ((float)CANLOAD_WINDOW_SIZE * (float)CANLOAD_BIT_RATE)) * 100.0;
+}
 
-    average_window_bits = getSlidingWindowAverage();
-    bus_load = ((float) average_window_bits / ((float)CAN_WINDOW_SIZE * (float)CAN_BIT_RATE)) * 100.0;
-
-    return bus_load;
+float CANLOAD_get_bus_load()
+{    
+	if(counter_window % 10 == 0){
+        // Runs every 1 second
+		  update_sliding_window(can_total_bits);
+	}
+	if(counter_window % 50 == 0){
+        // Runs every 5 seconds
+		 current_bus_load = calculate_bus_load();	
+	}
+    counter_window++;
+    return current_bus_load;
 }

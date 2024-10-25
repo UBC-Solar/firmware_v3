@@ -52,13 +52,6 @@ extern CAN_HandleTypeDef hcan;
 #define CAN_ID_BATTERY_SOC			 0x626
 
 #define CAN_DATA_LENGTH 8
-//
-//#define CAN_BIT_RATE 500000
-//#define CAN_WINDOW_SIZE 5
-//
-//extern uint32_t can_total_bits;
-//extern uint32_t average_window_bits;
-//extern float bus_load;
 
 extern CAN_TxHeaderTypeDef drive_command_header;
 extern CAN_TxHeaderTypeDef DID_next_page_header;

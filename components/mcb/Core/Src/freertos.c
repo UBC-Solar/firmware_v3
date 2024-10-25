@@ -169,26 +169,7 @@ void StartDefaultTask(void *argument)
 	  HAL_IWDG_Refresh(&hiwdg);
     #endif
 	  osDelay(100);
-
-	  static uint64_t counter_window = 0;
-
-	  if(counter_window % 10 == 0){
-		  //will run every 1 second
-		  slidingWindowAverage(can_total_bits);
-//		  can_total_bits = 0;
-	  }
-
-	  if(counter_window % 50 == 0){
-		  //will run every 5 seconds
-
-		 uint64_t current_bus_load = getCANBusLoad();
-//		 average_window_bits = getSlidingWindowAverage();
-//		 bus_load = ((float) average_window_bits / ((float) CAN_WINDOW_SIZE * (float) CAN_BIT_RATE)) * 100.0;
-////		 bus_load = (float) ( average_window_bits / (CAN_WINDOW_SIZE * CAN_BIT_RATE) ) * 100.0;
-//		 bus_load;
-	  }
-
-	  counter_window++;
+    CANLOAD_get_bus_load();
   }
   /* USER CODE END StartDefaultTask */
 }
