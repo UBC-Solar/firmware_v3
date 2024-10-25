@@ -93,7 +93,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if(GPIO_Pin == RADIO_CTS_IT_Pin)
     {
-        HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+        HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);  // TODO: actually handle CTS control flow
     }
 }
 

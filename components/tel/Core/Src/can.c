@@ -197,7 +197,7 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
     // TODO: Add diagnostics. Dont toggle LED if you already do in Rx
     if (hcan->ErrorCode & HAL_CAN_ERROR_RX_FOV1)
     {
-        HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+        HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   // TODO: add diagnostics
     }
 }
 

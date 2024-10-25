@@ -29,12 +29,12 @@
 
 /* LOCAL GLOBALS */
 volatile static bool done_uart_tx = true;
+osSemaphoreId_t usart1_tx_semaphore;
 
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart1;
 DMA_HandleTypeDef hdma_usart1_tx;
-osSemaphoreId_t usart1_tx_semaphore;
 
 /* USART1 init function */
 
@@ -51,7 +51,7 @@ void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 921600;
+  huart1.Init.BaudRate = 230400;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
