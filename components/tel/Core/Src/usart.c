@@ -22,12 +22,19 @@
 
 /* USER CODE BEGIN 0 */
 
+/* INCLUDES */
+#include "FreeRTOS.h"
+#include "task.h"
+#include "cmsis_os.h"
+
+/* LOCAL GLOBALS */
 volatile static bool done_uart_tx = true;
 
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart1;
 DMA_HandleTypeDef hdma_usart1_tx;
+osSemaphoreId_t usart1_tx_semaphore;
 
 /* USART1 init function */
 
@@ -35,6 +42,8 @@ void MX_USART1_UART_Init(void)
 {
 
   /* USER CODE BEGIN USART1_Init 0 */
+
+  usart1_tx_semaphore = osSemaphoreNew(NUM_USART1_TX_SEMAPHORES, NUM_USART1_TX_SEMAPHORES, NULL);
 
   /* USER CODE END USART1_Init 0 */
 
@@ -154,7 +163,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 { 
     if (huart->Instance == USART1)
     {
-      done_uart_tx = true;
+        osSemaphoreRelease(usart1_tx_semaphore);
     }
 }
 
@@ -168,8 +177,8 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
  */
 void UART_radio_transmit(RADIO_Msg_TypeDef* can_radio_msg)
 {
-    while (!done_uart_tx) {};	                                                  // Wait for the previous message to be sent
-    done_uart_tx = false;	                                                      // Reset the flag
+    osSemaphoreAcquire(usart1_tx_semaphore, osWaitForever);   // Dont Tx until previous Tx is done
+
     HAL_UART_Transmit_DMA(&huart1, (uint8_t*)can_radio_msg, sizeof(RADIO_Msg_TypeDef));	
 }
 

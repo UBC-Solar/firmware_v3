@@ -29,12 +29,13 @@ uint32_t get_can_id(CAN_RxHeaderTypeDef* can_msg_header_ptr);
 uint8_t get_data_length(uint8_t DLC);
 
 
+
 /**
  * @brief Initializes the template radio message
  */
 void RADIO_init()
 {
-	memset(&template_radio_msg, 0, sizeof(RADIO_Msg_TypeDef));
+	memset(&template_radio_msg, 0, sizeof(RADIO_Msg_TypeDef));		// Init template msg
 	template_radio_msg.ID_DELIMETER = ID_DELIMITER_CHAR;
 	template_radio_msg.CARRIAGE_RETURN = CARRIAGE_RETURN_CHAR;
 	template_radio_msg.NEW_LINE = NEW_LINE_CHAR;

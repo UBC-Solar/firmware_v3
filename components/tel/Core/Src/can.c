@@ -27,6 +27,7 @@
 #include <stdbool.h>
 #include "bitops.h"
 #include "radio.h"
+#include "CAN_comms.h"
 
 /* USER CODE END 0 */
 
@@ -152,6 +153,37 @@ void CAN_filter_init(CAN_FilterTypeDef* can_filter)
     can_filter->FilterMode = CAN_FILTERMODE_IDMASK;
     can_filter->FilterScale = CAN_FILTERSCALE_16BIT;
     can_filter->FilterActivation = CAN_FILTER_ENABLE;
+}
+
+
+/**
+ * @brief Callback from CAN comms to send a message over UART
+ * 
+ * @param CAN_comms_Rx_msg The CAN message received
+ */
+void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
+{
+    HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	    // Visual Confirmation of CAN working
+
+    RADIO_send_msg_uart(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data);
+}
+
+
+/**
+ * @brief Initializes CAN communications using CAN comms layer
+ */
+void CAN_rx_and_tx_init()
+{
+    CAN_FilterTypeDef CAN_filter = {0};
+    CAN_filter_init(&CAN_filter);
+
+    CAN_comms_config_t CAN_comms_config = {
+        .hcan = &hcan,
+        .CAN_Filter = CAN_filter,
+        .CAN_comms_Rx_callback = CAN_comms_Rx_callback
+    };
+
+    CAN_comms_init(&CAN_comms_config);  // Inits CAN comms
 }
 
 

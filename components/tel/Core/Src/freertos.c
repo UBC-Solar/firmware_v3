@@ -26,10 +26,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "rtc.h"
 #include "iwdg.h"
-#include "radio.h"
-#include "CAN_comms.h"
+#include "can.h"
 
 /* USER CODE END Includes */
 
@@ -63,8 +61,6 @@ const osThreadAttr_t defaultTask_attributes = {
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 
-void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg);
-
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -79,16 +75,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
-  CAN_FilterTypeDef CAN_filter = {0};
-  CAN_filter_init(&CAN_filter);
-
-  CAN_comms_config_t CAN_comms_config = {
-    .hcan = &hcan,
-    .CAN_Filter = CAN_filter,
-    .CAN_comms_Rx_callback = CAN_comms_Rx_callback
-  };
-
-  CAN_comms_init(&CAN_comms_config);  // Inits CAN comms
+  CAN_rx_and_tx_init();
 
   /* USER CODE END Init */
 
@@ -145,19 +132,6 @@ void StartDefaultTask(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-
-
-/**
- * @brief Callback from CAN comms to send a message over UART
- * 
- * @param CAN_comms_Rx_msg The CAN message received
- */
-void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
-{
-    // HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	    // Visual Confirmation of CAN working
-
-    RADIO_send_msg_uart(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data);
-}
 
 /* USER CODE END Application */
 

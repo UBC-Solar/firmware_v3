@@ -36,6 +36,9 @@ extern "C" {
 extern UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN Private defines */
+
+#define NUM_USART1_TX_SEMAPHORES        1
+
 /* USER CODE END Private defines */
 
 void MX_USART1_UART_Init(void);
