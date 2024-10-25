@@ -6,28 +6,43 @@
  * 
  * @attention See README for details on how to implement this library.
  */
-
 #ifndef CAN_COMMS_H
 #define CAN_COMMS_H
 
-#include <stdint.h>
 
-#include "can.h"
+#include <stdint.h>
 #include "cmsis_os2.h"
 #include "FreeRTOS.h"
 #include "stm32f1xx_hal.h"
 #include "task.h"
 
+
 /* Defines */
 #define CAN_DATA_SIZE 8
 
+
 /* Typedefs */
+/**
+ * @brief CAN communications Rx message struct
+ * This struct contains the CAN message header and data.
+ * 
+ * @param header: CAN Rx header struct
+ * @param data: Array of data bytes
+ */
 typedef struct 
 {
   CAN_RxHeaderTypeDef header;
   uint8_t data[CAN_DATA_SIZE];  // TODO: Dynamically change CAN data size based on DLC
 } CAN_comms_Rx_msg_t;
 
+
+/**
+ * @brief CAN communications Tx message struct 
+ * This struct contains the CAN message header and data.
+ * 
+ * @param header: CAN Tx header struct
+ * @param data: Array of data bytes
+ */
 typedef struct {
   CAN_TxHeaderTypeDef header;
   uint8_t data[CAN_DATA_SIZE];  // TODO: Dynamically change CAN data size based on DLC
