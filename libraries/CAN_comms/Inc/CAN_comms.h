@@ -6,8 +6,6 @@
  * 
  * @attention See README for details on how to implement this library.
  */
-
-
 #ifndef CAN_COMMS_H
 #define CAN_COMMS_H
 
@@ -21,13 +19,6 @@
 
 /* Defines */
 #define CAN_DATA_SIZE 8
-
-
-/* Forward Declarations */
-struct CAN_RxHeaderTypeDef;
-struct CAN_TxHeaderTypeDef;
-struct CAN_HandleTypeDef;
-struct CAN_FilterTypeDef;
 
 
 /* Typedefs */
