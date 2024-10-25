@@ -61,7 +61,7 @@ The CAN Communications Layer is a library that abstractes and simplifies the pro
 
 - `hcan` should be a pointer to the `CAN_HandleTypeDef` struct that's normally defined in `can.h`
 - `CAN_Filter` should be a `CAN_FilterTypeDef` struct.
-- `CAN_comms_Rx_callback` should be a pointer to a function of the form `void (*CAN_comms_Rx_callback)(CAN_comms_Rx_msg_t*);` This function will be called whenever a CAN message is received and ready to be parsed.
+- `CAN_comms_Rx_callback` should be a pointer to a function of the form `void (*CAN_comms_Rx_callback)(CAN_comms_Rx_msg_t*);` This function will be called whenever a CAN message is received and ready to be parsed. This callback function can be defined anywhere, but it's recomended to define it in `can.c`.
 
 **Initialize CAN Comms**  
 
@@ -78,7 +78,7 @@ The CAN Communications Layer is a library that abstractes and simplifies the pro
   ```c
   void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
   {
-    // User implimention for parsing CAN_comms_Rx_msg
+    // User implementation for parsing CAN_comms_Rx_msg
   }
   ```
   

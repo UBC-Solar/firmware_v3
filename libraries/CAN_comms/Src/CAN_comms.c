@@ -39,7 +39,7 @@ const osThreadAttr_t CAN_comms_Rx_task_attributes = {
 const osThreadAttr_t CAN_comms_Tx_task_attributes = {
     .name = "CAN_comms_Tx_task",
     .stack_size = CAN_TX_TASK_STACK_SIZE,
-    .priority = (osPriority_t) osPriorityLow,
+    .priority = (osPriority_t) osPriorityHigh,
 };
 
 
