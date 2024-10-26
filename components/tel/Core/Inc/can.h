@@ -35,7 +35,6 @@ extern "C" {
 extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
-#define RTC_TIMESTAMP_MSG_ID                0x300
 #define MAX_CAN_DATA_LENGTH                 8
 
 /* USER CODE END Private defines */

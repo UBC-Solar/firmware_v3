@@ -21,7 +21,15 @@
 #include "rtc.h"
 
 /* USER CODE BEGIN 0 */
+
+/* INCLUDES */
 #include <time.h>
+#include <stdbool.h>
+
+/* GLOBALS*/
+static bool rtc_set = false;            // TODO: Add diagnostic
+static uint32_t start_of_second = 0;    // TODO: Make cleaner timestamp fix
+
 /* USER CODE END 0 */
 
 RTC_HandleTypeDef hrtc;
@@ -140,9 +148,80 @@ double RTC_get_timestamp_secs()
     t.tm_isdst = 0;                // Disable daylight saving time adjustments.
     long int epoch_secs = (long int) mktime(&t);
 
-    double milliseconds = HAL_GetTick() * MILLISECONDS_TO_SECONDS;  // Get Milliseconds
+    double milliseconds = ((HAL_GetTick() - start_of_second) % MILLISECONDS_IN_SECONDS) * MILLISECONDS_TO_SECONDS;  // Get Milliseconds
 
     return (double)epoch_secs + milliseconds;  
+}
+
+
+/**
+ * @brief Sets RTC time based on CAN data formatted as follows:
+ *        Byte 0: Seconds, Byte 1: Minutes, Byte 2: Hours
+ * @param data: Pointer to the CAN data array
+ * @return None
+*/
+static void set_rtc_time(uint8_t* data)
+{
+    /* Initialize Time Object */
+    RTC_TimeTypeDef sTime = {0};
+
+    /* Manually parsing the seconds minutes hours */
+    sTime.Seconds = data[TIMETYPEDEF_SECONDS_IDX];
+    sTime.Minutes = data[TIMETYPEDEF_MINUTES_IDX];
+    sTime.Hours   = data[TIMETYPEDEF_HOURS_IDX];
+
+    /* Set the RTC time with these settings */
+    HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+}
+
+
+/**
+ * @brief Sets RTC date based on CAN data formatted as follows:
+ *       Byte 3: Date, Byte 4: Month, Byte 5: Year (from 2000)
+ * @param data: Pointer to the CAN data array
+ * @return None
+*/
+static void set_rtc_date(uint8_t* data)
+{
+    /* Initialize Date Object */
+    RTC_DateTypeDef sDate = {0};
+
+    /* Manually parsing the date, month, and year */
+    sDate.Date  = data[TIMETYPEDEF_DAY_IDX];
+    sDate.Month = data[TIMETYPEDEF_MONTH_IDX];
+    sDate.Year  = data[TIMETYPEDEF_YEAR_IDX];
+
+    /* Set the RTC Date with these settings */
+    HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+}
+
+
+/**
+ * @brief Function to sync the memorator RTC to the TEL clock
+ * @param rx_CAN_msg: Pointer to a CAN_msg_t
+ * @return None
+*/
+static void sync_memorator_rtc(uint8_t* rtc_can_msg_data)
+{
+    rtc_set = true;                 
+
+    set_rtc_time(rtc_can_msg_data);
+    set_rtc_date(rtc_can_msg_data);
+}
+
+
+/**
+ * @brief Function to check and sync the RTC with memorator message
+ * @param rx_CAN_msg The received CAN message
+ * @return void
+*/
+void RTC_check_and_sync_rtc(uint32_t can_id, uint8_t* rtc_can_msg_data) {
+    /* Perform rtc syncing check if the message is 0x300 and if RTC is reset to 2000-01-01 */
+    if (can_id == RTC_TIMESTAMP_MSG_ID && !rtc_set)
+    {
+        start_of_second = HAL_GetTick();
+        sync_memorator_rtc(rtc_can_msg_data);
+    }
 }
 
 /* USER CODE END 1 */
