@@ -91,6 +91,8 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
+CAN_comms_init(&CAN_comms_config_tel);
+
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -114,10 +116,10 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* creation of IMU_Task */
-//   IMU_TaskHandle = osThreadNew(Process_IMU, NULL, &IMU_Task_attributes);
+  IMU_TaskHandle = osThreadNew(Process_IMU, NULL, &IMU_Task_attributes);
 
   /* creation of GPS_Task */
-//   GPS_TaskHandle = osThreadNew(Process_GPS, NULL, &GPS_Task_attributes);
+  GPS_TaskHandle = osThreadNew(Process_GPS, NULL, &GPS_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */

@@ -32,6 +32,8 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "CAN_comms.h"
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -46,14 +48,13 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define CONST_UINT32_BYTE_REVERSE(num)      ((((num) & 0x000000FF) << 24) | (((num) & 0x0000FF00) << 8) | (((num) & 0x00FF0000) >> 8) | (((num) & 0xFF000000) >> 24))
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+extern CAN_comms_config_t CAN_comms_config_tel;
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

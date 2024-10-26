@@ -30,7 +30,6 @@
 /* USER CODE BEGIN Includes */
 
 #include "radio.h"
-#include "CAN_comms.h"
 
 /* USER CODE END Includes */
 
@@ -52,6 +51,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+
+CAN_comms_config_t CAN_comms_config_tel = {0}; 
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -107,12 +109,10 @@ int main(void)
   CAN_FilterTypeDef CAN_filter = {0};
   CAN_filter_init(&CAN_filter);
 
-  CAN_comms_config_t CAN_comms_config = {
-      .hcan = &hcan,
-      .CAN_Filter = CAN_filter,
-      .CAN_comms_Rx_callback = CAN_comms_Rx_callback
-  };
-
+  CAN_comms_config_tel.hcan = &hcan;
+  CAN_comms_config_tel.CAN_Filter = CAN_filter;
+  CAN_comms_config_tel.CAN_comms_Rx_callback = CAN_comms_Rx_callback;
+  
   RADIO_init();                       // Inits sending queue.
   IWDG_perform_reset_sequence();      // Check for IWDG reset    
 
