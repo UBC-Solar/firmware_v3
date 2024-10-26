@@ -57,6 +57,20 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for IMU_Task */
+osThreadId_t IMU_TaskHandle;
+const osThreadAttr_t IMU_Task_attributes = {
+  .name = "IMU_Task",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for GPS_Task */
+osThreadId_t GPS_TaskHandle;
+const osThreadAttr_t GPS_Task_attributes = {
+  .name = "GPS_Task",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -64,6 +78,8 @@ const osThreadAttr_t defaultTask_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
+void Process_IMU(void *argument);
+void Process_GPS(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -97,6 +113,12 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
+  /* creation of IMU_Task */
+//   IMU_TaskHandle = osThreadNew(Process_IMU, NULL, &IMU_Task_attributes);
+
+  /* creation of GPS_Task */
+//   GPS_TaskHandle = osThreadNew(Process_GPS, NULL, &GPS_Task_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -116,7 +138,7 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
-  /* USER CODE BEGIN StartDefaultTask */
+    /* USER CODE BEGIN StartDefaultTask */
 
     /* Infinite loop */
     for(;;)
@@ -126,6 +148,48 @@ void StartDefaultTask(void *argument)
     }
 
   /* USER CODE END StartDefaultTask */
+}
+
+/* USER CODE BEGIN Header_Process_IMU */
+
+/**
+* @brief Function implementing the IMU_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Process_IMU */
+void Process_IMU(void *argument)
+{
+    /* USER CODE BEGIN Process_IMU */
+
+    /* Infinite loop */
+    for(;;)
+    {
+        IWDG_Refresh(&hiwdg);	                                 // REPLACE WITH PROCESSING IMU CODE
+        osDelay(REFRESH_DELAY);
+    }
+
+    /* USER CODE END Process_IMU */
+}
+
+/* USER CODE BEGIN Header_Process_GPS */
+
+/**
+* @brief Function implementing the GPS_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Process_GPS */
+void Process_GPS(void *argument)
+{
+    /* USER CODE BEGIN Process_GPS */
+    /* Infinite loop */
+    for(;;)
+    {
+        IWDG_Refresh(&hiwdg);	                                 // REPLACE WITH PROCESSING GPS CODE
+        osDelay(REFRESH_DELAY);
+    }
+    /* USER CODE END Process_GPS */
 }
 
 /* Private application code --------------------------------------------------*/

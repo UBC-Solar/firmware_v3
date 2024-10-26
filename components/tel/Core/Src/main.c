@@ -123,7 +123,6 @@ int main(void)
 
   /* Call init function for freertos objects (in cmsis_os2.c) */
   MX_FREERTOS_Init();
-  CAN_comms_init(&CAN_comms_config);  // Inits CAN comms
 
   /* Start scheduler */
   osKernelStart();
