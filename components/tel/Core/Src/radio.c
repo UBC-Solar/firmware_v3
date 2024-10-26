@@ -29,7 +29,6 @@ uint32_t get_can_id(CAN_RxHeaderTypeDef* can_msg_header_ptr);
 uint8_t get_data_length(uint8_t DLC);
 
 
-
 /**
  * @brief Initializes the template radio message
  */
