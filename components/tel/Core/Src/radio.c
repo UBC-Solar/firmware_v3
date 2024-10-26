@@ -42,7 +42,6 @@ void RADIO_init()
 }
 
 
-static uint32_t counter = 0;
 /**
  * @brief Sends a CAN message over UART to the radio module
  * 
@@ -53,7 +52,6 @@ void RADIO_send_msg_uart(CAN_RxHeaderTypeDef* header, uint8_t* data)
 {
 	set_template_radio_msg(header, data);
 	UART_radio_transmit(&template_radio_msg);
-	counter++;
 }
 
 
