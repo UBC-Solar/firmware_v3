@@ -75,7 +75,7 @@ typedef struct {
 typedef struct {
    uint32_t dropped_rx_msg = 0;
    uint32_t dropped_tx_msg = 0;
-   boolean comms_init_error = 0;
+   uint8_t comms_init_error = 0;
 
    // ... More information ..
 
