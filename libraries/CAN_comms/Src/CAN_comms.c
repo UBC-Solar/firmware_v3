@@ -26,6 +26,7 @@
 
 /* Private varibles */
 CAN_comms_config_t CAN_comms_config;
+CAN_comms_diagnostics_t CAN_comms_diagnostic;
 osMessageQueueId_t CAN_comms_Rx_queue;
 osMessageQueueId_t CAN_comms_Tx_queue;
 osThreadId_t CAN_comms_Rx_task_handle;
@@ -58,15 +59,19 @@ void CAN_comms_Tx_task(void* argument);
  * @param config: Pointer to the config struct
  */
 void CAN_comms_init(CAN_comms_config_t* config)
-{
+{     
+
     /* Check config is not NULL */
     if (config == NULL)
     {
-        return; // TODO: Error handle
+        CAN_comms_diagnostic.comms_init_error = 1;
+        return;
     }
 
     /* Set config */
     CAN_comms_config = *config;
+
+    
 
     /* Create queues */
     CAN_comms_Rx_queue = osMessageQueueNew(CAN_RX_QUEUE_SIZE, CAN_RX_STRUCT_SIZE, NULL);
@@ -98,6 +103,7 @@ void CAN_comms_init(CAN_comms_config_t* config)
     HAL_CAN_ActivateNotification(CAN_comms_config.hcan, CAN_IT_TX_MAILBOX_EMPTY);
 
 
+
     /* Start CAN */
     HAL_CAN_Start(CAN_comms_config.hcan);
  }
@@ -114,7 +120,8 @@ void CAN_comms_Add_Tx_message(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
     /* Add CAN message to the queue */
     if(osOK != osMessageQueuePut(CAN_comms_Tx_queue, CAN_comms_Tx_msg, 0, 0))
     {
-        return; // TODO: Error handle
+        CAN_comms_diagnostic.dropped_tx_msg++;
+        return;
     }
 }
 
@@ -204,7 +211,8 @@ void CAN_comms_Rx_message_pending_ISR()
     /* Add CAN message to the queue */
     if(osOK != osMessageQueuePut(CAN_comms_Rx_queue, &CAN_Rx_msg, 0, 0))
     {
-        return; // TODO: Error handle
+        CAN_comms_diagnostic.dropped_rx_msg++;
+        return;
     }
 }
 
@@ -222,10 +230,24 @@ void CAN_comms_Tx_mailbox_complete_ISR()
 
 
 /**
+ * @brief  Returns diagnostic struct populated with diagnostic data
+ * This function copies data from the global CAN_comms_diagnostic struct into a CAN_comms_diagnostic_t struct
+ * created by the user.
+ *
+ * @param diagnostic: Pointer to user's diagnostic struct.
+ */
+void CAN_comms_Diagnostic(CAN_comms_diagnostics_t* diagnostic){
+
+    diagnostic->dropped_rx_msg = CAN_comms_diagnostic.dropped_rx_msg;
+    diagnostic->dropped_tx_msg = CAN_comms_diagnostic.dropped_tx_msg;
+    diagnostic->comms_init_error = CAN_comms_diagnostic.comms_init_error;
+    //... add more
+}
+
+/**
  * @attention The following functions are callback functions called by the STM32 HAL_CAN library.
  * These functions are weakly defined in the HAL_CAN library and are overridden in this library.
  */
-
 
 /**
   * @brief  Rx FIFO 0 message pending callback.
@@ -285,3 +307,5 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
         osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
     }
 }
+
+

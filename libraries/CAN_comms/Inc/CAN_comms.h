@@ -65,10 +65,26 @@ typedef struct {
     void (*CAN_comms_Rx_callback)(CAN_comms_Rx_msg_t*);
 } CAN_comms_config_t;
 
+/*
+* @brief CAN communications diagnostic struct
+*
+* @param dropped_rx_msg: Count of dropped received CAN messages
+* @param dropped_tx_msg: Count of dropped messages in the TX buffer
+* @param comms_init_error: indicates if comms has failed to init.
+*/
+typedef struct {
+   uint32_t dropped_rx_msg = 0;
+   uint32_t dropped_tx_msg = 0;
+   boolean comms_init_error = 0;
+
+   // ... More information ..
+
+} CAN_comms_diagnostics_t;
 
 /* Public function declarations */
 void CAN_comms_init(CAN_comms_config_t* config);
 void CAN_comms_Add_Tx_message(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg);
+void CAN_comms_Diagnostic(CAN_comms_diagnostics_t* diagnostic);
 
 
 #endif // CAN_COMMS_H
