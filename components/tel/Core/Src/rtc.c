@@ -148,7 +148,7 @@ double RTC_get_timestamp_secs()
     t.tm_isdst = 0;                // Disable daylight saving time adjustments.
     long int epoch_secs = (long int) mktime(&t);
 
-    double milliseconds = ((HAL_GetTick() - start_of_second) % MILLISECONDS_IN_SECONDS) * MILLISECONDS_TO_SECONDS;  // Get Milliseconds
+    double milliseconds = MILLIS_TO_SECONDS(((HAL_GetTick() - start_of_second) % MILLISECONDS_IN_SECONDS));  // Get Milliseconds
 
     return (double)epoch_secs + milliseconds;  
 }

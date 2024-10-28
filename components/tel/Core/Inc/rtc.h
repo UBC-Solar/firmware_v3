@@ -36,7 +36,6 @@ extern RTC_HandleTypeDef hrtc;
 
 /* USER CODE BEGIN Private defines */
 
-#define MILLISECONDS_TO_SECONDS         0.001
 #define MILLISECONDS_IN_SECONDS         1000
 
 #define TIMETYPEDEF_SECONDS_IDX         0
@@ -47,6 +46,8 @@ extern RTC_HandleTypeDef hrtc;
 #define TIMETYPEDEF_YEAR_IDX            5
 
 #define RTC_TIMESTAMP_MSG_ID            0x300
+
+#define MILLIS_TO_SECONDS(milliseconds) (double)(milliseconds * 0.001)
 
 /* USER CODE END Private defines */
 
