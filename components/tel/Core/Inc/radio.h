@@ -22,19 +22,10 @@
 
 /* DEFINES */
 #define RADIO_DATA_LENGTH                           8U      // Made to match CAN format for simplicity
-#define MAX_RX_QUEUE_SIZE                           60U     // See https://ubcsolar26.monday.com/boards/7524367653/pulses/7524368294/posts/3493917111
 #define ID_DELIMITER_CHAR                           '#'
 #define CARRIAGE_RETURN_CHAR                        '\r'
 #define NEW_LINE_CHAR                               '\n'
-#define START_OF_ARRAY                              0
 #define MASK_4_BITS                                 0xF
-#define MSG_READY_TO_SEND 		                    1U
-#define MSG_NOT_READY_TO_SEND 	                    0U
-
-
-/* MACROS */
-#define CIRCULAR_INCREMENT_SET(index, max_size) (((index) + 1) % (max_size))
-
 
 /* TYPEDEFS */
 typedef struct {                                            // Standardized to CAN fields to simplify CAN Rx callback code                          
