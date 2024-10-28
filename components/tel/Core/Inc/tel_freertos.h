@@ -1,9 +1,6 @@
 /**
  *  @file tel_freertos.h
  *  @brief header file for freertos.c
- *
- *  @date 2024/10/27
- *  @author Aarjav Jain
  */
 
 

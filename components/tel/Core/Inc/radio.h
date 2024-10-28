@@ -3,9 +3,6 @@
  *  @brief header file for radio.c. Define buffer lengths
  * 
  *  Read this monday item for architecture details: https://ubcsolar26.monday.com/boards/7524367653/pulses/7524368294
- *
- *  @date 2024/10/10
- *  @author Aarjav Jain
  */
 
 
