@@ -26,10 +26,10 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cmsis_os.h"
+#include "tel_freertos.h"
 
 /* LOCAL GLOBALS */
 volatile static bool done_uart_tx = true;
-osSemaphoreId_t usart1_tx_semaphore;
 
 /* USER CODE END 0 */
 
@@ -42,8 +42,6 @@ void MX_USART1_UART_Init(void)
 {
 
   /* USER CODE BEGIN USART1_Init 0 */
-
-  usart1_tx_semaphore = osSemaphoreNew(NUM_USART1_TX_SEMAPHORES, NUM_USART1_TX_SEMAPHORES, NULL);
 
   /* USER CODE END USART1_Init 0 */
 
@@ -150,7 +148,7 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
-
+    
 /**
  * @brief  Tx Transfer completed callback for UART. Triggered by DMA when final byte is sent
  * 

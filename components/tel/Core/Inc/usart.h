@@ -29,15 +29,15 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
+
 #include <stdbool.h>
 #include "radio.h"
+
 /* USER CODE END Includes */
 
 extern UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN Private defines */
-
-#define NUM_USART1_TX_SEMAPHORES        1
 
 /* USER CODE END Private defines */
 

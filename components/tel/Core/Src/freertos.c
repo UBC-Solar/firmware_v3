@@ -28,6 +28,7 @@
 
 #include "iwdg.h"
 #include "can.h"
+#include "tel_freertos.h"
 
 /* USER CODE END Includes */
 
@@ -48,6 +49,9 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+
+/* SEMAPHORES */
+osSemaphoreId_t usart1_tx_semaphore;
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -89,45 +93,48 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   * @retval None
   */
 void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+    /* USER CODE BEGIN Init */
 
-CAN_comms_init(&CAN_comms_config_tel);
+    CAN_comms_init(&CAN_comms_config_tel);
 
-  /* USER CODE END Init */
+    /* USER CODE END Init */
 
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
+    /* USER CODE BEGIN RTOS_MUTEX */
+    /* add mutexes, ... */
+    /* USER CODE END RTOS_MUTEX */
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+    /* USER CODE BEGIN RTOS_SEMAPHORES */
+    /* add semaphores, ... */
 
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
+    usart1_tx_semaphore = osSemaphoreNew(NUM_USART1_TX_SEMAPHORES, NUM_USART1_TX_SEMAPHORES, NULL);
 
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
+    /* USER CODE END RTOS_SEMAPHORES */
 
-  /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+    /* USER CODE BEGIN RTOS_TIMERS */
+    /* start timers, add new ones, ... */
+    /* USER CODE END RTOS_TIMERS */
 
-  /* creation of IMU_Task */
-  IMU_TaskHandle = osThreadNew(Process_IMU, NULL, &IMU_Task_attributes);
+    /* USER CODE BEGIN RTOS_QUEUES */
+    /* add queues, ... */
+    /* USER CODE END RTOS_QUEUES */
 
-  /* creation of GPS_Task */
-  GPS_TaskHandle = osThreadNew(Process_GPS, NULL, &GPS_Task_attributes);
+    /* Create the thread(s) */
+    /* creation of defaultTask */
+    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
+    /* creation of IMU_Task */
+    IMU_TaskHandle = osThreadNew(Process_IMU, NULL, &IMU_Task_attributes);
 
-  /* USER CODE BEGIN RTOS_EVENTS */
-  /* add events, ... */
-  /* USER CODE END RTOS_EVENTS */
+    /* creation of GPS_Task */
+    GPS_TaskHandle = osThreadNew(Process_GPS, NULL, &GPS_Task_attributes);
+
+    /* USER CODE BEGIN RTOS_THREADS */
+    /* add threads, ... */
+    /* USER CODE END RTOS_THREADS */
+
+    /* USER CODE BEGIN RTOS_EVENTS */
+    /* add events, ... */
+    /* USER CODE END RTOS_EVENTS */
 
 }
 
