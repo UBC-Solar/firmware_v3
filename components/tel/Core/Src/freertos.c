@@ -82,8 +82,8 @@ const osThreadAttr_t GPS_Task_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-void Process_IMU(void *argument);
-void Process_GPS(void *argument);
+void IMU_task(void *argument);
+void GPS_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -93,48 +93,48 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   * @retval None
   */
 void MX_FREERTOS_Init(void) {
-    /* USER CODE BEGIN Init */
+  /* USER CODE BEGIN Init */
 
     CAN_comms_init(&CAN_comms_config_tel);
 
-    /* USER CODE END Init */
+  /* USER CODE END Init */
 
-    /* USER CODE BEGIN RTOS_MUTEX */
+  /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
-    /* USER CODE END RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
 
-    /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
 
     usart1_tx_semaphore = osSemaphoreNew(NUM_USART1_TX_SEMAPHORES, NUM_USART1_TX_SEMAPHORES, NULL);
 
-    /* USER CODE END RTOS_SEMAPHORES */
+  /* USER CODE END RTOS_SEMAPHORES */
 
-    /* USER CODE BEGIN RTOS_TIMERS */
+  /* USER CODE BEGIN RTOS_TIMERS */
     /* start timers, add new ones, ... */
-    /* USER CODE END RTOS_TIMERS */
+  /* USER CODE END RTOS_TIMERS */
 
-    /* USER CODE BEGIN RTOS_QUEUES */
+  /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
-    /* USER CODE END RTOS_QUEUES */
+  /* USER CODE END RTOS_QUEUES */
 
-    /* Create the thread(s) */
-    /* creation of defaultTask */
-    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  /* Create the thread(s) */
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-    /* creation of IMU_Task */
-    IMU_TaskHandle = osThreadNew(Process_IMU, NULL, &IMU_Task_attributes);
+  /* creation of IMU_Task */
+  IMU_TaskHandle = osThreadNew(IMU_task, NULL, &IMU_Task_attributes);
 
-    /* creation of GPS_Task */
-    GPS_TaskHandle = osThreadNew(Process_GPS, NULL, &GPS_Task_attributes);
+  /* creation of GPS_Task */
+  GPS_TaskHandle = osThreadNew(GPS_task, NULL, &GPS_Task_attributes);
 
-    /* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
-    /* USER CODE END RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
 
-    /* USER CODE BEGIN RTOS_EVENTS */
+  /* USER CODE BEGIN RTOS_EVENTS */
     /* add events, ... */
-    /* USER CODE END RTOS_EVENTS */
+  /* USER CODE END RTOS_EVENTS */
 
 }
 
@@ -147,7 +147,7 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
-    /* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN StartDefaultTask */
 
     /* Infinite loop */
     for(;;)
@@ -159,46 +159,40 @@ void StartDefaultTask(void *argument)
   /* USER CODE END StartDefaultTask */
 }
 
-/* USER CODE BEGIN Header_Process_IMU */
-
+/* USER CODE BEGIN Header_IMU_task */
 /**
 * @brief Function implementing the IMU_Task thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_Process_IMU */
-void Process_IMU(void *argument)
+/* USER CODE END Header_IMU_task */
+void IMU_task(void *argument)
 {
-    /* USER CODE BEGIN Process_IMU */
-
-    /* Infinite loop */
-    for(;;)
-    {
-        IWDG_Refresh(&hiwdg);	                                 // REPLACE WITH PROCESSING IMU CODE
-        osDelay(REFRESH_DELAY);
-    }
-
-    /* USER CODE END Process_IMU */
+  /* USER CODE BEGIN IMU_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END IMU_task */
 }
 
-/* USER CODE BEGIN Header_Process_GPS */
-
+/* USER CODE BEGIN Header_GPS_task */
 /**
 * @brief Function implementing the GPS_Task thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_Process_GPS */
-void Process_GPS(void *argument)
+/* USER CODE END Header_GPS_task */
+void GPS_task(void *argument)
 {
-    /* USER CODE BEGIN Process_GPS */
-    /* Infinite loop */
-    for(;;)
-    {
-        IWDG_Refresh(&hiwdg);	                                 // REPLACE WITH PROCESSING GPS CODE
-        osDelay(REFRESH_DELAY);
-    }
-    /* USER CODE END Process_GPS */
+  /* USER CODE BEGIN GPS_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END GPS_task */
 }
 
 /* Private application code --------------------------------------------------*/
