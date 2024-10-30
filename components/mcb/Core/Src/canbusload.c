@@ -30,12 +30,13 @@ uint32_t circularBuffer[WINDOW_SIZE] = {0};
  * @brief Calculates the number of bits in a CAN message.
  *
  * This function calculates the number of bits in a CAN message based on the
- * message's header and data length.
+ * data length code (DLC) of the message. The result is stored in the global
+ * variable `can_total_bits`.
  *
- * This function does not modify any global variables or have any side effects.
+ * This function modifies the global variable `can_total_bits`. It does not
+ * return any value.
  *
- * @param msg A pointer to a CAN message structure.
- * @return The number of bits in the CAN message as a 32-bit integer.
+ * @param DLC The data length code of the CAN message.
  */
 void CANLOAD_calculate_message_bits(uint32_t DLC)
 {
@@ -67,17 +68,15 @@ void CANLOAD_calculate_message_bits(uint32_t DLC)
 }
 
 /**
- * @brief Updates the sliding window buffer with new CAN bus data bits.
+ * @brief Updates the sliding window with the total number of CAN bus bits.
  *
- * This function updates the circular buffer used for sliding window calculations
- * of CAN bus load. It stores the given number of bits in the circular buffer at
- * the current index, overwrites the oldest entry if necessary, and increments
- * the current index.
+ * This function updates the sliding window with the total number of CAN bus
+ * bits. The sliding window is implemented as a circular buffer with a fixed
+ * size. The oldest element in the buffer is removed and replaced with the
+ * new value.
  *
- * This function modifies the global variables `circularBuffer` and `can_total_bits`.
- * It does not return any value.
- *
- * @param bits The number of CAN bus data bits to add to the sliding window.
+ * This function modifies the global variables `currentIdx`, `circularBuffer`,
+ * and `can_total_bits`. It does not return any value.
  */
 void CANLOAD_update_sliding_window()
 {
