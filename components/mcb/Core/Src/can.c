@@ -266,8 +266,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   }
 
   /* Calculate bus load */
-   can_total_bits += calculate_CAN_message_bits(&new_CAN_msg);
-   can_count++;
+   can_total_bits += CANLOAD_calculate_message_bits(&new_CAN_msg);
 
   // Add a message to the queue
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
