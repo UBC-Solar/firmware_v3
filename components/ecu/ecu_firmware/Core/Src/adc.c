@@ -59,7 +59,15 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
     break;
   
   case PACK_CURRENT_SENSE__ADC1_IN14: // Pack current sense (mA)
-    ecu_data.adc_data.ADC_pack_current = (int32_t)(HASS100S_STD_DEV + HASS100S_INTERNAL_OFFSET + 100*(adc_voltage-ecu_data.adc_data.ADC_pack_current_offset)/0.625); //see HASS100-S datasheet     
+    // ECU Output Current -= 0.020942408376963*(sensor output voltage) - 0.021052356020942
+    // Useful links
+    // https://docs.google.com/spreadsheets/d/1HXrPki_DT9DKcE2jRaAo7RI-tzd-DGO2TF4V-1Q-JGc/edit?gid=0#gid=0
+    // https://ubcsolar26.monday.com/boards/7524367629/pulses/7524367868/posts/3588694751
+    double voltage_reading = adc_voltage - ecu_data.adc_data.ADC_pack_current_offset;
+    double voltage_offset = 0.02094*(voltage_reading) - 0.02105;
+    ecu_data.adc_data.ADC_pack_current = (int32_t)(HASS100S_STD_DEV + HASS100S_INTERNAL_OFFSET + 100*(voltage_reading + voltage_offset)/0.625);
+    
+    //ecu_data.adc_data.ADC_pack_current = (int32_t)(HASS100S_STD_DEV + HASS100S_INTERNAL_OFFSET + 100*(adc_voltage-ecu_data.adc_data.ADC_pack_current_offset)/0.625); //see HASS100-S datasheet     
     break;
 
   case T_AMBIENT_SENSE__ADC1_IN15: // Ambient controlboard temperature (deg C)
