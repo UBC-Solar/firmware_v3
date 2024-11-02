@@ -5,6 +5,7 @@
 #define WINDOW_SIZE 5
 #endif
 
+#define CANLOAD_BAUD_RATE 500000
 #define SOF_BITS 1
 #define STANDARD_ID_BITS 11
 #define EXTENDED_ID_BITS 29
