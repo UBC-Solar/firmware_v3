@@ -36,6 +36,8 @@ extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
 #define MAX_CAN_DATA_LENGTH                 8
+#define CANLOAD_MSG_ID                      0x760
+#define CANLOAD_DATA_LENGTH                 1
 
 /* USER CODE END Private defines */
 
@@ -44,6 +46,7 @@ void MX_CAN_Init(void);
 /* USER CODE BEGIN Prototypes */
 
 void CAN_filter_init(CAN_FilterTypeDef* can_filter);
+void CAN_tx_canload_msg();
 
 /* USER CODE END Prototypes */
 

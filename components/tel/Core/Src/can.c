@@ -27,6 +27,19 @@
 #include <stdbool.h>
 #include "bitops.h"
 #include "radio.h"
+#include "canload.h"
+
+/**
+ * @brief CAN message header for sending out bus load
+ */
+
+CAN_TxHeaderTypeDef CANLOAD_busload = {
+    .StdId = CANLOAD_MSG_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CANLOAD_DATA_LENGTH};
+
 
 /* USER CODE END 0 */
 
@@ -167,6 +180,13 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
     {
         HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   // TODO: add diagnostics
     }
+}
+
+void CAN_tx_canload_msg() {
+    CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
+        .data[0] = (uint8_t) CANLOAD_get_bus_load(),
+        .header = CANLOAD_busload
+    };
 }
 
 /* USER CODE END 1 */

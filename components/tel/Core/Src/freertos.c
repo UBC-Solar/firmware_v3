@@ -220,7 +220,8 @@ void CANBusLoad_Task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    CANLOAD_calculate_message_bits(8, 0);
+    CANLOAD_update_sliding_window();
+    CAN_tx_canload_msg();
     osDelay(1);
   }
   /* USER CODE END CANBusLoad_Task */
