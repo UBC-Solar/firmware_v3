@@ -2,6 +2,7 @@
 /**
   ******************************************************************************
   * @file    rtc.c
+  * @brief   This file provides code for the configuration
   *          of the RTC instances.
   ******************************************************************************
   * @attention
@@ -20,15 +21,14 @@
 #include "rtc.h"
 
 /* USER CODE BEGIN 0 */
-#include <stdbool.h>
-#include <time.h>
-#include "i2c.h"
-#include "main.h"
-#include "nmea_parse.h"
 
-#define GPS_RCV_BUFFER_SIZE 512
-//#define GPS_SYNC_TIMEOUT 60000 * 5 // 5 minutes
-#define GPS_SYNC_TIMEOUT 1000 // 1 second
+/* INCLUDES */
+#include <time.h>
+#include <stdbool.h>
+
+/* GLOBALS*/
+static bool rtc_set = false;            // TODO: Add diagnostic
+static uint32_t start_of_second = 0;    // TODO: Make cleaner timestamp fix
 
 /* USER CODE END 0 */
 
@@ -125,94 +125,32 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 
 /* USER CODE BEGIN 1 */
 
-double get_current_timestamp()
-{
-  /* Initialize Time and Date objects */
-  double milliseconds = (HAL_GetTick() - start_of_second) / 1000.0;
-  RTC_TimeTypeDef sTime;
-  RTC_DateTypeDef sDate;
-
-  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-  double epochTime = convertToEpochTime(&sTime, &sDate, milliseconds);
-
-  /* Return the resulting epoch time */
-  return epochTime;
-}
-
-/* Used to get current time stamp */
-double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate, double milliseconds)
-{
-    /* Initialize tm struct - from time.h library */
+/**
+ * @brief Get the current timestamp in seconds with milliseconds precision
+ * 
+ * @return double The current timestamp in seconds.
+ */
+double RTC_get_timestamp_secs()
+    {
+    RTC_TimeTypeDef time;
+    RTC_DateTypeDef date;
     struct tm t;
 
-    /* Populate the tm structure fields from the RTC time and date */
-    t.tm_year = sDate->Year + 100;  // Year since 1900, so add 100 to the year from the RTC (which starts at 2000).
-    t.tm_mon = sDate->Month - 1;    // tm_mon is 0-11, so subtract 1 from the RTC month (which starts at 1).
-    t.tm_mday = sDate->Date;
-    t.tm_hour = sTime->Hours;
-    t.tm_min = sTime->Minutes;
-    t.tm_sec = sTime->Seconds;
+    HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BIN);              /* RTC hours, mins, seconds */
+    HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BIN);              /* RTC years, months, days */
+
+    t.tm_year = date.Year + 100;  // Year since 1900, so add 100 to the year from the RTC (which starts at 2000).
+    t.tm_mon = date.Month - 1;    // tm_mon is 0-11, so subtract 1 from the RTC month (which starts at 1).
+    t.tm_mday = date.Date;
+    t.tm_hour = time.Hours;
+    t.tm_min = time.Minutes;
+    t.tm_sec = time.Seconds;
     t.tm_isdst = 0;                // Disable daylight saving time adjustments.
-
-    /* Subtract 8 hours with roll-back feature */
-//    t.tm_hour -= 8;
-//    if (t.tm_hour < 0) {
-//        t.tm_hour += 24;  // Adjust the hour to ensure it's not less than 0.
-//        t.tm_mday--;      // Decrement the day to reflect the day change.
-//
-//        /* Adjust the month and year if needed when day rolls below 1 */
-//        if (t.tm_mday < 1) {
-//            t.tm_mon--;  // Decrement the month.
-//            if (t.tm_mon < 0) { // If month rolls below January
-//                t.tm_mon = 11; // Set month to December
-//                t.tm_year--;   // Decrement the year
-//            }
-//            /* Set day to last day of the new month */
-//            t.tm_mday = lastDayOfMonth(t.tm_mon, t.tm_year + 1900);
-//        }
-//    }
-
-    /* Convert to epoch time - Function from time.h library */
     long int epoch_secs = (long int) mktime(&t);
 
-    /* Convert to double and add milliseconds with GetTick() */
-    return (double)epoch_secs + milliseconds;
-}
+    double milliseconds = MILLIS_TO_SECONDS(((HAL_GetTick() - start_of_second) % MILLISECONDS_IN_SECONDS));  // Get Milliseconds
 
-/* Function to return the last day of a month */
-int lastDayOfMonth(int month, int year)
-{
-  /* Array to hold the number of days in each month */
-  int daysInMonth[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-
-  /* Check for leap year in February */
-  if (month == 1) { // February case
-    if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
-      return 29;
-    }
-  }
-  return daysInMonth[month];
-}
-
-
-/**
- * @brief Will check the current RTC time on the TEL board. If it is 2000-01-01
- *        then RTC is not synced (it is reset to default). Also sets tel_diagnostic.rtc_reset to appropriate val
- * @return boolean indicating if RTC reset (true) or not (false)
- */
-bool checkAndSetRTCReset()
-{
-	RTC_DateTypeDef curr_date;
-	RTC_TimeTypeDef curr_time;
-	HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
-
-	/* Set rtc_reset true if current time is Jan 1, 2000 */
-	if ((curr_date.Month == RTC_MONTH_JANUARY && curr_date.Date == 1 && curr_date.Year == 0) || HAL_GPIO_ReadPin(RTC_SYNC_GPIO_Port, RTC_SYNC_Pin) == GPIO_PIN_SET) {
-		g_tel_diagnostics.rtc_reset = true;
-		return true;
-	}
-	return false;
+    return (double)epoch_secs + milliseconds;  
 }
 
 
@@ -222,7 +160,7 @@ bool checkAndSetRTCReset()
  * @param data: Pointer to the CAN data array
  * @return None
 */
-static void setRTCTime(uint8_t* data)
+static void set_rtc_time(uint8_t* data)
 {
     /* Initialize Time Object */
     RTC_TimeTypeDef sTime = {0};
@@ -236,13 +174,14 @@ static void setRTCTime(uint8_t* data)
     HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
 }
 
+
 /**
  * @brief Sets RTC date based on CAN data formatted as follows:
  *       Byte 3: Date, Byte 4: Month, Byte 5: Year (from 2000)
  * @param data: Pointer to the CAN data array
  * @return None
 */
-static void setRTCDate(uint8_t* data)
+static void set_rtc_date(uint8_t* data)
 {
     /* Initialize Date Object */
     RTC_DateTypeDef sDate = {0};
@@ -262,29 +201,26 @@ static void setRTCDate(uint8_t* data)
  * @param rx_CAN_msg: Pointer to a CAN_msg_t
  * @return None
 */
-static void sync_memorator_rtc(CAN_msg_t* rx_CAN_msg)
+static void sync_memorator_rtc(uint8_t* rtc_can_msg_data)
 {
-    /* Only perform syncing if RTC was reset */
-    if (g_tel_diagnostics.rtc_reset) {
-        /* Set the RTC time and date based on the CAN data */
-        setRTCTime(rx_CAN_msg->data);
-        setRTCDate(rx_CAN_msg->data);
+    rtc_set = true;                 
 
-        /* Set the flag to indicate that the RTC has been sync'd */
-        g_tel_diagnostics.rtc_reset = false;
-    }
+    set_rtc_time(rtc_can_msg_data);
+    set_rtc_date(rtc_can_msg_data);
 }
+
 
 /**
  * @brief Function to check and sync the RTC with memorator message
  * @param rx_CAN_msg The received CAN message
  * @return void
 */
-void RTC_check_and_sync_rtc(CAN_msg_t* rx_CAN_msg) {
+void RTC_check_and_sync_rtc(uint32_t can_id, uint8_t* rtc_can_msg_data) {
     /* Perform rtc syncing check if the message is 0x300 and if RTC is reset to 2000-01-01 */
-    if (rx_CAN_msg->header.StdId == RTC_TIMESTAMP_MSG_ID && checkAndSetRTCReset())
+    if (can_id == RTC_TIMESTAMP_MSG_ID && !rtc_set)
     {
-        sync_memorator_rtc(rx_CAN_msg);
+        start_of_second = HAL_GetTick();
+        sync_memorator_rtc(rtc_can_msg_data);
     }
 }
 

@@ -29,15 +29,15 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
-#include "rtos_tasks.h"
-#include "cmsis_os.h"
-
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 extern IWDG_HandleTypeDef hiwdg;
 
 /* USER CODE BEGIN Private defines */
+
+#define RESET_SEQUENCE_DELAY      200
+#define REFRESH_DELAY             100
 
 /* USER CODE END Private defines */
 
@@ -45,8 +45,9 @@ void MX_IWDG_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
-void IWDG_refresh();
-void IWDG_inf_refresh_with_delay();
+void IWDG_Refresh(IWDG_HandleTypeDef* hiwdg);
+bool IWDG_is_reset();
+void IWDG_perform_reset_sequence();
 
 /* USER CODE END Prototypes */
 

@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2023 STMicroelectronics.
+  * Copyright (c) 2024 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -20,21 +20,16 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "can.h"
-#include "fatfs.h"
-#include "i2c.h"
+#include "dma.h"
 #include "iwdg.h"
 #include "rtc.h"
-#include "spi.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
-#include "debug_io.h"
-#include "sd_logger.h"
+
+#include "radio.h"
 
 /* USER CODE END Includes */
 
@@ -45,8 +40,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define CAN_MESSAGE_QUEUE_SIZE 10
-#define IMU_QUEUE_SIZE 10
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -58,21 +52,7 @@
 
 /* USER CODE BEGIN PV */
 
-/* Diagnostics */
-
-tel_diagnostics g_tel_diagnostics = {false, false, false, false, false};
-
-/* CAN Filters */
-CAN_FilterTypeDef CAN_filter0;
-CAN_FilterTypeDef CAN_filter1;
-
-uint32_t start_of_second = 0;
-
-/* HAL Status */
-HAL_StatusTypeDef rx_status;
-
-/* Log File */
-FIL* logfile;
+CAN_comms_config_t CAN_comms_config_tel = {0}; 
 
 /* USER CODE END PV */
 
@@ -80,6 +60,8 @@ FIL* logfile;
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
+
+void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg);
 
 /* USER CODE END PFP */
 
@@ -94,6 +76,7 @@ void MX_FREERTOS_Init(void);
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -116,64 +99,36 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_CAN_Init();
-  MX_SPI1_Init();
-  MX_UART5_Init();
-  MX_I2C1_Init();
-  MX_I2C2_Init();
   MX_USART1_UART_Init();
   MX_RTC_Init();
-  MX_FATFS_Init();
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
-  if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET)
-  {
-    // IWDG reset occurred
-    g_tel_diagnostics.watchdog_reset = true;
+  CAN_FilterTypeDef CAN_filter = {0};
+  CAN_filter_init(&CAN_filter);
 
-    // Clear flag
-    __HAL_RCC_CLEAR_RESET_FLAGS();
-  }
-
-  DebugIO_Init(&huart5);
-  initIMU();
-
-  // Determine if RTC is reset and set diagnostic rtc_reset appropriately.
-  checkAndSetRTCReset();
-
-//  FRESULT fresult;
-//  char startup_message[60];
-//  char filename[30];
-
-//  HAL_RTC_GetDate(&hrtc, &curr_date, RTC_FORMAT_BIN);
-//  HAL_RTC_GetTime(&hrtc, &curr_time, RTC_FORMAT_BIN);
-
-  /* Year - Month - Date  Format */
-//  sprintf(startup_message, "TEL start up on 20%u %u %u at %u:%u:%u", curr_date.Year,
-//	  curr_date.Month, curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
-
-  /* mount SD card */
-//  DSTATUS stat = disk_status(0);
-//  DSTATUS stat2 = disk_initialize(0);
-//  fresult = sd_mount();
-  // if (fresult == FR_OK) printf("SD Mounted Successfully\n\r");
-  // else printf("SD NOT Mounted\n\r");
-
-//  sprintf(filename, "TEL-20%u-%u-%uT%u-%u-%u.txt", curr_date.Year, curr_date.Month,
-//	  curr_date.Date, curr_time.Hours, curr_time.Minutes, curr_time.Seconds);
-//  logfile = sd_open(filename);
-//  sd_append(logfile, startup_message);
+  CAN_comms_config_tel.hcan = &hcan;
+  CAN_comms_config_tel.CAN_Filter = CAN_filter;
+  CAN_comms_config_tel.CAN_comms_Rx_callback = CAN_comms_Rx_callback;
+  
+  RADIO_init();                       // Inits sending queue.
+  IWDG_perform_reset_sequence();      // Check for IWDG reset    
 
   /* USER CODE END 2 */
 
-  /* Call init function for freertos objects (in freertos.c) */
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* Call init function for freertos objects (in cmsis_os2.c) */
   MX_FREERTOS_Init();
 
   /* Start scheduler */
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -198,11 +153,9 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE
-                              |RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
-  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
@@ -227,7 +180,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
-  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -235,6 +188,20 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/**
+ * @brief Callback from CAN comms to send a message over UART
+ * 
+ * @param CAN_comms_Rx_msg The CAN message received
+ */
+void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
+{
+    HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	    // Visual Confirmation of CAN working
+
+    RTC_check_and_sync_rtc(CAN_comms_Rx_msg->header.StdId, CAN_comms_Rx_msg->data);     // Sync timestamps
+
+    RADIO_send_msg_uart(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data);
+}
 
 /* USER CODE END 4 */
 

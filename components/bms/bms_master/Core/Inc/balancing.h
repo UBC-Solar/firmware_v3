@@ -15,8 +15,15 @@
 /* CONFIGURABLE PARAMETERS */
 
 // Threshold module voltage above which to perform balancing
-// At least one module must have a avoltage higher than this threshold for balancing to take place.
-#define BAL_MIN_VOLTAGE_FOR_BALANCING 40000U // 4.0V
+// At least one module must have a voltage higher than this threshold for balancing to take place.
+
+/**
+ * Note: 
+ * At comp: Set constant to 4.0V
+ * Otherwsise set to 2.9V
+ * See  https://ubcsolar26.monday.com/boards/7524367629/pulses/7524367947/posts/3569860014 for explanation
+ */
+#define BAL_MIN_VOLTAGE_FOR_BALANCING 29000U // 4.0V
 
 // Voltage difference within which modules are counted as balanced
 #define BAL_VOLTAGE_DIFFERENCE_TOLERANCE 500U // 0.05V

@@ -29,8 +29,6 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-#include <time.h>
-#include "can.h"
 
 /* USER CODE END Includes */
 
@@ -38,24 +36,27 @@ extern RTC_HandleTypeDef hrtc;
 
 /* USER CODE BEGIN Private defines */
 
-#define TIMETYPEDEF_SECONDS_IDX     0
-#define TIMETYPEDEF_MINUTES_IDX     1
-#define TIMETYPEDEF_HOURS_IDX       2
-#define TIMETYPEDEF_DAY_IDX         3
-#define TIMETYPEDEF_MONTH_IDX       4   
-#define TIMETYPEDEF_YEAR_IDX        5
+#define MILLISECONDS_IN_SECONDS         1000
+
+#define TIMETYPEDEF_SECONDS_IDX         0
+#define TIMETYPEDEF_MINUTES_IDX         1
+#define TIMETYPEDEF_HOURS_IDX           2
+#define TIMETYPEDEF_DAY_IDX             3
+#define TIMETYPEDEF_MONTH_IDX           4   
+#define TIMETYPEDEF_YEAR_IDX            5
+
+#define RTC_TIMESTAMP_MSG_ID            0x300
+
+#define MILLIS_TO_SECONDS(milliseconds) (double)(milliseconds * 0.001)
 
 /* USER CODE END Private defines */
 
 void MX_RTC_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-void getGPSDateTime(uint8_t *buffer, char *GPSTime, char *GPSDate, uint8_t *RTC_Sync_Flag);
-double get_current_timestamp();
-double convertToEpochTime(RTC_TimeTypeDef *sTime, RTC_DateTypeDef *sDate, double milliseconds);
-int lastDayOfMonth(int month, int year);
-bool checkAndSetRTCReset();
-void RTC_check_and_sync_rtc(CAN_msg_t* rx_CAN_msg);
+
+double RTC_get_timestamp_secs();
+void RTC_check_and_sync_rtc(uint32_t can_id, uint8_t* rtc_can_msg_data);
 
 /* USER CODE END Prototypes */
 
