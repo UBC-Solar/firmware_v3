@@ -1,4 +1,4 @@
-#include "canbusload.h"
+#include "canload.h"
 
 // Private defines
 #ifndef WINDOW_SIZE
