@@ -5,7 +5,8 @@
 #define WINDOW_SIZE 5
 #endif
 
-#define CANLOAD_BAUD_RATE 500000
+
+#define BAUD_RATE 500000
 #define SOF_BITS 1
 #define STANDARD_ID_BITS 11
 #define EXTENDED_ID_BITS 29
@@ -23,8 +24,7 @@
 #define IFS_BITS 3
 
 static uint32_t can_total_bits = 0;
-static uint64_t current_bus_load = 0;
-uint32_t currentIdx = 0;
+uint64_t currentIdx = 0; // Always increments and needs large enough data type to avoid overflow
 uint32_t circularBuffer[WINDOW_SIZE] = {0};
 
 /**
@@ -38,12 +38,13 @@ uint32_t circularBuffer[WINDOW_SIZE] = {0};
  * return any value.
  *
  * @param DLC The data length code of the CAN message.
+ * @param IDE The identifier extension bit of the CAN message.
  */
-void CANLOAD_calculate_message_bits(uint32_t DLC)
+void CANLOAD_calculate_message_bits(uint32_t DLC, uint32_t IDE)
 {
     uint32_t bits = 0;
     bits += SOF_BITS;
-    if (DLC == 0)
+    if (IDE == CAN_ID_STD)
     {
         bits += STANDARD_ID_BITS;
     }
@@ -121,7 +122,7 @@ float calculate_total_bits()
  */
 float calculate_bus_load()
 {
-    return ((float)calculate_total_bits() / ((float)WINDOW_SIZE * (float)CANLOAD_BAUD_RATE)) * 100.0;
+    return ((float)calculate_total_bits() / ((float)WINDOW_SIZE * (float) BAUD_RATE)) * 100.0;
 }
 
 /**
@@ -138,6 +139,5 @@ float calculate_bus_load()
  */
 float CANLOAD_get_bus_load()
 {
-    current_bus_load = calculate_bus_load();
-    return current_bus_load;
+    return calculate_bus_load();
 }
