@@ -29,6 +29,7 @@
 #include "iwdg.h"
 #include "can.h"
 #include "tel_freertos.h"
+#include "canload.h"
 
 /* USER CODE END Includes */
 
@@ -75,6 +76,13 @@ const osThreadAttr_t GPS_Task_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for CANBusLoad_task */
+osThreadId_t CANBusLoad_taskHandle;
+const osThreadAttr_t CANBusLoad_task_attributes = {
+  .name = "CANBusLoad_task",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -84,6 +92,7 @@ const osThreadAttr_t GPS_Task_attributes = {
 void StartDefaultTask(void *argument);
 void IMU_task(void *argument);
 void GPS_task(void *argument);
+void CANBusLoad_Task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -127,6 +136,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of GPS_Task */
   GPS_TaskHandle = osThreadNew(GPS_task, NULL, &GPS_Task_attributes);
+
+  /* creation of CANBusLoad_task */
+  CANBusLoad_taskHandle = osThreadNew(CANBusLoad_Task, NULL, &CANBusLoad_task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
@@ -193,6 +205,25 @@ void GPS_task(void *argument)
     osDelay(1);
   }
   /* USER CODE END GPS_task */
+}
+
+/* USER CODE BEGIN Header_CANBusLoad_Task */
+/**
+* @brief Function implementing the CANBusLoad_task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_CANBusLoad_Task */
+void CANBusLoad_Task(void *argument)
+{
+  /* USER CODE BEGIN CANBusLoad_Task */
+  /* Infinite loop */
+  for(;;)
+  {
+    CANLOAD_calculate_message_bits(8, 0);
+    osDelay(1);
+  }
+  /* USER CODE END CANBusLoad_Task */
 }
 
 /* Private application code --------------------------------------------------*/
