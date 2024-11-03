@@ -152,8 +152,11 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 
 /**
  * @brief Initializes the CAN filter and CAN Rx callback function as CAN_comms_Rx_callback().
+ * 
+ * Note: This uses the CAN_comms abstraction layer which will initialize two freeRTOS tasks. As a result it is recommend to 
+ * Call this function inside the MX_FREERTOS_Init() function in freertos.c
  */
-void    CAN_init()
+void CAN_tasks_init()
 {
     CAN_comms_config_t CAN_comms_config_tel = {0}; 
 

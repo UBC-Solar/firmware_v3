@@ -28,6 +28,7 @@
 
 #include "iwdg.h"
 #include "tel_freertos.h"
+#include "can.h"
 
 /* USER CODE END Includes */
 
@@ -109,6 +110,8 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
+
+    CAN_tasks_init();                         // Rx CAN Filter, Rx callback using CAN comms
 
   /* USER CODE END Init */
 

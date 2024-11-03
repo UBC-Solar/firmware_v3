@@ -102,10 +102,8 @@ int main(void)
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   
-  CAN_init();                         // Rx CAN Filter, Rx callback using CAN comms
   RADIO_init();                       // Inits sending queue.
   IWDG_perform_reset_sequence();      // Check for IWDG reset    
-
 
   /* USER CODE END 2 */
 
