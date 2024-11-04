@@ -65,9 +65,9 @@ There are two ways you will use the memorator:
 2. Configuring CAN bus and logging parameters.
 
 ### For programming using the TRX IDE
-The TRX IDE is an IDE that is downloaded when you install the Kvaser [CANlib SDK](https://kvaser.com/developer/canlib-sdk/) from their website. To use it I recommend using this ~1h youtube course. There are multiple parts. Here is the [first video](https://www.youtube.com/watch?v=j3DidYWQ_TQ).
+The TRX IDE is an IDE that is downloaded when you install the Kvaser [CANlib SDK](https://kvaser.com/developer/canlib-sdk/) from their website. To use it I recommend watching this ~1h youtube course. There are multiple parts. Here is the [first video](https://www.youtube.com/watch?v=j3DidYWQ_TQ).
 
-The purpose of using this IDE as opposed to VSCode is to make compiling the t program easier (although they mention a CLI way to compile. This did not work for me, however) and connecting to the Kvaser memorator for testing. 
+The purpose of using this IDE as opposed to VSCode is to make compiling the t program easier (although they mention a CLI way to compile, this did not work for me), and to connect to the Kvaser memorator for testing. 
 
 The typical workflow goes as follows
 1. Idea for adding a software feature on the Kvaser Memorator (lets say sending out a CAN message)
