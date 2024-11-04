@@ -1,48 +1,44 @@
-
 /**
  *  @file radio.h
  *  @brief header file for radio.c. Define buffer lengths
- *
- *  @date 2023/03/18
- *  @author Aarjav Jain
+ * 
+ *  Read this monday item for architecture details: https://ubcsolar26.monday.com/boards/7524367653/pulses/7524368294
  */
+
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __RADIO_TRANSNIT_H__
 #define __RADIO_TRANSNIT_H__
 
-#include "can.h"
-#include "usart.h"
-#include "rtc.h"
 
-/* RADIO BUFFER BYTE LENGTHS */
-#define CAN_BUFFER_LEN                      24
-#define GPS_MESSAGE_LEN                     200
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+#include "stdint.h"
+#include <stdbool.h>
 
-/* CAN BUFFER INDECIES */
-#define TIMESTAMP_INDEX_START               0
-#define TIMESTAMP_INDEX_END                 7
-#define CAN_MESSAGE_IDENTIFIER_INDEX        8
-#define CAN_ID_INDEX_END                    12
-#define CAN_DATA_INDEX_START                13
-#define CAN_DATA_INDEX_END                  20
-#define CAN_DATA_LENGTH_INDEX               21
-#define CAN_CARRIAGE_RETURN_INDEX           CAN_BUFFER_LEN - 2
-#define CAN_NEW_LINE_INDEX                  CAN_BUFFER_LEN - 1
 
-/* BYTE LOGIC and LENGTHS */
-#define BITS_IN_BYTE                        8
-#define NUM_STD_ID_BYTES                    2
-#define NUM_EXT_ID_BYTES                    4
-#define MASK_8_BITS                         0xFF
-#define MASK_4_BITS                         0xF
+/* DEFINES */
+#define RADIO_DATA_LENGTH                           8U      // Made to match CAN format for simplicity
+#define ID_DELIMITER_CHAR                           '#'
+#define CARRIAGE_RETURN_CHAR                        '\r'
+#define NEW_LINE_CHAR                               '\n'
+#define MASK_4_BITS                                 0xF
 
-/* MSG CONSTANTS */
-#define CAN_MESSAGE_IDENTIFIER              '#'
+/* TYPEDEFS */
+typedef struct {                                            // Standardized to CAN fields to simplify CAN Rx callback code                          
+    uint64_t timestamp;   
+    char ID_DELIMETER;
+    uint32_t can_id;
+    uint8_t data[RADIO_DATA_LENGTH];
+    uint8_t data_len;
+    char CARRIAGE_RETURN;
+    char NEW_LINE;
+} __attribute__((packed)) RADIO_Msg_TypeDef;    
 
-/* TIMING CONSTANTS */
-#define CAN_TRANSMIT_TIMEOUT                1000                // 1 second timeout
 
-void RADIO_tx_CAN_msg(CAN_Radio_msg_t *tx_CAN_msg);
+/* PROTOTYPES */
+void RADIO_init();
+void RADIO_send_msg_uart(CAN_RxHeaderTypeDef* header, uint8_t* data);
+
 
 #endif /* __RADIO_H__ */

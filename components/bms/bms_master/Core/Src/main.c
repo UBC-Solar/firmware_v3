@@ -43,7 +43,7 @@
 #define LED_FAULT_BLINK_PATTERN  0b00000101U
 
 #define LED_BLINK_INTERVAL 500U // milliseconds
-#define UPDATE_INTERVAL 1000U // milliseconds
+#define UPDATE_INTERVAL 100U // milliseconds
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/

@@ -31,10 +31,10 @@ void MX_IWDG_Init(void)
 {
 
   /* USER CODE BEGIN IWDG_Init 0 */
-  #ifdef DEBUG
-    // Do nothing if in debug mode. iwdg will reset the board if breakpoints are hit.
-    return;
-  #endif
+    #ifdef DEBUG
+        // Do nothing if in debug mode. iwdg will reset the board if breakpoints are hit.
+        return;
+    #endif
   /* USER CODE END IWDG_Init 0 */
 
   /* USER CODE BEGIN IWDG_Init 1 */
@@ -56,24 +56,53 @@ void MX_IWDG_Init(void)
 /* USER CODE BEGIN 1 */
 
 /**
- * @brief Refreshes the IWDG if NOT in DEBUG mode
-*/
-void IWDG_refresh()
+ * @brief Refresh the IWDG.
+ * @param hiwdg pointer to a IWDG_HandleTypeDef
+ */
+void IWDG_Refresh(IWDG_HandleTypeDef* hiwdg)
 {
-    #ifndef DEBUG
-      HAL_IWDG_Refresh(&hiwdg);
-    #endif
+  #ifndef DEBUG
+    HAL_IWDG_Refresh(hiwdg);
+  #endif
 }
 
+
 /**
- * @brief Refreshes the IWDG with the default task delay
-*/
-void IWDG_inf_refresh_with_delay()
+ * @brief Check if the IWDG reset occurred
+ * 
+ * @return true if the IWDG reset occurred
+ */
+bool IWDG_is_reset()
 {
-  for (;;)
+  if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET)
   {
-    IWDG_refresh();
-    osDelay(DEFAULT_TASK_DELAY);
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+
+
+/**
+ * @brief Perform a reset LED sequence if the IWDG reset occurred.
+ * 
+ * This function will toggle the USER_LED of the TEL board 5 times at 200ms intervals
+ */
+void IWDG_perform_reset_sequence()
+{
+  // TODO: Add diagnostic logic
+
+  if (IWDG_is_reset())
+  {
+    for (int i = 0; i < 5; i++)
+    {
+      HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+      HAL_Delay(RESET_SEQUENCE_DELAY);
+    }
   }
 }
 

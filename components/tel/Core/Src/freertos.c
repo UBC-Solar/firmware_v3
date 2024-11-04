@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2023 STMicroelectronics.
+  * Copyright (c) 2024 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -26,20 +26,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include <stdio.h>
-#include <time.h>
-#include "can.h"
-#include "gpio.h"
-#include "spi.h"
-#include "usart.h"
-#include "i2c.h"
-#include "nmea_parse.h"
-#include "rtc.h"
-#include "fatfs_sd.h"
-#include "imu.h"
 #include "iwdg.h"
-#include "sd_logger.h"
-#include "radio.h"
+#include "can.h"
+#include "tel_freertos.h"
 
 /* USER CODE END Includes */
 
@@ -61,58 +50,42 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 
-CAN_msg_t msg_t;
-
-/* Define Memory Pool for the CAN_MSG queue data */
-osPoolDef (CAN_MSG_memory_pool, MAX_CAN_MSGS_IN_POOL, CAN_msg_t);  // Declare memory pool
-osPoolId  CAN_MSG_memory_pool;                 // Memory pool ID
-
-/* Create the Queue */
-// https://community.st.com/t5/stm32-mcus-products/osmessageget-crashing/td-p/257324
-// See this link for issues why osMessageGet may crash
-// osMessageQDef needs a pointer to the structure type, which needs to be a "dummy", not pointer to typedef.
-osMessageQDef(CAN_MSG_Rx_Queue, MAX_CAN_MSGS_IN_POOL, &msg_t);              // Define message queue
-osMessageQId  CAN_MSG_Rx_Queue;
+/* SEMAPHORES */
+osSemaphoreId_t usart1_tx_semaphore;
 
 /* USER CODE END Variables */
-osThreadId StartDefaultTaskHandle;
-osThreadId readCANTaskHandle;
-osThreadId readIMUTaskHandle;
-osThreadId readGPSTaskHandle;
-osThreadId transmitDiagnosticsTaskHandle;
+/* Definitions for defaultTask */
+osThreadId_t defaultTaskHandle;
+const osThreadAttr_t defaultTask_attributes = {
+  .name = "defaultTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for IMU_Task */
+osThreadId_t IMU_TaskHandle;
+const osThreadAttr_t IMU_Task_attributes = {
+  .name = "IMU_Task",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for GPS_Task */
+osThreadId_t GPS_TaskHandle;
+const osThreadAttr_t GPS_Task_attributes = {
+  .name = "GPS_Task",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-void check_IMU_result(union Utils_FloatBytes_t ax_x, union Utils_FloatBytes_t ax_y, union Utils_FloatBytes_t ax_z,
-		      union Utils_FloatBytes_t gy_x, union Utils_FloatBytes_t gy_y, union Utils_FloatBytes_t gy_z);
-void send_CAN_Radio(CAN_Radio_msg_t *tx_CAN_msg);
-
 
 /* USER CODE END FunctionPrototypes */
 
-void startDefaultTask(void const * argument);
-void read_CAN_task(void const * argument);
-void read_IMU_task(void const * argument);
-void read_GPS_task(void const * argument);
-void transmit_Diagnostics_task(void const * argument);
+void StartDefaultTask(void *argument);
+void IMU_task(void *argument);
+void GPS_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
-
-/* GetIdleTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
-
-/* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
-static StaticTask_t xIdleTaskTCBBuffer;
-static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
-
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
-{
-  *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
-  *ppxIdleTaskStackBuffer = &xIdleStack[0];
-  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
-  /* place for user code */
-}
-/* USER CODE END GET_IDLE_TASK_MEMORY */
 
 /**
   * @brief  FreeRTOS initialization
@@ -122,177 +95,104 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackTy
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
+    CAN_comms_init(&CAN_comms_config_tel);
+
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
+    /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
+    /* add semaphores, ... */
+
+    usart1_tx_semaphore = osSemaphoreNew(NUM_USART1_TX_SEMAPHORES, NUM_USART1_TX_SEMAPHORES, NULL);
+
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-
+    /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-
-  CAN_MSG_memory_pool = osPoolCreate(osPool(CAN_MSG_memory_pool));                 // create memory pool
-  CAN_MSG_Rx_Queue = osMessageCreate(osMessageQ(CAN_MSG_Rx_Queue), NULL);  // create msg queue
-
-
+    /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* definition and creation of StartDefaultTask */
-  osThreadDef(StartDefaultTask, startDefaultTask, osPriorityLow, 0, 128);
-  StartDefaultTaskHandle = osThreadCreate(osThread(StartDefaultTask), NULL);
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* definition and creation of readCANTask */
-  osThreadDef(readCANTask, read_CAN_task, osPriorityNormal, 0, 512);
-  readCANTaskHandle = osThreadCreate(osThread(readCANTask), NULL);
-  
-  /* definition and creation of readIMUTask */
-  osThreadDef(readIMUTask, read_IMU_task, osPriorityNormal, 0, 512);
-  readIMUTaskHandle = osThreadCreate(osThread(readIMUTask), NULL);
+  /* creation of IMU_Task */
+  IMU_TaskHandle = osThreadNew(IMU_task, NULL, &IMU_Task_attributes);
 
-  /* definition and creation of readGPSTask */
-  osThreadDef(readGPSTask, read_GPS_task, osPriorityNormal, 0, 1536);
-  readGPSTaskHandle = osThreadCreate(osThread(readGPSTask), NULL);
-
-  /* definition and creation of transmitDiagnosticsTask */
-  osThreadDef(transmitDiagnosticsTask, transmit_Diagnostics_task, osPriorityNormal, 0, 512);
-  transmitDiagnosticsTaskHandle = osThreadCreate(osThread(transmitDiagnosticsTask), NULL);
+  /* creation of GPS_Task */
+  GPS_TaskHandle = osThreadNew(GPS_task, NULL, &GPS_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+    /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+    /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
 
 }
 
-/* USER CODE BEGIN Header_startDefaultTask */
+/* USER CODE BEGIN Header_StartDefaultTask */
 /**
-  * @brief  Function implementing the StartDefaultTask thread.
+  * @brief  Function implementing the defaultTask thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_startDefaultTask */
-void startDefaultTask(void const * argument)
+/* USER CODE END Header_StartDefaultTask */
+void StartDefaultTask(void *argument)
 {
-  /* USER CODE BEGIN startDefaultTask */
-  CAN_Init();
+  /* USER CODE BEGIN StartDefaultTask */
 
-  /* Infinite loop */
-  IWDG_inf_refresh_with_delay();
-
-  /* USER CODE END startDefaultTask */
-}
-
-/* USER CODE BEGIN Header_read_CAN_task */
-/**
-* @brief Function implementing the readCANTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_read_CAN_task */
-void read_CAN_task(void const * argument)
-{
-  /* USER CODE BEGIN read_CAN_task */
-  CAN_msg_t *rx_CAN_msg;
-  osEvent evt;
-
-  /* Infinite loop */
-  while (true) {
-    /* Wait for thread flags to be set in the CAN Rx FIFO0 Interrupt Callback */
-    osSignalWait(CAN_READY, osWaitForever);
-    
-    IWDG_refresh();
-
-    /*
-     * Control Flow:
-     * Wait for Flag from Interrupt
-     * After flag occurs, read messages from queue repeatedly until it is empty
-     * Once empty,    // HAL_StatusTypeDef imu_status = HAL_OK;
-
-    /* Get CAN Message from Queue */
-    while(true) {
-      evt = osMessageGet(CAN_MSG_Rx_Queue, osWaitForever);
-
-      if (evt.status == osEventMessage) {
-        rx_CAN_msg = evt.value.p;                       // Get pointer to CAN message from the queue union
-        CAN_handle_rx_msg(rx_CAN_msg);                 // Handle the CAN message  
-      }
-      else break;
+    /* Infinite loop */
+    for(;;)
+    {
+        IWDG_Refresh(&hiwdg);	                                 // Refresh the IWDG to ensure no reset occurs
+        osDelay(REFRESH_DELAY);
     }
-  }
 
-  /* USER CODE END read_CAN_task */
+  /* USER CODE END StartDefaultTask */
 }
 
-/* USER CODE BEGIN Header_read_IMU_task */
+/* USER CODE BEGIN Header_IMU_task */
 /**
-* @brief Function implementing the readIMUTask thread.
+* @brief Function implementing the IMU_Task thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_read_IMU_task */
-void read_IMU_task(void const * argument)
+/* USER CODE END Header_IMU_task */
+void IMU_task(void *argument)
 {
-  /* USER CODE BEGIN read_IMU_task */
-
-  /* Infinite loop */
-  while(1)
-  {
-    HAL_StatusTypeDef imu_status = HAL_OK;
-
-    IMU_send_as_CAN_msg_single_delay(&imu_status);                // Send IMU data as CAN message
-    g_tel_diagnostics.imu_fail = (imu_status != HAL_OK);        // Update diagnostics
-    osDelay(IMU_SINGLE_DELAY);
-  }
-
-  /* USER CODE END read_IMU_task */
-}
-
-/* USER CODE BEGIN Header_read_GPS_task */
-/**
-* @brief Function implementing the readGPSTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_read_GPS_task */
-void read_GPS_task(void const * argument)
-{
-  /* USER CODE BEGIN read_GPS_task */
-  GPS_wait_for_fix();                     // Try to get a fix first.
-
-  /* Infinite loop */
-  while(1) {
-    GPS_delayed_rx_and_tx_as_CAN();       // Once a fix is obtained create and send GPS message as CAN
-  }
-
-  /* USER CODE END read_GPS_task */
-}
-
-/* USER CODE BEGIN Header_transmit_Diagnostics_task */
-/**
-* @brief Function implementing the transmitDiagnosticsTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_transmit_Diagnostics_task */
-void transmit_Diagnostics_task(void const * argument)
-{
-  /* USER CODE BEGIN transmit_Diagnostics_task */
+  /* USER CODE BEGIN IMU_task */
   /* Infinite loop */
   for(;;)
   {
-    CAN_diagnostic_msg_tx_radio_bus();
-    osDelay(TRANSMIT_DIAGNOSTICS_DELAY);
+    osDelay(1);
   }
-  /* USER CODE END transmit_Diagnostics_task */
+  /* USER CODE END IMU_task */
+}
+
+/* USER CODE BEGIN Header_GPS_task */
+/**
+* @brief Function implementing the GPS_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_GPS_task */
+void GPS_task(void *argument)
+{
+  /* USER CODE BEGIN GPS_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END GPS_task */
 }
 
 /* Private application code --------------------------------------------------*/
