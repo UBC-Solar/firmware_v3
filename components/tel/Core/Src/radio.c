@@ -66,15 +66,13 @@ void RADIO_Tx_forever()
 	{
 		/* Wait until there is a message in the queue */ 
 		RADIO_Msg_TypeDef radio_msg;
-        osStatus_t stat = osMessageQueueGet(radio_tx_queue, &radio_msg, NULL, osWaitForever);
-        if (stat == osOK)
+        if (osOK == osMessageQueueGet(radio_tx_queue, &radio_msg, NULL, osWaitForever))
 		{
             UART_radio_transmit(&radio_msg);
 		}
-		else if (radio_tx_queue == NULL)
+		else
 		{
-            // HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-			//TODO: Error handle
+			// TODO: Error handle
 		}
 	}
 }
