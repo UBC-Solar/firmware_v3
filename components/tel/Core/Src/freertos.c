@@ -27,13 +27,13 @@
 /* USER CODE BEGIN Includes */
 
 #include "iwdg.h"
-#include "can.h"
 #include "tel_freertos.h"
-#include "radio.h"
+#include "can.h"
 
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
+typedef StaticTask_t osStaticThreadDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -60,23 +60,38 @@ osMessageQueueId_t radio_tx_queue;
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
+uint32_t defaultTaskBuffer[ 128 ];
+osStaticThreadDef_t defaultTaskControlBlock;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 128 * 4,
+  .cb_mem = &defaultTaskControlBlock,
+  .cb_size = sizeof(defaultTaskControlBlock),
+  .stack_mem = &defaultTaskBuffer[0],
+  .stack_size = sizeof(defaultTaskBuffer),
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for IMU_Task */
 osThreadId_t IMU_TaskHandle;
+uint32_t IMU_TaskBuffer[ 128 ];
+osStaticThreadDef_t IMU_TaskControlBlock;
 const osThreadAttr_t IMU_Task_attributes = {
   .name = "IMU_Task",
-  .stack_size = 128 * 4,
+  .cb_mem = &IMU_TaskControlBlock,
+  .cb_size = sizeof(IMU_TaskControlBlock),
+  .stack_mem = &IMU_TaskBuffer[0],
+  .stack_size = sizeof(IMU_TaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for GPS_Task */
 osThreadId_t GPS_TaskHandle;
+uint32_t GPS_TaskBuffer[ 128 ];
+osStaticThreadDef_t GPS_TaskControlBlock;
 const osThreadAttr_t GPS_Task_attributes = {
   .name = "GPS_Task",
-  .stack_size = 128 * 4,
+  .cb_mem = &GPS_TaskControlBlock,
+  .cb_size = sizeof(GPS_TaskControlBlock),
+  .stack_mem = &GPS_TaskBuffer[0],
+  .stack_size = sizeof(GPS_TaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for Radio_Task */
@@ -107,7 +122,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
-    CAN_comms_init(&CAN_comms_config_tel);
+    CAN_tasks_init();                         // Rx CAN Filter, Rx callback using CAN comms
 
   /* USER CODE END Init */
 
