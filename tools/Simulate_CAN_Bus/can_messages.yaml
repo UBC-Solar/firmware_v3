@@ -17,49 +17,49 @@
   board_delay: 600
 
 - ID: "0x622"
-  interval: 1000
+  interval: 100
   data: "00000000000000"
   dlc: 7
   board_delay: 0
 
 - ID: "0x623"
-  interval: 1000
+  interval: 100
   data: "000000000000"
   dlc: 6
   board_delay: 0
 
 - ID: "0x624"
-  interval: 1000
+  interval: 100
   data: "00000000000000"
   dlc: 7
   board_delay: 0
 
 - ID: "0x625"
-  interval: 1000
+  interval: 100
   data: "0000000000"
   dlc: 5
   board_delay: 0
 
 - ID: "0x626"
-  interval: 1000
+  interval: 100
   data: "0000000000"
   dlc: 5
   board_delay: 0
 
 - ID: "0x627"
-  interval: 1000
+  interval: 100
   data: "0000000000"
   dlc: 5
   board_delay: 0
 
 - ID: "0x628"
-  interval: 1000
+  interval: 100
   data: "0000000000"
   dlc: 5
   board_delay: 0
 
 - ID: "0x629"
-  interval: 1000
+  interval: 100
   data: "00000000"
   dlc: 4
   board_delay: 0
