@@ -63,7 +63,6 @@ def send_message(bus, can_id, data, rate, dlc, board_delay, num_in_burst):
                 # Lock the bus to ensure exclusive access for sending
                 with bus_lock:
                     bus.send(message)
-                    time.sleep()
                     can_messages[can_id][MSG_COUNT_IDX] += 1
                     print(f"ID: {can_id}, Count: {can_messages[can_id][MSG_COUNT_IDX]}")
         except can.CanError as e:
