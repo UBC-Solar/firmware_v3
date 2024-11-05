@@ -13,10 +13,6 @@
 #include "main.h"
 #include "CAN_comms.h"
 
-/* DEFINES */
-#define NUM_USART1_TX_SEMAPHORES        1
-#define RADIO_TX_QUEUE_SIZE            32
-
 /* SEMAPHORES */
 extern osSemaphoreId_t usart1_tx_semaphore;
 

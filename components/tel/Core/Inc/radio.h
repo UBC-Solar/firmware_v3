@@ -19,12 +19,8 @@
 
 /* DEFINES */
 #define RADIO_DATA_LENGTH                           8U      // Made to match CAN format for simplicity
-#define ID_DELIMITER_CHAR                           '#'
-#define CARRIAGE_RETURN_CHAR                        '\r'
-#define NEW_LINE_CHAR                               '\n'
-#define MASK_4_BITS                                 0xF
 #define RADIO_MSG_TYPEDEF_SIZE                      sizeof(RADIO_Msg_TypeDef)
-#define RADIO_QUEUE_SIZE                            32
+#define RADIO_QUEUE_SIZE                            60
 
 /* TYPEDEFS */
 typedef struct {                                            // Standardized to CAN fields to simplify CAN Rx callback code                          
@@ -39,8 +35,7 @@ typedef struct {                                            // Standardized to C
 
 
 /* PROTOTYPES */
-void RADIO_init();
-void RADIO_Tx_task();
+void RADIO_Tx_forever();
 void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg);
 
 

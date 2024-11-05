@@ -19,8 +19,13 @@
 #include "tel_freertos.h"
 
 
-/* LOCAL GLOBALS */
-static RADIO_Msg_TypeDef template_radio_msg = {0};						    // Template for every CAN message
+/* PRIVATE DEFINES */
+#define NO_PRIORITY                                 0
+#define NON_BLOCKING                                0
+#define ID_DELIMITER_CHAR                           '#'
+#define CARRIAGE_RETURN_CHAR                        '\r'
+#define NEW_LINE_CHAR                               '\n'
+#define MASK_4_BITS                                 0xF
 
 
 /* PRIVATE FUNCTIONS DECLARATIONS */
@@ -28,18 +33,6 @@ void set_radio_msg(CAN_RxHeaderTypeDef* header, uint8_t* data, RADIO_Msg_TypeDef
 uint64_t get_timestamp();
 uint32_t get_can_id(CAN_RxHeaderTypeDef* can_msg_header_ptr);
 uint8_t get_data_length(uint32_t DLC);
-
-
-/**
- * @brief Initializes the template radio message
- */
-void RADIO_init()
-{
-	memset(&template_radio_msg, 0, sizeof(RADIO_Msg_TypeDef));		// Init template msg
-	template_radio_msg.ID_DELIMETER = ID_DELIMITER_CHAR;
-	template_radio_msg.CARRIAGE_RETURN = CARRIAGE_RETURN_CHAR;
-	template_radio_msg.NEW_LINE = NEW_LINE_CHAR;
-}
 
 
 /**
@@ -57,7 +50,7 @@ void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 	set_radio_msg(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data, &radio_msg);
 
 	/* Add CAN message to radio tx queue */
-	osMessageQueuePut(radio_tx_queue, &radio_msg, 0, 0);
+	osMessageQueuePut(radio_tx_queue, &radio_msg, NO_PRIORITY, NON_BLOCKING);
 }
 
 
@@ -66,23 +59,21 @@ void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
  * This tasks waits for a message in the radio tx queue and acquires a USART Tx semaphore before sending the message over UART
  * 
  */
-void RADIO_Tx_task()
+void RADIO_Tx_forever()
 {
 	/* Infinite Loop */
 	for(;;)
 	{
 		/* Wait until there is a message in the queue */ 
 		RADIO_Msg_TypeDef radio_msg;
-        if (osOK == osMessageQueueGet(radio_tx_queue, &radio_msg, NULL, osWaitForever))
+        osStatus_t stat = osMessageQueueGet(radio_tx_queue, &radio_msg, NULL, osWaitForever);
+        if (stat == osOK)
 		{
-			/* Wait for a USART Tx semaphore to be released */
-			osSemaphoreAcquire(usart1_tx_semaphore, osWaitForever);
-
-			/* Transmit the radio message over UART with DMA */
-    		HAL_UART_Transmit_DMA(&huart1, (uint8_t*)(&radio_msg), sizeof(RADIO_Msg_TypeDef));
+            UART_radio_transmit(&radio_msg);
 		}
-		else
+		else if (radio_tx_queue == NULL)
 		{
+            // HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
 			//TODO: Error handle
 		}
 	}
@@ -97,15 +88,15 @@ void RADIO_Tx_task()
  */
 void set_radio_msg(CAN_RxHeaderTypeDef* header, uint8_t* data, RADIO_Msg_TypeDef* radio_msg)
 {
-	memset(&radio_msg, 0, sizeof(RADIO_Msg_TypeDef));
+	memset(radio_msg, 0, sizeof(RADIO_Msg_TypeDef));           // 0 out all 8 bytes data
 	
-	radio_msg->timestamp = get_timestamp();
-	radio_msg->can_id    = get_can_id(header);
+	radio_msg->timestamp        = get_timestamp();
+	radio_msg->can_id           = get_can_id(header);
+	radio_msg->ID_DELIMETER     = ID_DELIMITER_CHAR;
 	memcpy(radio_msg->data, data, RADIO_DATA_LENGTH);
-	radio_msg->data_len  = get_data_length(header->DLC);
-	radio_msg->ID_DELIMETER = ID_DELIMITER_CHAR;
-	radio_msg->CARRIAGE_RETURN = CARRIAGE_RETURN_CHAR;
-	radio_msg->NEW_LINE = NEW_LINE_CHAR;
+	radio_msg->data_len         = get_data_length(header->DLC);
+	radio_msg->CARRIAGE_RETURN  = CARRIAGE_RETURN_CHAR;
+	radio_msg->NEW_LINE         = NEW_LINE_CHAR;
 }
 
 
@@ -145,5 +136,5 @@ uint32_t get_can_id(CAN_RxHeaderTypeDef* can_msg_header_ptr)
  */
 uint8_t get_data_length(uint32_t DLC)
 {
-	return DLC & MASK_4_BITS;
+	return (uint8_t) (DLC & MASK_4_BITS);
 }

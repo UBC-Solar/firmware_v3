@@ -29,6 +29,7 @@
 #include "iwdg.h"
 #include "tel_freertos.h"
 #include "can.h"
+#include "radio.h"
 
 /* USER CODE END Includes */
 
@@ -36,10 +37,14 @@
 typedef StaticTask_t osStaticThreadDef_t;
 /* USER CODE BEGIN PTD */
 
+typedef StaticTask_t osStaticMessageQDef_t;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define NUM_USART1_TX_SEMAPHORES        1
 
 /* USER CODE END PD */
 
@@ -56,6 +61,16 @@ osSemaphoreId_t usart1_tx_semaphore;
 
 /* QUEUES */
 osMessageQueueId_t radio_tx_queue;
+uint8_t radio_tx_queue_buffer[ RADIO_QUEUE_SIZE * RADIO_MSG_TYPEDEF_SIZE ];
+osStaticMessageQDef_t radio_tx_queue_cb;
+const osMessageQueueAttr_t radio_tx_queue_attributes = {
+  .name = "radio_tx_queue",
+  .cb_mem = &radio_tx_queue_cb,
+  .cb_size = sizeof(radio_tx_queue_cb),
+  .mq_mem = &radio_tx_queue_buffer,
+  .mq_size = sizeof(radio_tx_queue_buffer)
+};
+
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -96,9 +111,14 @@ const osThreadAttr_t GPS_Task_attributes = {
 };
 /* Definitions for Radio_Task */
 osThreadId_t Radio_TaskHandle;
+uint32_t Radio_TaskBuffer[ 128 ];
+osStaticThreadDef_t Radio_TaskControlBlock;
 const osThreadAttr_t Radio_Task_attributes = {
   .name = "Radio_Task",
-  .stack_size = 128 * 4,
+  .cb_mem = &Radio_TaskControlBlock,
+  .cb_size = sizeof(Radio_TaskControlBlock),
+  .stack_mem = &Radio_TaskBuffer[0],
+  .stack_size = sizeof(Radio_TaskBuffer),
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -144,7 +164,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
 
-  radio_tx_queue = osMessageQueueNew(RADIO_QUEUE_SIZE, RADIO_MSG_TYPEDEF_SIZE, NULL);
+  radio_tx_queue = osMessageQueueNew(RADIO_QUEUE_SIZE, RADIO_MSG_TYPEDEF_SIZE, &radio_tx_queue_attributes);
 
   /* USER CODE END RTOS_QUEUES */
 
@@ -186,7 +206,7 @@ void StartDefaultTask(void *argument)
     for(;;)
     {
         IWDG_Refresh(&hiwdg);	                                 // Refresh the IWDG to ensure no reset occurs
-        osDelay(REFRESH_DELAY);
+        osDelay(REFRESH_DELAY_MS);
     }
 
   /* USER CODE END StartDefaultTask */
@@ -239,7 +259,7 @@ void Radio_task(void *argument)
 {
   /* USER CODE BEGIN Radio_task */
 
-  RADIO_Tx_task();
+  RADIO_Tx_forever();
 
   /* USER CODE END Radio_task */
 }

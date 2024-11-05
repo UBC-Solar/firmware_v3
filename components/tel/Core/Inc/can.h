@@ -35,7 +35,6 @@ extern "C" {
 extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
-#define MAX_CAN_DATA_LENGTH                 8
 
 /* USER CODE END Private defines */
 
