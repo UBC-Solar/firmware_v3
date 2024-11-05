@@ -51,7 +51,7 @@ def signal_handler(sig, frame):
 def send_message(bus, can_id, data, rate, dlc, board_delay, num_in_burst):    
     time.sleep(board_delay)
 
-    is_extended = False if len(can_id) <= 3 else True
+    is_extended = False if int(can_id[2:], 16) <= 0x7FF else True
 
     message = can.Message(arbitration_id=int(can_id, 16), data=data[:dlc], is_extended_id=is_extended)
     while True:
