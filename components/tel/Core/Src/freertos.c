@@ -222,7 +222,7 @@ void CANBusLoad_Task(void *argument)
   {
     CANLOAD_update_sliding_window();
     CAN_tx_canload_msg();
-    osDelay(1);
+    osDelay(100);
   }
   /* USER CODE END CANBusLoad_Task */
 }
