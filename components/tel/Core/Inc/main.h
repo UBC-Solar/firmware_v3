@@ -63,8 +63,9 @@ void Error_Handler(void);
 #define RADIO_CTS_IT_EXTI_IRQn EXTI3_IRQn
 #define USER_LED_Pin GPIO_PIN_1
 #define USER_LED_GPIO_Port GPIOA
-#define TEST_POINT_Pin GPIO_PIN_5
-#define TEST_POINT_GPIO_Port GPIOC
+#define RADIO_RTS_IT_Pin GPIO_PIN_12
+#define RADIO_RTS_IT_GPIO_Port GPIOB
+#define RADIO_RTS_IT_EXTI_IRQn EXTI15_10_IRQn
 #define RADIO_TX_Pin GPIO_PIN_9
 #define RADIO_TX_GPIO_Port GPIOA
 #define RADIO_RX_Pin GPIO_PIN_10
