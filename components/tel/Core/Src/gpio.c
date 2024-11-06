@@ -68,7 +68,7 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : PtPin */
   GPIO_InitStruct.Pin = RADIO_RTS_IT_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(RADIO_RTS_IT_GPIO_Port, &GPIO_InitStruct);
 
@@ -92,8 +92,15 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if(GPIO_Pin == RADIO_CTS_IT_Pin)
     {
+        // HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);  // TODO: actually handle CTS control flow
+    }
+    else if (GPIO_Pin == RADIO_RTS_IT_Pin)
+    {
+        // HAL_GPIO_WritePin(USER_LED_GPIO_Port, USER_LED_Pin, )
         HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);  // TODO: actually handle CTS control flow
     }
 }
+
+
 
 /* USER CODE END 2 */
