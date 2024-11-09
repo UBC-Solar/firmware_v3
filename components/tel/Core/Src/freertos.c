@@ -173,6 +173,7 @@ void IMU_task(void *argument)
   for(;;)
   {
     osDelay(1);
+    
   }
   /* USER CODE END IMU_task */
 }
