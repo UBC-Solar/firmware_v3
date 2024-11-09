@@ -168,6 +168,10 @@ void StartDefaultTask(void *argument)
     /* Infinite loop */
     for(;;)
     {
+    	for (int i = 0; i < 3; i++){
+    			  HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+    			  HAL_Delay(1000);
+    		  }
         IWDG_Refresh(&hiwdg);	                                 // Refresh the IWDG to ensure no reset occurs
         osDelay(REFRESH_DELAY);
     }
@@ -188,6 +192,10 @@ void IMU_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
+	  for (int i = 0; i < 5; i++){
+		  HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+		  HAL_Delay(1000);
+	  }
     osDelay(1);
   }
   /* USER CODE END IMU_task */
@@ -206,6 +214,10 @@ void GPS_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
+	  for (int i = 0; i < 10; i++){
+	  		  HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+	  		  HAL_Delay(1000);
+	  	  }
     osDelay(1);
   }
   /* USER CODE END GPS_task */
