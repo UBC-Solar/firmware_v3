@@ -92,11 +92,16 @@ const osThreadAttr_t GPS_Task_attributes = {
   .stack_size = sizeof(GPS_TaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
-/* Definitions for CANBusLoad_task */
-osThreadId_t CANBusLoad_taskHandle;
-const osThreadAttr_t CANBusLoad_task_attributes = {
-  .name = "CANBusLoad_task",
-  .stack_size = 128 * 4,
+/* Definitions for CANLoad_Task */
+osThreadId_t CANLoad_TaskHandle;
+uint32_t CANLoad_TaskBuffer[ 128 ];
+osStaticThreadDef_t CANLoad_TaskControlBlock;
+const osThreadAttr_t CANLoad_Task_attributes = {
+  .name = "CANLoad_Task",
+  .cb_mem = &CANLoad_TaskControlBlock,
+  .cb_size = sizeof(CANLoad_TaskControlBlock),
+  .stack_mem = &CANLoad_TaskBuffer[0],
+  .stack_size = sizeof(CANLoad_TaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
 
@@ -153,8 +158,8 @@ void MX_FREERTOS_Init(void) {
   /* creation of GPS_Task */
   GPS_TaskHandle = osThreadNew(GPS_task, NULL, &GPS_Task_attributes);
 
-  /* creation of CANBusLoad_task */
-  CANBusLoad_taskHandle = osThreadNew(CANBusLoad_Task, NULL, &CANBusLoad_task_attributes);
+  /* creation of CANLoad_Task */
+  CANLoad_TaskHandle = osThreadNew(CANBusLoad_Task, NULL, &CANLoad_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
@@ -225,7 +230,7 @@ void GPS_task(void *argument)
 
 /* USER CODE BEGIN Header_CANBusLoad_Task */
 /**
-* @brief Function implementing the CANBusLoad_task thread.
+* @brief Function implementing the CANLoad_Task thread.
 * @param argument: Not used
 * @retval None
 */
@@ -235,11 +240,11 @@ void CANBusLoad_Task(void *argument)
   /* USER CODE BEGIN CANBusLoad_Task */
   /* Infinite loop */
   for(;;)
-  {
-    CANLOAD_update_sliding_window();
-    CAN_tx_canload_msg();
-    osDelay(100);
-  }
+	  {
+	    CANLOAD_update_sliding_window();
+	    CAN_tx_canload_msg();
+	    osDelay(100);
+	  }
   /* USER CODE END CANBusLoad_Task */
 }
 
