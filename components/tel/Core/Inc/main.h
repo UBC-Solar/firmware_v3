@@ -54,7 +54,7 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-extern CAN_comms_config_t CAN_comms_config_tel;
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
