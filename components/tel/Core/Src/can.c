@@ -187,6 +187,8 @@ void CAN_tx_canload_msg() {
         .data[0] = (uint8_t) CANLOAD_get_bus_load(),
         .header = CANLOAD_busload
     };
+
+   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
 }
 
 /* USER CODE END 1 */
