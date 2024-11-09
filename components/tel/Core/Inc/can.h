@@ -47,6 +47,7 @@ void MX_CAN_Init(void);
 
 void CAN_filter_init(CAN_FilterTypeDef* can_filter);
 void CAN_tx_canload_msg();
+void CAN_tasks_init();
 
 /* USER CODE END Prototypes */
 
