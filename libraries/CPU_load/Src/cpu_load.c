@@ -51,20 +51,20 @@ circ_buf_t cpuLoadBuffer = {
 void taskSwitchedIn(){
 	TaskHandle_t idleTaskHandle = xTaskGetIdleTaskHandle();
 	if(xTaskGetCurrentTaskHandle() == idleTaskHandle){
-		idle_switched_in = __HAL_TIM_GET_COUNTER(&htim10);
+		idle_switched_in = __HAL_TIM_GET_COUNTER(&g_timer_handle);
 	}
 }
 
 void taskSwitchedOut(){
 	TaskHandle_t idleTaskHandle = xTaskGetIdleTaskHandle();
 	if(xTaskGetCurrentTaskHandle() == idleTaskHandle){
-		idleRunTime += __HAL_TIM_GET_COUNTER(&htim10) - idle_switched_in;
+		idleRunTime += __HAL_TIM_GET_COUNTER(&g_timer_handle) - idle_switched_in;
 	}
 }
 
 void reset(){
 	idleRunTime = 0;
-	window_start_time = __HAL_TIM_GET_COUNTER(&htim10);
+	window_start_time = __HAL_TIM_GET_COUNTER(&g_timer_handle);
 }
 
 float CPU_LOAD_calculation(float idleRunTime, float total_run_time){
@@ -72,7 +72,7 @@ float CPU_LOAD_calculation(float idleRunTime, float total_run_time){
 }
 
 
-float CPU_LOAD_init(uint8_t window_size, uint16_t frequency_ms, TIM_HandleTypeDef *timer){
+void CPU_LOAD_init(uint8_t window_size, uint16_t frequency_ms, TIM_HandleTypeDef *timer){
 
     g_window_size = window_size;
     g_frequency_ms = frequency_ms;
@@ -80,12 +80,12 @@ float CPU_LOAD_init(uint8_t window_size, uint16_t frequency_ms, TIM_HandleTypeDe
 
     HAL_TIM_Base_Start(&g_timer_handle);
 
-    CPU_monitor_task_handle = osThreadNew(CPU_monitor_task, NULL, &CPU_Task_attributes)
+    CPU_monitor_task_handle = osThreadNew(CPU_monitor_task, NULL, &CPU_Task_attributes);
 }
 
 void add_to_buffer(){
 
-	total_run_time = __HAL_TIM_GET_COUNTER(&htim10) - window_start_time;
+	total_run_time = __HAL_TIM_GET_COUNTER(&g_timer_handle) - window_start_time;
 
     float cpu_load = CPU_LOAD_calculation((float)idleRunTime, (float)total_run_time);
     CIRC_BUF_enqueue(&cpuLoadBuffer, cpu_load, g_window_size);

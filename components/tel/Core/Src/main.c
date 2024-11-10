@@ -25,6 +25,7 @@
 #include "rtc.h"
 #include "usart.h"
 #include "gpio.h"
+#include "cpu_load.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
