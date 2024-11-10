@@ -22,6 +22,7 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
+#include "tim.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -29,6 +30,7 @@
 #include "iwdg.h"
 #include "tel_freertos.h"
 #include "can.h"
+#include "cpu_load.h"
 
 /* USER CODE END Includes */
 
@@ -112,7 +114,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
     CAN_tasks_init();                         // Rx CAN Filter, Rx callback using CAN comms
-    CPU_LOAD_init(10, 500, );
+    CPU_LOAD_init(10, 500, &htim2);
 
   /* USER CODE END Init */
 

@@ -23,9 +23,9 @@
 #include "dma.h"
 #include "iwdg.h"
 #include "rtc.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
-#include "cpu_load.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -101,6 +101,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_RTC_Init();
   MX_IWDG_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   
   RADIO_init();                       // Inits sending queue.

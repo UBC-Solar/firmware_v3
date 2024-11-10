@@ -94,6 +94,7 @@ to exclude the API function. */
 #define INCLUDE_xQueueGetMutexHolder        1
 #define INCLUDE_uxTaskGetStackHighWaterMark 1
 #define INCLUDE_eTaskGetState               1
+#define INCLUDE_xTaskGetIdleTaskHandle      1
 
 /*
  * The CMSIS-RTOS V2 FreeRTOS wrapper is dependent on the heap implementation used
