@@ -188,7 +188,8 @@ void IMU_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+    osDelay(500);
   }
   /* USER CODE END IMU_task */
 }
@@ -203,10 +204,24 @@ void IMU_task(void *argument)
 void GPS_task(void *argument)
 {
   /* USER CODE BEGIN GPS_task */
+
+  CAN_comms_Tx_msg_t msg;
+
+  CAN_TxHeaderTypeDef header = {
+      .StdId = 0x100,
+      .ExtId = 0x0000,
+      .IDE = CAN_ID_STD,
+      .RTR = CAN_RTR_DATA,
+      .DLC = 8};
+
+  msg.header = header;
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	  uint32_t mailbox;
+    HAL_CAN_AddTxMessage(&hcan, &msg.header, msg.data, &mailbox);
+	  //CAN_comms_Add_Tx_message(&msg);
+    osDelay(10);
   }
   /* USER CODE END GPS_task */
 }
@@ -215,4 +230,3 @@ void GPS_task(void *argument)
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
-

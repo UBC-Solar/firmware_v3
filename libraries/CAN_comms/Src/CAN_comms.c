@@ -30,16 +30,26 @@ osMessageQueueId_t CAN_comms_Rx_queue;
 osMessageQueueId_t CAN_comms_Tx_queue;
 osThreadId_t CAN_comms_Rx_task_handle;
 osThreadId_t CAN_comms_Tx_task_handle;
+StaticTask_t CAN_comms_Rx_task_control_block;
+StaticTask_t CAN_comms_Tx_task_control_block;
+uint32_t CAN_comms_Rx_task_buffer[CAN_RX_TASK_STACK_SIZE];
+uint32_t CAN_comms_Tx_task_buffer[CAN_TX_TASK_STACK_SIZE];
 osSemaphoreId_t CAN_comms_Tx_mailbox_semaphore;
 const osThreadAttr_t CAN_comms_Rx_task_attributes = {
     .name = "CAN_comms_Rx_task",
-    .stack_size = CAN_RX_TASK_STACK_SIZE,
+    .cb_mem = &CAN_comms_Rx_task_control_block,
+    .cb_size = sizeof(CAN_comms_Rx_task_control_block),
+    .stack_mem = &CAN_comms_Rx_task_buffer[0],
+    .stack_size = sizeof(CAN_comms_Rx_task_buffer),
     .priority = (osPriority_t) osPriorityLow,
 };
 const osThreadAttr_t CAN_comms_Tx_task_attributes = {
     .name = "CAN_comms_Tx_task",
-    .stack_size = CAN_TX_TASK_STACK_SIZE,
-    .priority = (osPriority_t) osPriorityHigh,
+    .cb_mem = &CAN_comms_Tx_task_control_block,
+    .cb_size = sizeof(CAN_comms_Tx_task_control_block),
+    .stack_mem = &CAN_comms_Tx_task_buffer[0],
+    .stack_size = sizeof(CAN_comms_Tx_task_buffer),
+    .priority = (osPriority_t) osPriorityLow,
 };
 
 
@@ -143,7 +153,7 @@ void CAN_comms_Tx_task(void* argument)
             uint32_t can_mailbox; // Not used
             if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))
             {
-                return; // TODO: Error handle
+            	// TODO: Error handle
             }
         }
         else
@@ -180,7 +190,7 @@ void CAN_comms_Rx_task(void* argument)
         }
         else
         {
-            return; // TODO: Error handle
+            // TODO: Error handle
         }
     }
 }
