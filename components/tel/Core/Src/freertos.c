@@ -112,6 +112,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
     CAN_tasks_init();                         // Rx CAN Filter, Rx callback using CAN comms
+    CPU_LOAD_init(10, 500, );
 
   /* USER CODE END Init */
 
