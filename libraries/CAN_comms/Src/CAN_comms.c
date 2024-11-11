@@ -217,7 +217,6 @@ void CAN_comms_Rx_message_pending_ISR()
     }
 
     /* Add CAN message to the queue */
-    busHeavycheck++;
     if(osOK != osMessageQueuePut(CAN_comms_Rx_queue, &CAN_Rx_msg, 0, 0))
     {
         CAN_comms_diagnostic.dropped_rx_msg++;
