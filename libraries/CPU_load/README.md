@@ -1,0 +1,42 @@
+# CPU Load Library
+
+## Overview
+
+The CPU Load Library is designed to calculate the CPU load of the connected MCU. This library measures the load at a user-specified frequency (in milliseconds) and utilizes a circular buffer for a windowed approach to track CPU loads over time. The buffer's values are averaged to provide a real-time CPU load measurement.
+
+## How to Use
+
+### Step 1: Include Required Headers
+
+1. **Include Header Files**: 
+   - Add `cpu_load.h` to your `main.c` and `FreeRTOS.c` files.
+   - Add `cpu_load_trace.h` to the bottom of `FreeRTOSConfig.h`.
+
+2. **Enable FreeRTOS Macros**:
+   - Copy and paste the following definition at the bottom of the API function section in `FreeRTOSConfig.h`:
+     ```c
+     #define INCLUDE_xTaskGetIdleTaskHandle 1
+     ```
+   - This enables the CPU Load library to use necessary FreeRTOS macros and functions.
+
+### Step 2: Set Up a Timer
+
+1. **Configure Timer**:
+   - Choose a timer and configure it to tick every 1 microsecond. For example, with a 72 MHz timer, set the prescaler to 71.
+
+2. **Handle Timer Overflow**:
+   - In the `HAL_TIM_PeriodElapsedCallback` function, call:
+     ```c
+     CPU_LOAD_timer_overflow_handler(htim);
+     ```
+   - This function allows the CPU Load library to track timer overflow events.
+
+### Step 3: Initialize the Component
+
+1. **Call Initialization Function**:
+   - In `FreeRTOS.c`, locate the `MX_FREERTOS_Init` function and call `CPU_LOAD_init()`, passing in:
+     - A window size (integer from 0 to 20).
+     - A frequency (in milliseconds) for CPU load calculation.
+     - A pointer to the timer handler, e.g., `&htim2` if using Timer 2.
+
+The library is now set up to calculate an
