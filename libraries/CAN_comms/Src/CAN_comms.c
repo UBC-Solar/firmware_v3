@@ -147,22 +147,22 @@ void CAN_comms_Tx_task(void* argument)
     	osDelay(1);
 
         /* Wait until there is a message in the queue */ 
-       // CAN_comms_Tx_msg_t CAN_comms_Tx_msg;
-       // if (osOK == osMessageQueueGet(CAN_comms_Tx_queue, &CAN_comms_Tx_msg, NULL, osWaitForever))
-       // {
+       CAN_comms_Tx_msg_t CAN_comms_Tx_msg;
+       if (osOK == osMessageQueueGet(CAN_comms_Tx_queue, &CAN_comms_Tx_msg, NULL, osWaitForever))
+       {
             /* Wait for a CAN mailbox semaphore to be released */
-         //   osSemaphoreAcquire(CAN_comms_Tx_mailbox_semaphore, osWaitForever);
+         osSemaphoreAcquire(CAN_comms_Tx_mailbox_semaphore, osWaitForever);
 
-         //   uint32_t can_mailbox; // Not used
-         //   if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))
-          //  {
-          //      return; // TODO: Error handle
-          //  }
-      //  }
-       // else
-       // {
+        uint32_t can_mailbox; // Not used
+         if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))
+        {
+           return; // TODO: Error handle
+        }
+        }
+       else
+       {
             // TODO: Error handle
-       // }
+       }
     }
 }
 
@@ -186,16 +186,17 @@ void CAN_comms_Rx_task(void* argument)
     {
     	osDelay(1);
         /* Wait until there is a message in the queue */ 
-       // CAN_comms_Rx_msg_t CAN_comms_Rx_msg;
-       // if (osOK == osMessageQueueGet(CAN_comms_Rx_queue, &CAN_comms_Rx_msg, NULL, osWaitForever))
-       // {
+       CAN_comms_Rx_msg_t CAN_comms_Rx_msg;
+        if (osOK == osMessageQueueGet(CAN_comms_Rx_queue, &CAN_comms_Rx_msg, NULL, osWaitForever))
+        {
+
             /* Call the handle function pointer */
-      //      CAN_comms_config.CAN_comms_Rx_callback(&CAN_comms_Rx_msg);
-       // }
-     //   else
-       // {
-       //     return; // TODO: Error handle
-       // }
+            CAN_comms_config.CAN_comms_Rx_callback(&CAN_comms_Rx_msg);
+       }
+        else
+      {
+          return; // TODO: Error handle
+      }
     }
 }
 
@@ -216,6 +217,7 @@ void CAN_comms_Rx_message_pending_ISR()
     }
 
     /* Add CAN message to the queue */
+    busHeavycheck++;
     if(osOK != osMessageQueuePut(CAN_comms_Rx_queue, &CAN_Rx_msg, 0, 0))
     {
         CAN_comms_diagnostic.dropped_rx_msg++;
