@@ -17,7 +17,6 @@ The CPU Load Library is designed to calculate the CPU load of the connected MCU.
      ```c
      #define INCLUDE_xTaskGetIdleTaskHandle 1
      ```
-   - This enables the CPU Load library to use necessary FreeRTOS macros and functions.
 
 ### Step 2: Set Up a Timer
 
@@ -29,7 +28,6 @@ The CPU Load Library is designed to calculate the CPU load of the connected MCU.
      ```c
      CPU_LOAD_timer_overflow_handler(htim);
      ```
-   - This function allows the CPU Load library to track timer overflow events.
 
 ### Step 3: Initialize the Component
 
@@ -39,4 +37,4 @@ The CPU Load Library is designed to calculate the CPU load of the connected MCU.
      - A frequency (in milliseconds) for CPU load calculation.
      - A pointer to the timer handler, e.g., `&htim2` if using Timer 2.
 
-The library is now set up to calculate an
+The library is now set up to calculate and track the CPU load of the MCU at your specified frequency!
