@@ -183,7 +183,6 @@ void CAN_comms_Rx_task(void* argument)
     {
         /* Wait until there is a message in the queue */ 
     	CAN_comms_Rx_msg_t CAN_comms_Rx_msg;
-
     	if (osOK == osMessageQueueGet(CAN_comms_Rx_queue, &CAN_comms_Rx_msg, NULL, osWaitForever))
     	{
 
