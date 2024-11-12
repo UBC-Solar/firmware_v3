@@ -242,7 +242,7 @@ void CAN_comms_Tx_mailbox_complete_ISR()
  */
 void CAN_comms_get_diagnostic(CAN_comms_diagnostics_t* diagnostic){
 
-	diagnostic = *CAN_comms_diagnostic;
+	*diagnostic = CAN_comms_diagnostic;
 }
 
 /**
