@@ -22,7 +22,8 @@
 #define CAN_RX_STRUCT_SIZE sizeof(CAN_comms_Rx_msg_t)
 #define CAN_TX_STRUCT_SIZE sizeof(CAN_comms_Tx_msg_t)
 #define NUM_CAN_TX_MAILBOXES 3
-
+#define COMMS_INIT_SUCCESS 0
+#define COMMS_INIT_FAILURE 1
 
 /* Private varibles */
 CAN_comms_config_t CAN_comms_config;
@@ -61,21 +62,19 @@ void CAN_comms_Tx_task(void* argument);
 void CAN_comms_init(CAN_comms_config_t* config)
 {
 
-	CAN_comms_diagnostic.comms_init_error = 0;
+	CAN_comms_diagnostic.comms_init_error = COMMS_INIT_SUCCESS;
 	CAN_comms_diagnostic.dropped_rx_msg = 0;
 	CAN_comms_diagnostic.dropped_tx_msg = 0;
 
     /* Check config is not NULL */
     if (config == NULL)
     {
-        CAN_comms_diagnostic.comms_init_error = 1;
+        CAN_comms_diagnostic.comms_init_error = COMMS_INIT_FAILURE;
         return;
     }
 
     /* Set config */
     CAN_comms_config = *config;
-
-
 
     /* Create queues */
     CAN_comms_Rx_queue = osMessageQueueNew(CAN_RX_QUEUE_SIZE, CAN_RX_STRUCT_SIZE, NULL);
@@ -107,7 +106,6 @@ void CAN_comms_init(CAN_comms_config_t* config)
     HAL_CAN_ActivateNotification(CAN_comms_config.hcan, CAN_IT_TX_MAILBOX_EMPTY);
 
 
-
     /* Start CAN */
     HAL_CAN_Start(CAN_comms_config.hcan);
  }
@@ -125,7 +123,6 @@ void CAN_comms_Add_Tx_message(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
     if(osOK != osMessageQueuePut(CAN_comms_Tx_queue, CAN_comms_Tx_msg, 0, 0))
     {
         CAN_comms_diagnostic.dropped_tx_msg++;
-        return;
     }
 }
 
@@ -144,7 +141,6 @@ void CAN_comms_Tx_task(void* argument)
     /* Infinite loop */
     for(;;)
     {
-    	osDelay(1);
 
         /* Wait until there is a message in the queue */ 
        CAN_comms_Tx_msg_t CAN_comms_Tx_msg;
@@ -154,11 +150,12 @@ void CAN_comms_Tx_task(void* argument)
          osSemaphoreAcquire(CAN_comms_Tx_mailbox_semaphore, osWaitForever);
 
         uint32_t can_mailbox; // Not used
-         if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))
+
+        if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))
         {
            return; // TODO: Error handle
         }
-        }
+       }
        else
        {
             // TODO: Error handle
@@ -184,20 +181,20 @@ void CAN_comms_Rx_task(void* argument)
     /* Infinite loop */
     for(;;)
     {
-    	osDelay(1);
         /* Wait until there is a message in the queue */ 
-       CAN_comms_Rx_msg_t CAN_comms_Rx_msg;
-        if (osOK == osMessageQueueGet(CAN_comms_Rx_queue, &CAN_comms_Rx_msg, NULL, osWaitForever))
-        {
+    	CAN_comms_Rx_msg_t CAN_comms_Rx_msg;
 
-            /* Call the handle function pointer */
-            CAN_comms_config.CAN_comms_Rx_callback(&CAN_comms_Rx_msg);
-       }
+    	if (osOK == osMessageQueueGet(CAN_comms_Rx_queue, &CAN_comms_Rx_msg, NULL, osWaitForever))
+    	{
+
+		/* Call the handle function pointer */
+		CAN_comms_config.CAN_comms_Rx_callback(&CAN_comms_Rx_msg);
+    	}
         else
-      {
+        {
           return; // TODO: Error handle
-      }
-    }
+        }
+   }
 }
 
 
@@ -220,7 +217,6 @@ void CAN_comms_Rx_message_pending_ISR()
     if(osOK != osMessageQueuePut(CAN_comms_Rx_queue, &CAN_Rx_msg, 0, 0))
     {
         CAN_comms_diagnostic.dropped_rx_msg++;
-        return;
     }
 }
 
@@ -249,7 +245,6 @@ void CAN_comms_Diagnostic(CAN_comms_diagnostics_t* diagnostic){
     diagnostic->dropped_rx_msg = CAN_comms_diagnostic.dropped_rx_msg;
     diagnostic->dropped_tx_msg = CAN_comms_diagnostic.dropped_tx_msg;
     diagnostic->comms_init_error = CAN_comms_diagnostic.comms_init_error;
-    //... add more
 }
 
 /**
