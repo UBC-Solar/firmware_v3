@@ -29,6 +29,9 @@
 #include "radio.h"
 #include "canload.h"
 
+#define CANLOAD_MSG_ID                      0x760
+#define CANLOAD_DATA_LENGTH                 1
+
 /**
  * @brief CAN message header for sending out bus load
  */
@@ -230,7 +233,11 @@ void CAN_tx_canload_msg() {
         .header = CANLOAD_busload
     };
 
-   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+
+//    CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+    uint32_t can_mailbox;
+    HAL_CAN_AddTxMessage(&hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox);
+
 }
 
 /* USER CODE END 1 */

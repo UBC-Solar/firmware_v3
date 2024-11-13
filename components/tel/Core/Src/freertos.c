@@ -240,11 +240,11 @@ void CANBusLoad_Task(void *argument)
   /* USER CODE BEGIN CANBusLoad_Task */
   /* Infinite loop */
   for(;;)
-	  {
-	    CANLOAD_update_sliding_window();
-	    CAN_tx_canload_msg();
-	    osDelay(100);
-	  }
+	{
+	CANLOAD_update_sliding_window();
+	CAN_tx_canload_msg();
+	osDelay(CANLOAD_MSG_RATE);
+	}
   /* USER CODE END CANBusLoad_Task */
 }
 

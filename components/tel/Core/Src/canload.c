@@ -5,6 +5,10 @@
 #define WINDOW_SIZE 5
 #endif
 
+/*
+Monday update explaining constants: 
+https://ubcsolar26.monday.com/boards/7524367653/pulses/7524368220/posts/3493917025
+*/
 
 #define BAUD_RATE 500000
 #define SOF_BITS 1

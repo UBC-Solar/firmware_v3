@@ -2,6 +2,7 @@
 #define INC_CANBUSLOAD_H_
 
 #include "main.h"
+#define CANLOAD_MSG_RATE 100
 
 float CANLOAD_get_bus_load();
 void CANLOAD_update_sliding_window();
