@@ -26,12 +26,12 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
-#include "cpu_load.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
 #include "radio.h"
+#include "cpu_load.h"
 
 /* USER CODE END Includes */
 
@@ -200,8 +200,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
 
-  CPU_LOAD_timer_overflow_handler(htim);
   /* USER CODE BEGIN Callback 1 */
+  
+  CPU_LOAD_timer_overflow_handler(htim);
 
   /* USER CODE END Callback 1 */
 }

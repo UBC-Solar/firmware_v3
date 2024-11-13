@@ -1,16 +1,10 @@
-/*
- * cpu_load.c
- *
- *  Created on: Nov 9, 2024
- *      Author: diego
- */
-
 #include "cpu_load.h"
 #include "circular_buffer.h"
 
 #define FLOAT_TO_PERCENTAGE 100.0f
+#define UINT16_NUM_BITS
 
-static uint64_t idleRunTime = 0;
+static uint64_t idle_run_time = 0;
 static uint64_t idle_switched_in = 0;
 static uint64_t window_start_time = 0;
 static uint64_t total_run_time = 0;
@@ -47,45 +41,107 @@ circ_buf_t cpuLoadBuffer = {
     .num_entries = 0,
 };
 
-// Timer overflow handler
+
+
+/**
+ * @brief Handler for timer overflow
+ *
+ * This gets called in the period elapsed function to check if it
+ * is the timer being passed to the CPU Load software component that has
+ * overflown. When it has, it increments the overflow_count global variable
+ * which is used to keep track of time accurately even when the timer
+ * has overflown. 
+ *
+ * @param htim A pointer to a timer handler
+ */
+
 void CPU_LOAD_timer_overflow_handler(TIM_HandleTypeDef *htim) {
     if (htim->Instance == g_timer_handle.Instance) {
         overflow_count++;
     }
 }
 
-// Task switched in - capture the starting time
+/**
+ * @brief Trace hook macro for switching into a task
+ *
+ * This function gets called when a task has been switched into. It
+ * then checks if the task being switched into is the idle task.
+ * If it is the idle task, we take note of the time we entered it 
+ * by combining the current time and overflown time into a global 
+ * variable called idle_switched_in. 
+ */
+
 void taskSwitchedIn() {
     TaskHandle_t idleTaskHandle = xTaskGetIdleTaskHandle();
     if (xTaskGetCurrentTaskHandle() == idleTaskHandle) {
         uint16_t timer_value = __HAL_TIM_GET_COUNTER(&g_timer_handle);
-        idle_switched_in = (overflow_count << 16) | timer_value;
+        idle_switched_in = (overflow_count << UINT16_NUM_BITS) | timer_value;
     }
 }
 
-// Task switched out - calculate idle time based on current time
+/**
+ * @brief Trace hook macro for switching out of a task
+ *
+ * This function gets called when a task has been switched out of. If the
+ * task being switched out of was the idle task, then we do calculations 
+ * involving the current time, overflow time, and the time we switched into 
+ * the idle task, to determine how long we spent in the idle task.
+ */
+
 void taskSwitchedOut() {
     TaskHandle_t idleTaskHandle = xTaskGetIdleTaskHandle();
     if (xTaskGetCurrentTaskHandle() == idleTaskHandle) {
         uint16_t timer_value = __HAL_TIM_GET_COUNTER(&g_timer_handle);
-        uint64_t current_time = (overflow_count << 16) | timer_value;
-        idleRunTime += current_time - idle_switched_in;
+        uint64_t current_time = (overflow_count << UINT16_NUM_BITS) | timer_value;
+        idle_run_time += current_time - idle_switched_in;
     }
 }
 
-// Reset the counters for a new monitoring window
+/**
+ * @brief Reset for new window of CPU Load calculation
+ *
+ * This function resets the idle_run_time to 0 and takes note of the new
+ * window's start time in window_start_time, in order to calculate a new CPU Load. This function
+ * gets called only after we have calculated and added a CPU Load to the circular
+ * buffer.
+ */
+
 void reset() {
-    idleRunTime = 0;
+    idle_run_time = 0;
     uint16_t timer_value = __HAL_TIM_GET_COUNTER(&g_timer_handle);
-    window_start_time = (overflow_count << 16) | timer_value;
+    window_start_time = (overflow_count << UINT16_NUM_BITS) | timer_value;
 }
 
-// Calculate CPU load percentage
-float CPU_LOAD_calculation(float idleRunTime, float total_run_time) {
-    return (1.0f - ((float)idleRunTime / total_run_time)) * FLOAT_TO_PERCENTAGE;
+/**
+ * @brief Calculates the CPU Load
+ *
+ * This function is the actual formula for calculating a CPU Load. 
+ * It simply takes a ratio of the idle_run_time and total_run_time and 
+ * multiplies by 100 to get a percentage. You can think of this as a ratio
+ * of free-time over busy-time. So a CPU Load of 100% means there was no free-time.
+ *
+ * @param idle_run_time The time spent in the idle task for this window
+ * @param total_run_time The total time in this window
+ * @return The CPU Load as a percentage
+ */
+
+float CPU_LOAD_calculation(float idle_run_time, float total_run_time) {
+    return (1.0f - ((float)idle_run_time / total_run_time)) * FLOAT_TO_PERCENTAGE;
 }
 
-// Initialize the CPU load monitoring
+/**
+ * @brief Necessary initializations for the software component
+ *
+ * This function takes and stores the user's desired window size, 
+ * calculation frequency, and timer in global variables so that the 
+ * rest of the software component has access to these desired constraints.
+ * This function also starts the given timer and creates the RTOS task.
+ *
+ * @param window_size The desired amount of items in the circular buffer
+ * @param frequency_ms The frequency for a calculation in milliseconds
+ * @param timer A pointer to a timer handler
+ */
+
 void CPU_LOAD_init(uint8_t window_size, uint16_t frequency_ms, TIM_HandleTypeDef *timer) {
     g_window_size = window_size;
     g_frequency_ms = frequency_ms;
@@ -96,17 +152,35 @@ void CPU_LOAD_init(uint8_t window_size, uint16_t frequency_ms, TIM_HandleTypeDef
     CPU_monitor_task_handle = osThreadNew(CPU_monitor_task, NULL, &CPU_Task_attributes);
 }
 
-// Add CPU load data to the circular buffer and reset for the next window
+/**
+ * @brief Adds a CPU Load to the circular buffer
+ *
+ * This function takes the note of the total time passed and stores it in
+ * total_run_time. The CPU_LOAD_calculation then gets called with total_run_time
+ * and idle_run_time being passed in and the return value is stored in cpu_load.
+ * This CPU load is then added to the circular buffer with CIRC_BUF_enqueue and the reset
+ * function gets called so as to indicate a new window start. 
+ */
+
 void add_to_buffer() {
     uint16_t timer_value = __HAL_TIM_GET_COUNTER(&g_timer_handle);
-    total_run_time = ((overflow_count << 16) | timer_value) - window_start_time;
+    total_run_time = ((overflow_count << UINT16_NUM_BITS) | timer_value) - window_start_time;
 
-    float cpu_load = CPU_LOAD_calculation((float)idleRunTime, (float)total_run_time);
+    float cpu_load = CPU_LOAD_calculation((float)idle_run_time, (float)total_run_time);
     CIRC_BUF_enqueue(&cpuLoadBuffer, cpu_load, g_window_size);
     reset();
 }
 
-// Calculate the average CPU load from the buffer
+/**
+ * @brief Takes the average of the CPU loads in the buffer
+ *
+ * This function first checks to make sure the buffer isn't empty,
+ * then iterates thru the circular buffer and takes an average of all the CPU Loads 
+ * so as to provide the user with a more accurate CPU load over time. 
+ *
+ * @return An average of the CPU loads as a percentage.
+ */
+
 float CPU_LOAD_average() {
     if (CIRC_BUF_empty(&cpuLoadBuffer)) {
         return -1;  // Return an indicator for no data in buffer
@@ -120,7 +194,16 @@ float CPU_LOAD_average() {
     return sum / cpuLoadBuffer.num_entries;
 }
 
-// CPU monitoring task - periodically calculates and stores CPU load
+/**
+ * @brief FreeRTOS task for monitoring the CPU load
+ *
+ * This task is the highest priority task only second to all interrupts.
+ * It adds CPU loads to the buffer by calling the add_to_buffer function and calls
+ * an osDelay for the amount of time that the user specified in their given frequency.
+ *
+ * @param argument Unused
+ */
+
 void CPU_monitor_task(void* argument) {
     for (;;) {
         add_to_buffer();

@@ -1,10 +1,3 @@
-/*
- * cpu_load_trace.h
- *
- *  Created on: Nov 9, 2024
- *      Author: diego
- */
-
 #ifndef CPU_LOAD_INC_CPU_LOAD_TRACE_H_
 #define CPU_LOAD_INC_CPU_LOAD_TRACE_H_
 
