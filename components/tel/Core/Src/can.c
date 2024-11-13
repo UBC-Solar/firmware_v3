@@ -233,11 +233,7 @@ void CAN_tx_canload_msg() {
         .header = CANLOAD_busload
     };
 
-
-//    CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
-    uint32_t can_mailbox;
-    HAL_CAN_AddTxMessage(&hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox);
-
+   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
 }
 
 /* USER CODE END 1 */
