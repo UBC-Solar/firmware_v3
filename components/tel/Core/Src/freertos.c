@@ -41,7 +41,8 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define WINDOW_SIZE 10
+#define FREQUENCY_MS 500
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -113,7 +114,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
     CAN_tasks_init();                         // Rx CAN Filter, Rx callback using CAN comms
-    CPU_LOAD_init(10, 500, &htim2);
+    CPU_LOAD_init(WINDOW_SIZE, FREQUENCY_MS, &htim2);
 
   /* USER CODE END Init */
 
