@@ -15,15 +15,15 @@
 
 
 /* Private defines */
-#define CAN_RX_TASK_STACK_SIZE 512
-#define CAN_TX_TASK_STACK_SIZE 512
-#define CAN_RX_QUEUE_SIZE 16
-#define CAN_TX_QUEUE_SIZE 16
-#define CAN_RX_STRUCT_SIZE sizeof(CAN_comms_Rx_msg_t)
-#define CAN_TX_STRUCT_SIZE sizeof(CAN_comms_Tx_msg_t)
-#define NUM_CAN_TX_MAILBOXES 3
-#define COMMS_INIT_SUCCESS 0
-#define COMMS_INIT_FAILURE 1
+#define CAN_RX_TASK_STACK_SIZE      512 
+#define CAN_TX_TASK_STACK_SIZE      512
+#define CAN_RX_QUEUE_SIZE           16
+#define CAN_TX_QUEUE_SIZE           16
+#define CAN_RX_STRUCT_SIZE          sizeof(CAN_comms_Rx_msg_t)
+#define CAN_TX_STRUCT_SIZE          sizeof(CAN_comms_Tx_msg_t)
+#define NUM_CAN_TX_MAILBOXES        3
+#define COMMS_INIT_SUCCESS          0
+#define COMMS_INIT_FAILURE          1
 
 /* Private varibles */
 CAN_comms_config_t CAN_comms_config;
@@ -41,7 +41,7 @@ const osThreadAttr_t CAN_comms_Rx_task_attributes = {
 const osThreadAttr_t CAN_comms_Tx_task_attributes = {
     .name = "CAN_comms_Tx_task",
     .stack_size = CAN_TX_TASK_STACK_SIZE,
-    .priority = (osPriority_t) osPriorityLow,
+    .priority = (osPriority_t) osPriorityHigh,
 };
 
 
@@ -61,11 +61,8 @@ void CAN_comms_Tx_task(void* argument);
  */
 void CAN_comms_init(CAN_comms_config_t* config)
 {
-
-	CAN_comms_diagnostic.comms_init_error = COMMS_INIT_SUCCESS;
-	CAN_comms_diagnostic.dropped_rx_msg = 0;
-	CAN_comms_diagnostic.dropped_tx_msg = 0;
-
+    comms_diagnostic_init();
+	
     /* Check config is not NULL */
     if (config == NULL)
     {
@@ -141,20 +138,18 @@ void CAN_comms_Tx_task(void* argument)
     /* Infinite loop */
     for(;;)
     {
-
-        /* Wait until there is a message in the queue */ 
+       /* Wait until there is a message in the queue */ 
        CAN_comms_Tx_msg_t CAN_comms_Tx_msg;
        if (osOK == osMessageQueueGet(CAN_comms_Tx_queue, &CAN_comms_Tx_msg, NULL, osWaitForever))
        {
             /* Wait for a CAN mailbox semaphore to be released */
-         osSemaphoreAcquire(CAN_comms_Tx_mailbox_semaphore, osWaitForever);
+            osSemaphoreAcquire(CAN_comms_Tx_mailbox_semaphore, osWaitForever);
+            uint32_t can_mailbox; // Not used
 
-        uint32_t can_mailbox; // Not used
-
-        if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))
-        {
-           return; // TODO: Error handle
-        }
+            if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))
+            {
+                return; // TODO: Error handle
+            }
        }
        else
        {
@@ -185,13 +180,12 @@ void CAN_comms_Rx_task(void* argument)
     	CAN_comms_Rx_msg_t CAN_comms_Rx_msg;
     	if (osOK == osMessageQueueGet(CAN_comms_Rx_queue, &CAN_comms_Rx_msg, NULL, osWaitForever))
     	{
-
-		/* Call the handle function pointer */
-		CAN_comms_config.CAN_comms_Rx_callback(&CAN_comms_Rx_msg);
+		    /* Call the handle function pointer */
+		    CAN_comms_config.CAN_comms_Rx_callback(&CAN_comms_Rx_msg);
     	}
         else
         {
-          return; // TODO: Error handle
+            return; // TODO: Error handle
         }
    }
 }
@@ -308,3 +302,9 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
     }
 }
 
+void comms_diagnostic_init()
+{
+    CAN_comms_diagnostic.comms_init_error = COMMS_INIT_SUCCESS;
+	CAN_comms_diagnostic.dropped_rx_msg = 0;
+	CAN_comms_diagnostic.dropped_tx_msg = 0;
+}
