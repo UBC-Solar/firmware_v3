@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2023 STMicroelectronics.
+  * Copyright (c) 2024 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -30,9 +30,10 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 
-/* USER CODE END Includes */
+#include <stdbool.h>
+#include "radio.h"
 
-extern UART_HandleTypeDef huart5;
+/* USER CODE END Includes */
 
 extern UART_HandleTypeDef huart1;
 
@@ -40,10 +41,11 @@ extern UART_HandleTypeDef huart1;
 
 /* USER CODE END Private defines */
 
-void MX_UART5_Init(void);
 void MX_USART1_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
+void UART_radio_transmit(RADIO_Msg_TypeDef* can_radio_msg);
 
 /* USER CODE END Prototypes */
 
