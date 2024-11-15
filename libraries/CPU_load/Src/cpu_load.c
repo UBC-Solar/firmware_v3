@@ -207,7 +207,6 @@ float CPU_LOAD_average() {
 void CPU_monitor_task(void* argument) {
     for (;;) {
         add_to_buffer();
-        cpu_load = CPU_LOAD_average();
         osDelay(g_frequency_ms);
     }
 }
