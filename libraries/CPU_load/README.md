@@ -4,6 +4,10 @@
 
 The CPU Load Library is designed to calculate the CPU load of the connected MCU. This library measures the load at a user-specified frequency (in milliseconds) and utilizes a circular buffer for a windowed approach to track CPU loads over time. The buffer's values are averaged to provide a real-time CPU load measurement.
 
+## Prerequisite
+
+Make sure to link the library folder. A tutorial on how to do that can be found [here.](https://wiki.ubcsolar.com/en/tutorials/stm32cubeide)
+
 ## Usage
 
 ### Step 1: Include Required Headers
