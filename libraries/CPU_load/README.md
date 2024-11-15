@@ -13,7 +13,7 @@ Make sure to link the library folder. A tutorial on how to do that can be found 
 ### Step 1: Include Required Headers
 
 1. **Include Header Files**: 
-   - Add `cpu_load.h` to your `main.c` and `FreeRTOS.c` files.
+   - Add `cpu_load.h` to your `main.c` and `freeRTOS.c` files.
    - Add `cpu_load_trace.h` to the bottom-most user code section of `FreeRTOSConfig.h`.
 
 2. **Enable FreeRTOS Macros**:
@@ -40,5 +40,14 @@ Make sure to link the library folder. A tutorial on how to do that can be found 
      - A window size (integer from 0 to 20).
      - A frequency (in milliseconds) for CPU load calculation.
      - A pointer to the timer handler, e.g., `&htim2` if using Timer 2.
+
+### Step 4 (Optional): Getting the average CPU load from the buffer
+
+   If you are interested in getting the average of the CPU loads in the circular buffer, you can simply call the averaging function and store it in a variable.
+   For example:
+   
+   ```c
+     float average_cpu_load = CPU_LOAD_average();
+   ```
 
 The library is now set up to calculate and track the CPU load of the MCU at your specified frequency!
