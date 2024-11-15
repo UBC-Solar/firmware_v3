@@ -2,14 +2,13 @@
 #include "circular_buffer.h"
 
 #define FLOAT_TO_PERCENTAGE 100.0f
-#define UINT16_NUM_BITS
+#define UINT16_NUM_BITS     16
 
 static uint64_t idle_run_time = 0;
 static uint64_t idle_switched_in = 0;
 static uint64_t window_start_time = 0;
 static uint64_t total_run_time = 0;
 static uint64_t overflow_count = 0;
-static float cpu_load = 0;
 
 static uint8_t g_window_size;
 static uint16_t g_frequency_ms;
