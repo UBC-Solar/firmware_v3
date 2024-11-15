@@ -71,11 +71,17 @@ typedef struct {
 * @param dropped_rx_msg: Count of dropped received CAN messages
 * @param dropped_tx_msg: Count of dropped messages in the TX buffer
 * @param comms_init_error: indicates if comms has failed to init.
+* @param rx_queue_count: the number of can messages in the RX queue
+* @param tx_queue_count: the number of CAN messages in the TX queue
+* @param tx_semaphore_count: the number of free semaphores for CAN TX mailboxes
 */
 typedef struct {
    uint32_t dropped_rx_msg;
    uint32_t dropped_tx_msg;
    uint8_t comms_init_error;
+   uint8_t rx_queue_count;
+   uint8_t tx_queue_count;
+   uint32_t tx_semaphore_count;
 
 } CAN_comms_diagnostics_t;
 
@@ -84,5 +90,8 @@ void CAN_comms_init(CAN_comms_config_t* config);
 void CAN_comms_Add_Tx_message(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg);
 void CAN_comms_get_diagnostic(CAN_comms_diagnostics_t* diagnostic);
 void comms_diagnostic_init();
+void comms_get_semaphore_count();
+void comms_rx_queue_get_count();
+void comms_tx_queue_get_count();
 
 #endif // CAN_COMMS_H

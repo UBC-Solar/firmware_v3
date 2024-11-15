@@ -148,7 +148,7 @@ void CAN_comms_Tx_task(void* argument)
 
             if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))
             {
-                return; // TODO: Error handle
+            	osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore); // TODO: Error handle
             }
        }
        else
@@ -185,7 +185,7 @@ void CAN_comms_Rx_task(void* argument)
     	}
         else
         {
-            return; // TODO: Error handle
+            // TODO: Error handle
         }
    }
 }
@@ -210,6 +210,7 @@ void CAN_comms_Rx_message_pending_ISR()
     if(osOK != osMessageQueuePut(CAN_comms_Rx_queue, &CAN_Rx_msg, 0, 0))
     {
         CAN_comms_diagnostic.dropped_rx_msg++;
+
     }
 }
 
@@ -233,8 +234,11 @@ void CAN_comms_Tx_mailbox_complete_ISR()
  *
  * @param diagnostic: Pointer to user's diagnostic struct.
  */
-void CAN_comms_get_diagnostic(CAN_comms_diagnostics_t* diagnostic){
-
+void CAN_comms_get_diagnostic(CAN_comms_diagnostics_t* diagnostic)
+{
+	comms_get_semaphore_count();
+	comms_rx_queue_get_count();
+	comms_tx_queue_get_count();
 	*diagnostic = CAN_comms_diagnostic;
 }
 
@@ -307,4 +311,20 @@ void comms_diagnostic_init()
     CAN_comms_diagnostic.comms_init_error = COMMS_INIT_SUCCESS;
 	CAN_comms_diagnostic.dropped_rx_msg = 0;
 	CAN_comms_diagnostic.dropped_tx_msg = 0;
+	CAN_comms_diagnostic.rx_queue_count = 0;
+	CAN_comms_diagnostic.tx_queue_count = 0;
+	CAN_comms_diagnostic.tx_semaphore_count = 0;
+}
+void comms_get_semaphore_count()
+{
+	CAN_comms_diagnostic.tx_semaphore_count = osSemaphoreGetCount(CAN_comms_Tx_mailbox_semaphore);
+}
+
+void comms_rx_queue_get_count()
+{
+	 CAN_comms_diagnostic.rx_queue_count = osMessageQueueGetCount(CAN_comms_Rx_queue);
+}
+void comms_tx_queue_get_count()
+{
+	CAN_comms_diagnostic.tx_queue_count = osMessageQueueGetCount(CAN_comms_Tx_queue);
 }
