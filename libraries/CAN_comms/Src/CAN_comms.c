@@ -15,8 +15,8 @@
 
 
 /* Private defines */
-#define CAN_RX_TASK_STACK_SIZE 512
-#define CAN_TX_TASK_STACK_SIZE 512
+#define CAN_RX_TASK_STACK_SIZE 1028
+#define CAN_TX_TASK_STACK_SIZE 1028
 #define CAN_RX_QUEUE_SIZE 16
 #define CAN_TX_QUEUE_SIZE 16
 #define CAN_RX_STRUCT_SIZE sizeof(CAN_comms_Rx_msg_t)
@@ -112,6 +112,10 @@ void CAN_comms_init(CAN_comms_config_t* config)
     HAL_CAN_Start(CAN_comms_config.hcan);
  }
 
+uint32_t queue_put_fail = 0;
+uint32_t queue_get_fail = 0;
+uint32_t semaphore_acquire_fail = 0;
+uint32_t HAL_CAN_fail = 0;
 
 /**
  * @brief Adds a CAN Tx message to the CAN_comms_Tx_queue
@@ -125,9 +129,9 @@ void CAN_comms_Add_Tx_message(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
     if(osOK != osMessageQueuePut(CAN_comms_Tx_queue, CAN_comms_Tx_msg, 0, 0))
     {
         return; // TODO: Error handle
+        queue_put_fail++;
     }
 }
-
 
 /**
  * @brief Task for handling CAN Tx messages
@@ -145,20 +149,25 @@ void CAN_comms_Tx_task(void* argument)
     {
         /* Wait until there is a message in the queue */ 
         CAN_comms_Tx_msg_t CAN_comms_Tx_msg;
-        if (osOK == osMessageQueueGet(CAN_comms_Tx_queue, &CAN_comms_Tx_msg, NULL, osWaitForever))
+        if (osOK != osMessageQueueGet(CAN_comms_Tx_queue, &CAN_comms_Tx_msg, NULL, osWaitForever))
         {
-            /* Wait for a CAN mailbox semaphore to be released */
-            osSemaphoreAcquire(CAN_comms_Tx_mailbox_semaphore, osWaitForever);
-
-            uint32_t can_mailbox; // Not used
-            if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))
-            {
-            	// TODO: Error handle
-            }
+            queue_get_fail++;
+            continue;
         }
-        else
+
+        /* Wait for a CAN mailbox semaphore to be released */
+        if(osOK != osSemaphoreAcquire(CAN_comms_Tx_mailbox_semaphore, osWaitForever))
         {
-            // TODO: Error handle
+            semaphore_acquire_fail++;
+            continue;
+        }
+
+        uint32_t can_mailbox; // Not used
+        if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))
+        {
+            HAL_CAN_fail++;
+            /* Release semaphore if HAL_CAN did not work */
+            osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
         }
     }
 }
