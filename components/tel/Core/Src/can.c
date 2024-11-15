@@ -146,28 +146,7 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 
     RTC_check_and_sync_rtc(CAN_comms_Rx_msg->header.StdId, CAN_comms_Rx_msg->data);     // Sync timestamps
 
-    RADIO_send_msg_uart(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data);
-}
-
-
-/**
- * @brief Initializes the CAN filter and CAN Rx callback function as CAN_comms_Rx_callback().
- * 
- * Note: This uses the CAN_comms abstraction layer which will initialize two freeRTOS tasks. As a result it is recommend to 
- * Call this function inside the MX_FREERTOS_Init() function in freertos.c
- */
-void CAN_tasks_init()
-{
-    CAN_comms_config_t CAN_comms_config_tel = {0}; 
-
-    CAN_FilterTypeDef CAN_filter = {0};
-    CAN_filter_init(&CAN_filter);
-
-    CAN_comms_config_tel.hcan = &hcan;
-    CAN_comms_config_tel.CAN_Filter = CAN_filter;
-    CAN_comms_config_tel.CAN_comms_Rx_callback = CAN_comms_Rx_callback;   
-
-    CAN_comms_init(&CAN_comms_config_tel);
+    RADIO_filter_and_queue_msg(CAN_comms_Rx_msg);
 }
 
 
@@ -190,6 +169,27 @@ void CAN_filter_init(CAN_FilterTypeDef* can_filter)
     can_filter->FilterMode = CAN_FILTERMODE_IDMASK;
     can_filter->FilterScale = CAN_FILTERSCALE_16BIT;
     can_filter->FilterActivation = CAN_FILTER_ENABLE;
+}
+
+
+/**
+ * @brief Initializes the CAN filter and CAN Rx callback function as CAN_comms_Rx_callback().
+ * 
+ * Note: This uses the CAN_comms abstraction layer which will initialize two freeRTOS tasks. As a result it is recommend to 
+ * Call this function inside the MX_FREERTOS_Init() function in freertos.c
+ */
+void CAN_tasks_init()
+{
+    CAN_comms_config_t CAN_comms_config_tel = {0}; 
+
+    CAN_FilterTypeDef CAN_filter = {0};
+    CAN_filter_init(&CAN_filter);
+
+    CAN_comms_config_tel.hcan = &hcan;
+    CAN_comms_config_tel.CAN_Filter = CAN_filter;
+    CAN_comms_config_tel.CAN_comms_Rx_callback = CAN_comms_Rx_callback;   
+
+    CAN_comms_init(&CAN_comms_config_tel);
 }
 
 

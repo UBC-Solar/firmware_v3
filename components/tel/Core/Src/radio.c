@@ -16,41 +16,68 @@
 #include "usart.h"
 #include "string.h"
 #include "rtc.h"
+#include "tel_freertos.h"
 
 
-/* LOCAL GLOBALS */
-static RADIO_Msg_TypeDef template_radio_msg = {0};						    // Template for every CAN message
+/* PRIVATE DEFINES */
+#define NO_PRIORITY                                 0
+#define NON_BLOCKING                                0
+#define ID_DELIMITER_CHAR                           '#'
+#define CARRIAGE_RETURN_CHAR                        '\r'
+#define NEW_LINE_CHAR                               '\n'
+#define MASK_4_BITS                                 0xF
 
 
 /* PRIVATE FUNCTIONS DECLARATIONS */
-void set_template_radio_msg(CAN_RxHeaderTypeDef* header, uint8_t* data);
+void set_radio_msg(CAN_RxHeaderTypeDef* header, uint8_t* data, RADIO_Msg_TypeDef* radio_msg);
 uint64_t get_timestamp();
 uint32_t get_can_id(CAN_RxHeaderTypeDef* can_msg_header_ptr);
-uint8_t get_data_length(uint8_t DLC);
+uint8_t get_data_length(uint32_t DLC);
 
 
 /**
- * @brief Initializes the template radio message
+ * @brief Adds a radio message to the radio tx queue
+ * 
+ * @param CAN_comms_Rx_msg Pointer to the CAN Rx message
  */
-void RADIO_init()
+void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
-	memset(&template_radio_msg, 0, sizeof(RADIO_Msg_TypeDef));		// Init template msg
-	template_radio_msg.ID_DELIMETER = ID_DELIMITER_CHAR;
-	template_radio_msg.CARRIAGE_RETURN = CARRIAGE_RETURN_CHAR;
-	template_radio_msg.NEW_LINE = NEW_LINE_CHAR;
+	// TODO: Implement filtering
+	// EX: if (check_CAN_ID_whitelist(CAN_comms_Rx_msg->header.StdId) == true) { ... }
+
+	/* Create radio message struct */
+	RADIO_Msg_TypeDef radio_msg = {0};
+	set_radio_msg(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data, &radio_msg);
+
+	/* Add CAN message to radio tx queue */
+	osMessageQueuePut(radio_tx_queue, &radio_msg, NO_PRIORITY, NON_BLOCKING);
 }
 
 
 /**
- * @brief Sends a CAN message over UART to the radio module
+ * @brief Radio Tx task that sends radio messages over UART
+ * This tasks waits for a message in the radio tx queue and acquires a USART Tx semaphore before sending the message over UART
  * 
- * @param header The CAN header struct
- * @param data The CAN data
  */
-void RADIO_send_msg_uart(CAN_RxHeaderTypeDef* header, uint8_t* data)
+void RADIO_Tx_forever()
 {
-	set_template_radio_msg(header, data);
-	UART_radio_transmit(&template_radio_msg);
+	/* Infinite Loop */
+	for(;;)
+	{
+		/* Wait until there is a message in the queue */ 
+		RADIO_Msg_TypeDef radio_msg;
+        if (HAL_GPIO_ReadPin(RADIO_CTS_GPIO_Port, RADIO_CTS_Pin) == GPIO_PIN_RESET)
+        {
+            if (osOK == osMessageQueueGet(radio_tx_queue, &radio_msg, NULL, osWaitForever))
+            {
+                UART_radio_transmit(&radio_msg);
+            }
+            else
+            {
+                // TODO: Error handle
+            }
+        }
+	}
 }
 
 
@@ -60,12 +87,17 @@ void RADIO_send_msg_uart(CAN_RxHeaderTypeDef* header, uint8_t* data)
  * @param header The CAN header struct
  * @param data The CAN data
  */
-void set_template_radio_msg(CAN_RxHeaderTypeDef* header, uint8_t* data)
+void set_radio_msg(CAN_RxHeaderTypeDef* header, uint8_t* data, RADIO_Msg_TypeDef* radio_msg)
 {
-	template_radio_msg.timestamp         = get_timestamp();
-	template_radio_msg.can_id            = get_can_id(header);
-	/* Get CAN Data */          		 memcpy(template_radio_msg.data, data, RADIO_DATA_LENGTH);
-	template_radio_msg.data_len          = get_data_length(header->DLC);
+	memset(radio_msg, 0, sizeof(RADIO_Msg_TypeDef));           // 0 out all 8 bytes data
+	
+	radio_msg->timestamp        = get_timestamp();
+	radio_msg->can_id           = get_can_id(header);
+	radio_msg->ID_DELIMETER     = ID_DELIMITER_CHAR;
+	memcpy(radio_msg->data, data, RADIO_DATA_LENGTH);
+	radio_msg->data_len         = get_data_length(header->DLC);
+	radio_msg->CARRIAGE_RETURN  = CARRIAGE_RETURN_CHAR;
+	radio_msg->NEW_LINE         = NEW_LINE_CHAR;
 }
 
 
@@ -103,7 +135,7 @@ uint32_t get_can_id(CAN_RxHeaderTypeDef* can_msg_header_ptr)
  * 
  * @return The data length as an 8-bit unsigned integer but only the 4 least significant bits are used
  */
-uint8_t get_data_length(uint8_t DLC)
+uint8_t get_data_length(uint32_t DLC)
 {
-	return DLC & MASK_4_BITS;
+	return (uint8_t) (DLC & MASK_4_BITS);
 }
