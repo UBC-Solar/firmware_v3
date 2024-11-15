@@ -22,6 +22,7 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
+#include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -53,7 +54,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 /* SEMAPHORES */
 osSemaphoreId_t usart1_tx_semaphore;
-
+CAN_comms_diagnostics_t testDiagnostics;
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -188,6 +189,8 @@ void IMU_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
+
+	  CAN_comms_get_diagnostic(&testDiagnostics);
     osDelay(1);
   }
   /* USER CODE END IMU_task */
@@ -206,7 +209,19 @@ void GPS_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	uint8_t data[] = {0,0,0,0,0,0,0,0};
+	CAN_TxHeaderTypeDef header;
+	CAN_comms_Tx_msg_t myMsg;
+	header.StdId = 0x401;
+	header.ExtId = 0x0000;
+	header.IDE = CAN_ID_STD;
+	header.RTR = CAN_RTR_DATA;
+	header.DLC = 8;
+
+	myMsg.header = header;
+	memcpy(myMsg.data, data, 8);
+	CAN_comms_Add_Tx_message(&myMsg);
+    osDelay(10);
   }
   /* USER CODE END GPS_task */
 }
