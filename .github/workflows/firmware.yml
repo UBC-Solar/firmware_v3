@@ -1,13 +1,17 @@
 name: Build Components
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3.1.0
       - name: Build TEL
         uses: xanderhendriks/action-build-stm32cubeide@v13.0
         with:
-          project-path: '../../components/tel'
+          project-path: 'components/tel'
           project-target: 'tel'
+      - name: Debug Path
+        run: ls -la components/tel
