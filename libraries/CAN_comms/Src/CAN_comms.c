@@ -112,10 +112,6 @@ void CAN_comms_init(CAN_comms_config_t* config)
     HAL_CAN_Start(CAN_comms_config.hcan);
  }
 
-uint32_t queue_put_fail = 0;
-uint32_t queue_get_fail = 0;
-uint32_t semaphore_acquire_fail = 0;
-uint32_t HAL_CAN_fail = 0;
 
 /**
  * @brief Adds a CAN Tx message to the CAN_comms_Tx_queue
@@ -129,7 +125,6 @@ void CAN_comms_Add_Tx_message(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
     if(osOK != osMessageQueuePut(CAN_comms_Tx_queue, CAN_comms_Tx_msg, 0, 0))
     {
         return; // TODO: Error handle
-        queue_put_fail++;
     }
 }
 
@@ -151,21 +146,18 @@ void CAN_comms_Tx_task(void* argument)
         CAN_comms_Tx_msg_t CAN_comms_Tx_msg;
         if (osOK != osMessageQueueGet(CAN_comms_Tx_queue, &CAN_comms_Tx_msg, NULL, osWaitForever))
         {
-            queue_get_fail++;
             continue;
         }
 
         /* Wait for a CAN mailbox semaphore to be released */
         if(osOK != osSemaphoreAcquire(CAN_comms_Tx_mailbox_semaphore, osWaitForever))
         {
-            semaphore_acquire_fail++;
             continue;
         }
 
         uint32_t can_mailbox; // Not used
         if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))
         {
-            HAL_CAN_fail++;
             /* Release semaphore if HAL_CAN did not work */
             osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
         }
@@ -225,18 +217,6 @@ void CAN_comms_Rx_message_pending_ISR()
     {
         return; // TODO: Error handle
     }
-}
-
-
-/**
- * @brief Interrupt Service Routine for the CAN mailbox callback function
- * This function frees the semaphore for the CAN Tx mailbox
- * 
- * @attention This function needs to be added to each CAN mailbox complete callback function
- */
-void CAN_comms_Tx_mailbox_complete_ISR()
-{
-    osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
 }
 
 
