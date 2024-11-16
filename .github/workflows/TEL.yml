@@ -1,8 +1,9 @@
 name: TEL Continuous Integration Pipeline
 
 jobs:
-- name: build_tel
-  uses: xanderhendriks/action-build-stm32cubeide@v13.0
-  with:
-    project-path: 'components/tel/'
-    project-target: 'tel'
+  build_tel:
+    name: Build TEL
+    uses: xanderhendriks/action-build-stm32cubeide@v13.0
+    with:
+      project-path: 'components/tel/'
+      project-target: 'tel'
