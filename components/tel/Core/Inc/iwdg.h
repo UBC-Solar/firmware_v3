@@ -36,8 +36,7 @@ extern IWDG_HandleTypeDef hiwdg;
 
 /* USER CODE BEGIN Private defines */
 
-#define RESET_SEQUENCE_DELAY      200
-#define REFRESH_DELAY             100
+#define REFRESH_DELAY_MS             100
 
 /* USER CODE END Private defines */
 

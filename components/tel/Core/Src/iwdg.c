@@ -22,6 +22,9 @@
 
 /* USER CODE BEGIN 0 */
 
+/* PRIVATE DEFINES */
+#define RESET_SEQUENCE_DELAY_MS      200           
+
 /* USER CODE END 0 */
 
 IWDG_HandleTypeDef hiwdg;
@@ -101,7 +104,7 @@ void IWDG_perform_reset_sequence()
     for (int i = 0; i < 5; i++)
     {
       HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-      HAL_Delay(RESET_SEQUENCE_DELAY);
+      HAL_Delay(RESET_SEQUENCE_DELAY_MS);
     }
   }
 }

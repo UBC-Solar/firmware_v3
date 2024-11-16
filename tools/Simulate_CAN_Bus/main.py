@@ -8,12 +8,15 @@ from pathlib import Path
 # ANSI color for yellow
 ANSI_YELLOW = "\033[33m"
 ANSI_RESET = "\033[0m"
-
+    
 RATE_SCALER = 1
 MSG_COUNT_IDX = 3
 
 global can_messages 
 can_messages = {}
+
+# Create a global lock for CAN bus access
+bus_lock = threading.Lock()
 
 def load_can_messages(filename):
     # Use Path to handle the file path
@@ -51,15 +54,17 @@ def signal_handler(sig, frame):
 def send_message(bus, can_id, data, rate, dlc, board_delay, num_in_burst):    
     time.sleep(board_delay)
 
-    is_extended = False if len(can_id) <= 3 else True
+    is_extended = False if int(can_id[2:], 16) <= 0x7FF else True
 
     message = can.Message(arbitration_id=int(can_id, 16), data=data[:dlc], is_extended_id=is_extended)
     while True:
         try:
             for num_msgs in range(num_in_burst):
-                bus.send(message)
-                can_messages[can_id][MSG_COUNT_IDX] += 1
-                print(f"ID: {can_id}, Count: {can_messages[can_id][MSG_COUNT_IDX]}")
+                # Lock the bus to ensure exclusive access for sending
+                with bus_lock:
+                    bus.send(message)
+                    can_messages[can_id][MSG_COUNT_IDX] += 1
+                    print(f"ID: {can_id}, Count: {can_messages[can_id][MSG_COUNT_IDX]}")
         except can.CanError as e:
             print(f"Message NOT sent {e}")
         time.sleep(rate * RATE_SCALER)

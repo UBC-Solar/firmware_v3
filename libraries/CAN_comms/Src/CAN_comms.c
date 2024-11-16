@@ -133,12 +133,14 @@ void CAN_comms_Tx_task(void* argument)
     /* Infinite loop */
     for(;;)
     {
-        /* Wait until there is a message in the queue */ 
+        /* Wait until there is a message in the queue */
         CAN_comms_Tx_msg_t CAN_comms_Tx_msg;
+        uint32_t can_mailbox;
+
         if (osOK == osMessageQueueGet(CAN_comms_Tx_queue, &CAN_comms_Tx_msg, NULL, osWaitForever))
         {
             /* Wait for a CAN mailbox semaphore to be released */
-            osSemaphoreAcquire(CAN_comms_Tx_mailbox_semaphore, osWaitForever);
+        	osSemaphoreAcquire(CAN_comms_Tx_mailbox_semaphore, osWaitForever);
 
             uint32_t can_mailbox; // Not used
             if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))

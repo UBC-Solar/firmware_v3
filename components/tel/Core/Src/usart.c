@@ -148,6 +148,21 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+/**
+ * @brief Transmit a CAN message over radio using UART and DMA
+ * 
+ * @param can_radio_msg The message to transmit of type RADIO_Msg_TypeDef
+ *  
+ * @note This function WILL BLOCK until the DMA Complete callback occurs.
+ */
+void UART_radio_transmit(RADIO_Msg_TypeDef* can_radio_msg)
+{
+    osSemaphoreAcquire(usart1_tx_semaphore, osWaitForever);   // Dont Tx until previous Tx is done
+
+    HAL_UART_Transmit_DMA(&huart1, (uint8_t*)can_radio_msg, sizeof(RADIO_Msg_TypeDef));	
+}
+
     
 /**
  * @brief  Tx Transfer completed callback for UART. Triggered by DMA when final byte is sent
@@ -163,21 +178,6 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     {
         osSemaphoreRelease(usart1_tx_semaphore);
     }
-}
-
-
-/**
- * @brief Transmit a CAN message over radio using UART and DMA
- * 
- * @param can_radio_msg The message to transmit of type RADIO_Msg_TypeDef
- *  
- * @note This function WILL BLOCK until the DMA Complete callback occurs.
- */
-void UART_radio_transmit(RADIO_Msg_TypeDef* can_radio_msg)
-{
-    osSemaphoreAcquire(usart1_tx_semaphore, osWaitForever);   // Dont Tx until previous Tx is done
-
-    HAL_UART_Transmit_DMA(&huart1, (uint8_t*)can_radio_msg, sizeof(RADIO_Msg_TypeDef));	
 }
 
 /* USER CODE END 1 */
