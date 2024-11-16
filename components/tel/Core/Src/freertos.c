@@ -222,24 +222,9 @@ void StartDefaultTask(void *argument)
 void IMU_task(void *argument)
 {
   /* USER CODE BEGIN IMU_task */
-  CAN_TxHeaderTypeDef h = {
-    .StdId = 0x100,
-    .ExtId = 0x0000,
-    .IDE = CAN_ID_STD,
-    .RTR = CAN_RTR_DATA,
-    .DLC = 8};
-  
-  uint8_t data[8] = {0};
-
-
-  CAN_comms_Tx_msg_t tx_msg;
-  memcpy(&tx_msg.data[0], &data[0], 8);
-  tx_msg.header = h;
-
   /* Infinite loop */
   for(;;)
   {
-    CAN_comms_Add_Tx_message(&tx_msg);
     osDelay(1);
   }
   /* USER CODE END IMU_task */
