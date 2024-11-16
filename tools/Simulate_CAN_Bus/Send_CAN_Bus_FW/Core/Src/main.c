@@ -101,6 +101,20 @@ int main(void)
   {
     /* USER CODE END WHILE */
 
+    CAN_TxHeaderTypeDef header = {
+        .StdId = 0x696,
+        .ExtId = 0x0000,
+        .IDE = CAN_ID_STD,
+        .RTR = CAN_RTR_DATA,
+        .DLC = 8,
+    };
+
+    uint8_t x[8] = {1, 2, 3, 4 ,5, 6 ,7, 8};
+
+    uint32_t can_mailbox;
+    HAL_CAN_AddTxMessage(&hcan, &header, &x[0], &can_mailbox);
+
+    HAL_Delay(100);
 
     /* USER CODE BEGIN 3 */
   }
