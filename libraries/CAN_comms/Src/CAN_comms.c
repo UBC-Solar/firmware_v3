@@ -128,6 +128,7 @@ void CAN_comms_Add_Tx_message(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
     }
 }
 
+
 /**
  * @brief Task for handling CAN Tx messages
  * This task waits for a message in the CAN_comms_Tx_queue and a CAN mailbox semaphore to be released and
