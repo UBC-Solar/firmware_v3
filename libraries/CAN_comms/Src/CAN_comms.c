@@ -130,7 +130,7 @@ void CAN_comms_init(CAN_comms_config_t* config)
     /* Start CAN */
     HAL_CAN_Start(CAN_comms_config.hcan);
  }
-
+skibbity toilet
 
 /**
  * @brief Adds a CAN Tx message to the CAN_comms_Tx_queue
