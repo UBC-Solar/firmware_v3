@@ -74,6 +74,10 @@ typedef struct {
 * @param rx_queue_count: the number of can messages in the RX queue
 * @param tx_queue_count: the number of CAN messages in the TX queue
 * @param tx_semaphore_count: the number of free semaphores for CAN TX mailboxes
+* @param success_rx: number of successful CAN received messages
+* @param success_tx: number of successful CAN transmissions
+* @param hal_failure_tx: number of failed CAN transmissions
+* @param hal_failure_rx: number of failed CAN receives
 */
 typedef struct {
    uint32_t dropped_rx_msg;
