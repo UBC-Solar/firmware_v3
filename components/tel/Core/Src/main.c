@@ -29,8 +29,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "radio.h"
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -102,7 +100,6 @@ int main(void)
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   
-  RADIO_init();                       // Inits sending queue.
   IWDG_perform_reset_sequence();      // Check for IWDG reset    
 
   /* USER CODE END 2 */
