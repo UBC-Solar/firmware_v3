@@ -30,6 +30,8 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 
+#include "stdint.h"
+
 /* USER CODE END Includes */
 
 extern CAN_HandleTypeDef hcan;
@@ -43,6 +45,7 @@ void MX_CAN_Init(void);
 /* USER CODE BEGIN Prototypes */
 
 void CAN_filter_setup();
+void CAN_Xms_Tx_Y(uint32_t X, uint32_t Y);
 
 /* USER CODE END Prototypes */
 

@@ -141,6 +141,45 @@ void CAN_filter_setup()
     HAL_CAN_ConfigFilter(&hcan, &filter);
 }
 
+
+static uint64_t tx_error = 0;
+static uint64_t tx_success = 0;
+static CAN_TxHeaderTypeDef header = {
+    .StdId = 0x696,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = 8,
+};
+static uint8_t x[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+static uint32_t can_mailbox = 0;
+
+/**
+ * @brief: txes a CAN message with the constant header defined above
+ */
+void tx()
+{
+    if (HAL_OK != HAL_CAN_AddTxMessage(&hcan, &header, x, &can_mailbox))
+        ++tx_error;
+    else
+        ++tx_success;
+}
+
+/**
+ * @brief: Transmit Y can messages at a rate of X milliseconds with header and data defined above.
+ */
+void CAN_Xms_Tx_Y(uint32_t X, uint32_t Y)
+{
+    for (int i = 0; i < Y; ++i)
+    {
+        tx();
+        HAL_Delay(X);
+    }
+}
+
+
+
+
 /* USER CODE END 1 */
 
 
