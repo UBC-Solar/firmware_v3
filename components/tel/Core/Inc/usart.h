@@ -45,7 +45,7 @@ void MX_USART1_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
-void UART_radio_transmit(RADIO_Msg_TypeDef* can_radio_msg);
+void UART_radio_transmit(RADIO_Msg_TypeDef* can_radio_msg, Radio_diagnostics_t* Radio_diagnostic);
 
 /* USER CODE END Prototypes */
 

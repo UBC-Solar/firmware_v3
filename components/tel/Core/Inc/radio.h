@@ -35,12 +35,32 @@ typedef struct {                                            // Standardized to C
     char NEW_LINE;
 } __attribute__((packed)) RADIO_Msg_TypeDef;    
 
+/*
+* @brief Radio diagnostic struct
+*
+* @param dropped_radio_msg: Count of dropped radio messages. Happens when radio queue overflows.
+* @param radio_hal_transmit_failures: increments when uart_transmit call for radio is not HAL_OK
+* @param XBee_buffer_overflows: Increments every time XBee sets CTS to high
+* @param sucessful_radio_tx: Increments for every HAL_OK on HAL_UART_Transmit()
+* @param radio_queue_count: the number of Radio messages in the TX queue
+* @param radio_flag_value: the current value of the radio cts event flag.
+*/
+typedef struct {
 
+   uint32_t dropped_radio_msg;
+   uint32_t radio_hal_transmit_failures;
+   uint32_t XBee_buffer_overflows;
+   uint32_t successful_radio_tx;
+   uint8_t radio_queue_count;
+   uint32_t cts_flag_value;
+
+} Radio_diagnostics_t;
 
 /* PROTOTYPES */
-void RADIO_init();
+
 void RADIO_Tx_forever();
 void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg);
-
+void RADIO_diagnostic_init();
+void RADIO_init();
 
 #endif /* __RADIO_H__ */

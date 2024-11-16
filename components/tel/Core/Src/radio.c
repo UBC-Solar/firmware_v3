@@ -33,31 +33,26 @@ void set_radio_msg(CAN_RxHeaderTypeDef* header, uint8_t* data, RADIO_Msg_TypeDef
 uint64_t get_timestamp();
 uint32_t get_can_id(CAN_RxHeaderTypeDef* can_msg_header_ptr);
 uint8_t get_data_length(uint32_t DLC);
+void clear_cts_flag();
+void set_cts_flag();
+void radio_diagnostic_init();
+void radio_get_queue_count();
+void radio_get_cts_count();
 
 /* VARIABLES */
 osEventFlagsId_t Radio_cts_flag;
+void (*cts_flag_array[2])() = {set_cts_flag, clear_cts_flag};
+Radio_diagnostics_t Radio_diagnostic;
 
 void RADIO_init(){
+	RADIO_diagnostic_init();
 	Radio_cts_flag = osEventFlagsNew(NULL);
 	osEventFlagsSet(Radio_cts_flag, CLEAR_TO_SEND);
-
 }
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-    if (GPIO_Pin == RADIO_CTS_Pin)
-    {
-    	if (HAL_GPIO_ReadPin(RADIO_CTS_GPIO_Port, RADIO_CTS_Pin) == GPIO_PIN_RESET)
-    	{
-    		osEventFlagsSet(Radio_cts_flag, CLEAR_TO_SEND);
-    	}
-    	if (HAL_GPIO_ReadPin(RADIO_CTS_GPIO_Port, RADIO_CTS_Pin) == GPIO_PIN_SET)
-    	{
-    		osEventFlagsClear(Radio_cts_flag, CLEAR_TO_SEND);
 
-    	 }
 
-    }
-}
+
+
 
 /**
  * @brief Adds a radio message to the radio tx queue
@@ -74,7 +69,10 @@ void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 	set_radio_msg(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data, &radio_msg);
 
 	/* Add CAN message to radio tx queue */
-	osMessageQueuePut(radio_tx_queue, &radio_msg, NO_PRIORITY, NON_BLOCKING);
+	if (osOK != osMessageQueuePut(radio_tx_queue, &radio_msg, NO_PRIORITY, NON_BLOCKING)){
+		Radio_diagnostic.dropped_radio_msg++;
+	}
+
 }
 
 
@@ -89,15 +87,16 @@ void RADIO_Tx_forever()
 	for(;;)
 	{
 
-		/* Wait until there is a message in the queue */
 		RADIO_Msg_TypeDef radio_msg;
 
+		/* Wait until CTS is asserted. This happens when the CTS signal is set to low by the XBee*/
         uint32_t flags = osEventFlagsWait(Radio_cts_flag, CLEAR_TO_SEND, osFlagsNoClear, osWaitForever);
         if (flags & CLEAR_TO_SEND)
         {
+        	/* Wait until there is a message in the queue */
         	if (osOK == osMessageQueueGet(radio_tx_queue, &radio_msg, NULL, osWaitForever))
             {
-                UART_radio_transmit(&radio_msg);
+                UART_radio_transmit(&radio_msg, &Radio_diagnostic);
             }
             else
             {
@@ -165,4 +164,70 @@ uint32_t get_can_id(CAN_RxHeaderTypeDef* can_msg_header_ptr)
 uint8_t get_data_length(uint32_t DLC)
 {
 	return (uint8_t) (DLC & MASK_4_BITS);
+}
+
+/**
+ * @brief Initializes the Radio_diagnostic Struct values to zero.
+ *
+ */
+void radio_diagnostic_init(){
+
+	Radio_diagnostic.XBee_buffer_overflows = 0;
+	Radio_diagnostic.dropped_radio_msg = 0;
+	Radio_diagnostic.cts_flag_value = CLEAR_TO_SEND;
+	Radio_diagnostic.radio_hal_transmit_failures = 0;
+	Radio_diagnostic.radio_queue_count = 0;
+	Radio_diagnostic.successful_radio_tx = 0;
+
+}
+
+/*
+ *
+ * @brief  Returns a radio diagnostic struct populated with diagnostic data
+ * This function copies data from the global Radio_diagnotic struct into a Radio_diagnostic_t struct
+ * created by the user.
+ *
+ * @param diagnostic: Pointer to user's diagnostic struct.
+ */
+void RADIO_get_diagnostic(Radio_diagnostics_t* diagnostic){
+
+	radio_get_queue_count();
+	radio_get_cts_count();
+	*diagnostic = Radio_diagnostic;
+
+}
+
+
+void radio_get_queue_count(){
+
+	Radio_diagnostic.radio_queue_count = osMessageQueueGetCount(radio_tx_queue);
+}
+
+void radio_get_cts_count(){
+
+	Radio_diagnostic.cts_flag_value =  osEventFlagsGet(Radio_cts_flag);
+}
+
+/*
+ *
+ * @brief  Interrupt Callback that occurs when CTS signal changes value. Handles setting
+ * and clearing Radio_cts_flag
+ *
+ *
+ * @param GPIO_Pin: GPIO_Pin which the interrupt originates from
+ */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == RADIO_CTS_Pin)
+    {
+    	cts_flag_array[ HAL_GPIO_ReadPin(RADIO_CTS_GPIO_Port, RADIO_CTS_Pin)]();
+    }
+}
+
+void clear_cts_flag(){
+	osEventFlagsClear(Radio_cts_flag, CLEAR_TO_SEND);
+	Radio_diagnostic.XBee_buffer_overflows++;
+}
+void set_cts_flag(){
+	osEventFlagsSet(Radio_cts_flag, CLEAR_TO_SEND);
 }

@@ -27,6 +27,7 @@
 #include "task.h"
 #include "cmsis_os.h"
 #include "tel_freertos.h"
+#include "radio.h"
 
 /* LOCAL GLOBALS */
 volatile static bool done_uart_tx = true;
@@ -156,11 +157,16 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
  *  
  * @note This function WILL BLOCK until the DMA Complete callback occurs.
  */
-void UART_radio_transmit(RADIO_Msg_TypeDef* can_radio_msg)
+void UART_radio_transmit(RADIO_Msg_TypeDef* can_radio_msg, Radio_diagnostics_t* Radio_diagnostic)
 {
     osSemaphoreAcquire(usart1_tx_semaphore, osWaitForever);   // Dont Tx until previous Tx is done
 
-    HAL_UART_Transmit_DMA(&huart1, (uint8_t*)can_radio_msg, sizeof(RADIO_Msg_TypeDef));	
+    if (HAL_OK == HAL_UART_Transmit_DMA(&huart1, (uint8_t*)can_radio_msg, sizeof(RADIO_Msg_TypeDef))){
+    	Radio_diagnostic->successful_radio_tx++;
+    }
+    else{
+    	Radio_diagnostic->radio_hal_transmit_failures++;
+    }
 }
 
     
