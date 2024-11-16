@@ -1,4 +1,13 @@
-- uses: xanderhendriks/action-build-stm32cubeide@v10.0
-  with:
-    project-path: 'components/tel'
-    project-target: 'tel'
+name: Build STM32CubeIde Project
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build STM32CubeIde project
+        uses: xanderhendriks/action-build-stm32cubeide@v13.0
+        with:
+          project-path: 'components/tel'
+          project-target: 'tel'
