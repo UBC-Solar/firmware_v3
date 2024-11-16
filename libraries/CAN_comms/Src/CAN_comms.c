@@ -49,7 +49,7 @@ const osThreadAttr_t CAN_comms_Tx_task_attributes = {
     .cb_size = sizeof(CAN_comms_Tx_task_control_block),
     .stack_mem = &CAN_comms_Tx_task_buffer[0],
     .stack_size = sizeof(CAN_comms_Tx_task_buffer),
-    .priority = (osPriority_t) osPriorityLow,
+    .priority = (osPriority_t) osPriorityHigh,
 };
 
 
