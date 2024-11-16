@@ -11,11 +11,13 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
-/* DEFINES */
-#define NUM_USART1_TX_SEMAPHORES        1
+#include "CAN_comms.h"
 
 /* SEMAPHORES */
 extern osSemaphoreId_t usart1_tx_semaphore;
+
+/* QUEUES */
+extern osMessageQueueId_t radio_tx_queue;
+
 
 #endif /* __RADIO_H__ */

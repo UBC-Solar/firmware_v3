@@ -30,6 +30,18 @@
 static bool rtc_set = false;            // TODO: Add diagnostic
 static uint32_t start_of_second = 0;    // TODO: Make cleaner timestamp fix
 
+/* PRIVATE DEFINES */
+#define MILLISECONDS_IN_SECONDS         1000
+#define TIMETYPEDEF_SECONDS_IDX         0
+#define TIMETYPEDEF_MINUTES_IDX         1
+#define TIMETYPEDEF_HOURS_IDX           2
+#define TIMETYPEDEF_DAY_IDX             3
+#define TIMETYPEDEF_MONTH_IDX           4   
+#define TIMETYPEDEF_YEAR_IDX            5
+#define RTC_TIMESTAMP_MSG_ID            0x300
+
+#define MILLIS_TO_SECONDS(milliseconds) ( (double)(milliseconds * 0.001) )
+
 /* USER CODE END 0 */
 
 RTC_HandleTypeDef hrtc;

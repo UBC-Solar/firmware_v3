@@ -29,6 +29,7 @@
 #include "iwdg.h"
 #include "tel_freertos.h"
 #include "can.h"
+#include "radio.h"
 
 /* USER CODE END Includes */
 
@@ -36,10 +37,14 @@
 typedef StaticTask_t osStaticThreadDef_t;
 /* USER CODE BEGIN PTD */
 
+typedef StaticTask_t osStaticMessageQDef_t;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define NUM_USART1_TX_SEMAPHORES        1
 
 /* USER CODE END PD */
 
@@ -53,6 +58,19 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 /* SEMAPHORES */
 osSemaphoreId_t usart1_tx_semaphore;
+
+/* QUEUES */
+osMessageQueueId_t radio_tx_queue;
+uint8_t radio_tx_queue_buffer[ RADIO_QUEUE_SIZE * RADIO_MSG_TYPEDEF_SIZE ];
+osStaticMessageQDef_t radio_tx_queue_cb;
+const osMessageQueueAttr_t radio_tx_queue_attributes = {
+  .name = "radio_tx_queue",
+  .cb_mem = &radio_tx_queue_cb,
+  .cb_size = sizeof(radio_tx_queue_cb),
+  .mq_mem = &radio_tx_queue_buffer,
+  .mq_size = sizeof(radio_tx_queue_buffer)
+};
+
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -91,6 +109,18 @@ const osThreadAttr_t GPS_Task_attributes = {
   .stack_size = sizeof(GPS_TaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for Radio_Task */
+osThreadId_t Radio_TaskHandle;
+uint32_t Radio_TaskBuffer[ 128 ];
+osStaticThreadDef_t Radio_TaskControlBlock;
+const osThreadAttr_t Radio_Task_attributes = {
+  .name = "Radio_Task",
+  .cb_mem = &Radio_TaskControlBlock,
+  .cb_size = sizeof(Radio_TaskControlBlock),
+  .stack_mem = &Radio_TaskBuffer[0],
+  .stack_size = sizeof(Radio_TaskBuffer),
+  .priority = (osPriority_t) osPriorityNormal,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -100,6 +130,7 @@ const osThreadAttr_t GPS_Task_attributes = {
 void StartDefaultTask(void *argument);
 void IMU_task(void *argument);
 void GPS_task(void *argument);
+void Radio_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -122,7 +153,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
 
-    usart1_tx_semaphore = osSemaphoreNew(NUM_USART1_TX_SEMAPHORES, NUM_USART1_TX_SEMAPHORES, NULL);
+  usart1_tx_semaphore = osSemaphoreNew(NUM_USART1_TX_SEMAPHORES, NUM_USART1_TX_SEMAPHORES, NULL);
 
   /* USER CODE END RTOS_SEMAPHORES */
 
@@ -132,6 +163,9 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
+
+  radio_tx_queue = osMessageQueueNew(RADIO_QUEUE_SIZE, RADIO_MSG_TYPEDEF_SIZE, &radio_tx_queue_attributes);
+
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -143,6 +177,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of GPS_Task */
   GPS_TaskHandle = osThreadNew(GPS_task, NULL, &GPS_Task_attributes);
+
+  /* creation of Radio_Task */
+  Radio_TaskHandle = osThreadNew(Radio_task, NULL, &Radio_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
@@ -169,7 +206,7 @@ void StartDefaultTask(void *argument)
     for(;;)
     {
         IWDG_Refresh(&hiwdg);	                                 // Refresh the IWDG to ensure no reset occurs
-        osDelay(REFRESH_DELAY);
+        osDelay(REFRESH_DELAY_MS);
     }
 
   /* USER CODE END StartDefaultTask */
@@ -209,6 +246,22 @@ void GPS_task(void *argument)
     osDelay(1);
   }
   /* USER CODE END GPS_task */
+}
+
+/* USER CODE BEGIN Header_Radio_task */
+/**
+* @brief Function implementing the Radio_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Radio_task */
+void Radio_task(void *argument)
+{
+  /* USER CODE BEGIN Radio_task */
+
+  RADIO_Tx_forever();
+
+  /* USER CODE END Radio_task */
 }
 
 /* Private application code --------------------------------------------------*/
