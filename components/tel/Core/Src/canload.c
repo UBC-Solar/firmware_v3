@@ -126,7 +126,7 @@ float calculate_total_bits()
  */
 float calculate_bus_load()
 {
-    return ((float)calculate_total_bits() / ((float)WINDOW_SIZE * (float) BAUD_RATE)) * 100.0;
+    return ((float)calculate_total_bits() / ((float) (WINDOW_SIZE * (CANLOAD_MSG_RATE / 1000) ) * (float) BAUD_RATE)) * 100.0;
 }
 
 /**
