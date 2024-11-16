@@ -22,6 +22,8 @@
 #define RADIO_MSG_TYPEDEF_SIZE                      sizeof(RADIO_Msg_TypeDef)
 #define RADIO_QUEUE_SIZE                            60
 
+
+
 /* TYPEDEFS */
 typedef struct {                                            // Standardized to CAN fields to simplify CAN Rx callback code                          
     uint64_t timestamp;   
@@ -34,7 +36,9 @@ typedef struct {                                            // Standardized to C
 } __attribute__((packed)) RADIO_Msg_TypeDef;    
 
 
+
 /* PROTOTYPES */
+void RADIO_init();
 void RADIO_Tx_forever();
 void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg);
 

@@ -26,7 +26,7 @@
 #define CARRIAGE_RETURN_CHAR                        '\r'
 #define NEW_LINE_CHAR                               '\n'
 #define MASK_4_BITS                                 0xF
-
+#define CLEAR_TO_SEND 								0x01
 
 /* PRIVATE FUNCTIONS DECLARATIONS */
 void set_radio_msg(CAN_RxHeaderTypeDef* header, uint8_t* data, RADIO_Msg_TypeDef* radio_msg);
@@ -34,6 +34,30 @@ uint64_t get_timestamp();
 uint32_t get_can_id(CAN_RxHeaderTypeDef* can_msg_header_ptr);
 uint8_t get_data_length(uint32_t DLC);
 
+/* VARIABLES */
+osEventFlagsId_t Radio_cts_flag;
+
+void RADIO_init(){
+	Radio_cts_flag = osEventFlagsNew(NULL);
+	osEventFlagsSet(Radio_cts_flag, CLEAR_TO_SEND);
+
+}
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == RADIO_CTS_Pin)
+    {
+    	if (HAL_GPIO_ReadPin(RADIO_CTS_GPIO_Port, RADIO_CTS_Pin) == GPIO_PIN_RESET)
+    	{
+    		osEventFlagsSet(Radio_cts_flag, CLEAR_TO_SEND);
+    	}
+    	if (HAL_GPIO_ReadPin(RADIO_CTS_GPIO_Port, RADIO_CTS_Pin) == GPIO_PIN_SET)
+    	{
+    		osEventFlagsClear(Radio_cts_flag, CLEAR_TO_SEND);
+
+    	 }
+
+    }
+}
 
 /**
  * @brief Adds a radio message to the radio tx queue
@@ -64,11 +88,14 @@ void RADIO_Tx_forever()
 	/* Infinite Loop */
 	for(;;)
 	{
-		/* Wait until there is a message in the queue */ 
+
+		/* Wait until there is a message in the queue */
 		RADIO_Msg_TypeDef radio_msg;
-        if (HAL_GPIO_ReadPin(RADIO_CTS_GPIO_Port, RADIO_CTS_Pin) == GPIO_PIN_RESET)
+
+        uint32_t flags = osEventFlagsWait(Radio_cts_flag, CLEAR_TO_SEND, osFlagsNoClear, osWaitForever);
+        if (flags & CLEAR_TO_SEND)
         {
-            if (osOK == osMessageQueueGet(radio_tx_queue, &radio_msg, NULL, osWaitForever))
+        	if (osOK == osMessageQueueGet(radio_tx_queue, &radio_msg, NULL, osWaitForever))
             {
                 UART_radio_transmit(&radio_msg);
             }

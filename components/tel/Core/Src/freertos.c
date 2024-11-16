@@ -59,6 +59,7 @@ typedef StaticTask_t osStaticMessageQDef_t;
 /* SEMAPHORES */
 osSemaphoreId_t usart1_tx_semaphore;
 
+
 /* QUEUES */
 osMessageQueueId_t radio_tx_queue;
 uint8_t radio_tx_queue_buffer[ RADIO_QUEUE_SIZE * RADIO_MSG_TYPEDEF_SIZE ];
@@ -143,7 +144,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
     CAN_tasks_init();                         // Rx CAN Filter, Rx callback using CAN comms
-
+    RADIO_init();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -187,6 +188,8 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_EVENTS */
     /* add events, ... */
+
+
   /* USER CODE END RTOS_EVENTS */
 
 }
