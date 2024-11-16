@@ -42,6 +42,8 @@ void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
+void CAN_filter_setup();
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

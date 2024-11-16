@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "stdint.h"
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
@@ -117,4 +119,28 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 
 /* USER CODE BEGIN 1 */
 
+/**
+ * @brief: Sets up CAN filters to do nothing. Config needed by HAL CAN for starting CAN.
+ */
+void CAN_filter_setup()
+{
+    CAN_FilterTypeDef filter = {0};
+
+    filter.FilterIdHigh = 0x0000;
+    filter.FilterIdLow = 0x0000;
+
+    filter.FilterMaskIdHigh = 0x0000;
+    filter.FilterMaskIdLow = 0x0000;
+
+    filter.FilterFIFOAssignment = CAN_RX_FIFO0;
+    filter.FilterBank = (uint32_t) 0;
+    filter.FilterScale = CAN_FILTERSCALE_16BIT;
+    filter.FilterActivation = CAN_FILTER_ENABLE;
+    filter.FilterMode = CAN_FILTERMODE_IDMASK;
+
+    HAL_CAN_ConfigFilter(&hcan, &filter);
+}
+
 /* USER CODE END 1 */
+
+

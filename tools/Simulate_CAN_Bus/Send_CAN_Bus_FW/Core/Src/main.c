@@ -90,6 +90,9 @@ int main(void)
   MX_CAN_Init();
   /* USER CODE BEGIN 2 */
 
+    CAN_filter_setup();
+    HAL_CAN_Start(&hcan);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -97,6 +100,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+
 
     /* USER CODE BEGIN 3 */
   }
