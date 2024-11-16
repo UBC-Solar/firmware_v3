@@ -82,6 +82,10 @@ typedef struct {
    uint8_t rx_queue_count;
    uint8_t tx_queue_count;
    uint32_t tx_semaphore_count;
+   uint32_t success_rx;
+   uint32_t success_tx;
+   uint32_t hal_failure_tx;
+   uint32_t hal_failure_rx;
 
 } CAN_comms_diagnostics_t;
 
