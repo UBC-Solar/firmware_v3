@@ -205,6 +205,7 @@ float CPU_LOAD_average() {
 
 void CPU_monitor_task(void* argument) {
     for (;;) {
+    	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_1);
         add_to_buffer();
         osDelay(g_frequency_ms);
     }

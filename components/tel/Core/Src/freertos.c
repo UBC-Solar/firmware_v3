@@ -42,7 +42,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define WINDOW_SIZE 10
-#define FREQUENCY_MS 500
+#define FREQUENCY_MS 100
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -168,11 +168,19 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
 
+	int counter = 0;
+
     /* Infinite loop */
     for(;;)
     {
+    	if(counter % 10 == 0){
+        	float cpu_load = CPU_LOAD_average();
+
+    	}
+
         IWDG_Refresh(&hiwdg);	                                 // Refresh the IWDG to ensure no reset occurs
         osDelay(REFRESH_DELAY);
+        counter++;
     }
 
   /* USER CODE END StartDefaultTask */
