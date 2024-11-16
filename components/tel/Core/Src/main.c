@@ -105,7 +105,6 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   
-  RADIO_init();                       // Inits sending queue.
   IWDG_perform_reset_sequence();      // Check for IWDG reset    
 
   /* USER CODE END 2 */
