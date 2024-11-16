@@ -3,7 +3,7 @@ name: Build Components
 on: [pull_request]
 
 jobs:
-  build:
+  build_components:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
