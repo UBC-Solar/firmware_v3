@@ -160,7 +160,10 @@ void UART_radio_transmit(RADIO_Msg_TypeDef* can_radio_msg)
 {
     osSemaphoreAcquire(usart1_tx_semaphore, osWaitForever);   // Dont Tx until previous Tx is done
 
-    HAL_UART_Transmit_DMA(&huart1, (uint8_t*)can_radio_msg, sizeof(RADIO_Msg_TypeDef));	
+    if(HAL_OK != HAL_UART_Transmit_DMA(&huart1, (uint8_t*)can_radio_msg, sizeof(RADIO_Msg_TypeDef)))
+    {
+      osSemaphoreRelease(usart1_tx_semaphore);
+    }
 }
 
     
