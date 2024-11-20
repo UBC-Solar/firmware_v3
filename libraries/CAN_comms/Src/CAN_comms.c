@@ -28,7 +28,6 @@
 
 /* Private varibles */
 CAN_comms_config_t CAN_comms_config;
-CAN_comms_diagnostics_t CAN_comms_diagnostic;
 osMessageQueueId_t CAN_comms_Rx_queue;
 osMessageQueueId_t CAN_comms_Tx_queue;
 osThreadId_t CAN_comms_Rx_task_handle;
@@ -38,6 +37,20 @@ StaticTask_t CAN_comms_Tx_task_control_block;
 uint32_t CAN_comms_Rx_task_buffer[CAN_RX_TASK_STACK_SIZE];
 uint32_t CAN_comms_Tx_task_buffer[CAN_TX_TASK_STACK_SIZE];
 osSemaphoreId_t CAN_comms_Tx_mailbox_semaphore;
+
+CAN_comms_diagnostics_t CAN_comms_diagnostic = {
+    .comms_init_error = COMMS_INIT_SUCCESS,
+    .dropped_rx_msg = 0,
+    .dropped_tx_msg = 0,
+    .rx_queue_count = 0,
+    .tx_queue_count = 0,
+    .tx_semaphore_count = 0,
+    .success_rx = 0,
+    .success_tx = 0,
+    .hal_failure_tx = 0,
+    .hal_failure_rx = 0
+};
+
 const osThreadAttr_t CAN_comms_Rx_task_attributes = {
     .name = "CAN_comms_Rx_task",
     .cb_mem = &CAN_comms_Rx_task_control_block,
@@ -72,7 +85,7 @@ void CAN_comms_Tx_task(void* argument);
  */
 void CAN_comms_init(CAN_comms_config_t* config)
 {
-    comms_diagnostic_init();
+
 	
     /* Check config is not NULL */
     if (config == NULL)
@@ -242,20 +255,6 @@ void CAN_comms_Rx_message_pending_ISR()
 }
 
 
-/**
- * @brief  Returns diagnostic struct populated with diagnostic data
- * This function copies data from the global CAN_comms_diagnostic struct into a CAN_comms_diagnostic_t struct
- * created by the user.
- *
- * @param diagnostic: Pointer to user's diagnostic struct.
- */
-void CAN_comms_get_diagnostic(CAN_comms_diagnostics_t* diagnostic)
-{
-	comms_get_semaphore_count();
-	comms_rx_queue_get_count();
-	comms_tx_queue_get_count();
-	*diagnostic = CAN_comms_diagnostic;
-}
 
 /**
  * @attention The following functions are callback functions called by the STM32 HAL_CAN library.
@@ -321,35 +320,19 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
     }
 }
 
-/**
-  * @brief  Initializes CAN_comms_diagnostics struct values.
-  * @param  CAN_comms_diagnostics_t CAN_comms_diagnostic: Diagnostic Struct used by CAN comms.
-  */
-void comms_diagnostic_init()
-{
-    CAN_comms_diagnostic.comms_init_error = COMMS_INIT_SUCCESS;
-	CAN_comms_diagnostic.dropped_rx_msg = 0;
-	CAN_comms_diagnostic.dropped_tx_msg = 0;
-	CAN_comms_diagnostic.rx_queue_count = 0;
-	CAN_comms_diagnostic.tx_queue_count = 0;
-	CAN_comms_diagnostic.tx_semaphore_count = 0;
-	CAN_comms_diagnostic.success_rx = 0;
-	CAN_comms_diagnostic.success_tx = 0;
-	CAN_comms_diagnostic.hal_failure_tx = 0;
-	CAN_comms_diagnostic.hal_failure_rx = 0;
 
-}
-void comms_get_semaphore_count()
+/**
+ * @brief  Returns diagnostic struct populated with diagnostic data
+ * This function copies data from the global CAN_comms_diagnostic struct into a CAN_comms_diagnostic_t struct
+ * created by the user.
+ *
+ * @param diagnostic: Pointer to user's diagnostic struct.
+ */
+void CAN_comms_get_diagnostic(CAN_comms_diagnostics_t* diagnostic)
 {
 	CAN_comms_diagnostic.tx_semaphore_count = osSemaphoreGetCount(CAN_comms_Tx_mailbox_semaphore);
-}
-
-void comms_rx_queue_get_count()
-{
 	CAN_comms_diagnostic.rx_queue_count = osMessageQueueGetCount(CAN_comms_Rx_queue);
+	CAN_comms_diagnostic.tx_queue_count = osMessageQueueGetCount(CAN_comms_Tx_queue);
+	*diagnostic = CAN_comms_diagnostic;
 }
 
-void comms_tx_queue_get_count()
-{
-	CAN_comms_diagnostic.tx_queue_count = osMessageQueueGetCount(CAN_comms_Tx_queue);
-}
