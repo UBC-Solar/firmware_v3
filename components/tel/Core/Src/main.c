@@ -21,6 +21,7 @@
 #include "cmsis_os.h"
 #include "can.h"
 #include "dma.h"
+#include "i2c.h"
 #include "iwdg.h"
 #include "rtc.h"
 #include "usart.h"
@@ -30,6 +31,7 @@
 /* USER CODE BEGIN Includes */
 
 #include "radio.h"
+#include "gps.h"
 
 /* USER CODE END Includes */
 
@@ -100,6 +102,8 @@ int main(void)
   MX_USART1_UART_Init();
   MX_RTC_Init();
   MX_IWDG_Init();
+  MX_UART5_Init();
+  MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
   
   RADIO_init();                       // Inits sending queue.

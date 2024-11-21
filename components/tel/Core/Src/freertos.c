@@ -29,6 +29,7 @@
 #include "iwdg.h"
 #include "tel_freertos.h"
 #include "can.h"
+#include "usart.h"
 
 /* USER CODE END Includes */
 
@@ -40,7 +41,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define GPS_MESSAGE_LEN 1000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -188,6 +189,7 @@ void IMU_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
+
     osDelay(1);
   }
   /* USER CODE END IMU_task */
@@ -203,13 +205,15 @@ void IMU_task(void *argument)
 void GPS_task(void *argument)
 {
   /* USER CODE BEGIN GPS_task */
+  
+  
   /* Infinite loop */
   for(;;)
   {
     os_Delay(500);
 
     uint8_t msg[20] = "New GPS read\r\n\n";
-    HAL_UART_Transmit(&huart2, msg, 20, 100);
+    HAL_UART_Transmit(&huart5, msg, 20, 100);
 
     uint8_t data[GPS_MESSAGE_LEN];
     memset(data, 0, GPS_MESSAGE_LEN);
@@ -221,13 +225,13 @@ void GPS_task(void *argument)
     // If the GPS read was successful, print the data
     if(g_gps_read_okay)
     {
-      HAL_UART_Transmit(&huart2, data, GPS_MESSAGE_LEN, 100);
+      HAL_UART_Transmit(&huart5, data, GPS_MESSAGE_LEN, 100);
       g_gps_read_okay = false;
     }
     else
     {
       strncpy(data, "GPS not connected\r\n", GPS_MESSAGE_LEN);
-      HAL_UART_Transmit(&huart2, data, GPS_MESSAGE_LEN, 100);
+      HAL_UART_Transmit(&huart5, data, GPS_MESSAGE_LEN, 100);
     }
 
     HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
