@@ -110,7 +110,7 @@ float calculate_total_bits()
     {
         sliding_sum += circularBuffer[i];
     }
-    return (float)sliding_sum;
+    return (float) sliding_sum;
 }
 
 /**
@@ -126,7 +126,12 @@ float calculate_total_bits()
  */
 float calculate_bus_load()
 {
-    return ((float)calculate_total_bits() / ((float) (WINDOW_SIZE * (CANLOAD_MSG_RATE / 1000) ) * (float) BAUD_RATE)) * 100.0;
+	  float total_bits = (float) calculate_total_bits();
+	  float window_duration_seconds = (float) WINDOW_SIZE * (float) (CANLOAD_MSG_RATE / 1000.0f);
+	  float max_bits_in_window = window_duration_seconds * (float) BAUD_RATE;
+	  float load_percentage = (total_bits / max_bits_in_window) * 100.0f;
+
+	  return load_percentage;
 }
 
 /**

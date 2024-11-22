@@ -228,6 +228,9 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
 }
 
 void CAN_tx_canload_msg() {
+
+	uint8_t test_can = (uint8_t) CANLOAD_get_bus_load();
+
     CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
         .data[0] = (uint8_t) CANLOAD_get_bus_load(),
         .header = CANLOAD_busload
