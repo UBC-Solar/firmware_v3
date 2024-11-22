@@ -35,12 +35,28 @@ Make sure to link the library folder. A tutorial on how to do that can be found 
 
 ### Step 3: Initialize the Component
 
-1. **Call Initialization Function**:
-   - In `freeRTOS.c`, locate the `MX_FREERTOS_Init` function and call `CPU_LOAD_init()`, passing in:
-     - A window size (integer from 0 to 20).
-     - A frequency (in milliseconds) for CPU load calculation.
-     - A pointer to the timer handler, e.g., `&htim2` if using Timer 2.
+1. **Initialize CPU Load Config Struct
+   - In freeRTOS.c, locate the MX_FREERTOS_Init functio and 
+     create your "user configuration" by initializing a new 
+     struct of type CPU_LOAD_config_t and set the window size, frequency, and timer, to your desires.
+     For example:
 
+     ```c
+   	CPU_LOAD_config_t user_config = {
+	    .window_size = 10,
+	    .frequency_ms = 100,
+	    .timer = htim2
+	   };
+     ```
+
+2. **Call Initialization Function**:
+   - In `freeRTOS.c`, locate the `MX_FREERTOS_Init` function and call `CPU_LOAD_init()`, passing in a pointer to the user config that you just created.
+   For example:
+
+   ```c
+   CPU_LOAD_init(&user_config);
+   ```
+   
 ### Step 4 (Optional): Getting the average CPU load from the buffer
 
    If you are interested in getting the average of the CPU loads in the circular buffer, you can simply call the averaging function and store it in a variable.
