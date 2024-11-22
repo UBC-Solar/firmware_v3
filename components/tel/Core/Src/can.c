@@ -29,6 +29,18 @@
 #include "radio.h"
 #include "CAN_comms.h"
 #include "rtc.h"
+#include "cpu_load.h"
+#include "bitops.h"
+
+#define CPU_LOAD_CAN_MESSAGE_ID 0x759
+#define CPU_LOAD_CAN_DATA_LENGTH 4
+
+CAN_TxHeaderTypeDef cpu_load_can_header = {
+    .StdId = CPU_LOAD_CAN_MESSAGE_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CPU_LOAD_CAN_DATA_LENGTH};
 
 /* USER CODE END 0 */
 
@@ -206,5 +218,22 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
         HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   // TODO: add diagnostics
     }
 }
+
+void CAN_cpu_load_can_tx(){
+   CAN_comms_Tx_msg_t CPU_LOAD_can_tx = {0};
+   FloatToBytes CPU_LOAD;
+
+   CPU_LOAD.f = CPU_LOAD_average();
+
+   CPU_LOAD_can_tx.header = cpu_load_can_header;
+   CPU_LOAD_can_tx.data[0] = CPU_LOAD.bytes[0];
+   CPU_LOAD_can_tx.data[1] = CPU_LOAD.bytes[1];
+   CPU_LOAD_can_tx.data[2] = CPU_LOAD.bytes[2];
+   CPU_LOAD_can_tx.data[3] = CPU_LOAD.bytes[3];
+  
+  CAN_comms_Add_Tx_message(&CPU_LOAD_can_tx);
+}
+
+
 
 /* USER CODE END 1 */

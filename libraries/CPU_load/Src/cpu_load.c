@@ -1,3 +1,8 @@
+/******************************************************************************
+* @file    cpu_load.c
+* @brief   Source code for the CPU Load software component
+******************************************************************************/
+
 #include "cpu_load.h"
 #include "circular_buffer.h"
 
@@ -33,14 +38,12 @@ const osThreadAttr_t CPU_Task_attributes = {
     .priority = (osPriority_t) osPriorityRealtime7,
 };
 
-circ_buf_t cpuLoadBuffer = {
+circ_buf_t CPU_LOAD_buffer_config = {
     .pBuffer = cpu_load_buffer,
     .head = 0,
     .tail = 0,
     .num_entries = 0,
 };
-
-
 
 /**
  * @brief Handler for timer overflow
@@ -141,10 +144,10 @@ float CPU_LOAD_calculation(float idle_run_time, float total_run_time) {
  * @param timer A pointer to a timer handler
  */
 
-void CPU_LOAD_init(uint8_t window_size, uint16_t frequency_ms, TIM_HandleTypeDef *timer) {
-    g_window_size = window_size;
-    g_frequency_ms = frequency_ms;
-    g_timer_handle = *timer;
+void CPU_LOAD_init(CPU_LOAD_config_t *user_config) {
+    g_window_size = user_config->window_size;
+    g_frequency_ms = user_config->frequency_ms;
+    g_timer_handle = user_config->timer;
 
     HAL_TIM_Base_Start_IT(&g_timer_handle);  // Start timer with interrupts enabled for overflow handling
 
@@ -164,9 +167,12 @@ void CPU_LOAD_init(uint8_t window_size, uint16_t frequency_ms, TIM_HandleTypeDef
 void add_to_buffer() {
     uint16_t timer_value = __HAL_TIM_GET_COUNTER(&g_timer_handle);
     total_run_time = ((overflow_count << UINT16_NUM_BITS) | timer_value) - window_start_time;
-
     float cpu_load = CPU_LOAD_calculation((float)idle_run_time, (float)total_run_time);
-    CIRC_BUF_enqueue(&cpuLoadBuffer, cpu_load, g_window_size);
+
+    if(cpu_load > 0){
+    CIRC_BUF_enqueue(&CPU_LOAD_buffer_config, cpu_load, g_window_size);
+    }
+
     reset();
 }
 
@@ -181,16 +187,16 @@ void add_to_buffer() {
  */
 
 float CPU_LOAD_average() {
-    if (CIRC_BUF_empty(&cpuLoadBuffer)) {
+    if (CIRC_BUF_empty(&CPU_LOAD_buffer_config)) {
         return -1;  // Return an indicator for no data in buffer
     }
 
     float sum = 0.0f;
-    for (int i = 0; i < cpuLoadBuffer.num_entries; i++) {
-        sum += cpuLoadBuffer.pBuffer[(cpuLoadBuffer.tail + i) % MAX_CPU_LOAD_ENTRIES];
+    for (int i = 0; i < CPU_LOAD_buffer_config.num_entries; i++) {
+        sum += CPU_LOAD_buffer_config.pBuffer[i % MAX_CPU_LOAD_ENTRIES];
     }
 
-    return sum / cpuLoadBuffer.num_entries;
+    return sum / CPU_LOAD_buffer_config.num_entries;
 }
 
 /**

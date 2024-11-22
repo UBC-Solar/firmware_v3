@@ -73,6 +73,8 @@ const osMessageQueueAttr_t radio_tx_queue_attributes = {
   .mq_size = sizeof(radio_tx_queue_buffer)
 };
 
+/* CPU Load Config */
+
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -144,8 +146,14 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
+	CPU_LOAD_config_t user_config = {
+	    .window_size = WINDOW_SIZE,
+	    .frequency_ms = FREQUENCY_MS,
+	    .timer = htim2
+	};
+
     CAN_tasks_init();                         // Rx CAN Filter, Rx callback using CAN comms
-    CPU_LOAD_init(WINDOW_SIZE, FREQUENCY_MS, &htim2);
+    CPU_LOAD_init(&user_config);
 
   /* USER CODE END Init */
 
@@ -201,24 +209,17 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-static float cpu_load = 0;
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
 
-	int counter = 1;
-
     /* Infinite loop */
     for(;;)
     {
-    	if(counter % 10 == 0){
-        	cpu_load = CPU_LOAD_average();
-
-    	}
-
+		CAN_cpu_load_can_tx();
         IWDG_Refresh(&hiwdg);	                                 // Refresh the IWDG to ensure no reset occurs
         osDelay(REFRESH_DELAY_MS);
-        counter++;
+
     }
 
   /* USER CODE END StartDefaultTask */
