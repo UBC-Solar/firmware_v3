@@ -41,13 +41,13 @@ Make sure to link the library folder. A tutorial on how to do that can be found 
      struct of type CPU_LOAD_config_t and set the window size, frequency, and timer, to your desires.
      For example:
 
-     ```c
-   	CPU_LOAD_config_t user_config = {
-	    .window_size = 10,
-	    .frequency_ms = 100,
-	    .timer = htim2
-	   };
-     ```
+   ```c
+   CPU_LOAD_config_t user_config = {
+      .window_size = 10,
+      .frequency_ms = 100,
+      .timer = htim2
+   };
+   ```
 
 2. **Call Initialization Function**:
    - In `freeRTOS.c`, locate the `MX_FREERTOS_Init` function and call `CPU_LOAD_init()`, passing in a pointer to the user config that you just created.
