@@ -28,6 +28,7 @@
 
 #include "iwdg.h"
 #include "tel_freertos.h"
+#include "canload.h"
 #include "can.h"
 #include "cpu_load.h"
 #include "radio.h"
@@ -125,6 +126,18 @@ const osThreadAttr_t Radio_Task_attributes = {
   .stack_size = sizeof(Radio_TaskBuffer),
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for CANLoad_Task */
+osThreadId_t CANLoad_TaskHandle;
+uint32_t CANLoad_TaskBuffer[ 128 ];
+osStaticThreadDef_t CANLoad_TaskControlBlock;
+const osThreadAttr_t CANLoad_Task_attributes = {
+  .name = "CANLoad_Task",
+  .cb_mem = &CANLoad_TaskControlBlock,
+  .cb_size = sizeof(CANLoad_TaskControlBlock),
+  .stack_mem = &CANLoad_TaskBuffer[0],
+  .stack_size = sizeof(CANLoad_TaskBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -135,6 +148,7 @@ void StartDefaultTask(void *argument);
 void IMU_task(void *argument);
 void GPS_task(void *argument);
 void Radio_task(void *argument);
+void CANLoad_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -191,6 +205,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of Radio_Task */
   Radio_TaskHandle = osThreadNew(Radio_task, NULL, &Radio_Task_attributes);
+
+  /* creation of CANLoad_Task */
+  CANLoad_TaskHandle = osThreadNew(CANLoad_task, NULL, &CANLoad_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
@@ -272,9 +289,29 @@ void Radio_task(void *argument)
 {
   /* USER CODE BEGIN Radio_task */
 
-  RADIO_Tx_forever();
+   RADIO_Tx_forever();
 
   /* USER CODE END Radio_task */
+}
+
+/* USER CODE BEGIN Header_CANLoad_task */
+/**
+* @brief Function implementing the CANLoad_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_CANLoad_task */
+void CANLoad_task(void *argument)
+{
+  /* USER CODE BEGIN CANLoad_task */
+  /* Infinite loop */
+  for(;;)
+  {
+   CANLOAD_update_sliding_window();
+   CAN_tx_canload_msg();
+   osDelay(CANLOAD_MSG_RATE);
+  }
+  /* USER CODE END CANLoad_task */
 }
 
 /* Private application code --------------------------------------------------*/

@@ -166,7 +166,7 @@ void CAN_comms_Tx_task(void* argument)
     /* Infinite loop */
     for(;;)
     {
-        /* Wait until there is a message in the queue */ 
+        /* Wait until there is a message in the queue */
         CAN_comms_Tx_msg_t CAN_comms_Tx_msg;
         if (osOK != osMessageQueueGet(CAN_comms_Tx_queue, &CAN_comms_Tx_msg, NULL, osWaitForever))
         {
@@ -335,4 +335,3 @@ void CAN_comms_get_diagnostic(CAN_comms_diagnostics_t* diagnostic)
 	CAN_comms_diagnostic.tx_queue_count = osMessageQueueGetCount(CAN_comms_Tx_queue);
 	*diagnostic = CAN_comms_diagnostic;
 }
-

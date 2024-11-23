@@ -27,6 +27,23 @@
 #include <stdbool.h>
 #include "bitops.h"
 #include "radio.h"
+#include "canload.h"
+
+#define CANLOAD_MSG_ID                      0x760
+#define CANLOAD_DATA_LENGTH                 1
+
+/**
+ * @brief CAN message header for sending out bus load
+ */
+
+CAN_TxHeaderTypeDef CANLOAD_busload = {
+    .StdId = CANLOAD_MSG_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CANLOAD_DATA_LENGTH};
+
+
 #include "CAN_comms.h"
 #include "rtc.h"
 #include "cpu_load.h"
@@ -41,6 +58,7 @@ CAN_TxHeaderTypeDef cpu_load_can_header = {
     .IDE = CAN_ID_STD,
     .RTR = CAN_RTR_DATA,
     .DLC = CPU_LOAD_CAN_DATA_LENGTH};
+
 
 /* USER CODE END 0 */
 
@@ -156,6 +174,8 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
     HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	    // Visual Confirmation of CAN working
 
+    CANLOAD_calculate_message_bits(CAN_comms_Rx_msg->header.DLC, CAN_comms_Rx_msg->header.IDE); // Calculate CAN bus load
+
     RTC_check_and_sync_rtc(CAN_comms_Rx_msg->header.StdId, CAN_comms_Rx_msg->data);     // Sync timestamps
 
     // RADIO_filter_and_queue_msg(CAN_comms_Rx_msg); TODO: Add back radio
@@ -217,6 +237,16 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
     {
         HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   // TODO: add diagnostics
     }
+}
+
+void CAN_tx_canload_msg() {
+    CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
+        .data[0] = (uint8_t) CANLOAD_get_bus_load(),
+        .header = CANLOAD_busload
+    };  
+
+  CANLOAD_calculate_message_bits(CAN_comms_Tx_msg.header.DLC, CAN_comms_Tx_msg.header.IDE);
+  CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
 }
 
 void CAN_cpu_load_can_tx(){

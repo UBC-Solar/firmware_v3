@@ -31,6 +31,7 @@
 /* USER CODE BEGIN Includes */
 
 #include "radio.h"
+#include "canload.h"
 #include "cpu_load.h"
 
 /* USER CODE END Includes */
