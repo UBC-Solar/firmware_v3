@@ -65,10 +65,37 @@ typedef struct {
     void (*CAN_comms_Rx_callback)(CAN_comms_Rx_msg_t*);
 } CAN_comms_config_t;
 
+/*
+* @brief CAN communications diagnostic struct
+*
+* @param dropped_rx_msg: Count of dropped received CAN messages.Happens when rx buffer overflows.
+* @param dropped_tx_msg: Count of dropped messages in the TX buffer. Happens when TX buffer overflows.
+* @param comms_init_error: indicates if comms has failed to init.
+* @param rx_queue_count: the number of can messages in the RX queue
+* @param tx_queue_count: the number of CAN messages in the TX queue
+* @param tx_semaphore_count: the number of free semaphores for CAN TX mailboxes
+* @param success_rx: number of successful CAN received messages
+* @param success_tx: number of successful CAN transmissions
+* @param hal_failure_tx: number of failed CAN transmissions
+* @param hal_failure_rx: number of failed CAN receives
+*/
+typedef struct {
+   uint32_t dropped_rx_msg;
+   uint32_t dropped_tx_msg;
+   uint8_t comms_init_error;
+   uint8_t rx_queue_count;
+   uint8_t tx_queue_count;
+   uint32_t tx_semaphore_count;
+   uint32_t success_rx;
+   uint32_t success_tx;
+   uint32_t hal_failure_tx;
+   uint32_t hal_failure_rx;
+
+} CAN_comms_diagnostics_t;
 
 /* Public function declarations */
 void CAN_comms_init(CAN_comms_config_t* config);
 void CAN_comms_Add_Tx_message(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg);
-
+void CAN_comms_get_diagnostic(CAN_comms_diagnostics_t* diagnostic);
 
 #endif // CAN_COMMS_H

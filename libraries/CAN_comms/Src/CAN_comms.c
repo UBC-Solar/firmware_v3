@@ -15,8 +15,10 @@
 
 
 /* Private defines */
-#define CAN_RX_TASK_STACK_SIZE 512
-#define CAN_TX_TASK_STACK_SIZE 512
+#define COMMS_INIT_SUCCESS          0
+#define COMMS_INIT_FAILURE          1
+#define CAN_RX_TASK_STACK_SIZE 1028
+#define CAN_TX_TASK_STACK_SIZE 1028
 #define CAN_RX_QUEUE_SIZE 16
 #define CAN_TX_QUEUE_SIZE 16
 #define CAN_RX_STRUCT_SIZE sizeof(CAN_comms_Rx_msg_t)
@@ -30,15 +32,39 @@ osMessageQueueId_t CAN_comms_Rx_queue;
 osMessageQueueId_t CAN_comms_Tx_queue;
 osThreadId_t CAN_comms_Rx_task_handle;
 osThreadId_t CAN_comms_Tx_task_handle;
+StaticTask_t CAN_comms_Rx_task_control_block;
+StaticTask_t CAN_comms_Tx_task_control_block;
+uint32_t CAN_comms_Rx_task_buffer[CAN_RX_TASK_STACK_SIZE];
+uint32_t CAN_comms_Tx_task_buffer[CAN_TX_TASK_STACK_SIZE];
 osSemaphoreId_t CAN_comms_Tx_mailbox_semaphore;
+
+CAN_comms_diagnostics_t CAN_comms_diagnostic = {
+    .comms_init_error = COMMS_INIT_SUCCESS,
+    .dropped_rx_msg = 0,
+    .dropped_tx_msg = 0,
+    .rx_queue_count = 0,
+    .tx_queue_count = 0,
+    .tx_semaphore_count = 0,
+    .success_rx = 0,
+    .success_tx = 0,
+    .hal_failure_tx = 0,
+    .hal_failure_rx = 0
+};
+
 const osThreadAttr_t CAN_comms_Rx_task_attributes = {
     .name = "CAN_comms_Rx_task",
-    .stack_size = CAN_RX_TASK_STACK_SIZE,
+    .cb_mem = &CAN_comms_Rx_task_control_block,
+    .cb_size = sizeof(CAN_comms_Rx_task_control_block),
+    .stack_mem = &CAN_comms_Rx_task_buffer[0],
+    .stack_size = sizeof(CAN_comms_Rx_task_buffer),
     .priority = (osPriority_t) osPriorityLow,
 };
 const osThreadAttr_t CAN_comms_Tx_task_attributes = {
     .name = "CAN_comms_Tx_task",
-    .stack_size = CAN_TX_TASK_STACK_SIZE,
+    .cb_mem = &CAN_comms_Tx_task_control_block,
+    .cb_size = sizeof(CAN_comms_Tx_task_control_block),
+    .stack_mem = &CAN_comms_Tx_task_buffer[0],
+    .stack_size = sizeof(CAN_comms_Tx_task_buffer),
     .priority = (osPriority_t) osPriorityHigh,
 };
 
@@ -59,10 +85,13 @@ void CAN_comms_Tx_task(void* argument);
  */
 void CAN_comms_init(CAN_comms_config_t* config)
 {
+
+	
     /* Check config is not NULL */
     if (config == NULL)
     {
-        return; // TODO: Error handle
+        CAN_comms_diagnostic.comms_init_error = COMMS_INIT_FAILURE;
+        return;
     }
 
     /* Set config */
@@ -114,7 +143,11 @@ void CAN_comms_Add_Tx_message(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
     /* Add CAN message to the queue */
     if(osOK != osMessageQueuePut(CAN_comms_Tx_queue, CAN_comms_Tx_msg, 0, 0))
     {
-        return; // TODO: Error handle
+        CAN_comms_diagnostic.dropped_tx_msg++;
+    }
+    else
+    {
+
     }
 }
 
@@ -135,20 +168,28 @@ void CAN_comms_Tx_task(void* argument)
     {
         /* Wait until there is a message in the queue */ 
         CAN_comms_Tx_msg_t CAN_comms_Tx_msg;
-        if (osOK == osMessageQueueGet(CAN_comms_Tx_queue, &CAN_comms_Tx_msg, NULL, osWaitForever))
+        if (osOK != osMessageQueueGet(CAN_comms_Tx_queue, &CAN_comms_Tx_msg, NULL, osWaitForever))
         {
-            /* Wait for a CAN mailbox semaphore to be released */
-            osSemaphoreAcquire(CAN_comms_Tx_mailbox_semaphore, osWaitForever);
+            continue;
+        }
 
-            uint32_t can_mailbox; // Not used
-            if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))
-            {
-                return; // TODO: Error handle
-            }
+        /* Wait for a CAN mailbox semaphore to be released */
+        if(osOK != osSemaphoreAcquire(CAN_comms_Tx_mailbox_semaphore, osWaitForever))
+        {
+            continue;
+        }
+
+        uint32_t can_mailbox; // Not used
+        if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))
+        {
+        	CAN_comms_diagnostic.hal_failure_tx++;
+
+            /* Release semaphore if HAL_CAN did not work */
+            osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
         }
         else
         {
-            // TODO: Error handle
+        	CAN_comms_diagnostic.success_tx++;
         }
     }
 }
@@ -172,17 +213,17 @@ void CAN_comms_Rx_task(void* argument)
     for(;;)
     {
         /* Wait until there is a message in the queue */ 
-        CAN_comms_Rx_msg_t CAN_comms_Rx_msg;
-        if (osOK == osMessageQueueGet(CAN_comms_Rx_queue, &CAN_comms_Rx_msg, NULL, osWaitForever))
-        {
-            /* Call the handle function pointer */
-            CAN_comms_config.CAN_comms_Rx_callback(&CAN_comms_Rx_msg);
-        }
+    	CAN_comms_Rx_msg_t CAN_comms_Rx_msg;
+    	if (osOK == osMessageQueueGet(CAN_comms_Rx_queue, &CAN_comms_Rx_msg, NULL, osWaitForever))
+    	{
+		    /* Call the handle function pointer */
+		    CAN_comms_config.CAN_comms_Rx_callback(&CAN_comms_Rx_msg);
+    	}
         else
         {
-            return; // TODO: Error handle
+            // TODO: Error handle
         }
-    }
+   }
 }
 
 
@@ -198,34 +239,27 @@ void CAN_comms_Rx_message_pending_ISR()
     CAN_comms_Rx_msg_t CAN_Rx_msg;
     if(HAL_OK != HAL_CAN_GetRxMessage(CAN_comms_config.hcan, CAN_RX_FIFO0, &CAN_Rx_msg.header, CAN_Rx_msg.data))
     {
-        return; // TODO: Error handle
+    	CAN_comms_diagnostic.hal_failure_rx++;
     }
 
     /* Add CAN message to the queue */
     if(osOK != osMessageQueuePut(CAN_comms_Rx_queue, &CAN_Rx_msg, 0, 0))
     {
-        return; // TODO: Error handle
+        CAN_comms_diagnostic.dropped_rx_msg++;
+
+    }
+    else
+    {
+    	CAN_comms_diagnostic.success_rx++;
     }
 }
 
-
-/**
- * @brief Interrupt Service Routine for the CAN mailbox callback function
- * This function frees the semaphore for the CAN Tx mailbox
- * 
- * @attention This function needs to be added to each CAN mailbox complete callback function
- */
-void CAN_comms_Tx_mailbox_complete_ISR()
-{
-    osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
-}
 
 
 /**
  * @attention The following functions are callback functions called by the STM32 HAL_CAN library.
  * These functions are weakly defined in the HAL_CAN library and are overridden in this library.
  */
-
 
 /**
   * @brief  Rx FIFO 0 message pending callback.
@@ -285,3 +319,20 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
         osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
     }
 }
+
+
+/**
+ * @brief  Returns diagnostic struct populated with diagnostic data
+ * This function copies data from the global CAN_comms_diagnostic struct into a CAN_comms_diagnostic_t struct
+ * created by the user.
+ *
+ * @param diagnostic: Pointer to user's diagnostic struct.
+ */
+void CAN_comms_get_diagnostic(CAN_comms_diagnostics_t* diagnostic)
+{
+	CAN_comms_diagnostic.tx_semaphore_count = osSemaphoreGetCount(CAN_comms_Tx_mailbox_semaphore);
+	CAN_comms_diagnostic.rx_queue_count = osMessageQueueGetCount(CAN_comms_Rx_queue);
+	CAN_comms_diagnostic.tx_queue_count = osMessageQueueGetCount(CAN_comms_Tx_queue);
+	*diagnostic = CAN_comms_diagnostic;
+}
+
