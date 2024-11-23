@@ -1,5 +1,4 @@
 import serial
-import time
 
 # # Configure the COM port
 # ser = serial.Serial(
@@ -21,7 +20,7 @@ import time
 # finally:
 #     ser.close()
 
-ser = serial.Serial('/dev/ttyUSB0', 115200)
+ser = serial.Serial('/dev/cu.usbserial-1130', 115200)
 
 while True:
     print(ser.readline().decode('latin-1'))
