@@ -199,7 +199,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM1) {
     HAL_IncTick();
   }
-
   /* USER CODE BEGIN Callback 1 */
   
   CPU_LOAD_timer_overflow_handler(htim);

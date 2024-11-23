@@ -94,7 +94,6 @@ to exclude the API function. */
 #define INCLUDE_xQueueGetMutexHolder        1
 #define INCLUDE_uxTaskGetStackHighWaterMark 1
 #define INCLUDE_eTaskGetState               1
-#define INCLUDE_xTaskGetIdleTaskHandle      1
 
 /*
  * The CMSIS-RTOS V2 FreeRTOS wrapper is dependent on the heap implementation used
@@ -146,6 +145,7 @@ standard names. */
 /* USER CODE BEGIN Defines */
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
 
+#define INCLUDE_xTaskGetIdleTaskHandle 1
 #include "cpu_load_trace.h"
 
 /* USER CODE END Defines */
