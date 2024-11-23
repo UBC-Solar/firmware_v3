@@ -36,5 +36,10 @@ typedef union {                 // Union to interpret doubles to an integral
     uint64_t u;
 } DoubleAsUint64;
 
+typedef union {
+    float f;
+    uint8_t bytes[4];
+} FloatToBytes;
+
 
 #endif /* __BITOPS_H__ */

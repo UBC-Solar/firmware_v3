@@ -23,6 +23,7 @@
 #include "dma.h"
 #include "iwdg.h"
 #include "rtc.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -31,6 +32,7 @@
 
 #include "radio.h"
 #include "canload.h"
+#include "cpu_load.h"
 
 /* USER CODE END Includes */
 
@@ -101,6 +103,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_RTC_Init();
   MX_IWDG_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   
   IWDG_perform_reset_sequence();      // Check for IWDG reset    
@@ -196,7 +199,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM1) {
     HAL_IncTick();
   }
+
   /* USER CODE BEGIN Callback 1 */
+  
+  CPU_LOAD_timer_overflow_handler(htim);
 
   /* USER CODE END Callback 1 */
 }

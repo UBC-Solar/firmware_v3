@@ -30,6 +30,7 @@
 #include "tel_freertos.h"
 #include "canload.h"
 #include "can.h"
+#include "cpu_load.h"
 #include "radio.h"
 
 /* USER CODE END Includes */
@@ -44,7 +45,8 @@ typedef StaticTask_t osStaticMessageQDef_t;
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define WINDOW_SIZE 10
+#define FREQUENCY_MS 100
 #define NUM_USART1_TX_SEMAPHORES        1
 
 /* USER CODE END PD */
@@ -71,6 +73,8 @@ const osMessageQueueAttr_t radio_tx_queue_attributes = {
   .mq_mem = &radio_tx_queue_buffer,
   .mq_size = sizeof(radio_tx_queue_buffer)
 };
+
+/* CPU Load Config */
 
 
 /* USER CODE END Variables */
@@ -143,7 +147,14 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
+	CPU_LOAD_config_t user_config = {
+	    .window_size = WINDOW_SIZE,
+	    .frequency_ms = FREQUENCY_MS,
+	    .timer = htim2
+	};
+
     CAN_tasks_init();                         // Rx CAN Filter, Rx callback using CAN comms
+    CPU_LOAD_init(&user_config);
 
   /* USER CODE END Init */
 
@@ -206,8 +217,10 @@ void StartDefaultTask(void *argument)
     /* Infinite loop */
     for(;;)
     {
+		CAN_cpu_load_can_tx();
         IWDG_Refresh(&hiwdg);	                                 // Refresh the IWDG to ensure no reset occurs
         osDelay(REFRESH_DELAY_MS);
+
     }
 
   /* USER CODE END StartDefaultTask */
