@@ -60,7 +60,8 @@ typedef struct {
 
 void RADIO_Tx_forever();
 void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg);
-void RADIO_diagnostic_init();
 void RADIO_init();
+void RADIO_get_diagnostic(Radio_diagnostics_t* diagnostic);
+
 
 #endif /* __RADIO_H__ */

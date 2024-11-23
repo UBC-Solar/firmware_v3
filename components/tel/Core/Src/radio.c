@@ -28,6 +28,7 @@
 #define MASK_4_BITS                                 0xF
 #define CLEAR_TO_SEND 								0x01
 
+
 /* PRIVATE FUNCTIONS DECLARATIONS */
 void set_radio_msg(CAN_RxHeaderTypeDef* header, uint8_t* data, RADIO_Msg_TypeDef* radio_msg);
 uint64_t get_timestamp();
@@ -35,22 +36,29 @@ uint32_t get_can_id(CAN_RxHeaderTypeDef* can_msg_header_ptr);
 uint8_t get_data_length(uint32_t DLC);
 void clear_cts_flag();
 void set_cts_flag();
-void radio_diagnostic_init();
-void radio_get_queue_count();
-void radio_get_cts_count();
+void (*cts_flag_array[2])() = {set_cts_flag, clear_cts_flag};
+
 
 /* VARIABLES */
 osEventFlagsId_t Radio_cts_flag;
-void (*cts_flag_array[2])() = {set_cts_flag, clear_cts_flag};
-Radio_diagnostics_t Radio_diagnostic;
+Radio_diagnostics_t Radio_diagnostic = {
+    .XBee_buffer_overflows = 0,
+    .dropped_radio_msg = 0,
+    .cts_flag_value = CLEAR_TO_SEND,
+    .radio_hal_transmit_failures = 0,
+    .radio_queue_count = 0,
+    .successful_radio_tx = 0
+};
 
+
+
+/**
+ * @brief Initializes Radio CTS Flag, sets it as CLEAR_TO_SEND
+ */
 void RADIO_init(){
-	RADIO_diagnostic_init();
 	Radio_cts_flag = osEventFlagsNew(NULL);
 	osEventFlagsSet(Radio_cts_flag, CLEAR_TO_SEND);
 }
-
-
 
 
 
@@ -105,7 +113,6 @@ void RADIO_Tx_forever()
         }
 	}
 }
-
 
 /**
  * @brief Sets all the fields in the radio message struct
@@ -166,23 +173,7 @@ uint8_t get_data_length(uint32_t DLC)
 	return (uint8_t) (DLC & MASK_4_BITS);
 }
 
-/**
- * @brief Initializes the Radio_diagnostic Struct values to zero.
- *
- */
-void radio_diagnostic_init(){
-
-	Radio_diagnostic.XBee_buffer_overflows = 0;
-	Radio_diagnostic.dropped_radio_msg = 0;
-	Radio_diagnostic.cts_flag_value = CLEAR_TO_SEND;
-	Radio_diagnostic.radio_hal_transmit_failures = 0;
-	Radio_diagnostic.radio_queue_count = 0;
-	Radio_diagnostic.successful_radio_tx = 0;
-
-}
-
 /*
- *
  * @brief  Returns a radio diagnostic struct populated with diagnostic data
  * This function copies data from the global Radio_diagnotic struct into a Radio_diagnostic_t struct
  * created by the user.
@@ -190,29 +181,15 @@ void radio_diagnostic_init(){
  * @param diagnostic: Pointer to user's diagnostic struct.
  */
 void RADIO_get_diagnostic(Radio_diagnostics_t* diagnostic){
-
-	radio_get_queue_count();
-	radio_get_cts_count();
-	*diagnostic = Radio_diagnostic;
-
-}
-
-
-void radio_get_queue_count(){
-
 	Radio_diagnostic.radio_queue_count = osMessageQueueGetCount(radio_tx_queue);
-}
-
-void radio_get_cts_count(){
-
 	Radio_diagnostic.cts_flag_value =  osEventFlagsGet(Radio_cts_flag);
+	*diagnostic = Radio_diagnostic;
 }
+
 
 /*
- *
  * @brief  Interrupt Callback that occurs when CTS signal changes value. Handles setting
- * and clearing Radio_cts_flag
- *
+ * and clearing Radio_cts_flag.
  *
  * @param GPIO_Pin: GPIO_Pin which the interrupt originates from
  */
@@ -223,6 +200,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     	cts_flag_array[ HAL_GPIO_ReadPin(RADIO_CTS_GPIO_Port, RADIO_CTS_Pin)]();
     }
 }
+
 
 void clear_cts_flag(){
 	osEventFlagsClear(Radio_cts_flag, CLEAR_TO_SEND);

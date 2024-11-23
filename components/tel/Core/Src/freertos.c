@@ -144,7 +144,9 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
     CAN_tasks_init();                         // Rx CAN Filter, Rx callback using CAN comms
-    RADIO_init();
+
+    RADIO_init();  							  // Setup CTS Event Flag
+
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
