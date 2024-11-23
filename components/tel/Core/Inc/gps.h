@@ -2,6 +2,7 @@
 #ifndef __GPS__H__
 #define __GPS__H__
 #include "stdbool.h"
+#include "i2c.h"
 
 #define GPS_MESSAGE_LEN 1000
 

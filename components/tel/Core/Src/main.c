@@ -111,14 +111,14 @@ int main(void)
 
   /* USER CODE END 2 */
 
-  /* Init scheduler */
-  osKernelInitialize();
+  // /* Init scheduler */
+  // osKernelInitialize();
 
-  /* Call init function for freertos objects (in cmsis_os2.c) */
-  MX_FREERTOS_Init();
+  // /* Call init function for freertos objects (in cmsis_os2.c) */
+  // MX_FREERTOS_Init();
 
-  /* Start scheduler */
-  osKernelStart();
+  // /* Start scheduler */
+  // osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
 
@@ -127,7 +127,10 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+    uint8_t msg[20] = "New GPS read\r\n\n";
+    HAL_UART_Transmit(&huart5, msg, 20, 100);
 
+    HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

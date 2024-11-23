@@ -8,42 +8,42 @@
 #include "nmea_parse.h"
 
 // Test function
-int main() {
+// int main() {
 
-    GPS gps_data = {0};
-    uint8_t buffer[1024];
+//     GPS gps_data = {0};
+//     uint8_t buffer[1024];
 
-    // Simulate loading NMEA sentences from a file
-    FILE *nmeaFile = fopen("gpsData1.txt", "r");
+//     // Simulate loading NMEA sentences from a file
+//     FILE *nmeaFile = fopen("gpsData1.txt", "r");
 
-    // Read the file line by line
-    while (fgets((char *)buffer, sizeof(buffer), nmeaFile) != NULL) {
-        nmea_parse(&gps_data, buffer);
+//     // Read the file line by line
+//     while (fgets((char *)buffer, sizeof(buffer), nmeaFile) != NULL) {
+//         nmea_parse(&gps_data, buffer);
 
-        // Print parsed results
-        printf("Latitude: %.6f %c\n", gps_data.latitude, gps_data.latSide);
-        printf("Longitude: %.6f %c\n", gps_data.longitude, gps_data.lonSide);
-        printf("UTC Time: %s\n", gps_data.utcTime);
-        printf("Geod height: %.2f m\n", gps_data.geodHeight);
-        printf("Altitude: %.2f m\n", gps_data.altitude);
-        printf("Satellites: %d\n", gps_data.satelliteCount);
-        printf("Fix: %d\n", gps_data.fix);
-        printf("HDOP: %.2f\n", gps_data.hdop);
-        printf("VDOP: %.2f\n", gps_data.vdop);
-        printf("PDOP: %.2f\n", gps_data.pdop);
-        printf("SNR: %d\n", gps_data.snr);
-        printf("Satellites in View: %d\n", gps_data.satInView);
-        printf("True Heading: %.2f\n", gps_data.trueHeading);
-        printf("Magnetic Heading: %.2f\n", gps_data.magneticHeading);
-        printf("Speed (km/h): %.2f\n", gps_data.speedKmh);
-        printf("Date: %s\n", gps_data.date);
-        printf("RMC Flag: %d\n", gps_data.RMC_Flag);
-        printf("-----------------------------\n");
-    }
+//         // Print parsed results
+//         printf("Latitude: %.6f %c\n", gps_data.latitude, gps_data.latSide);
+//         printf("Longitude: %.6f %c\n", gps_data.longitude, gps_data.lonSide);
+//         printf("UTC Time: %s\n", gps_data.utcTime);
+//         printf("Geod height: %.2f m\n", gps_data.geodHeight);
+//         printf("Altitude: %.2f m\n", gps_data.altitude);
+//         printf("Satellites: %d\n", gps_data.satelliteCount);
+//         printf("Fix: %d\n", gps_data.fix);
+//         printf("HDOP: %.2f\n", gps_data.hdop);
+//         printf("VDOP: %.2f\n", gps_data.vdop);
+//         printf("PDOP: %.2f\n", gps_data.pdop);
+//         printf("SNR: %d\n", gps_data.snr);
+//         printf("Satellites in View: %d\n", gps_data.satInView);
+//         printf("True Heading: %.2f\n", gps_data.trueHeading);
+//         printf("Magnetic Heading: %.2f\n", gps_data.magneticHeading);
+//         printf("Speed (km/h): %.2f\n", gps_data.speedKmh);
+//         printf("Date: %s\n", gps_data.date);
+//         printf("RMC Flag: %d\n", gps_data.RMC_Flag);
+//         printf("-----------------------------\n");
+//     }
 
-    fclose(nmeaFile);
-    return 0;
-}
+//     fclose(nmeaFile);
+//     return 0;
+// }
 
 
 char *data[15];
