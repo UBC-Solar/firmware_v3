@@ -288,11 +288,9 @@ void GPS_task(void *argument)
 void Radio_task(void *argument)
 {
   /* USER CODE BEGIN Radio_task */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+
+   RADIO_Tx_forever();
+
   /* USER CODE END Radio_task */
 }
 
@@ -309,7 +307,9 @@ void CANLoad_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+   CANLOAD_update_sliding_window();
+   CAN_tx_canload_msg();
+   osDelay(CANLOAD_MSG_RATE);
   }
   /* USER CODE END CANLoad_task */
 }
