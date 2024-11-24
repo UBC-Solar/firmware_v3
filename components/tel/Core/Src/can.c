@@ -29,18 +29,19 @@
 #include "radio.h"
 #include "CAN_comms.h"
 #include "rtc.h"
-#include "cpu_load.h"
+//#include "cpu_load.h"
 #include "bitops.h"
 
-#define CPU_LOAD_CAN_MESSAGE_ID 0x759
-#define CPU_LOAD_CAN_DATA_LENGTH 4
 
-CAN_TxHeaderTypeDef cpu_load_can_header = {
-    .StdId = CPU_LOAD_CAN_MESSAGE_ID,
-    .ExtId = 0x0000,
-    .IDE = CAN_ID_STD,
-    .RTR = CAN_RTR_DATA,
-    .DLC = CPU_LOAD_CAN_DATA_LENGTH};
+// #define CPU_LOAD_CAN_MESSAGE_ID 0x759
+// #define CPU_LOAD_CAN_DATA_LENGTH 4
+
+// CAN_TxHeaderTypeDef cpu_load_can_header = {
+//     .StdId = CPU_LOAD_CAN_MESSAGE_ID,
+//     .ExtId = 0x0000,
+//     .IDE = CAN_ID_STD,
+//     .RTR = CAN_RTR_DATA,
+//     .DLC = CPU_LOAD_CAN_DATA_LENGTH};
 
 /* USER CODE END 0 */
 
@@ -158,7 +159,7 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 
     RTC_check_and_sync_rtc(CAN_comms_Rx_msg->header.StdId, CAN_comms_Rx_msg->data);     // Sync timestamps
 
-    // RADIO_filter_and_queue_msg(CAN_comms_Rx_msg); TODO: Add back radio
+     RADIO_filter_and_queue_msg(CAN_comms_Rx_msg);
 }
 
 
@@ -219,6 +220,7 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
     }
 }
 
+/*
 void CAN_cpu_load_can_tx(){
    CAN_comms_Tx_msg_t CPU_LOAD_can_tx = {0};
    FloatToBytes CPU_LOAD;
@@ -233,7 +235,7 @@ void CAN_cpu_load_can_tx(){
   
   CAN_comms_Add_Tx_message(&CPU_LOAD_can_tx);
 }
-
+*/
 
 
 /* USER CODE END 1 */

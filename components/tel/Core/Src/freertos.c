@@ -22,14 +22,14 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
-
+#include <string.h>
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
 #include "iwdg.h"
 #include "tel_freertos.h"
 #include "can.h"
-#include "cpu_load.h"
+//#include "cpu_load.h"
 #include "radio.h"
 
 /* USER CODE END Includes */
@@ -57,6 +57,9 @@ typedef StaticTask_t osStaticMessageQDef_t;
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+
+Radio_diagnostics_t radio_diagnostic;
+CAN_comms_diagnostics_t can_diagnostic;
 
 /* SEMAPHORES */
 osSemaphoreId_t usart1_tx_semaphore;
@@ -124,7 +127,7 @@ const osThreadAttr_t Radio_Task_attributes = {
   .cb_size = sizeof(Radio_TaskControlBlock),
   .stack_mem = &Radio_TaskBuffer[0],
   .stack_size = sizeof(Radio_TaskBuffer),
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityLow,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -147,14 +150,14 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
-	CPU_LOAD_config_t user_config = {
-	    .window_size = WINDOW_SIZE,
-	    .frequency_ms = FREQUENCY_MS,
-	    .timer = htim2
-	};
+	//CPU_LOAD_config_t user_config = {
+	  //  .window_size = WINDOW_SIZE,
+	  //  .frequency_ms = FREQUENCY_MS,
+	   // .timer = htim2
+	//};
 
     CAN_tasks_init();                         // Rx CAN Filter, Rx callback using CAN comms
-    CPU_LOAD_init(&user_config);
+    //CPU_LOAD_init(&user_config);
 
     RADIO_init();  							  // Setup CTS Event Flag
 
@@ -221,7 +224,7 @@ void StartDefaultTask(void *argument)
     /* Infinite loop */
     for(;;)
     {
-		CAN_cpu_load_can_tx();
+		//CAN_cpu_load_can_tx();
         IWDG_Refresh(&hiwdg);	                                 // Refresh the IWDG to ensure no reset occurs
         osDelay(REFRESH_DELAY_MS);
 
@@ -241,9 +244,21 @@ void IMU_task(void *argument)
 {
   /* USER CODE BEGIN IMU_task */
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
+	CAN_TxHeaderTypeDef myHeader = {
+			  .StdId = 0x451,
+			    .ExtId = 0x0000,
+			    .IDE = CAN_ID_STD,
+			    .RTR = CAN_RTR_DATA,
+			    .DLC = 8
+	};
+	uint8_t data[] = {0, 0, 0, 0, 0, 0, 0, 0};
+	CAN_comms_Tx_msg_t newMessage;
+	memcpy(newMessage.data, data, 8);
+	newMessage.header = myHeader;
+
+  for(;;){
+	  CAN_comms_Add_Tx_message(&newMessage);
+	  osDelay(100);
   }
   /* USER CODE END IMU_task */
 }
@@ -261,6 +276,8 @@ void GPS_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
+	 RADIO_get_diagnostic(&radio_diagnostic);
+	 CAN_comms_get_diagnostic(&can_diagnostic);
     osDelay(1);
   }
   /* USER CODE END GPS_task */

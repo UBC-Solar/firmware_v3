@@ -90,6 +90,10 @@ typedef struct {
    uint32_t success_tx;
    uint32_t hal_failure_tx;
    uint32_t hal_failure_rx;
+   uint8_t tx_mailbox_free_space0;
+   uint8_t tx_mailbox_free_space1;
+   uint8_t tx_mailbox_free_space2;
+   uint8_t rx_mailbox_free_space;
 
 } CAN_comms_diagnostics_t;
 

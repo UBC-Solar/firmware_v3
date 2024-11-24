@@ -99,7 +99,7 @@ void RADIO_Tx_forever()
 
 		/* Wait until CTS is asserted. This happens when the CTS signal is set to low by the XBee*/
         uint32_t flags = osEventFlagsWait(Radio_cts_flag, CLEAR_TO_SEND, osFlagsNoClear, osWaitForever);
-        if (flags & CLEAR_TO_SEND)
+        if (flags == CLEAR_TO_SEND)
         {
         	/* Wait until there is a message in the queue */
         	if (osOK == osMessageQueueGet(radio_tx_queue, &radio_msg, NULL, osWaitForever))

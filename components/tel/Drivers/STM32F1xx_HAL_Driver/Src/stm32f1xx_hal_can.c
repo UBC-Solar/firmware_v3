@@ -57,7 +57,7 @@
                  message.
             (++) HAL_CAN_AbortTxRequest() to abort transmission of a pending
                  message.
-            (++) HAL_CAN_GetTxMailboxesFreeLevel() to get the number of free Tx
+            (++) FIF)() to get the number of free Tx
                  mailboxes.
             (++) HAL_CAN_IsTxMessagePending() to check if a message is pending
                  in a Tx mailbox.
@@ -84,7 +84,7 @@
 
       (#) Transmission:
             (++) Monitor the Tx mailboxes availability until at least one Tx
-                 mailbox is free, using HAL_CAN_GetTxMailboxesFreeLevel().
+                 mailbox is free, using FIF0().
             (++) Then request transmission of a message using
                  HAL_CAN_AddTxMessage().
 
@@ -1369,7 +1369,7 @@ HAL_StatusTypeDef HAL_CAN_AbortTxRequest(CAN_HandleTypeDef *hcan, uint32_t TxMai
   *         the configuration information for the specified CAN.
   * @retval Number of free Tx Mailboxes.
   */
-uint32_t HAL_CAN_GetTxMailboxesFreeLevel(const CAN_HandleTypeDef *hcan)
+uint32_t HAL_CAN_(const CAN_HandleTypeDef *hcan)
 {
   uint32_t freelevel = 0U;
   HAL_CAN_StateTypeDef state = hcan->State;

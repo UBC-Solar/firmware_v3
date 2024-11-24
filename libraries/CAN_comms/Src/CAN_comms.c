@@ -37,7 +37,7 @@ StaticTask_t CAN_comms_Tx_task_control_block;
 uint32_t CAN_comms_Rx_task_buffer[CAN_RX_TASK_STACK_SIZE];
 uint32_t CAN_comms_Tx_task_buffer[CAN_TX_TASK_STACK_SIZE];
 osSemaphoreId_t CAN_comms_Tx_mailbox_semaphore;
-
+uint8_t counter;
 CAN_comms_diagnostics_t CAN_comms_diagnostic = {
     .comms_init_error = COMMS_INIT_SUCCESS,
     .dropped_rx_msg = 0,
@@ -48,7 +48,11 @@ CAN_comms_diagnostics_t CAN_comms_diagnostic = {
     .success_rx = 0,
     .success_tx = 0,
     .hal_failure_tx = 0,
-    .hal_failure_rx = 0
+    .hal_failure_rx = 0,
+	 .tx_mailbox_free_space0,
+	 .tx_mailbox_free_space1,
+	 .tx_mailbox_free_space2,
+	 .rx_mailbox_free_space,
 };
 
 const osThreadAttr_t CAN_comms_Rx_task_attributes = {
@@ -65,7 +69,7 @@ const osThreadAttr_t CAN_comms_Tx_task_attributes = {
     .cb_size = sizeof(CAN_comms_Tx_task_control_block),
     .stack_mem = &CAN_comms_Tx_task_buffer[0],
     .stack_size = sizeof(CAN_comms_Tx_task_buffer),
-    .priority = (osPriority_t) osPriorityHigh,
+    .priority = (osPriority_t) osPriorityNormal,
 };
 
 
@@ -165,32 +169,34 @@ void CAN_comms_Tx_task(void* argument)
 
     /* Infinite loop */
     for(;;)
-    {
+    {	counter = 0;
         /* Wait until there is a message in the queue */ 
+    	counter = 1;
         CAN_comms_Tx_msg_t CAN_comms_Tx_msg;
         if (osOK != osMessageQueueGet(CAN_comms_Tx_queue, &CAN_comms_Tx_msg, NULL, osWaitForever))
         {
             continue;
         }
-
+        counter = 2;
         /* Wait for a CAN mailbox semaphore to be released */
-        if(osOK != osSemaphoreAcquire(CAN_comms_Tx_mailbox_semaphore, osWaitForever))
-        {
-            continue;
-        }
-
+//       if(osOK != osSemaphoreAcquire(CAN_comms_Tx_mailbox_semaphore, osWaitForever))
+//        {
+//            continue;
+//        }
+        counter = 3;
         uint32_t can_mailbox; // Not used
         if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))
         {
         	CAN_comms_diagnostic.hal_failure_tx++;
 
             /* Release semaphore if HAL_CAN did not work */
-            osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
+           //osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
         }
         else
         {
         	CAN_comms_diagnostic.success_tx++;
         }
+        counter = 4;
     }
 }
 
@@ -286,7 +292,7 @@ void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
 {
     if (hcan->Instance == CAN_comms_config.hcan->Instance)
     {
-        osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
+        //osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
     }
 }
 
@@ -301,7 +307,7 @@ void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan)
 {
     if (hcan->Instance == CAN_comms_config.hcan->Instance)
     {
-        osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
+        //osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
     }
 }
 
@@ -316,7 +322,7 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
 {
     if (hcan->Instance == CAN_comms_config.hcan->Instance)
     {
-        osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
+        //osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
     }
 }
 
@@ -330,6 +336,10 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
  */
 void CAN_comms_get_diagnostic(CAN_comms_diagnostics_t* diagnostic)
 {
+	CAN_comms_diagnostic.tx_mailbox_free_space0 = HAL_CAN_GetTxMailboxesFreeLevel();
+	CAN_comms_diagnostic.tx_mailbox_free_space1 = HAL_CAN_GetTxMailboxesFreeLevel();
+	CAN_comms_diagnostic.tx_mailbox_free_space2 = HAL_CAN_GetTxMailboxesFreeLevel();
+	CAN_comms_diagnostic.rx_mailbox_free_space = 3 - HAL_CAN_GetRxFifoFillLevel();
 	CAN_comms_diagnostic.tx_semaphore_count = osSemaphoreGetCount(CAN_comms_Tx_mailbox_semaphore);
 	CAN_comms_diagnostic.rx_queue_count = osMessageQueueGetCount(CAN_comms_Rx_queue);
 	CAN_comms_diagnostic.tx_queue_count = osMessageQueueGetCount(CAN_comms_Tx_queue);
