@@ -22,7 +22,7 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 bool read_i2c_gps_module(uint8_t* receive_buffer)
 {
 	bool status = false;
-    if(HAL_I2C_Master_Receive_IT(&hi2c2, GPS_DEVICE_ADDRESS, receive_buffer, GPS_MESSAGE_LEN) == HAL_OK)
+    if(HAL_I2C_Master_Receive(&hi2c2, GPS_DEVICE_ADDRESS, receive_buffer, GPS_MESSAGE_LEN, 100) == HAL_OK)
     {
         // Set status to true if i2c read was successful
         status = true;
