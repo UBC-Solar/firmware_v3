@@ -8,6 +8,10 @@ The CPU Load Library is designed to calculate the CPU load of the connected MCU.
 
 Make sure to link the library folder. A tutorial on how to do that can be found [here.](https://wiki.ubcsolar.com/en/tutorials/stm32cubeide)
 
+## Known Issues
+As of December 4th, 2024, here are some known issues with the library. 
+* After every 20-30 CPU load values are sent out, a negative (or very small) CPU load average may be sent out over CAN. This is because every so often, the tick count of the timer used for tracking the CPU load exceeds the number of ticks in the window we are checking CPU load in. As a result, a negative value is added to the CPU Load circular buffer and thus the average may come out negative when you call `CPU_LOAD_average`. **We currently do not know why this occurs**. 
+
 ## Usage
 
 ### Step 1: Include Required Headers
