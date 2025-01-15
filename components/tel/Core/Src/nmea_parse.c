@@ -1,4 +1,3 @@
-// CAN message is only 8 bytes long
 
 #include <stdint.h>
 #include <stdint.h>
@@ -7,46 +6,7 @@
 #include <stdlib.h>
 #include "nmea_parse.h"
 
-// Test function
-// int main() {
-
-//     GPS gps_data = {0};
-//     uint8_t buffer[1024];
-
-//     // Simulate loading NMEA sentences from a file
-//     FILE *nmeaFile = fopen("gpsData1.txt", "r");
-
-//     // Read the file line by line
-//     while (fgets((char *)buffer, sizeof(buffer), nmeaFile) != NULL) {
-//         nmea_parse(&gps_data, buffer);
-
-//         // Print parsed results
-//         printf("Latitude: %.6f %c\n", gps_data.latitude, gps_data.latSide);
-//         printf("Longitude: %.6f %c\n", gps_data.longitude, gps_data.lonSide);
-//         printf("UTC Time: %s\n", gps_data.utcTime);
-//         printf("Geod height: %.2f m\n", gps_data.geodHeight);
-//         printf("Altitude: %.2f m\n", gps_data.altitude);
-//         printf("Satellites: %d\n", gps_data.satelliteCount);
-//         printf("Fix: %d\n", gps_data.fix);
-//         printf("HDOP: %.2f\n", gps_data.hdop);
-//         printf("VDOP: %.2f\n", gps_data.vdop);
-//         printf("PDOP: %.2f\n", gps_data.pdop);
-//         printf("SNR: %d\n", gps_data.snr);
-//         printf("Satellites in View: %d\n", gps_data.satInView);
-//         printf("True Heading: %.2f\n", gps_data.trueHeading);
-//         printf("Magnetic Heading: %.2f\n", gps_data.magneticHeading);
-//         printf("Speed (km/h): %.2f\n", gps_data.speedKmh);
-//         printf("Date: %s\n", gps_data.date);
-//         printf("RMC Flag: %d\n", gps_data.RMC_Flag);
-//         printf("-----------------------------\n");
-//     }
-
-//     fclose(nmeaFile);
-//     return 0;
-// }
-
-
-char *data[15];
+char *data[20];
 
 int gps_checksum(char *nmea_data)
 {
@@ -326,21 +286,29 @@ int nmea_GPGSV(GPS *gps_data, char* inputString){
 }
 
 
-void nmea_parse(GPS *gps_data, uint8_t *buffer){
+void nmea_parse(GPS *gps_data, uint8_t *buffer) {
+    
     memset(data, 0, sizeof(data));
+
     char *token = strtok((char *)buffer, "$"); // TODO: Check if buffer can be casted to a char * for strtok argument
     int cnt = 0;
+
     while(token !=NULL){
-        data[cnt++] = malloc(strlen(token)+1); //free later!!!!!
+
+        data[cnt++] = malloc(strlen(token) + 1 ); //free later!!!!!
         strcpy(data[cnt-1], token);
         token = strtok(NULL, "$");
     }
+
     for(int i = 0; i<cnt; i++){
-       if(strstr(data[i], "\r\n")!=NULL){
-           if(strstr(data[i], "GPGLL")!=NULL){
+
+        if(strstr(data[i], "\r\n")!= NULL){
+
+            // figure out why this does not run, add $?
+            if(strstr(data[i], "GPGLL")!=NULL){
                nmea_GPGLL(gps_data, data[i]);
             }
-            else if(strstr(data[i], "GNGSA")!=NULL || (strstr(data[i], "GPGGA"))!=NULL){
+            else if(strstr(data[i], "GNGSA")!= NULL || (strstr(data[i], "GPGGA"))!=NULL){
                 nmea_GPGSA(gps_data, data[i]);
             }
             else if(strstr(data[i], "GNGGA") != NULL || (strstr(data[i], "GPGGA"))!=NULL){
@@ -355,8 +323,10 @@ void nmea_parse(GPS *gps_data, uint8_t *buffer){
             else if(strstr(data[i], "GNGSV") != NULL || (strstr(data[i], "GPGSV"))!=NULL){
 	            nmea_GPGSV(gps_data, data[i]);
             }
-       }
+        }
 
     }
-    for(int i = 0; i<cnt; i++) free(data[i]);
+    for(int i = 0; i<cnt; i++) {
+        if (data[i] != NULL) { free(data[i]); }
+    }
 }

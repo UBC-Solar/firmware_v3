@@ -32,6 +32,8 @@ extern "C" {
 
 /* USER CODE END Includes */
 
+extern CAN_TxHeaderTypeDef gps_lon_lat_can_data;
+
 extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */

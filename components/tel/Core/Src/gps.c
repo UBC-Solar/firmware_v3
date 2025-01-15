@@ -1,8 +1,9 @@
 #include "gps.h"
 
 #define GPS_DEVICE_ADDRESS ((0x42)<<1)
-#define GPS_I2C_TIMEOUT    (1000)
 bool g_gps_read_okay = false;
+uint8_t g_gps_data[GPS_MESSAGE_LEN];
+char gps_parse_data[GPS_MESSAGE_LEN];
 
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
@@ -21,12 +22,12 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
  */
 bool read_i2c_gps_module(uint8_t* receive_buffer)
 {
-	bool status = false;
-    if(HAL_I2C_Master_Receive(&hi2c2, GPS_DEVICE_ADDRESS, receive_buffer, GPS_MESSAGE_LEN, 100) == HAL_OK)
+	  g_gps_read_okay = false;
+    if(HAL_I2C_Master_Receive_IT(&hi2c2, GPS_DEVICE_ADDRESS, receive_buffer, GPS_MESSAGE_LEN) == HAL_OK)
     {
         // Set status to true if i2c read was successful
-        status = true;
+        g_gps_read_okay = true;
     }
 
-    return status;
+    return g_gps_read_okay;
 }

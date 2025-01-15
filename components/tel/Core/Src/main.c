@@ -111,13 +111,13 @@ int main(void)
 
   /* USER CODE END 2 */
 
-  // /* Init scheduler */
+  /* Init scheduler */
   osKernelInitialize();
 
-  // /* Call init function for freertos objects (in cmsis_os2.c) */
+  /* Call init function for freertos objects (in cmsis_os2.c) */
   MX_FREERTOS_Init();
 
-  // /* Start scheduler */
+  /* Start scheduler */
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
@@ -127,7 +127,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

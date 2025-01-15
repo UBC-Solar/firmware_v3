@@ -31,6 +31,7 @@
 #include "can.h"
 #include "usart.h"
 #include "gps.h"
+#include "nmea_parse.h"
 
 /* USER CODE END Includes */
 
@@ -83,7 +84,7 @@ const osThreadAttr_t IMU_Task_attributes = {
 };
 /* Definitions for GPS_Task */
 osThreadId_t GPS_TaskHandle;
-uint32_t GPS_TaskBuffer[ 128 ];
+uint32_t GPS_TaskBuffer[ 256 ];
 osStaticThreadDef_t GPS_TaskControlBlock;
 const osThreadAttr_t GPS_Task_attributes = {
   .name = "GPS_Task",
@@ -215,24 +216,31 @@ void GPS_task(void *argument)
     uint8_t msg[20] = "New GPS read\r\n\n";
     HAL_UART_Transmit(&huart5, msg, 20, 100);
 
-    uint8_t data[GPS_MESSAGE_LEN];
-    memset(data, 0, GPS_MESSAGE_LEN);
+    memset(g_gps_data, 0, GPS_MESSAGE_LEN);
 
-    read_i2c_gps_module(data);
+    read_i2c_gps_module(g_gps_data);
 
     osDelay(500);
 
-    // If the GPS read was successful, print the data
-//    if(g_gps_read_okay)
-//    {
-//      HAL_UART_Transmit(&huart5, data, GPS_MESSAGE_LEN, 100);
-//      g_gps_read_okay = false;
-//    }
-//    else
-//    {
-//      strncpy(data, "GPS not connected\r\n", GPS_MESSAGE_LEN);
-//      HAL_UART_Transmit(&huart5, data, GPS_MESSAGE_LEN, 100);
-//    }
+    // If the GPS read was successful, print the g_gps_data
+   if(g_gps_read_okay)
+   {
+     HAL_UART_Transmit(&huart5, g_gps_data, GPS_MESSAGE_LEN, 100);
+
+     GPS gps_data = {0};
+
+     nmea_parse(&gps_data, g_gps_data);
+
+    //  sprintf(gps_parse_data, "lat: %f\n lon: %f\n time: %f\n", gps_data.latitude, gps_data.longitude, gps_data.utcTime);
+    //  HAL_UART_Transmit(&huart5, gps_parse_data, GPS_MESSAGE_LEN, 100);
+
+     g_gps_read_okay = false;
+   }
+   else
+   {
+     strncpy(g_gps_data, "GPS not connected\r\n", GPS_MESSAGE_LEN);
+     HAL_UART_Transmit(&huart5, g_gps_data, GPS_MESSAGE_LEN, 100);
+   }
 
     HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
   }

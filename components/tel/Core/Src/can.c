@@ -30,6 +30,17 @@
 #include "CAN_comms.h"
 #include "rtc.h"
 
+// #define GPS_DATA_LON_LAT_CAN_MESSAGE_ID 0x555
+// #define GPS_LON_LAT_CAN_DATA_LENGTH  8
+
+// CAN_TxHeaderTypeDef gps_lon_lat_can_data = {
+//   .StdId = GPS_DATA_LON_LAT_CAN_MESSAGE_ID,
+//   .ExtId = 0x0000,
+//   .IDE = CAN_ID_STD,
+//   .RTR = CAN_RTR_DATA,
+//   .DLC = GPS_LON_LAT_CAN_DATA_LENGTH
+// };
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
@@ -206,5 +217,15 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
         HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   // TODO: add diagnostics
     }
 }
+
+// Rename the function
+// void CAN_tx_canload_msg() {
+//     CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
+//         .data[0] = (uint8_t) CANLOAD_get_bus_load(),
+//         .header = CANLOAD_busload
+//     };  
+
+//   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+// }
 
 /* USER CODE END 1 */
