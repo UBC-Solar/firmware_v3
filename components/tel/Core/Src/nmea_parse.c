@@ -152,7 +152,7 @@ int nmea_GPGLL(GPS *gps_data, char*inputString) {
 
         int lat_deg_strtol = strtol(lat_d, NULL, 10);
         float lat_min_strtof = strtof(lat_m, NULL);
-        double lat_deg = lat_deg_strtol + lat_min_strtof / 60;
+        float lat_deg = lat_deg_strtol + lat_min_strtof / 60;
 
         char lon_d[3];
         char lon_m[7];
@@ -162,7 +162,7 @@ int nmea_GPGLL(GPS *gps_data, char*inputString) {
 
         int lon_deg_strtol = strtol(lon_d, NULL, 10);
         float lon_min_strtof = strtof(lon_m, NULL);
-        double lon_deg = lon_deg_strtol + lon_min_strtof / 60;
+        float lon_deg = lon_deg_strtol + lon_min_strtof / 60;
         //confirm that we aren't on null island
         if(lon_deg_strtol == 0 || lon_min_strtof == 0 || lat_deg_strtol == 0 || lat_min_strtof == 0) {
             for(int i = 0; i<counter; i++) free(values[i]);

@@ -10,20 +10,20 @@
  * @brief GPS data structure for storing parsed data
  ******************************************************************************/
 typedef struct NMEA_DATA {
-    double latitude; //latitude in degrees with decimal places
+    float latitude; //latitude in degrees with decimal places
     char latSide;  // N or S
-    double longitude; //longitude in degrees with decimal places
+    float longitude; //longitude in degrees with decimal places
     char lonSide; // E or W
-    char utcTime[7];
-    float altitude; //altitude in meters
-    float geodHeight;
-    float hdop; //horizontal dilution of precision
-    float vdop;
-    float pdop;
+    char utcTime[7]; // time when data is recorded in UTC time
+    float altitude; // altitude in meters
+    float geodHeight; // difference between GPS-measured altitude and the height above the Earth's surface
+    float hdop; // horizontal dilution of precision
+    float vdop; // vertical dilution of precision
+    float pdop; // position dilution of precision
     int satelliteCount; //number of satellites used in measurement
     int fix; // 1 = fix, 0 = no fix
     char lastMeasure[10]; // hhmmss.ss UTC of last successful measurement; time read from the GPS module
-    char date[7];
+    char date[7]; 
     float trueHeading;
     float magneticHeading;
     float speedKmh;
