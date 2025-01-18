@@ -7,13 +7,12 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2023 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2025 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
@@ -32,7 +31,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <MDI_Helper_Functions.h>
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -58,17 +57,9 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define Boot_LED_Pin GPIO_PIN_3
-#define Boot_LED_GPIO_Port GPIOA
-#define ECO_Pin GPIO_PIN_12
-#define ECO_GPIO_Port GPIOB
-#define DIR_Pin GPIO_PIN_13
-#define DIR_GPIO_Port GPIOB
-#define REVs_TICK_INPUT_Pin GPIO_PIN_12
-#define REVs_TICK_INPUT_GPIO_Port GPIOA
+
 /* USER CODE BEGIN Private defines */
 
-#define REGEN_MAX 1 // percentage between 0 (none) and 1
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
@@ -76,5 +67,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
