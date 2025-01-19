@@ -231,6 +231,8 @@ void GPS_task(void *argument)
 
      nmea_parse(&gps_data, g_gps_data);
 
+    
+
     //  sprintf(gps_parse_data, "lat: %f\n lon: %f\n time: %f\n", gps_data.latitude, gps_data.longitude, gps_data.utcTime);
     //  HAL_UART_Transmit(&huart5, gps_parse_data, GPS_MESSAGE_LEN, 100);
 

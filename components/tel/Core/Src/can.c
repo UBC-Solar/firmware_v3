@@ -29,18 +29,83 @@
 #include "radio.h"
 #include "CAN_comms.h"
 #include "rtc.h"
+#include "nmea_parse.h"
 
-// #define GPS_DATA_LON_LAT_CAN_MESSAGE_ID 0x555
-// #define GPS_LON_LAT_CAN_DATA_LENGTH  8
+#define GPS_CAN_MESSAGE_LENGTH                         8
 
-// CAN_TxHeaderTypeDef gps_lon_lat_can_data = {
-//   .StdId = GPS_DATA_LON_LAT_CAN_MESSAGE_ID,
-//   .ExtId = 0x0000,
-//   .IDE = CAN_ID_STD,
-//   .RTR = CAN_RTR_DATA,
-//   .DLC = GPS_LON_LAT_CAN_DATA_LENGTH
-// };
+#define GPS_DATA_SAT_COUNT_VIEW_FIX_SNR_CAN_MESSAGE_ID 0x755
+#define GPS_DATA_LON_LAT_CAN_MESSAGE_ID                0x756
+#define GPS_DATA_HDOP_VDOP_CAN_MESSAGE_ID              0x757
+#define GPS_DATA_LAT_SIDE_UTC_TIME_CAN_MESSAGE_ID      0x758
+#define GPS_DATA_LON_SIDE_DATE_CAN_MESSAGE_ID          0x759
+#define GPS_DATA_PDOP_SPEEDKMH_CAN_MESSAGE_ID          0x760
+#define GPS_DATA_ALT_GEOD_CAN_MESSAGE_ID               0x761
+#define GPS_DATA_TRUE_MAG_HEADING_CAN_MESSAGE_ID       0x762
 
+extern GPS gps_data;
+
+CAN_TxHeaderTypeDef gps_sat_count_view_fix_snr_rmc = {
+  .StdId = GPS_DATA_SAT_COUNT_VIEW_FIX_SNR_CAN_MESSAGE_ID,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = GPS_CAN_MESSAGE_LENGTH
+};
+
+CAN_TxHeaderTypeDef gps_lon_lat = {
+  .StdId = GPS_DATA_LON_LAT_CAN_MESSAGE_ID,
+  .ExtId = 0x0000,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = GPS_CAN_MESSAGE_LENGTH
+};
+
+CAN_TxHeaderTypeDef gps_hdop_vdop = {
+  .StdId = GPS_DATA_HDOP_VDOP_CAN_MESSAGE_ID,
+  .ExtId = 0x0000,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = GPS_CAN_MESSAGE_LENGTH
+};
+
+CAN_TxHeaderTypeDef gps_alt_geod = {
+  .StdId = GPS_DATA_ALT_GEOD_CAN_MESSAGE_ID,
+  .ExtId = 0x0000,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = GPS_CAN_MESSAGE_LENGTH
+};
+
+CAN_TxHeaderTypeDef gps_lat_side_utc_time = {
+  .StdId = GPS_DATA_LAT_SIDE_UTC_TIME_CAN_MESSAGE_ID,
+  .ExtId = 0x0000,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = GPS_CAN_MESSAGE_LENGTH
+};
+
+CAN_TxHeaderTypeDef gps_lon_side_date = {
+  .StdId = GPS_DATA_LON_SIDE_DATE_CAN_MESSAGE_ID,
+  .ExtId = 0x0000,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = GPS_CAN_MESSAGE_LENGTH
+};
+
+CAN_TxHeaderTypeDef gps_pdop_speedkmh = {
+  .StdId = GPS_DATA_PDOP_SPEEDKMH_CAN_MESSAGE_ID,
+  .ExtId = 0x0000,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = GPS_CAN_MESSAGE_LENGTH
+};
+
+CAN_TxHeaderTypeDef gps_true_mag_heading = {
+  .StdId = GPS_DATA_TRUE_MAG_HEADING_CAN_MESSAGE_ID,
+  .ExtId = 0x0000,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = GPS_CAN_MESSAGE_LENGTH
+};
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
@@ -218,14 +283,164 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
     }
 }
 
-// Rename the function
-// void CAN_tx_canload_msg() {
-//     CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
-//         .data[0] = (uint8_t) CANLOAD_get_bus_load(),
-//         .header = CANLOAD_busload
-//     };  
+union {
+      float value;
+      uint8_t bytes[4];
+    } float_bytes;
 
-//   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
-// }
+void CAN_tx_lon_lat_msg(float latitude, float longitude) {
 
+    float_bytes.value = gps_data.latitude;
+
+    CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
+        .header = gps_lon_lat
+    };
+
+    for (int i = 0; i < 4; i++) 
+    {
+      CAN_comms_Tx_msg.data[i] = float_bytes.bytes[i];
+    }
+
+    float_bytes.value = gps_data.longitude;
+
+    for (int i = 0; i < 4; i++) 
+    {
+      CAN_comms_Tx_msg.data[i + 4] = float_bytes.bytes[i];
+    }
+
+  CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+}
+
+void CAN_tx_alt_geod_msg(float altitude, float geodHeight) {
+
+    float_bytes.value = gps_data.altitude;
+
+    CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
+        .header = gps_alt_geod
+    };
+
+    for (int i = 0; i < 4; i++) 
+    {
+      CAN_comms_Tx_msg.data[i] = float_bytes.bytes[i];
+    }
+
+    float_bytes.value = gps_data.geodHeight;
+
+    for (int i = 0; i < 4; i++) 
+    {
+      CAN_comms_Tx_msg.data[i + 4] = float_bytes.bytes[i];
+    }
+
+  CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+}
+
+void CAN_tx_hdop_vdop_msg(float hdop, float vdop) {
+
+    float_bytes.value = gps_data.hdop;
+
+    CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
+        .header = gps_hdop_vdop
+    };
+
+    for (int i = 0; i < 4; i++) 
+    {
+      CAN_comms_Tx_msg.data[i] = float_bytes.bytes[i];
+    }
+
+    float_bytes.value = gps_data.vdop;
+
+    for (int i = 0; i < 4; i++) 
+    {
+      CAN_comms_Tx_msg.data[i + 4] = float_bytes.bytes[i];
+    }
+
+  CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+}
+
+void CAN_tx_pdop_speedKmh_msg(float pdop, float speedKmh) {
+
+    float_bytes.value = gps_data.pdop;
+
+    CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
+        .header = gps_pdop_speedkmh
+    };
+
+    for (int i = 0; i < 4; i++) 
+    {
+      CAN_comms_Tx_msg.data[i] = float_bytes.bytes[i];
+    }
+
+    float_bytes.value = gps_data.speedKmh;
+
+    for (int i = 0; i < 4; i++) 
+    {
+      CAN_comms_Tx_msg.data[i + 4] = float_bytes.bytes[i];
+    }
+
+  CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+}
+
+void CAN_tx_true_magnetic_heading_msg(float trueHeading, float magneticHeading) {
+
+    float_bytes.value = gps_data.trueHeading;
+
+    CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
+        .header = gps_true_mag_heading
+    };  
+
+    for (int i = 0; i < 4; i++) 
+    {
+      CAN_comms_Tx_msg.data[i] = float_bytes.bytes[i];
+    }
+
+    float_bytes.value = gps_data.magneticHeading;
+
+    for (int i = 0; i < 4; i++) 
+    {
+      CAN_comms_Tx_msg.data[i + 4] = float_bytes.bytes[i];
+    }
+
+  CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+}
+
+void CAN_tx_sat_count_view_fix_snr_msg(int satelliteCount, int satInView, int fix, int snr) {
+
+    CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
+      .data[0] = (uint8_t) gps_data.satelliteCount,
+      .data[1] = (uint8_t) gps_data.satInView,
+      .data[2] = (uint8_t) gps_data.fix,
+      .data[3] = (uint8_t) gps_data.snr,
+
+      .header = gps_sat_count_view_fix_snr_rmc
+    };
+  CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+}
+
+void CAN_tx_lat_side_utc_time_msg(char latSide, char utcTime[7]) {
+    CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
+        .data[7] = (uint8_t) gps_data.latSide,
+        .header = gps_lat_side_utc_time
+    };  
+
+    for (int i = 0; i < 7; i++)
+    {
+      CAN_comms_Tx_msg.data[i] = (uint8_t) gps_data.utcTime[i];
+    }
+
+  CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+}
+
+void CAN_tx_lon_side_date_msg(char lonSide, char date[7]) {
+    CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
+        .data[7] = (uint8_t) gps_data.lonSide,
+        .header = gps_lon_side_date
+    };  
+
+    for (int i = 0; i < 7; i++)
+    {
+      CAN_comms_Tx_msg.data[i] = (uint8_t) gps_data.date[i];
+    }
+
+  CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+}
 /* USER CODE END 1 */
