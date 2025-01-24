@@ -18,4 +18,7 @@
 /* SEMAPHORES */
 extern osSemaphoreId_t usart1_tx_semaphore;
 
+/*	QUEUES	*/
+extern osMessageQueueId_t CAN_rx_queueHandle;
+
 #endif /* __RADIO_H__ */

@@ -21,6 +21,15 @@
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
+CAN_diagnostics_t can_diagnostic = {
+		.queue_dropped_rx_msg = 0,
+		.queue_dropped_tx_msg = 0,
+		.hal_failure_rx = 0,
+		.hal_failure_tx = 0,
+		.rx_queue_count = 0,
+		.success_rx = 0,
+		.success_tx = 0
+};
 
 /* PRIVATE INCLUDES */
 #include <stdint.h>
@@ -31,6 +40,8 @@
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
+CAN_FilterTypeDef can_filter = {0};
+
 
 /* CAN init function */
 void MX_CAN_Init(void)
@@ -136,23 +147,24 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 /**
  * @brief Allows all messages to be received
  */
-void CAN_filter_init(CAN_FilterTypeDef* can_filter)
+void CAN_filter_init()
 {
     /* TODO: Review Filter Implementation */
     // Use mask and list mode to filter IDs from the CAN ID BOM
 
-    can_filter->FilterIdHigh = 0x0000;
-    can_filter->FilterMaskIdHigh = 0x0000;
+    can_filter.FilterIdHigh = 0x0000;
+    can_filter.FilterMaskIdHigh = 0x0000;
 
-    can_filter->FilterIdLow = 0x0000;
-    can_filter->FilterMaskIdLow = 0x0000;
+    can_filter.FilterIdLow = 0x0000;
+    can_filter.FilterMaskIdLow = 0x0000;
 
-    can_filter->FilterFIFOAssignment = CAN_FILTER_FIFO0;
-    can_filter->FilterBank = (uint32_t) 0;
-    can_filter->FilterMode = CAN_FILTERMODE_IDMASK;
-    can_filter->FilterScale = CAN_FILTERSCALE_16BIT;
-    can_filter->FilterActivation = CAN_FILTER_ENABLE;
+    can_filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+    can_filter.FilterBank = (uint32_t) 0;
+    can_filter.FilterMode = CAN_FILTERMODE_IDMASK;
+    can_filter.FilterScale = CAN_FILTERSCALE_16BIT;
+    can_filter.FilterActivation = CAN_FILTER_ENABLE;
 }
+
 
 
 /**
@@ -168,5 +180,64 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
         HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);   // TODO: add diagnostics
     }
 }
+
+/**
+  * @brief  Rx FIFO 0 message pending callback.
+  * @param  hcan pointer to a CAN_HandleTypeDef structure that contains
+  *         the configuration information for the specified CAN.
+  * @retval None
+  */
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+	CAN_Rx_msg_t rx_msg;
+
+	if(HAL_OK != HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_msg.header, rx_msg.data))
+	{
+		can_diagnostic.hal_failure_rx++;
+	}
+
+	/* Add CAN message to the queue */
+	if(osOK != osMessageQueuePut(CAN_rx_queueHandle, &rx_msg, 0, 0))
+	{
+		can_diagnostic.queue_dropped_rx_msg++;
+
+	}
+	else
+	{
+		//can_diagnostic.success_rx++;
+	}
+}
+
+/**
+ * @brief Callback from CAN comms to send a message over UART
+ *
+ * @param CAN_comms_Rx_msg The CAN message received
+ */
+void CAN_Rx_callback(CAN_Rx_msg_t* CAN_Rx_msg)
+{
+    HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	    // Visual Confirmation of CAN working
+
+   // RTC_check_and_sync_rtc(CAN_comms_Rx_msg->header.StdId, CAN_comms_Rx_msg->data);     // Sync timestamps
+
+    //RADIO_send_msg_uart(&(CAN_Rx_msg->header), CAN_Rx_msg->data);
+}
+
+
+void CAN_Init()
+{
+	CAN_filter_init();
+	HAL_CAN_ConfigFilter(&hcan, &can_filter);
+
+	/* Activate notifications */
+	HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+	HAL_CAN_ActivateNotification(&hcan, CAN_IT_TX_MAILBOX_EMPTY);
+
+
+	/* Start CAN */
+	HAL_CAN_Start(&hcan);
+}
+
+
+
 
 /* USER CODE END 1 */
