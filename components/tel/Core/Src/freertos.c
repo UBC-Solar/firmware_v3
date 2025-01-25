@@ -29,21 +29,23 @@
 #include "iwdg.h"
 #include "can.h"
 #include "tel_freertos.h"
+#include "string.h"
 
 
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 typedef StaticTask_t osStaticThreadDef_t;
-typedef StaticQueue_t osStaticMessageQDef_t;
 /* USER CODE BEGIN PTD */
-
+typedef StaticQueue_t osStaticMessageQDef_t;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define CAN_RX_STRUCT_SIZE sizeof(CAN_Rx_msg_t)
-#define CAN_TX_STRUCT_SIZE sizeof(CAN_Tx_msg_t)
+#define CAN_RX_STRUCT_SIZE 		sizeof(CAN_Rx_msg_t)
+#define CAN_TX_STRUCT_SIZE 		sizeof(CAN_Tx_msg_t)
+#define CAN_RX_QUEUE_SIZE 		16
+#define CAN_TX_QUEUE_SIZE		16
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -56,6 +58,31 @@ typedef StaticQueue_t osStaticMessageQDef_t;
 
 /* SEMAPHORES */
 osSemaphoreId_t usart1_tx_semaphore;
+
+
+/*	User Defined Tasks	*/
+/* Definitions for CAN_rx_queue */
+osMessageQueueId_t CAN_rx_queueHandle;
+uint8_t CAN_rx_queueBuffer[ CAN_RX_QUEUE_SIZE * CAN_RX_STRUCT_SIZE ];
+osStaticMessageQDef_t CAN_rx_queueControlBlock;
+const osMessageQueueAttr_t CAN_rx_queue_attributes = {
+  .name = "CAN_rx_queue",
+  .cb_mem = &CAN_rx_queueControlBlock,
+  .cb_size = sizeof(CAN_rx_queueControlBlock),
+  .mq_mem = &CAN_rx_queueBuffer,
+  .mq_size = sizeof(CAN_rx_queueBuffer)
+};
+
+osMessageQueueId_t CAN_tx_queueHandle;
+uint8_t CAN_tx_queueBuffer[ CAN_TX_QUEUE_SIZE * CAN_TX_STRUCT_SIZE ];
+osStaticMessageQDef_t CAN_tx_queueControlBlock;
+const osMessageQueueAttr_t CAN_tx_queue_attributes = {
+  .name = "CAN_tx_queue",
+  .cb_mem = &CAN_tx_queueControlBlock,
+  .cb_size = sizeof(CAN_tx_queueControlBlock),
+  .mq_mem = &CAN_tx_queueBuffer,
+  .mq_size = sizeof(CAN_tx_queueBuffer)
+};
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -91,20 +118,22 @@ const osThreadAttr_t CAN_Rx_Task_attributes = {
   .stack_size = sizeof(CAN_Rx_TaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
-/* Definitions for CAN_rx_queue */
-osMessageQueueId_t CAN_rx_queueHandle;
-uint8_t CAN_rx_queueBuffer[ 16 * CAN_RX_STRUCT_SIZE ];
-osStaticMessageQDef_t CAN_rx_queueControlBlock;
-const osMessageQueueAttr_t CAN_rx_queue_attributes = {
-  .name = "CAN_rx_queue",
-  .cb_mem = &CAN_rx_queueControlBlock,
-  .cb_size = sizeof(CAN_rx_queueControlBlock),
-  .mq_mem = &CAN_rx_queueBuffer,
-  .mq_size = sizeof(CAN_rx_queueBuffer)
+/* Definitions for CAN_Tx_Task */
+osThreadId_t CAN_Tx_TaskHandle;
+uint32_t CAN_Tx_TaskBuffer[ 128 ];
+osStaticThreadDef_t CAN_Tx_TaskControlBlock;
+const osThreadAttr_t CAN_Tx_Task_attributes = {
+  .name = "CAN_Tx_Task",
+  .cb_mem = &CAN_Tx_TaskControlBlock,
+  .cb_size = sizeof(CAN_Tx_TaskControlBlock),
+  .stack_mem = &CAN_Tx_TaskBuffer[0],
+  .stack_size = sizeof(CAN_Tx_TaskBuffer),
+  .priority = (osPriority_t) osPriorityLow,
 };
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
+
 
 /* USER CODE END FunctionPrototypes */
 
@@ -112,6 +141,7 @@ void StartDefaultTask(void *argument);
 void IMU_task(void *argument);
 void GPS_task(void *argument);
 void CAN_Rx_task(void *argument);
+void CAN_Tx_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -142,12 +172,10 @@ void MX_FREERTOS_Init(void) {
     /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
-  /* Create the queue(s) */
-  /* creation of CAN_rx_queue */
-  CAN_rx_queueHandle = osMessageQueueNew (16, CAN_RX_STRUCT_SIZE, &CAN_rx_queue_attributes);
-
   /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
+  CAN_rx_queueHandle = osMessageQueueNew (CAN_RX_QUEUE_SIZE, CAN_RX_STRUCT_SIZE, &CAN_rx_queue_attributes);
+  CAN_tx_queueHandle = osMessageQueueNew(CAN_TX_QUEUE_SIZE, CAN_TX_STRUCT_SIZE, &CAN_tx_queue_attributes);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -162,6 +190,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of CAN_Rx_Task */
   CAN_Rx_TaskHandle = osThreadNew(CAN_Rx_task, NULL, &CAN_Rx_Task_attributes);
+
+  /* creation of CAN_Tx_Task */
+  CAN_Tx_TaskHandle = osThreadNew(CAN_Tx_task, NULL, &CAN_Tx_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
@@ -219,13 +250,28 @@ void IMU_task(void *argument)
 * @retval None
 */
 /* USER CODE END Header_GPS_task */
+
+CAN_TxHeaderTypeDef my_header = {
+    .StdId = 0x111,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = 8};
+uint8_t my_data[8] = {0};
+CAN_Tx_msg_t my_message;
+
 void GPS_task(void *argument)
 {
   /* USER CODE BEGIN GPS_task */
+	my_message.header = my_header;
+	memcpy(my_message.data, my_data, 8);
+
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+
+	  CAN_Add_Message(&my_message);
+	  osDelay(100);
   }
   /* USER CODE END GPS_task */
 }
@@ -254,6 +300,40 @@ void CAN_Rx_task(void *argument)
 
   }
   /* USER CODE END CAN_Rx_task */
+}
+
+/* USER CODE BEGIN Header_CAN_Tx_task */
+/**
+* @brief Function implementing the CAN_Tx_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_CAN_Tx_task */
+void CAN_Tx_task(void *argument)
+{
+  /* USER CODE BEGIN CAN_Tx_task */
+  /* Infinite loop */
+  for(;;)
+  {
+	  CAN_Tx_msg_t CAN_Tx_msg;
+
+	  if (osOK == osMessageQueueGet(CAN_tx_queueHandle, &CAN_Tx_msg, NULL, osWaitForever))
+	  {
+		  uint32_t can_mailbox;
+
+		  if (HAL_OK == HAL_CAN_AddTxMessage(&hcan, &CAN_Tx_msg.header, CAN_Tx_msg.data, &can_mailbox))
+		  {
+			  can_diagnostic.success_tx++;
+		  }
+		  else
+		  {
+			  can_diagnostic.hal_failure_tx++;
+		  }
+	  }
+
+
+  }
+  /* USER CODE END CAN_Tx_task */
 }
 
 /* Private application code --------------------------------------------------*/

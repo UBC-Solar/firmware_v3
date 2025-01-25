@@ -64,7 +64,16 @@ void set_template_radio_msg(CAN_RxHeaderTypeDef* header, uint8_t* data)
 {
 	template_radio_msg.timestamp         = get_timestamp();
 	template_radio_msg.can_id            = get_can_id(header);
-	/* Get CAN Data */          		 memcpy(template_radio_msg.data, data, RADIO_DATA_LENGTH);
+	/* Get CAN Data */
+	if (data == NULL){
+		while(1){
+
+		}
+	}
+	if (data != NULL){
+		memcpy(template_radio_msg.data, data, RADIO_DATA_LENGTH);
+	}
+
 	template_radio_msg.data_len          = get_data_length(header->DLC);
 }
 

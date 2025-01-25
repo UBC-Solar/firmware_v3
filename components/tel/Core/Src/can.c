@@ -30,6 +30,7 @@ CAN_diagnostics_t can_diagnostic = {
 		.success_rx = 0,
 		.success_tx = 0
 };
+CAN_FilterTypeDef can_filter = {0};
 
 /* PRIVATE INCLUDES */
 #include <stdint.h>
@@ -40,8 +41,6 @@ CAN_diagnostics_t can_diagnostic = {
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
-CAN_FilterTypeDef can_filter = {0};
-
 
 /* CAN init function */
 void MX_CAN_Init(void)
@@ -187,25 +186,24 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
   *         the configuration information for the specified CAN.
   * @retval None
   */
+CAN_Rx_msg_t rx_msg;
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-	CAN_Rx_msg_t rx_msg;
 
-	if(HAL_OK != HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_msg.header, rx_msg.data))
+	if(HAL_OK == HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_msg.header, rx_msg.data))
 	{
-		can_diagnostic.hal_failure_rx++;
-	}
+		if(osOK != osMessageQueuePut(CAN_rx_queueHandle, &rx_msg, 0, 0))
+		{
+				can_diagnostic.queue_dropped_rx_msg++;
 
-	/* Add CAN message to the queue */
-	if(osOK != osMessageQueuePut(CAN_rx_queueHandle, &rx_msg, 0, 0))
-	{
-		can_diagnostic.queue_dropped_rx_msg++;
+		}
 
 	}
 	else
 	{
-		//can_diagnostic.success_rx++;
+		can_diagnostic.hal_failure_rx++;
 	}
+
 }
 
 /**
@@ -219,10 +217,18 @@ void CAN_Rx_callback(CAN_Rx_msg_t* CAN_Rx_msg)
 
    // RTC_check_and_sync_rtc(CAN_comms_Rx_msg->header.StdId, CAN_comms_Rx_msg->data);     // Sync timestamps
 
-    //RADIO_send_msg_uart(&(CAN_Rx_msg->header), CAN_Rx_msg->data);
+    if (CAN_Rx_msg == NULL){
+    	while(1);
+    }
+    RADIO_send_msg_uart(&(CAN_Rx_msg->header), CAN_Rx_msg->data);
 }
 
 
+/**
+ * @brief init function to setup CAN before use.
+ *
+ * @note sets up CAN filter, and enables CAN interrupts.
+ */
 void CAN_Init()
 {
 	CAN_filter_init();
@@ -235,6 +241,17 @@ void CAN_Init()
 
 	/* Start CAN */
 	HAL_CAN_Start(&hcan);
+}
+
+void CAN_Add_Message(CAN_Tx_msg_t* message){
+	if (message == NULL){
+		return;
+	}
+//	if (osOK != osMessageQueuePut(CAN_tx_queueHandle, message, 0, 0)){
+//		can_diagnostic.queue_dropped_tx_msg++;
+//	}
+	 uint32_t can_mailbox;
+	HAL_CAN_AddTxMessage(&hcan, &message->header, message->data, &can_mailbox );
 }
 
 

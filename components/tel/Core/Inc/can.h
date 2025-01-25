@@ -77,6 +77,7 @@ typedef struct
 
 void CAN_Rx_callback(CAN_Rx_msg_t* CAN_Rx_msg);
 void CAN_Init();
+void CAN_Add_Message(CAN_Tx_msg_t* message);
 
 
 extern CAN_diagnostics_t can_diagnostic;

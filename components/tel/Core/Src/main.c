@@ -19,12 +19,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "can.h"
 #include "dma.h"
 #include "iwdg.h"
 #include "rtc.h"
 #include "usart.h"
 #include "gpio.h"
-#include "can.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -105,8 +105,7 @@ int main(void)
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
-  CAN_FilterTypeDef CAN_filter = {0};
-  CAN_filter_init(&CAN_filter);
+
 
   
   RADIO_init();                       // Inits sending queue.
