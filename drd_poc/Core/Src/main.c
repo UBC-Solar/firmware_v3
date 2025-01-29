@@ -156,7 +156,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_SPI1_Init();
+  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
 
 	  // Configure GPIOs as output (already set in CubeMX for HAL)
@@ -166,19 +166,25 @@ int main(void)
 	  HAL_Delay(100); // Wait another 100 ms
 
 	  setup_display();
+
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_SET);    // Chip Select High
+
+	  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	     ClearLCD(NHD); // clear LCD
+	     HAL_Delay(1000);
+	     DispPic(NHD); // Show Image
+	     HAL_Delay(3000);
+	     comm_write(0xA5); // Turn all points ON
+	     HAL_Delay(1000);
+	     comm_write(0xA4); // Revert to Normal Display
+	     HAL_Delay(1000);
     /* USER CODE END WHILE */
-	  ClearLCD(NHD);
-	  HAL_Delay(1000);
-	  DispPic(NHD);
-	  HAL_Delay(3000);
-	  test_display_toggle();
-	  HAL_Delay(1000);
 
     /* USER CODE BEGIN 3 */
   }
@@ -231,7 +237,11 @@ void comm_write(uint8_t cmd)
     HAL_GPIO_WritePin(A0_GPIO_Port, A0_Pin, GPIO_PIN_RESET);  // A0 = 0 for command
 
     // Send the command byte via SPI
-    HAL_SPI_Transmit(&hspi1, &cmd, 1, HAL_MAX_DELAY);
+    HAL_StatusTypeDef return_value = HAL_SPI_Transmit(&hspi2, (uint8_t *) &cmd, 1, HAL_MAX_DELAY);
+
+    if(return_value == HAL_OK){
+       	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    }
 
     HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_SET);    // Chip Select High
 }
@@ -285,7 +295,12 @@ void data_write(uint8_t data)
     HAL_GPIO_WritePin(A0_GPIO_Port, A0_Pin, GPIO_PIN_SET);    // A0 = 1 for data
 
     // Send the data byte via SPI
-    HAL_SPI_Transmit(&hspi1, &data, 1, HAL_MAX_DELAY);
+    HAL_StatusTypeDef return_value = HAL_SPI_Transmit(&hspi2, (uint8_t *) &data, 1, HAL_MAX_DELAY);
+
+    if(return_value == HAL_OK){
+      HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    }
+
     HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_SET);    // Chip Select High
 }
 
