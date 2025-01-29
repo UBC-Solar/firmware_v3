@@ -98,7 +98,6 @@ int nmea_GPGGA(GPS *gps_data, char*inputString){
     return 1;
 }
 
-// add hdop, vdop and etc
 int nmea_GPGSA(GPS *gps_data, char* inputString) {
     char *values[25];
     int counter = 0;
@@ -251,7 +250,7 @@ int nmea_GPVTG(GPS *gps_data, char* inputString) {
     gps_data->magneticHeading = magneticHeading!=0 ? magneticHeading : gps_data->magneticHeading;
 
     float speedKmh = strtof(values[7], NULL);
-    gps_data->speedKmh = speedKmh!=0 ? speedKmh : gps_data->speedKmh;
+    gps_data->speedKmh = speedKmh!=0 ? speedKmh : gps_data->speedKmh; 
 
     for (int i = 0; i < counter; i++) {
         free(values[i]);

@@ -27,6 +27,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "nmea_parse.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -36,6 +37,7 @@ extern CAN_TxHeaderTypeDef gps_lon_lat_can_data;
 
 extern CAN_HandleTypeDef hcan;
 
+void CAN_tx_gps_data_msg(GPS* gps_data);
 /* USER CODE BEGIN Private defines */
 #define MAX_CAN_DATA_LENGTH                 8
 
