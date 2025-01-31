@@ -32,7 +32,6 @@
 #include "can.h"
 #include "cpu_load.h"
 #include "radio.h"
-#include <string.h>
 
 /* USER CODE END Includes */
 
@@ -253,23 +252,10 @@ void IMU_task(void *argument)
 void GPS_task(void *argument)
 {
   /* USER CODE BEGIN GPS_task */
-
-	CAN_TxHeaderTypeDef my_header = {
-		    .StdId = 0x111,
-		    .ExtId = 0x0000,
-		    .IDE = CAN_ID_STD,
-		    .RTR = CAN_RTR_DATA,
-		    .DLC = 8};
-	uint8_t my_data[8] = {0};
-	CAN_comms_Tx_msg_t my_message;
-	my_message.header = my_header;
-	memcpy(my_message.data, my_data, 8);
   /* Infinite loop */
   for(;;)
   {
-	  CAN_comms_Add_Tx_message(&my_message);
-	  osDelay(10);
-
+	  osDelay(1);
   }
   /* USER CODE END GPS_task */
 }
