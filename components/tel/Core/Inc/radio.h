@@ -48,10 +48,10 @@ typedef struct {
 
 
 } Radio_diagnostics_t;
+
 extern Radio_diagnostics_t Radio_diagnostic;
 
 /* PROTOTYPES */
-void RADIO_Tx_forever();
 void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg);
 
 

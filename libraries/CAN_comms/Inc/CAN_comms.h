@@ -69,11 +69,8 @@ typedef struct {
 * @brief CAN communications diagnostic struct
 *
 * @param dropped_rx_msg: Count of dropped received CAN messages.Happens when rx buffer overflows.
-* @param dropped_tx_msg: Count of dropped messages in the TX buffer. Happens when TX buffer overflows.
 * @param comms_init_error: indicates if comms has failed to init.
 * @param rx_queue_count: the number of can messages in the RX queue
-* @param tx_queue_count: the number of CAN messages in the TX queue
-* @param tx_semaphore_count: the number of free semaphores for CAN TX mailboxes
 * @param success_rx: number of successful CAN received messages
 * @param success_tx: number of successful CAN transmissions
 * @param hal_failure_tx: number of failed CAN transmissions
@@ -81,11 +78,8 @@ typedef struct {
 */
 typedef struct {
    uint32_t dropped_rx_msg;
-   uint32_t dropped_tx_msg;
    uint8_t comms_init_error;
    uint8_t rx_queue_count;
-   uint8_t tx_queue_count;
-   uint32_t tx_semaphore_count;
    uint32_t success_rx;
    uint32_t success_tx;
    uint32_t hal_failure_tx;
