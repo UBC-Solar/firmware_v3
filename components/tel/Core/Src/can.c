@@ -105,7 +105,7 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
     __HAL_AFIO_REMAP_CAN1_2();
 
     /* CAN1 interrupt Init */
-    HAL_NVIC_SetPriority(USB_HP_CAN1_TX_IRQn, 5, 0);
+    HAL_NVIC_SetPriority(USB_HP_CAN1_TX_IRQn, 7, 0);
     HAL_NVIC_EnableIRQ(USB_HP_CAN1_TX_IRQn);
     HAL_NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
@@ -189,7 +189,7 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
 CAN_Rx_msg_t rx_msg;
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-
+	//taskENTER_CRITICAL();
 	if(HAL_OK == HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_msg.header, rx_msg.data))
 	{
 		if(osOK != osMessageQueuePut(CAN_rx_queueHandle, &rx_msg, 0, 0))
@@ -203,6 +203,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	{
 		can_diagnostic.hal_failure_rx++;
 	}
+	//taskEXIT_CRITICAL();
 
 }
 
@@ -247,11 +248,13 @@ void CAN_Add_Message(CAN_Tx_msg_t* message){
 	if (message == NULL){
 		return;
 	}
-//	if (osOK != osMessageQueuePut(CAN_tx_queueHandle, message, 0, 0)){
-//		can_diagnostic.queue_dropped_tx_msg++;
-//	}
-	 uint32_t can_mailbox;
-	HAL_CAN_AddTxMessage(&hcan, &message->header, message->data, &can_mailbox );
+	if (osOK != osMessageQueuePut(CAN_tx_queueHandle, message, 0, osWaitForever)){
+		can_diagnostic.queue_dropped_tx_msg++;
+	}
+//	 uint32_t can_mailbox;
+//	 if (HAL_OK == HAL_CAN_AddTxMessage(&hcan, &message->header, message->data, &can_mailbox)){
+//		 can_diagnostic.success_tx++;
+//	 }
 }
 
 
