@@ -222,7 +222,6 @@ void GPS_task(void *argument)
 
     osDelay(500);
 
-    // If the GPS read was successful, print the g_gps_data
    if(g_gps_read_okay)
    {
      HAL_UART_Transmit(&huart5, g_gps_data, GPS_MESSAGE_LEN, 100);

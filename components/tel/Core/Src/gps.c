@@ -1,10 +1,21 @@
+/******************************************************************************
+* @file    gps.c
+* @brief   Sets g_gps_read_okay to true or false based on I2C reading
+******************************************************************************/
+
+/* Includes ------------------------------------------------------------------*/
 #include "gps.h"
 
 #define GPS_DEVICE_ADDRESS ((0x42)<<1)
+
 bool g_gps_read_okay = false;
 uint8_t g_gps_data[GPS_MESSAGE_LEN];
 char gps_parse_data[GPS_MESSAGE_LEN];
 
+ /**
+ * @brief Callback function triggered when an I2C master receive operation completes.
+ * @param hi2c Pointer to the I2C handle structure that triggered the callback
+ */
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -13,7 +24,6 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
     g_gps_read_okay = true;
   }
 }
-
 
 /**
  * @brief Continually tries to get a fix. Only returns once a fix is obtained

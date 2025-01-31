@@ -1,8 +1,15 @@
+/******************************************************************************
+* @file    gps.h
+* @brief   Stores global GPS variables and GPS functions
+******************************************************************************/
+
+/* Includes ------------------------------------------------------------------*/
+#include "stdbool.h"
+#include "i2c.h"
+
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __GPS__H__
 #define __GPS__H__
-#include "stdbool.h"
-#include "i2c.h"
 
 #define GPS_MESSAGE_LEN 500
 

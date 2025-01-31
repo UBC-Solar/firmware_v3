@@ -37,10 +37,10 @@
 #define GPS_DATA_SAT_COUNT_VIEW_FIX_SNR_CAN_MESSAGE_ID 0x755
 #define GPS_DATA_LON_LAT_CAN_MESSAGE_ID                0x756
 #define GPS_DATA_HDOP_VDOP_CAN_MESSAGE_ID              0x757
-#define GPS_DATA_LON_SIDE_DATE_CAN_MESSAGE_ID          0x758 // UPDATE TO 758
-#define GPS_DATA_PDOP_SPEEDKMH_CAN_MESSAGE_ID          0x760 // 759
-#define GPS_DATA_ALT_GEOD_CAN_MESSAGE_ID               0x761 // 760
-#define GPS_DATA_TRUE_MAG_HEADING_CAN_MESSAGE_ID       0x762 // 761
+#define GPS_DATA_LON_SIDE_DATE_CAN_MESSAGE_ID          0x758
+#define GPS_DATA_PDOP_SPEEDKMH_CAN_MESSAGE_ID          0x759
+#define GPS_DATA_ALT_GEOD_CAN_MESSAGE_ID               0x760
+#define GPS_DATA_TRUE_MAG_HEADING_CAN_MESSAGE_ID       0x761
 
 CAN_TxHeaderTypeDef gps_sat_count_view_fix_snr_rmc = {
   .StdId = GPS_DATA_SAT_COUNT_VIEW_FIX_SNR_CAN_MESSAGE_ID,
@@ -72,14 +72,6 @@ CAN_TxHeaderTypeDef gps_alt_geod = {
   .RTR = CAN_RTR_DATA,
   .DLC = GPS_CAN_MESSAGE_LENGTH
 };
-
-// CAN_TxHeaderTypeDef gps_lat_side_utc_time = {
-//   .StdId = GPS_DATA_LAT_SIDE_UTC_TIME_CAN_MESSAGE_ID,
-//   .ExtId = 0x0000,
-//   .IDE = CAN_ID_STD,
-//   .RTR = CAN_RTR_DATA,
-//   .DLC = GPS_CAN_MESSAGE_LENGTH
-// };
 
 CAN_TxHeaderTypeDef gps_lon_side_date = {
   .StdId = GPS_DATA_LON_SIDE_DATE_CAN_MESSAGE_ID,
@@ -286,6 +278,9 @@ union {
       uint8_t bytes[4];
     } float_bytes;
 
+/**
+ * @brief CAN message for latitude and longitude GPS fields
+ */
 void CAN_tx_lon_lat_msg(float latitude, float longitude) {
 
     float_bytes.value = latitude;
@@ -309,6 +304,10 @@ void CAN_tx_lon_lat_msg(float latitude, float longitude) {
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
 }
 
+
+/**
+ * @brief CAN message for altitude and geodHeight GPS fields
+ */
 void CAN_tx_alt_geod_msg(float altitude, float geodHeight) {
 
     float_bytes.value = altitude;
@@ -332,6 +331,10 @@ void CAN_tx_alt_geod_msg(float altitude, float geodHeight) {
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
 }
 
+
+/**
+ * @brief CAN message for hdop and vdop GPS fields
+ */
 void CAN_tx_hdop_vdop_msg(float hdop, float vdop) {
 
     float_bytes.value = hdop;
@@ -355,6 +358,10 @@ void CAN_tx_hdop_vdop_msg(float hdop, float vdop) {
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
 }
 
+
+/**
+ * @brief CAN message for pdop and speedKmh GPS fields
+ */
 void CAN_tx_pdop_speedKmh_msg(float pdop, float speedKmh) {
 
     float_bytes.value = pdop;
@@ -378,6 +385,10 @@ void CAN_tx_pdop_speedKmh_msg(float pdop, float speedKmh) {
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
 }
 
+
+/**
+ * @brief CAN message for trueHeading and magneticHeading GPS fields
+ */
 void CAN_tx_true_magnetic_heading_msg(float trueHeading, float magneticHeading) {
 
     float_bytes.value = trueHeading;
@@ -401,6 +412,11 @@ void CAN_tx_true_magnetic_heading_msg(float trueHeading, float magneticHeading) 
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
 }
 
+/**
+ * @brief CAN message for sateilliteCount, satInView, fix and snr GPS fields
+ * 
+ * Packages the following integer fields into a 4 byte array
+ */
 void CAN_tx_sat_count_view_fix_snr_msg(int satelliteCount, int satInView, int fix, int snr) {
 
     CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
@@ -414,17 +430,14 @@ void CAN_tx_sat_count_view_fix_snr_msg(int satelliteCount, int satInView, int fi
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
 }
 
-// void CAN_tx_lat_side_utc_time_msg(char latSide, char utcTime[7]) {
-//     CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
-//         .data[7] = (uint8_t) latSide,
-//         .header = gps_lat_side_utc_time
-//     };  
 
-//   // ... copy from below
-
-//   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
-// }
-
+/**
+ * @brief CAN message for lonSide, latSide, date and time GPS fields
+ *
+ * Packs the following fields into an 8 byte array and seperates the
+ * date and time fields into 3 different integer arrays each from a single
+ * character array
+ */
 void CAN_tx_lon_side_date_msg(char lonSide, char latSide, char date[7], char utcTime[7]) {
     CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
         .data[6] = (uint8_t) latSide,
@@ -437,6 +450,7 @@ void CAN_tx_lon_side_date_msg(char lonSide, char latSide, char date[7], char utc
     char date1[3], date2[3], date3[3];
     char utcTime1[3], utcTime2[3], utcTime3[3];
 
+    // Hardcoding to split date and utcTime into 3 different arrays
     date1[0] = date[0];
     date1[1] = date[1];
     date1[2] = '\0';
@@ -477,6 +491,10 @@ void CAN_tx_lon_side_date_msg(char lonSide, char latSide, char date[7], char utc
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
 }
 
+/**
+ * @brief Calls all CAN messages for every GPS field
+ * @param gps_data Pointer to GPS struct of all fields
+ */
 void CAN_tx_gps_data_msg(GPS* gps_data) {
   CAN_tx_lon_lat_msg(gps_data->longitude, gps_data->latitude);
   CAN_tx_alt_geod_msg(gps_data->altitude, gps_data->geodHeight);
@@ -484,7 +502,6 @@ void CAN_tx_gps_data_msg(GPS* gps_data) {
   CAN_tx_pdop_speedKmh_msg(gps_data->pdop, gps_data->speedKmh);
   CAN_tx_true_magnetic_heading_msg(gps_data->trueHeading, gps_data->magneticHeading);
   CAN_tx_sat_count_view_fix_snr_msg(gps_data->satelliteCount, gps_data->satInView, gps_data->fix, gps_data->snr);
-  // CAN_tx_lat_side_utc_time_msg(gps_data->latSide, gps_data->utcTime);
   CAN_tx_lon_side_date_msg(gps_data->lonSide, gps_data->latSide, gps_data->date, gps_data->utcTime);
 }
 /* USER CODE END 1 */
