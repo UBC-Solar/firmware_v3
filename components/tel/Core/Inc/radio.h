@@ -33,6 +33,22 @@ typedef struct {                                            // Standardized to C
     char NEW_LINE;
 } __attribute__((packed)) RADIO_Msg_TypeDef;    
 
+/*
+* @brief Radio diagnostic struct
+*
+* @param dropped_radio_msg: Count of dropped radio messages. Happens when radio queue overflows.
+* @param radio_hal_transmit_failures: increments when uart_transmit call for radio is not HAL_OK
+* @param sucessful_radio_tx: Increments for every HAL_OK on HAL_UART_Transmit()
+*/
+typedef struct {
+
+   uint32_t dropped_radio_msg;
+   uint32_t radio_hal_transmit_failures;
+   uint32_t successful_radio_tx;
+
+
+} Radio_diagnostics_t;
+extern Radio_diagnostics_t Radio_diagnostic;
 
 /* PROTOTYPES */
 void RADIO_Tx_forever();
