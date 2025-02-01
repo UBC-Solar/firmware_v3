@@ -94,6 +94,18 @@ const osThreadAttr_t GPS_Task_attributes = {
   .stack_size = sizeof(GPS_TaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for CANLoad_Task */
+osThreadId_t CANLoad_TaskHandle;
+uint32_t CANLoad_TaskBuffer[ 128 ];
+osStaticThreadDef_t CANLoad_TaskControlBlock;
+const osThreadAttr_t CANLoad_Task_attributes = {
+  .name = "CANLoad_Task",
+  .cb_mem = &CANLoad_TaskControlBlock,
+  .cb_size = sizeof(CANLoad_TaskControlBlock),
+  .stack_mem = &CANLoad_TaskBuffer[0],
+  .stack_size = sizeof(CANLoad_TaskBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -103,6 +115,7 @@ const osThreadAttr_t GPS_Task_attributes = {
 void StartDefaultTask(void *argument);
 void IMU_task(void *argument);
 void GPS_task(void *argument);
+void CANLoad_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -146,6 +159,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of GPS_Task */
   GPS_TaskHandle = osThreadNew(GPS_task, NULL, &GPS_Task_attributes);
+
+  /* creation of CANLoad_Task */
+  CANLoad_TaskHandle = osThreadNew(CANLoad_task, NULL, &CANLoad_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
@@ -243,6 +259,26 @@ void GPS_task(void *argument)
     HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
   }
   /* USER CODE END GPS_task */
+}
+
+/* USER CODE BEGIN Header_CANLoad_task */
+/**
+* @brief Function implementing the CANLoad_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_CANLoad_task */
+void CANLoad_task(void *argument)
+{
+  /* USER CODE BEGIN CANLoad_task */
+  /* Infinite loop */
+  for(;;)
+  {
+   CANLOAD_update_sliding_window();
+   CAN_tx_canload_msg();
+   osDelay(CANLOAD_MSG_RATE);
+  }
+  /* USER CODE END CANLoad_task */
 }
 
 /* Private application code --------------------------------------------------*/

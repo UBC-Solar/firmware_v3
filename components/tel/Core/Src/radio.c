@@ -31,6 +31,22 @@ uint8_t get_data_length(uint8_t DLC);
 
 /**
  * @brief Initializes the template radio message
+
+
+Radio_diagnostics_t Radio_diagnostic = {
+
+    .dropped_radio_msg = 0,
+    .radio_hal_transmit_failures = 0,
+    .successful_radio_tx = 0
+};
+
+uint8_t get_data_length(uint32_t DLC);
+
+
+/**
+ * @brief Transmits a message over UART to the XBee Radio Module
+ * 
+ * @param CAN_comms_Rx_msg Pointer to the CAN Rx message
  */
 void RADIO_init()
 {
@@ -51,6 +67,15 @@ void RADIO_send_msg_uart(CAN_RxHeaderTypeDef* header, uint8_t* data)
 {
 	set_template_radio_msg(header, data);
 	UART_radio_transmit(&template_radio_msg);
+	// TODO: Implement filtering
+	// EX: if (check_CAN_ID_whitelist(CAN_comms_Rx_msg->header.StdId) == true) { ... }
+
+	/* Create radio message struct */
+	RADIO_Msg_TypeDef radio_msg = {0};
+	set_radio_msg(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data, &radio_msg);
+
+	/* Transmit Radio Message */
+	 UART_radio_transmit(&radio_msg);
 }
 
 
@@ -105,5 +130,5 @@ uint32_t get_can_id(CAN_RxHeaderTypeDef* can_msg_header_ptr)
  */
 uint8_t get_data_length(uint8_t DLC)
 {
-	return DLC & MASK_4_BITS;
+	return (uint8_t) (DLC & MASK_4_BITS);
 }

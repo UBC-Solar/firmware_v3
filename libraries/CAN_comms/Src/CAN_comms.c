@@ -15,9 +15,11 @@
 
 
 /* Private defines */
-#define CAN_RX_TASK_STACK_SIZE 512
-#define CAN_TX_TASK_STACK_SIZE 512
-#define CAN_RX_QUEUE_SIZE 16
+#define COMMS_INIT_SUCCESS          0
+#define COMMS_INIT_FAILURE          1
+#define CAN_RX_TASK_STACK_SIZE 1028
+#define CAN_TX_TASK_STACK_SIZE 1028
+#define CAN_RX_QUEUE_SIZE 64
 #define CAN_TX_QUEUE_SIZE 16
 #define CAN_RX_STRUCT_SIZE sizeof(CAN_comms_Rx_msg_t)
 #define CAN_TX_STRUCT_SIZE sizeof(CAN_comms_Tx_msg_t)
@@ -39,13 +41,29 @@ const osThreadAttr_t CAN_comms_Rx_task_attributes = {
 const osThreadAttr_t CAN_comms_Tx_task_attributes = {
     .name = "CAN_comms_Tx_task",
     .stack_size = CAN_TX_TASK_STACK_SIZE,
+
+CAN_comms_diagnostics_t CAN_comms_diagnostic = {
+    .comms_init_error = COMMS_INIT_SUCCESS,
+    .dropped_rx_msg = 0,
+    .rx_queue_count = 0,
+    .success_rx = 0,
+    .success_tx = 0,
+    .hal_failure_tx = 0,
+    .hal_failure_rx = 0
+};
+
+const osThreadAttr_t CAN_comms_Rx_task_attributes = {
+    .name = "CAN_comms_Rx_task",
+    .cb_mem = &CAN_comms_Rx_task_control_block,
+    .cb_size = sizeof(CAN_comms_Rx_task_control_block),
+    .stack_mem = &CAN_comms_Rx_task_buffer[0],
+    .stack_size = sizeof(CAN_comms_Rx_task_buffer),
     .priority = (osPriority_t) osPriorityHigh,
 };
 
 
 /* Private function declarations */
 void CAN_comms_Rx_task(void* argument);
-void CAN_comms_Tx_task(void* argument);
 
 
 /* Function definitions */
@@ -70,14 +88,12 @@ void CAN_comms_init(CAN_comms_config_t* config)
 
     /* Create queues */
     CAN_comms_Rx_queue = osMessageQueueNew(CAN_RX_QUEUE_SIZE, CAN_RX_STRUCT_SIZE, NULL);
-    CAN_comms_Tx_queue = osMessageQueueNew(CAN_TX_QUEUE_SIZE, CAN_TX_STRUCT_SIZE, NULL);
 
     /* Create Semaphores */
     CAN_comms_Tx_mailbox_semaphore = osSemaphoreNew(NUM_CAN_TX_MAILBOXES, NUM_CAN_TX_MAILBOXES, NULL);
 
     /* Create tasks */
     CAN_comms_Rx_task_handle = osThreadNew(CAN_comms_Rx_task, NULL, &CAN_comms_Rx_task_attributes);
-    CAN_comms_Tx_task_handle = osThreadNew(CAN_comms_Tx_task, NULL, &CAN_comms_Tx_task_attributes);
 }
 
 
@@ -95,8 +111,6 @@ void CAN_comms_init(CAN_comms_config_t* config)
 
     /* Activate notifications */
     HAL_CAN_ActivateNotification(CAN_comms_config.hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
-    HAL_CAN_ActivateNotification(CAN_comms_config.hcan, CAN_IT_TX_MAILBOX_EMPTY);
-
 
     /* Start CAN */
     HAL_CAN_Start(CAN_comms_config.hcan);
@@ -152,6 +166,22 @@ void CAN_comms_Tx_task(void* argument)
         }
     }
 }
+		taskENTER_CRITICAL();
+		uint32_t canMailbox;
+		if (HAL_OK == HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg->header, CAN_comms_Tx_msg->data, &canMailbox))
+		{
+			CAN_comms_diagnostic.success_tx++;
+
+		}
+		else
+		{
+			CAN_comms_diagnostic.hal_failure_tx++;
+		}
+		taskEXIT_CRITICAL();
+
+}
+
+
 
 
 /**
@@ -172,17 +202,13 @@ void CAN_comms_Rx_task(void* argument)
     for(;;)
     {
         /* Wait until there is a message in the queue */ 
-        CAN_comms_Rx_msg_t CAN_comms_Rx_msg;
-        if (osOK == osMessageQueueGet(CAN_comms_Rx_queue, &CAN_comms_Rx_msg, NULL, osWaitForever))
-        {
-            /* Call the handle function pointer */
-            CAN_comms_config.CAN_comms_Rx_callback(&CAN_comms_Rx_msg);
-        }
-        else
-        {
-            return; // TODO: Error handle
-        }
-    }
+    	CAN_comms_Rx_msg_t CAN_comms_Rx_msg;
+    	if (osOK == osMessageQueueGet(CAN_comms_Rx_queue, &CAN_comms_Rx_msg, NULL, osWaitForever))
+    	{
+		    /* Call the handle function pointer */
+		    CAN_comms_config.CAN_comms_Rx_callback(&CAN_comms_Rx_msg);
+    	}
+   }
 }
 
 
@@ -243,45 +269,14 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
 
 /**
-  * @brief  Transmission Mailbox 0 complete callback.
-  * @param  hcan pointer to a CAN_HandleTypeDef structure that contains
-  *         the configuration information for the specified CAN.
-  * @retval None
-  */
-void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
+ * @brief  Returns diagnostic struct populated with diagnostic data
+ * This function copies data from the global CAN_comms_diagnostic struct into a CAN_comms_diagnostic_t struct
+ * created by the user.
+ *
+ * @param diagnostic: Pointer to user's diagnostic struct.
+ */
+void CAN_comms_get_diagnostic(CAN_comms_diagnostics_t* diagnostic)
 {
-    if (hcan->Instance == CAN_comms_config.hcan->Instance)
-    {
-        osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
-    }
-}
-
-
-/**
-  * @brief  Transmission Mailbox 1 complete callback.
-  * @param  hcan pointer to a CAN_HandleTypeDef structure that contains
-  *         the configuration information for the specified CAN.
-  * @retval None
-  */
-void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan)
-{
-    if (hcan->Instance == CAN_comms_config.hcan->Instance)
-    {
-        osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
-    }
-}
-
-
-/**
-  * @brief  Transmission Mailbox 2 complete callback.
-  * @param  hcan pointer to a CAN_HandleTypeDef structure that contains
-  *         the configuration information for the specified CAN.
-  * @retval None
-  */
-void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
-{
-    if (hcan->Instance == CAN_comms_config.hcan->Instance)
-    {
-        osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
-    }
+	CAN_comms_diagnostic.rx_queue_count = osMessageQueueGetCount(CAN_comms_Rx_queue);
+	*diagnostic = CAN_comms_diagnostic;
 }
