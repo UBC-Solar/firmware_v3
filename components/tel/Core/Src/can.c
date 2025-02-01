@@ -27,9 +27,38 @@
 #include <stdbool.h>
 #include "bitops.h"
 #include "radio.h"
+#include "canload.h"
+#include "nmea_parse.h"
+
+#define CANLOAD_MSG_ID                      0x760
+#define CANLOAD_DATA_LENGTH                 1
+
+/**
+ * @brief CAN message header for sending out bus load
+ */
+
+CAN_TxHeaderTypeDef CANLOAD_busload = {
+    .StdId = CANLOAD_MSG_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CANLOAD_DATA_LENGTH};
+
+
 #include "CAN_comms.h"
 #include "rtc.h"
-#include "nmea_parse.h"
+#include "cpu_load.h"
+#include "bitops.h"
+
+#define CPU_LOAD_CAN_MESSAGE_ID 0x759
+#define CPU_LOAD_CAN_DATA_LENGTH 4
+
+CAN_TxHeaderTypeDef cpu_load_can_header = {
+    .StdId = CPU_LOAD_CAN_MESSAGE_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CPU_LOAD_CAN_DATA_LENGTH};
 
 #define GPS_CAN_MESSAGE_LENGTH                         8
 #define GPS_CAN_MESSAGE_INT_LENGTH                     4
@@ -42,6 +71,9 @@
 #define GPS_DATA_ALT_GEOD_CAN_MESSAGE_ID               0x760
 #define GPS_DATA_TRUE_MAG_HEADING_CAN_MESSAGE_ID       0x761
 
+/**
+ * @brief CAN message header for GPS messages
+ */
 CAN_TxHeaderTypeDef gps_sat_count_view_fix_snr_rmc = {
   .StdId = GPS_DATA_SAT_COUNT_VIEW_FIX_SNR_CAN_MESSAGE_ID,
   .IDE = CAN_ID_STD,
@@ -96,6 +128,7 @@ CAN_TxHeaderTypeDef gps_true_mag_heading = {
   .RTR = CAN_RTR_DATA,
   .DLC = GPS_CAN_MESSAGE_LENGTH
 };
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
@@ -207,30 +240,11 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
     HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	    // Visual Confirmation of CAN working
 
+    CANLOAD_calculate_message_bits(CAN_comms_Rx_msg->header.DLC, CAN_comms_Rx_msg->header.IDE); // Calculate CAN bus load
+
     RTC_check_and_sync_rtc(CAN_comms_Rx_msg->header.StdId, CAN_comms_Rx_msg->data);     // Sync timestamps
 
-    RADIO_send_msg_uart(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data);
-}
-
-
-/**
- * @brief Initializes the CAN filter and CAN Rx callback function as CAN_comms_Rx_callback().
- * 
- * Note: This uses the CAN_comms abstraction layer which will initialize two freeRTOS tasks. As a result it is recommend to 
- * Call this function inside the MX_FREERTOS_Init() function in freertos.c
- */
-void CAN_tasks_init()
-{
-    CAN_comms_config_t CAN_comms_config_tel = {0}; 
-
-    CAN_FilterTypeDef CAN_filter = {0};
-    CAN_filter_init(&CAN_filter);
-
-    CAN_comms_config_tel.hcan = &hcan;
-    CAN_comms_config_tel.CAN_Filter = CAN_filter;
-    CAN_comms_config_tel.CAN_comms_Rx_callback = CAN_comms_Rx_callback;   
-
-    CAN_comms_init(&CAN_comms_config_tel);
+    RADIO_filter_and_queue_msg(CAN_comms_Rx_msg);
 }
 
 
@@ -257,6 +271,27 @@ void CAN_filter_init(CAN_FilterTypeDef* can_filter)
 
 
 /**
+ * @brief Initializes the CAN filter and CAN Rx callback function as CAN_comms_Rx_callback().
+ * 
+ * Note: This uses the CAN_comms abstraction layer which will initialize two freeRTOS tasks. As a result it is recommend to 
+ * Call this function inside the MX_FREERTOS_Init() function in freertos.c
+ */
+void CAN_tasks_init()
+{
+    CAN_comms_config_t CAN_comms_config_tel = {0}; 
+
+    CAN_FilterTypeDef CAN_filter = {0};
+    CAN_filter_init(&CAN_filter);
+
+    CAN_comms_config_tel.hcan = &hcan;
+    CAN_comms_config_tel.CAN_Filter = CAN_filter;
+    CAN_comms_config_tel.CAN_comms_Rx_callback = CAN_comms_Rx_callback;   
+
+    CAN_comms_init(&CAN_comms_config_tel);
+}
+
+
+/**
  * @brief Callback function for when a CAN error occurs
  * 
  * Currently only toggles the user LED upon a RX FIFO overrun
@@ -270,6 +305,30 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
     }
 }
 
+void CAN_tx_canload_msg() {
+    CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
+        .data[0] = (uint8_t) CANLOAD_get_bus_load(),
+        .header = CANLOAD_busload
+    };  
+
+  CANLOAD_calculate_message_bits(CAN_comms_Tx_msg.header.DLC, CAN_comms_Tx_msg.header.IDE);
+  CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+}
+
+void CAN_cpu_load_can_tx(){
+   CAN_comms_Tx_msg_t CPU_LOAD_can_tx = {0};
+   FloatToBytes CPU_LOAD;
+
+   CPU_LOAD.f = CPU_LOAD_average();
+
+   CPU_LOAD_can_tx.header = cpu_load_can_header;
+   CPU_LOAD_can_tx.data[0] = CPU_LOAD.bytes[0];
+   CPU_LOAD_can_tx.data[1] = CPU_LOAD.bytes[1];
+   CPU_LOAD_can_tx.data[2] = CPU_LOAD.bytes[2];
+   CPU_LOAD_can_tx.data[3] = CPU_LOAD.bytes[3];
+  
+  CAN_comms_Add_Tx_message(&CPU_LOAD_can_tx);
+}
 union {
       float value;
       uint8_t bytes[4];

@@ -21,9 +21,9 @@
 #include "cmsis_os.h"
 #include "can.h"
 #include "dma.h"
-#include "i2c.h"
 #include "iwdg.h"
 #include "rtc.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -31,7 +31,8 @@
 /* USER CODE BEGIN Includes */
 
 #include "radio.h"
-#include "gps.h"
+#include "canload.h"
+#include "cpu_load.h"
 
 /* USER CODE END Includes */
 
@@ -102,11 +103,9 @@ int main(void)
   MX_USART1_UART_Init();
   MX_RTC_Init();
   MX_IWDG_Init();
-  MX_UART5_Init();
-  MX_I2C2_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   
-  RADIO_init();                       // Inits sending queue.
   IWDG_perform_reset_sequence();      // Check for IWDG reset    
 
   /* USER CODE END 2 */
@@ -201,6 +200,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
+  
+  CPU_LOAD_timer_overflow_handler(htim);
 
   /* USER CODE END Callback 1 */
 }

@@ -28,8 +28,10 @@
 
 #include "iwdg.h"
 #include "tel_freertos.h"
+#include "canload.h"
 #include "can.h"
-#include "usart.h"
+#include "cpu_load.h"
+#include "radio.h"
 #include "gps.h"
 #include "nmea_parse.h"
 
@@ -39,10 +41,15 @@
 typedef StaticTask_t osStaticThreadDef_t;
 /* USER CODE BEGIN PTD */
 
+typedef StaticTask_t osStaticMessageQDef_t;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define WINDOW_SIZE 10
+#define FREQUENCY_MS 100
+#define NUM_USART1_TX_SEMAPHORES        1
 
 /* USER CODE END PD */
 
@@ -56,6 +63,21 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 /* SEMAPHORES */
 osSemaphoreId_t usart1_tx_semaphore;
+
+/* QUEUES */
+osMessageQueueId_t radio_tx_queue;
+uint8_t radio_tx_queue_buffer[ RADIO_QUEUE_SIZE * RADIO_MSG_TYPEDEF_SIZE ];
+osStaticMessageQDef_t radio_tx_queue_cb;
+const osMessageQueueAttr_t radio_tx_queue_attributes = {
+  .name = "radio_tx_queue",
+  .cb_mem = &radio_tx_queue_cb,
+  .cb_size = sizeof(radio_tx_queue_cb),
+  .mq_mem = &radio_tx_queue_buffer,
+  .mq_size = sizeof(radio_tx_queue_buffer)
+};
+
+/* CPU Load Config */
+
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -84,7 +106,7 @@ const osThreadAttr_t IMU_Task_attributes = {
 };
 /* Definitions for GPS_Task */
 osThreadId_t GPS_TaskHandle;
-uint32_t GPS_TaskBuffer[ 256 ];
+uint32_t GPS_TaskBuffer[ 128 ];
 osStaticThreadDef_t GPS_TaskControlBlock;
 const osThreadAttr_t GPS_Task_attributes = {
   .name = "GPS_Task",
@@ -127,7 +149,14 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
+	CPU_LOAD_config_t user_config = {
+	    .window_size = WINDOW_SIZE,
+	    .frequency_ms = FREQUENCY_MS,
+	    .timer = htim2
+	};
+
     CAN_tasks_init();                         // Rx CAN Filter, Rx callback using CAN comms
+    CPU_LOAD_init(&user_config);
 
   /* USER CODE END Init */
 
@@ -138,7 +167,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
 
-    usart1_tx_semaphore = osSemaphoreNew(NUM_USART1_TX_SEMAPHORES, NUM_USART1_TX_SEMAPHORES, NULL);
+  usart1_tx_semaphore = osSemaphoreNew(NUM_USART1_TX_SEMAPHORES, NUM_USART1_TX_SEMAPHORES, NULL);
 
   /* USER CODE END RTOS_SEMAPHORES */
 
@@ -148,6 +177,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
+
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -187,8 +217,10 @@ void StartDefaultTask(void *argument)
     /* Infinite loop */
     for(;;)
     {
+		CAN_cpu_load_can_tx();
         IWDG_Refresh(&hiwdg);	                                 // Refresh the IWDG to ensure no reset occurs
-        osDelay(REFRESH_DELAY);
+        osDelay(REFRESH_DELAY_MS);
+
     }
 
   /* USER CODE END StartDefaultTask */
@@ -207,7 +239,7 @@ void IMU_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(100);
+    osDelay(1);
   }
   /* USER CODE END IMU_task */
 }
@@ -222,8 +254,6 @@ void IMU_task(void *argument)
 void GPS_task(void *argument)
 {
   /* USER CODE BEGIN GPS_task */
-  
-  
   /* Infinite loop */
   for(;;)
   {
