@@ -207,3 +207,4 @@ VP_TIM2_VS_ControllerModeTrigger.Mode=Trigger Mode
 VP_TIM2_VS_ControllerModeTrigger.Signal=TIM2_VS_ControllerModeTrigger
 board=custom
 rtos.0.ip=FREERTOS
+isbadioc=false
