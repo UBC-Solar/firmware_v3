@@ -463,3 +463,4 @@ void nmea_parse(GPS *gps_data, uint8_t *buffer) {
     {
         if (data[i] != NULL) { free(data[i]); }
     }
+}
