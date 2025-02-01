@@ -114,18 +114,6 @@ const osThreadAttr_t GPS_Task_attributes = {
   .stack_size = sizeof(GPS_TaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
-/* Definitions for Radio_Task */
-osThreadId_t Radio_TaskHandle;
-uint32_t Radio_TaskBuffer[ 128 ];
-osStaticThreadDef_t Radio_TaskControlBlock;
-const osThreadAttr_t Radio_Task_attributes = {
-  .name = "Radio_Task",
-  .cb_mem = &Radio_TaskControlBlock,
-  .cb_size = sizeof(Radio_TaskControlBlock),
-  .stack_mem = &Radio_TaskBuffer[0],
-  .stack_size = sizeof(Radio_TaskBuffer),
-  .priority = (osPriority_t) osPriorityNormal,
-};
 /* Definitions for CANLoad_Task */
 osThreadId_t CANLoad_TaskHandle;
 uint32_t CANLoad_TaskBuffer[ 128 ];
@@ -147,7 +135,6 @@ const osThreadAttr_t CANLoad_Task_attributes = {
 void StartDefaultTask(void *argument);
 void IMU_task(void *argument);
 void GPS_task(void *argument);
-void Radio_task(void *argument);
 void CANLoad_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -189,8 +176,6 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
 
-  radio_tx_queue = osMessageQueueNew(RADIO_QUEUE_SIZE, RADIO_MSG_TYPEDEF_SIZE, &radio_tx_queue_attributes);
-
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -202,9 +187,6 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of GPS_Task */
   GPS_TaskHandle = osThreadNew(GPS_task, NULL, &GPS_Task_attributes);
-
-  /* creation of Radio_Task */
-  Radio_TaskHandle = osThreadNew(Radio_task, NULL, &Radio_Task_attributes);
 
   /* creation of CANLoad_Task */
   CANLoad_TaskHandle = osThreadNew(CANLoad_task, NULL, &CANLoad_Task_attributes);
@@ -273,25 +255,9 @@ void GPS_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	  osDelay(1);
   }
   /* USER CODE END GPS_task */
-}
-
-/* USER CODE BEGIN Header_Radio_task */
-/**
-* @brief Function implementing the Radio_Task thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_Radio_task */
-void Radio_task(void *argument)
-{
-  /* USER CODE BEGIN Radio_task */
-
-   RADIO_Tx_forever();
-
-  /* USER CODE END Radio_task */
 }
 
 /* USER CODE BEGIN Header_CANLoad_task */

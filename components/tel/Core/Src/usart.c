@@ -162,8 +162,14 @@ void UART_radio_transmit(RADIO_Msg_TypeDef* can_radio_msg)
 
     if(HAL_OK != HAL_UART_Transmit_DMA(&huart1, (uint8_t*)can_radio_msg, sizeof(RADIO_Msg_TypeDef)))
     {
-      osSemaphoreRelease(usart1_tx_semaphore);
+    	Radio_diagnostic.radio_hal_transmit_failures++;
+    	osSemaphoreRelease(usart1_tx_semaphore);
     }
+    else
+    {
+    	Radio_diagnostic.successful_radio_tx++;
+    }
+
 }
 
     

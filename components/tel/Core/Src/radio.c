@@ -32,11 +32,20 @@
 void set_radio_msg(CAN_RxHeaderTypeDef* header, uint8_t* data, RADIO_Msg_TypeDef* radio_msg);
 uint64_t get_timestamp();
 uint32_t get_can_id(CAN_RxHeaderTypeDef* can_msg_header_ptr);
+
+
+Radio_diagnostics_t Radio_diagnostic = {
+
+    .dropped_radio_msg = 0,
+    .radio_hal_transmit_failures = 0,
+    .successful_radio_tx = 0
+};
+
 uint8_t get_data_length(uint32_t DLC);
 
 
 /**
- * @brief Adds a radio message to the radio tx queue
+ * @brief Transmits a message over UART to the XBee Radio Module
  * 
  * @param CAN_comms_Rx_msg Pointer to the CAN Rx message
  */
@@ -49,35 +58,8 @@ void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 	RADIO_Msg_TypeDef radio_msg = {0};
 	set_radio_msg(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data, &radio_msg);
 
-	/* Add CAN message to radio tx queue */
-	osMessageQueuePut(radio_tx_queue, &radio_msg, NO_PRIORITY, NON_BLOCKING);
-}
-
-
-/**
- * @brief Radio Tx task that sends radio messages over UART
- * This tasks waits for a message in the radio tx queue and acquires a USART Tx semaphore before sending the message over UART
- * 
- */
-void RADIO_Tx_forever()
-{
-	/* Infinite Loop */
-	for(;;)
-	{
-		/* Wait until there is a message in the queue */ 
-		RADIO_Msg_TypeDef radio_msg;
-        if (HAL_GPIO_ReadPin(RADIO_CTS_GPIO_Port, RADIO_CTS_Pin) == GPIO_PIN_RESET)
-        {
-            if (osOK == osMessageQueueGet(radio_tx_queue, &radio_msg, NULL, osWaitForever))
-            {
-                UART_radio_transmit(&radio_msg);
-            }
-            else
-            {
-                // TODO: Error handle
-            }
-        }
-	}
+	/* Transmit Radio Message */
+	 UART_radio_transmit(&radio_msg);
 }
 
 
