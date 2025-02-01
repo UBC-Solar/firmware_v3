@@ -11,7 +11,7 @@
 
 
 #include <stdint.h>
-#include "cmsis_os2.h"
+#include "cmsis_os.h"
 #include "FreeRTOS.h"
 #include "stm32f1xx_hal.h"
 #include "task.h"
@@ -90,6 +90,6 @@ typedef struct {
 /* Public function declarations */
 void CAN_comms_init(CAN_comms_config_t* config);
 void CAN_comms_Add_Tx_message(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg);
-
+void CAN_comms_get_diagnostic(CAN_comms_diagnostics_t* diagnostic);
 
 #endif // CAN_COMMS_H

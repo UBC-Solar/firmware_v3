@@ -32,15 +32,11 @@ osMessageQueueId_t CAN_comms_Rx_queue;
 osMessageQueueId_t CAN_comms_Tx_queue;
 osThreadId_t CAN_comms_Rx_task_handle;
 osThreadId_t CAN_comms_Tx_task_handle;
+StaticTask_t CAN_comms_Rx_task_control_block;
+StaticTask_t CAN_comms_Tx_task_control_block;
+uint32_t CAN_comms_Rx_task_buffer[CAN_RX_TASK_STACK_SIZE];
+uint32_t CAN_comms_Tx_task_buffer[CAN_TX_TASK_STACK_SIZE];
 osSemaphoreId_t CAN_comms_Tx_mailbox_semaphore;
-const osThreadAttr_t CAN_comms_Rx_task_attributes = {
-    .name = "CAN_comms_Rx_task",
-    .stack_size = CAN_RX_TASK_STACK_SIZE,
-    .priority = (osPriority_t) osPriorityLow,
-};
-const osThreadAttr_t CAN_comms_Tx_task_attributes = {
-    .name = "CAN_comms_Tx_task",
-    .stack_size = CAN_TX_TASK_STACK_SIZE,
 
 CAN_comms_diagnostics_t CAN_comms_diagnostic = {
     .comms_init_error = COMMS_INIT_SUCCESS,
@@ -77,10 +73,13 @@ void CAN_comms_Rx_task(void* argument);
  */
 void CAN_comms_init(CAN_comms_config_t* config)
 {
+
+	
     /* Check config is not NULL */
     if (config == NULL)
     {
-        return; // TODO: Error handle
+        CAN_comms_diagnostic.comms_init_error = COMMS_INIT_FAILURE;
+        return;
     }
 
     /* Set config */
@@ -125,47 +124,6 @@ void CAN_comms_init(CAN_comms_config_t* config)
  */
 void CAN_comms_Add_Tx_message(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
 {
-    /* Add CAN message to the queue */
-    if(osOK != osMessageQueuePut(CAN_comms_Tx_queue, CAN_comms_Tx_msg, 0, 0))
-    {
-        return; // TODO: Error handle
-    }
-}
-
-
-/**
- * @brief Task for handling CAN Tx messages
- * This task waits for a message in the CAN_comms_Tx_queue and a CAN mailbox semaphore to be released and
- * calls the HAL_CAN_AddTxMessage function.
- * 
- * @param argument: Unused
- */
-void CAN_comms_Tx_task(void* argument)
-{
-    UNUSED(argument);
-
-    /* Infinite loop */
-    for(;;)
-    {
-        /* Wait until there is a message in the queue */ 
-        CAN_comms_Tx_msg_t CAN_comms_Tx_msg;
-        if (osOK == osMessageQueueGet(CAN_comms_Tx_queue, &CAN_comms_Tx_msg, NULL, osWaitForever))
-        {
-            /* Wait for a CAN mailbox semaphore to be released */
-            osSemaphoreAcquire(CAN_comms_Tx_mailbox_semaphore, osWaitForever);
-
-            uint32_t can_mailbox; // Not used
-            if(HAL_OK != HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg.header, CAN_comms_Tx_msg.data, &can_mailbox))
-            {
-                return; // TODO: Error handle
-            }
-        }
-        else
-        {
-            // TODO: Error handle
-        }
-    }
-}
 		taskENTER_CRITICAL();
 		uint32_t canMailbox;
 		if (HAL_OK == HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg->header, CAN_comms_Tx_msg->data, &canMailbox))
@@ -224,34 +182,27 @@ void CAN_comms_Rx_message_pending_ISR()
     CAN_comms_Rx_msg_t CAN_Rx_msg;
     if(HAL_OK != HAL_CAN_GetRxMessage(CAN_comms_config.hcan, CAN_RX_FIFO0, &CAN_Rx_msg.header, CAN_Rx_msg.data))
     {
-        return; // TODO: Error handle
+    	CAN_comms_diagnostic.hal_failure_rx++;
     }
 
     /* Add CAN message to the queue */
     if(osOK != osMessageQueuePut(CAN_comms_Rx_queue, &CAN_Rx_msg, 0, 0))
     {
-        return; // TODO: Error handle
+        CAN_comms_diagnostic.dropped_rx_msg++;
+
+    }
+    else
+    {
+    	CAN_comms_diagnostic.success_rx++;
     }
 }
 
-
-/**
- * @brief Interrupt Service Routine for the CAN mailbox callback function
- * This function frees the semaphore for the CAN Tx mailbox
- * 
- * @attention This function needs to be added to each CAN mailbox complete callback function
- */
-void CAN_comms_Tx_mailbox_complete_ISR()
-{
-    osSemaphoreRelease(CAN_comms_Tx_mailbox_semaphore);
-}
 
 
 /**
  * @attention The following functions are callback functions called by the STM32 HAL_CAN library.
  * These functions are weakly defined in the HAL_CAN library and are overridden in this library.
  */
-
 
 /**
   * @brief  Rx FIFO 0 message pending callback.
