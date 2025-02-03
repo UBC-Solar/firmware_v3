@@ -28,10 +28,16 @@
 #include "bitops.h"
 #include "radio.h"
 #include "canload.h"
+#include "CAN_comms.h"
+#include "rtc.h"
+#include "cpu_load.h"
+#include "bitops.h"
 #include "nmea_parse.h"
 
-#define CANLOAD_MSG_ID                      0x760
+#define CANLOAD_MSG_ID                      0x763
 #define CANLOAD_DATA_LENGTH                 1
+#define CPU_LOAD_CAN_MESSAGE_ID             0x764
+#define CPU_LOAD_CAN_DATA_LENGTH            4
 
 /**
  * @brief CAN message header for sending out bus load
@@ -44,14 +50,6 @@ CAN_TxHeaderTypeDef CANLOAD_busload = {
     .RTR = CAN_RTR_DATA,
     .DLC = CANLOAD_DATA_LENGTH};
 
-
-#include "CAN_comms.h"
-#include "rtc.h"
-#include "cpu_load.h"
-#include "bitops.h"
-
-#define CPU_LOAD_CAN_MESSAGE_ID 0x759
-#define CPU_LOAD_CAN_DATA_LENGTH 4
 
 CAN_TxHeaderTypeDef cpu_load_can_header = {
     .StdId = CPU_LOAD_CAN_MESSAGE_ID,

@@ -30,7 +30,6 @@
 #include "tel_freertos.h"
 #include "canload.h"
 #include "can.h"
-#include "cpu_load.h"
 #include "radio.h"
 #include "gps.h"
 #include "nmea_parse.h"
@@ -149,14 +148,9 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
-	CPU_LOAD_config_t user_config = {
-	    .window_size = WINDOW_SIZE,
-	    .frequency_ms = FREQUENCY_MS,
-	    .timer = htim2
-	};
+
 
     CAN_tasks_init();                         // Rx CAN Filter, Rx callback using CAN comms
-    CPU_LOAD_init(&user_config);
 
   /* USER CODE END Init */
 
@@ -217,10 +211,8 @@ void StartDefaultTask(void *argument)
     /* Infinite loop */
     for(;;)
     {
-		CAN_cpu_load_can_tx();
         IWDG_Refresh(&hiwdg);	                                 // Refresh the IWDG to ensure no reset occurs
         osDelay(REFRESH_DELAY_MS);
-
     }
 
   /* USER CODE END StartDefaultTask */
