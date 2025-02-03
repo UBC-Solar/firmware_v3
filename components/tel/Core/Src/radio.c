@@ -49,13 +49,13 @@ uint8_t get_data_length(uint32_t DLC);
  * 
  * @param CAN_comms_Rx_msg Pointer to the CAN Rx message
  */
+RADIO_Msg_TypeDef radio_msg = {0};
 void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
 	// TODO: Implement filtering
 	// EX: if (check_CAN_ID_whitelist(CAN_comms_Rx_msg->header.StdId) == true) { ... }
 
 	/* Create radio message struct */
-	RADIO_Msg_TypeDef radio_msg = {0};
 	set_radio_msg(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data, &radio_msg);
 
 	/* Transmit Radio Message */

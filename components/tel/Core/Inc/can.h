@@ -36,8 +36,6 @@ extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
 #define MAX_CAN_DATA_LENGTH                 8
-#define CANLOAD_MSG_ID                      0x760
-#define CANLOAD_DATA_LENGTH                 1
 
 /* USER CODE END Private defines */
 
