@@ -31,6 +31,7 @@
 #include "canload.h"
 #include "can.h"
 #include "radio.h"
+#include "imu.h"
 
 /* USER CODE END Includes */
 
@@ -227,10 +228,11 @@ void IMU_task(void *argument)
 {
   /* USER CODE BEGIN IMU_task */
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+//   for(;;)
+//   {
+//     osDelay(1);
+//   }
+    imu_task();
   /* USER CODE END IMU_task */
 }
 
