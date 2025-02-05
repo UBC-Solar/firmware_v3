@@ -12,6 +12,7 @@
 - [ ] DRD
 - [ ] ECU
 - [ ] MDI
+- [ ] STR
 - [ ] TEL
 - [ ] CI/CD
 
