@@ -9,10 +9,10 @@
 <!-- Check which components are affected -->
 - [ ] AMB
 - [ ] BMS
-- [ ] DID
+- [ ] DRD
 - [ ] ECU
-- [ ] MCB
 - [ ] MDI
+- [ ] STR
 - [ ] TEL
 - [ ] CI/CD
 
