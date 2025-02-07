@@ -19,11 +19,11 @@ char gps_parse_data[GPS_MESSAGE_LEN];
  */
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-  /* Prevent unused argument(s) compilation warning */
-  if(hi2c->Instance == I2C1)
-  {
-    g_gps_read_okay = true;
-  }
+    /* Prevent unused argument(s) compilation warning */
+    if(hi2c->Instance == I2C1)
+    {
+        g_gps_read_okay = true;
+    }
 }
 
 /**
@@ -33,7 +33,7 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
  */
 bool read_i2c_gps_module(uint8_t* receive_buffer)
 {
-	  g_gps_read_okay = false;
+	g_gps_read_okay = false;
     if(HAL_I2C_Master_Receive_IT(&hi2c1, GPS_DEVICE_ADDRESS, receive_buffer, GPS_MESSAGE_LEN) == HAL_OK)
     {
         // Set status to true if i2c read was successful
@@ -48,11 +48,6 @@ bool read_i2c_gps_module(uint8_t* receive_buffer)
  */
 void gps_task()
 {
-  osDelay(500);
-
-    // uint8_t msg[20] = "New GPS read\r\n\n";
-    // HAL_UART_Transmit(&huart5, msg, 20, 100);
-
     memset(g_gps_data, 0, GPS_MESSAGE_LEN);
 
     read_i2c_gps_module(g_gps_data);
@@ -61,8 +56,6 @@ void gps_task()
 
    if(g_gps_read_okay)
    {
-    //  HAL_UART_Transmit(&huart5, g_gps_data, GPS_MESSAGE_LEN, 100);
-
      GPS gps_data = {0};
 
      nmea_parse(&gps_data, g_gps_data);
@@ -71,11 +64,6 @@ void gps_task()
 
      g_gps_read_okay = false;
    }
-  //  else
-  //  {
-  //    strncpy(g_gps_data, "GPS not connected\r\n", GPS_MESSAGE_LEN);
-  //    HAL_UART_Transmit(&huart5, g_gps_data, GPS_MESSAGE_LEN, 100);
-  //  }
 
     HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
 }
