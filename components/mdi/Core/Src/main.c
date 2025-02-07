@@ -94,6 +94,7 @@ int main(void)
   MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
 
+  HAL_CAN_Start(&hcan);
   /* USER CODE END 2 */
 
   /* Init scheduler */

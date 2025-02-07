@@ -21,7 +21,8 @@
 #include "i2c.h"
 
 /* USER CODE BEGIN 0 */
-
+#define I2C_ACCEL_ADDR    (0b0001110 << 1) //I2C address for the accel DAC
+#define I2C_REGEN_ADDR  (0b0001101 << 1) //I2C address for the regen DAC
 /* USER CODE END 0 */
 
 I2C_HandleTypeDef hi2c2;
