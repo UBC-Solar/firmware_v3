@@ -16,6 +16,7 @@
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
 float volts2temp(uint16_t adc_voltage);
+int32_t hass100s_voltagetocurrent(uint16_t adc_voltage, uint16_t adc_reading);
 /*============================================================================*/
 /* PUBLIC FUNCTIONS */
 
@@ -31,6 +32,9 @@ float volts2temp(uint16_t adc_voltage);
 
 void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
 {
+  adc_reading -= 91.6 - 0.04132 * adc_reading; // ADC error offset, see TODO LINK HERE DONT FORGET
+  uint16_t error = 91.6 - 0.04132 * adc_reading; // TODO: delete when done testing
+  printf("adc_reading %d, error %d\r\n", adc_reading, error); // TODO: delete when done testing
   uint16_t adc_voltage = adc_reading;
   if (adc_voltage < 0) adc_voltage = 0;
   else if (adc_voltage >= ADC_RESOLUTION) adc_voltage = ADC_RESOLUTION;
@@ -59,7 +63,7 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
     break;
   
   case PACK_CURRENT_SENSE__ADC1_IN14: // Pack current sense (mA)
-    ecu_data.adc_data.ADC_pack_current = (int32_t)(HASS100S_STD_DEV + HASS100S_INTERNAL_OFFSET + 100*(adc_voltage-ecu_data.adc_data.ADC_pack_current_offset)/0.625); //see HASS100-S datasheet     
+    ecu_data.adc_data.ADC_pack_current = hass100s_voltagetocurrent(adc_voltage, adc_reading);
     break;
 
   case T_AMBIENT_SENSE__ADC1_IN15: // Ambient controlboard temperature (deg C)
@@ -110,7 +114,6 @@ void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float resul
   // Average the samples
   for(; sample_num < limit; sample_num++) //summing the readings in the averaging process
   {
-    
     for(int channel = 0; channel < ADC1_NUM_ANALOG_CHANNELS; channel++)
     {
       // adc1_buf is organized as [supp batt x 200 ... motor curr x 200 ... array curr x 200]
@@ -124,6 +127,16 @@ void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float resul
   {
     // averages across all ADC samples within respective ADC channel
     result[channel] = ((float) sum[channel]) / (ADC1_BUF_LENGTH_PER_CHANNEL >> 1);
+  }
+
+  // Apply the error term to adjust the ADC readings
+  // See [Monday Update Link] for more info
+  for(int channel = 0; channel < ADC1_NUM_ANALOG_CHANNELS; channel++){
+    // Delete these prints when done debugging
+    printf("%d ", channel);
+    printf("%f\r\n", result[channel]);
+
+    result[channel] -= -75.8 + 0.0222 * (result[channel]);
   }
 }
 
@@ -205,5 +218,26 @@ float volts2temp(uint16_t adc_voltage)
   temp_kelvin = (beta * room_temp) / (beta + (room_temp * logf(R_therm / R_room_temp)));
   
   return temp_kelvin - 273.15;
+}
 
+/**
+ * @brief Converts the raw ADC reading from the batt_curr_sense pin into the current observation of the sensor
+ * 
+ * @param adc_voltage voltage reading from the batt_curr_sense pin
+ * @param adc_reading adc reading from the batt_curr_sense pin, before being converted into a voltage reading
+ * 
+ * @return Current reading in A
+ * 
+ * @date 2024/02/06
+ * @author Christopher Kalitin
+ */
+int32_t hass100s_voltagetocurrent(uint16_t adc_voltage, uint16_t adc_reading){
+  int16_t curr_adc_error = -75.8 + 0.0222 * adc_reading; // Apply current sensor error term in bits, see TODO LINK HERE DONT FORGET
+  int16_t curr_volt_error = curr_adc_error * ADC_VOLTAGE_SCALING * ADC_MAX_VOLT_READING/ADC_RESOLUTION; // Convert adc bits into voltage reading
+
+  uint32_t current_reading = (int32_t)100*(adc_voltage-curr_volt_error-ecu_data.adc_data.ADC_pack_current_offset)/0.625; //see HASS100-S datasheet 
+
+  printf("adc_voltage %d, adc_reading %d, curr_adc_error %d, curr_volt_error %d, current_reading %d\r\n", adc_voltage, adc_reading, curr_adc_error, curr_volt_error, current_reading); // TODO: delete when done testing
+
+  return current_reading;   
 }
