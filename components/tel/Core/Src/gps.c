@@ -49,6 +49,8 @@ bool read_i2c_gps_module(uint8_t* receive_buffer)
  */
 void gps_task()
 {
+    osDelay(500);
+
     memset(g_gps_data, 0, GPS_MESSAGE_LEN);
 
     read_i2c_gps_module(g_gps_data);
