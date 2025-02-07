@@ -6,6 +6,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "gps.h"
 #include "nmea_parse.h"
+#include "can.h"
 
 #define GPS_DEVICE_ADDRESS ((0x42)<<1)
 
@@ -63,7 +64,7 @@ void gps_task()
      CAN_tx_gps_data_msg(&gps_data);
 
      g_gps_read_okay = false;
-   }
 
-    HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+     HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+   }
 }

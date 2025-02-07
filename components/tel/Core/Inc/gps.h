@@ -6,6 +6,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stdbool.h"
 #include "i2c.h"
+#include "main.h"
+
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __GPS__H__

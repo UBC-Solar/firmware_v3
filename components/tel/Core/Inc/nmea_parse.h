@@ -5,6 +5,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include "main.h"
+
 
 /*******************************************************************************
  * @brief GPS data structure for storing parsed data
