@@ -216,10 +216,7 @@ float volts2temp(uint16_t adc_voltage)
  * @param adc_voltage voltage reading from the batt_curr_sense pin
  * @param adc_reading adc reading from the batt_curr_sense pin, before being converted into a voltage reading
  * 
- * @return Current reading in A
- * 
- * @date 2024/02/06
- * @author Christopher Kalitin
+ * @return Current reading in amps
  */
 int32_t hass100s_voltagetocurrent(uint16_t adc_voltage, uint16_t adc_reading){
   int16_t curr_adc_error = -75.8 + 0.0222 * adc_reading; // Apply current sensor error term in bits, see TODO LINK HERE DONT FORGET
