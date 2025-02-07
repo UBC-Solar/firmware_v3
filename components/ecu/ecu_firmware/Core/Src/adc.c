@@ -128,16 +128,6 @@ void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float resul
     // averages across all ADC samples within respective ADC channel
     result[channel] = ((float) sum[channel]) / (ADC1_BUF_LENGTH_PER_CHANNEL >> 1);
   }
-
-  // Apply the error term to adjust the ADC readings
-  // See [Monday Update Link] for more info
-  for(int channel = 0; channel < ADC1_NUM_ANALOG_CHANNELS; channel++){
-    // Delete these prints when done debugging
-    printf("%d ", channel);
-    printf("%f\r\n", result[channel]);
-
-    result[channel] -= -75.8 + 0.0222 * (result[channel]);
-  }
 }
 
 
