@@ -32,9 +32,6 @@ int32_t hass100s_voltagetocurrent(uint16_t adc_voltage, uint16_t adc_reading);
 
 void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
 {
-  adc_reading -= 91.6 - 0.04132 * adc_reading; // ADC error offset, see TODO LINK HERE DONT FORGET
-  uint16_t error = 91.6 - 0.04132 * adc_reading; // TODO: delete when done testing
-  printf("adc_reading %d, error %d\r\n", adc_reading, error); // TODO: delete when done testing
   uint16_t adc_voltage = adc_reading;
   if (adc_voltage < 0) adc_voltage = 0;
   else if (adc_voltage >= ADC_RESOLUTION) adc_voltage = ADC_RESOLUTION;
@@ -219,12 +216,15 @@ float volts2temp(uint16_t adc_voltage)
  * @return Current reading in amps
  */
 int32_t hass100s_voltagetocurrent(uint16_t adc_voltage, uint16_t adc_reading){
-  int16_t curr_adc_error = -75.8 + 0.0222 * adc_reading; // Apply current sensor error term in bits, see TODO LINK HERE DONT FORGET
+  int16_t adc_error = 91.6 - 0.04132 * adc_reading; // ADC error offset, see TODO LINK HERE DONT FORGET
+  adc_reading -= adc_error;
+
+  int16_t curr_adc_error = -75.8 + 0.0222 * adc_reading; // Apply current sensor error term in adc bits, see TODO LINK HERE DONT FORGET
   int16_t curr_volt_error = curr_adc_error * ADC_VOLTAGE_SCALING * ADC_MAX_VOLT_READING/ADC_RESOLUTION; // Convert adc bits into voltage reading
 
   uint32_t current_reading = (int32_t)100*(adc_voltage-curr_volt_error-ecu_data.adc_data.ADC_pack_current_offset)/0.625; //see HASS100-S datasheet 
 
-  printf("adc_voltage %d, adc_reading %d, curr_adc_error %d, curr_volt_error %d, current_reading %d\r\n", adc_voltage, adc_reading, curr_adc_error, curr_volt_error, current_reading); // TODO: delete when done testing
+  printf("adc_reading %d, adc_error %d, adc_voltage %d, current_reading %d, curr_adc_error %d, curr_volt_error %d\r\n", adc_reading, adc_error, adc_voltage, current_reading, curr_adc_error, curr_volt_error); // TODO: delete when done testing
 
   return current_reading;   
 }
