@@ -27,11 +27,10 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "gps.h"
-#include "nmea_parse.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "gps.h"
+#include "nmea_parse.h"
 /* USER CODE END Includes */
 
 extern CAN_HandleTypeDef hcan;

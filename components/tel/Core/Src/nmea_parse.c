@@ -436,7 +436,7 @@ void nmea_parse(GPS *gps_data, uint8_t *buffer) {
             // Identify sentence type and call corresponding parsing function
             if(strstr(data[i], "GPGLL")!=NULL)
             {
-               nmea_GPGLL(gps_data, data[i]);
+                nmea_GPGLL(gps_data, data[i]);
             }
             else if(strstr(data[i], "GNGSA")!= NULL || (strstr(data[i], "GPGSA"))!=NULL)
             {
