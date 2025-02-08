@@ -356,6 +356,7 @@ void CAN_tx_lon_lat_msg(float latitude, float longitude) {
     }
 
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+  RADIO_filter_and_queue_msg_tx(&CAN_comms_Tx_msg);  
 }
 
 
@@ -383,6 +384,7 @@ void CAN_tx_alt_geod_msg(float altitude, float geodHeight) {
     }
 
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+  RADIO_filter_and_queue_msg_tx(&CAN_comms_Tx_msg);  
 }
 
 
@@ -410,6 +412,7 @@ void CAN_tx_hdop_vdop_msg(float hdop, float vdop) {
     }
 
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+  RADIO_filter_and_queue_msg_tx(&CAN_comms_Tx_msg);  
 }
 
 
@@ -437,6 +440,7 @@ void CAN_tx_pdop_speedKmh_msg(float pdop, float speedKmh) {
     }
 
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+  RADIO_filter_and_queue_msg_tx(&CAN_comms_Tx_msg);  
 }
 
 
@@ -464,6 +468,7 @@ void CAN_tx_true_magnetic_heading_msg(float trueHeading, float magneticHeading) 
     }
 
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+  RADIO_filter_and_queue_msg_tx(&CAN_comms_Tx_msg);
 }
 
 /**
@@ -482,6 +487,7 @@ void CAN_tx_sat_count_view_fix_snr_msg(int satelliteCount, int satInView, int fi
       .header = gps_sat_count_view_fix_snr_rmc
     };
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+  RADIO_filter_and_queue_msg_tx(&CAN_comms_Tx_msg);
 }
 
 
@@ -543,6 +549,7 @@ void CAN_tx_lon_side_date_msg(char lonSide, char latSide, char date[7], char utc
     }
 
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+  RADIO_filter_and_queue_msg_tx(&CAN_comms_Tx_msg);
 }
 
 /**
