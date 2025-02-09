@@ -135,9 +135,9 @@ void imu_task()
 		osDelay(3);
 		CAN_tx_ag_x_msg(imu_data.accelx, imu_data.gyrox);
 		osDelay(3);
-		CAN_tx_ag_x_msg(imu_data.accely, imu_data.gyroy);
+		CAN_tx_ag_y_msg(imu_data.accely, imu_data.gyroy);
 		osDelay(3);
-		CAN_tx_ag_x_msg(imu_data.accelz, imu_data.gyroz);
+		CAN_tx_ag_z_msg(imu_data.accelz, imu_data.gyroz);
 
         osDelay(100);
 	}
