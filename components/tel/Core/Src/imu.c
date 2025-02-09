@@ -132,9 +132,12 @@ void imu_task()
 			imu_data.gyroz = gyro_z;
 		}
 
-		CAN_tx_accel_xy_msg(imu_data.accelx, imu_data.accely);
-		CAN_tx_accel_z_gyro_x_msg(imu_data.accelz, imu_data.gyrox);
-		CAN_tx_gyro_yz_msg(imu_data.gyroy, imu_data.gyroz);
+		osDelay(3);
+		CAN_tx_ag_x_msg(imu_data.accelx, imu_data.gyrox);
+		osDelay(3);
+		CAN_tx_ag_x_msg(imu_data.accely, imu_data.gyroy);
+		osDelay(3);
+		CAN_tx_ag_x_msg(imu_data.accelz, imu_data.gyroz);
 
         osDelay(100);
 	}

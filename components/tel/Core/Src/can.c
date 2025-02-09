@@ -59,28 +59,28 @@ CAN_TxHeaderTypeDef cpu_load_can_header = {
 
 #define IMU_CAN_MESSAGE_LENGTH					8
 
-#define IMU_ACCEL_X_Y_CAN_MESSAGE_ID 			0x100
-#define IMU_ACCEL_Z_GYRO_X_CAN_MESSAGE_ID		0x101
-#define IMU_GYRO_Y_Z_CAN_MESSAGE_ID				0x102
+#define IMU_AG_X_CAN_MESSAGE_ID 			0x752
+#define IMU_AG_Y_CAN_MESSAGE_ID				0x753
+#define IMU_AG_Z_CAN_MESSAGE_ID				0x754
 
-CAN_TxHeaderTypeDef imu_accel_x_y = {
-  .StdId = IMU_ACCEL_X_Y_CAN_MESSAGE_ID,
+CAN_TxHeaderTypeDef imu_ag_x = {
+  .StdId = IMU_AG_X_CAN_MESSAGE_ID,
   .ExtId = 0x0000,
   .IDE = CAN_ID_STD,
   .RTR = CAN_RTR_DATA,
   .DLC = IMU_CAN_MESSAGE_LENGTH
 };
 
-CAN_TxHeaderTypeDef imu_accel_z_gyro_x = {
-  .StdId = IMU_ACCEL_Z_GYRO_X_CAN_MESSAGE_ID,
+CAN_TxHeaderTypeDef imu_ag_y = {
+  .StdId = IMU_AG_Y_CAN_MESSAGE_ID,
   .ExtId = 0x0000,
   .IDE = CAN_ID_STD,
   .RTR = CAN_RTR_DATA,
   .DLC = IMU_CAN_MESSAGE_LENGTH
 };
 
-CAN_TxHeaderTypeDef imu_gyro_y_z = {
-  .StdId = IMU_GYRO_Y_Z_CAN_MESSAGE_ID,
+CAN_TxHeaderTypeDef imu_ag_z = {
+  .StdId = IMU_AG_Z_CAN_MESSAGE_ID,
   .ExtId = 0x0000,
   .IDE = CAN_ID_STD,
   .RTR = CAN_RTR_DATA,
@@ -297,12 +297,12 @@ union {
 /**
  * @brief CAN message for accel_x and accel_y GPS fields
  */
-void CAN_tx_accel_xy_msg(float accel_x, float accel_y) {
+void CAN_tx_ag_x_msg(float accel_x, float gyros_x) {
 
     float_bytes.value = accel_x;
 
     CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
-        .header = imu_accel_x_y
+        .header = imu_ag_x
     };
 
     for (int i = 0; i < 4; i++)
@@ -310,7 +310,7 @@ void CAN_tx_accel_xy_msg(float accel_x, float accel_y) {
       CAN_comms_Tx_msg.data[i] = float_bytes.bytes[i];
     }
 
-    float_bytes.value = accel_y;
+    float_bytes.value = gyros_x;
 
     for (int i = 0; i < 4; i++)
     {
@@ -324,12 +324,12 @@ void CAN_tx_accel_xy_msg(float accel_x, float accel_y) {
 /**
  * @brief CAN message for accel_z and gyro_x GPS fields
  */
-void CAN_tx_accel_z_gyro_x_msg(float accel_z, float gyro_x) {
+void CAN_tx_ag_y_msg(float accel_y, float gyro_y) {
 
-    float_bytes.value = accel_z;
+    float_bytes.value = accel_y;
 
     CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
-        .header = imu_accel_z_gyro_x
+        .header = imu_ag_y
     };
 
     for (int i = 0; i < 4; i++)
@@ -337,7 +337,7 @@ void CAN_tx_accel_z_gyro_x_msg(float accel_z, float gyro_x) {
       CAN_comms_Tx_msg.data[i] = float_bytes.bytes[i];
     }
 
-    float_bytes.value = gyro_x;
+    float_bytes.value = gyro_y;
 
     for (int i = 0; i < 4; i++)
     {
@@ -351,12 +351,12 @@ void CAN_tx_accel_z_gyro_x_msg(float accel_z, float gyro_x) {
 /**
  * @brief CAN message for gyro_y and gyro_z GPS fields
  */
-void CAN_tx_gyro_yz_msg(float gyro_y, float gyro_z) {
+void CAN_tx_ag_z_msg(float accel_z, float gyro_z) {
 
-    float_bytes.value = gyro_y;
+    float_bytes.value = accel_z;
 
     CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
-        .header = imu_gyro_y_z
+        .header = imu_ag_z
     };
 
     for (int i = 0; i < 4; i++)

@@ -48,9 +48,9 @@ void CAN_tx_canload_msg();
 void CAN_tasks_init();
 void CAN_cpu_load_can_tx();
 
-void CAN_tx_accel_xy_msg(float accel_x, float accel_y);
-void CAN_tx_accel_z_gyro_x_msg(float accel_z, float gyro_x);
-void CAN_tx_gyro_yz_msg(float gyro_y, float gyro_z);
+void CAN_tx_ag_x_msg(float accel_x, float gyros_x);
+void CAN_tx_ag_y_msg(float accel_y, float gyro_y);
+void CAN_tx_ag_z_msg(float accel_z, float gyro_z);
 
 
 /* USER CODE END Prototypes */
