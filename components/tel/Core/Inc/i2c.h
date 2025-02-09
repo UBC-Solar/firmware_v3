@@ -1,13 +1,13 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    can.h
+  * @file    i2c.h
   * @brief   This file contains all the function prototypes for
-  *          the can.c file
+  *          the i2c.c file
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -18,8 +18,8 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __CAN_H__
-#define __CAN_H__
+#ifndef __I2C_H__
+#define __I2C_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,26 +32,15 @@ extern "C" {
 
 /* USER CODE END Includes */
 
-extern CAN_HandleTypeDef hcan;
+extern I2C_HandleTypeDef hi2c2;
 
 /* USER CODE BEGIN Private defines */
-#define MAX_CAN_DATA_LENGTH                 8
 
 /* USER CODE END Private defines */
 
-void MX_CAN_Init(void);
+void MX_I2C2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
-void CAN_filter_init(CAN_FilterTypeDef* can_filter);
-void CAN_tx_canload_msg();
-void CAN_tasks_init();
-void CAN_cpu_load_can_tx();
-
-void CAN_tx_ag_x_msg(float accel_x, float gyros_x);
-void CAN_tx_ag_y_msg(float accel_y, float gyro_y);
-void CAN_tx_ag_z_msg(float accel_z, float gyro_z);
-
 
 /* USER CODE END Prototypes */
 
@@ -59,5 +48,5 @@ void CAN_tx_ag_z_msg(float accel_z, float gyro_z);
 }
 #endif
 
-#endif /* __CAN_H__ */
+#endif /* __I2C_H__ */
 

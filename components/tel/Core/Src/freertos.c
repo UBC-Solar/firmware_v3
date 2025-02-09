@@ -31,6 +31,7 @@
 #include "canload.h"
 #include "can.h"
 #include "radio.h"
+#include "imu.h"
 
 /* USER CODE END Includes */
 
@@ -91,7 +92,7 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 /* Definitions for IMU_Task */
 osThreadId_t IMU_TaskHandle;
-uint32_t IMU_TaskBuffer[ 128 ];
+uint32_t IMU_TaskBuffer[ 256 ];
 osStaticThreadDef_t IMU_TaskControlBlock;
 const osThreadAttr_t IMU_Task_attributes = {
   .name = "IMU_Task",
@@ -227,10 +228,11 @@ void IMU_task(void *argument)
 {
   /* USER CODE BEGIN IMU_task */
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+//   for(;;)
+//   {
+//     osDelay(1);
+//   }
+    imu_task();
   /* USER CODE END IMU_task */
 }
 
