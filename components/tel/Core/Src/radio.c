@@ -17,6 +17,7 @@
 #include "string.h"
 #include "rtc.h"
 #include "tel_freertos.h"
+#include "can.h"
 
 
 /* PRIVATE DEFINES */
@@ -30,6 +31,7 @@
 
 /* PRIVATE FUNCTIONS DECLARATIONS */
 void set_radio_msg(CAN_RxHeaderTypeDef* header, uint8_t* data, RADIO_Msg_TypeDef* radio_msg);
+void set_radio_msg_tx(CAN_TxHeaderTypeDef* header, uint8_t* data, RADIO_Msg_TypeDef* radio_msg);
 uint64_t get_timestamp();
 uint32_t get_can_id(CAN_RxHeaderTypeDef* can_msg_header_ptr);
 
@@ -62,6 +64,18 @@ void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 	 UART_radio_transmit(&radio_msg);
 }
 
+void RADIO_filter_and_queue_msg_tx(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
+{
+	// TODO: Implement filtering
+	// EX: if (check_CAN_ID_whitelist(CAN_comms_Rx_msg->header.StdId) == true) { ... }
+
+	/* Create radio message struct */
+	set_radio_msg_tx(&(CAN_comms_Tx_msg->header), CAN_comms_Tx_msg->data, &radio_msg);
+
+	/* Transmit Radio Message */
+	 UART_radio_transmit(&radio_msg);
+}
+
 
 /**
  * @brief Sets all the fields in the radio message struct
@@ -75,6 +89,26 @@ void set_radio_msg(CAN_RxHeaderTypeDef* header, uint8_t* data, RADIO_Msg_TypeDef
 	
 	radio_msg->timestamp        = get_timestamp();
 	radio_msg->can_id           = get_can_id(header);
+	radio_msg->ID_DELIMETER     = ID_DELIMITER_CHAR;
+	memcpy(radio_msg->data, data, RADIO_DATA_LENGTH);
+	radio_msg->data_len         = get_data_length(header->DLC);
+	radio_msg->CARRIAGE_RETURN  = CARRIAGE_RETURN_CHAR;
+	radio_msg->NEW_LINE         = NEW_LINE_CHAR;
+}
+
+/**
+ * @brief Sets all the fields in the radio message struct
+ * 
+ * @param header The CAN header struct
+ * @param data The CAN data
+ */
+void set_radio_msg_tx(CAN_TxHeaderTypeDef* header, uint8_t* data, RADIO_Msg_TypeDef* radio_msg)
+{
+	memset(radio_msg, 0, sizeof(RADIO_Msg_TypeDef));           // 0 out all 8 bytes data
+	
+	radio_msg->timestamp        = get_timestamp();
+	uint32_t id 				= (header->IDE == CAN_ID_STD) ? header->StdId : header->ExtId; 
+	radio_msg->can_id           = BITOPS_32BIT_REVERSE(id);
 	radio_msg->ID_DELIMETER     = ID_DELIMITER_CHAR;
 	memcpy(radio_msg->data, data, RADIO_DATA_LENGTH);
 	radio_msg->data_len         = get_data_length(header->DLC);
