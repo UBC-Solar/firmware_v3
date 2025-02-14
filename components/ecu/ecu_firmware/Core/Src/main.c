@@ -168,6 +168,7 @@ int main(void)
   while (1)
   {
 
+    ecu_data.status.bits.estop == false;
     FSM_run();
 
     HAL_IWDG_Refresh (&hiwdg);//Programmed in IOC to have refreshed in 150ms due to possible CAN message delays.
@@ -178,6 +179,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
     current_time = HAL_GetTick();
+    printf("Current Time: %d\r\n", current_time);
 
     if (current_time - last_blink_time >= DEBUG_LED_BLINK_INTERVAL)
     {

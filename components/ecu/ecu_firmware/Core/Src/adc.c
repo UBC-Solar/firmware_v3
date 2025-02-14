@@ -32,7 +32,7 @@ int32_t hass100s_voltagetocurrent(uint16_t adc_voltage, uint16_t adc_reading);
 
 void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
 {
-  uint16_t adc_voltage = adc_reading;
+  uint16_t adc_voltage = (uint16_t)adc_reading;
   if (adc_voltage < 0) adc_voltage = 0;
   else if (adc_voltage >= ADC_RESOLUTION) adc_voltage = ADC_RESOLUTION;
   adc_voltage = adc_voltage * ADC_VOLTAGE_SCALING * ADC_MAX_VOLT_READING/ADC_RESOLUTION;
@@ -60,7 +60,7 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
     break;
   
   case PACK_CURRENT_SENSE__ADC1_IN14: // Pack current sense (mA)
-    ecu_data.adc_data.ADC_pack_current = hass100s_voltagetocurrent(adc_voltage, adc_reading);
+    ecu_data.adc_data.ADC_pack_current = hass100s_voltagetocurrent(adc_voltage, (uint16_t)adc_reading);
     break;
 
   case T_AMBIENT_SENSE__ADC1_IN15: // Ambient controlboard temperature (deg C)
@@ -113,8 +113,9 @@ void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float resul
   {
     for(int channel = 0; channel < ADC1_NUM_ANALOG_CHANNELS; channel++)
     {
-      // adc1_buf is organized as [supp batt x 200 ... motor curr x 200 ... array curr x 200]
+      // adc1_buf is organized as [supp batt x 200 ... motor curr x 200 ... array curr x 200] ... TODO (no it isn't) - Chris
       // when sampling at 100Hz (not sure if that 100Hz number is correct)
+      if (channel == PACK_CURRENT_SENSE__ADC1_IN14 && sample_num%15==0) printf("adc1_buf[%d] = %f\r\n", ADC1_NUM_ANALOG_CHANNELS * sample_num + channel, (float)adc1_buf[ADC1_NUM_ANALOG_CHANNELS * sample_num + channel]);
       sum[channel] += (float)adc1_buf[ADC1_NUM_ANALOG_CHANNELS * sample_num + channel];
     }
   }
@@ -208,7 +209,7 @@ float volts2temp(uint16_t adc_voltage)
 }
 
 /**
- * @brief Converts the raw ADC reading from the batt_curr_sense pin into the current observation of the sensor
+ * @brief Converts the raw ADC reading from the batt_curr_sense pin into the current observation of the sensor, while applying error terms to get a more accurate result
  * 
  * @param adc_voltage voltage reading from the batt_curr_sense pin
  * @param adc_reading adc reading from the batt_curr_sense pin, before being converted into a voltage reading
@@ -216,15 +217,60 @@ float volts2temp(uint16_t adc_voltage)
  * @return Current reading in amps
  */
 int32_t hass100s_voltagetocurrent(uint16_t adc_voltage, uint16_t adc_reading){
-  int16_t adc_error = 91.6 - 0.04132 * adc_reading; // ADC error offset, see TODO LINK HERE DONT FORGET
+  int16_t adc_error = -75.8 + 0.0222 * adc_reading; // ADC error offset, see TODO LINK HERE DONT FORGET
+  int16_t adc_volt_error = adc_error * ADC_VOLTAGE_SCALING * ADC_MAX_VOLT_READING/ADC_RESOLUTION; // Convert adc bits into voltage reading
   adc_reading -= adc_error;
+  adc_voltage -= adc_volt_error;
 
-  int16_t curr_adc_error = -75.8 + 0.0222 * adc_reading; // Apply current sensor error term in adc bits, see TODO LINK HERE DONT FORGET
+  int16_t curr_adc_error = 91.6 - 0.04132 * adc_reading; // Apply current sensor error term in adc bits, see TODO LINK HERE DONT FORGET
   int16_t curr_volt_error = curr_adc_error * ADC_VOLTAGE_SCALING * ADC_MAX_VOLT_READING/ADC_RESOLUTION; // Convert adc bits into voltage reading
 
-  uint32_t current_reading = (int32_t)100*(adc_voltage-curr_volt_error-ecu_data.adc_data.ADC_pack_current_offset)/0.625; //see HASS100-S datasheet 
+  // TODO DELETE, if your seeing this just delete these 3 comments and push to main tbh
+  // TDOD DELETE Set ADC_pack_current_offset to 1811 mv? for default 0 reading since the pack_current_offset reading can't be trusted?
+  // TODO DELETE ecu_data.adc_data.ADC_pack_current_offset
+  int32_t current_reading = (int32_t)100*(adc_voltage-curr_volt_error-1811)/0.625; //see HASS100-S datasheet 
 
-  printf("adc_reading %d, adc_error %d, adc_voltage %d, current_reading %d, curr_adc_error %d, curr_volt_error %d\r\n", adc_reading, adc_error, adc_voltage, current_reading, curr_adc_error, curr_volt_error); // TODO: delete when done testing
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf("adc_reading %d, adc_error %d, adc_voltage %d, current_reading %d, curr_adc_error %d, curr_volt_error %d, pack_current_offset %d\r\n", adc_reading, adc_error, adc_voltage, current_reading, curr_adc_error, curr_volt_error, ecu_data.adc_data.ADC_pack_current_offset); // TODO: delete when done testing
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
+  printf(" - - - - - \r\n");
 
   return current_reading;   
 }
