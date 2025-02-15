@@ -67,10 +67,14 @@ void Error_Handler(void);
 #define BATT_FLT_GPIO_Port GPIOC
 #define BATT_OT_Pin GPIO_PIN_3
 #define BATT_OT_GPIO_Port GPIOC
-#define BATT_LO_Pin GPIO_PIN_0
-#define BATT_LO_GPIO_Port GPIOA
 #define BATT_OV_Pin GPIO_PIN_1
 #define BATT_OV_GPIO_Port GPIOA
+#define ACCEL_2_Pin GPIO_PIN_2
+#define ACCEL_2_GPIO_Port GPIOA
+#define ACCEL_1_Pin GPIO_PIN_3
+#define ACCEL_1_GPIO_Port GPIOA
+#define SPI1_CS_Pin GPIO_PIN_4
+#define SPI1_CS_GPIO_Port GPIOA
 #define DISPLAY_A0_Pin GPIO_PIN_6
 #define DISPLAY_A0_GPIO_Port GPIOA
 #define DCH_OC_Pin GPIO_PIN_4
@@ -99,14 +103,16 @@ void Error_Handler(void);
 #define MTR_OC_GPIO_Port GPIOC
 #define MTR_OT_Pin GPIO_PIN_8
 #define MTR_OT_GPIO_Port GPIOC
-#define ESTOP_Pin GPIO_PIN_9
-#define ESTOP_GPIO_Port GPIOC
 #define PARK_EN_Pin GPIO_PIN_8
 #define PARK_EN_GPIO_Port GPIOA
 #define FWRD_EN_Pin GPIO_PIN_9
 #define FWRD_EN_GPIO_Port GPIOA
 #define RVRS_EN_Pin GPIO_PIN_10
 #define RVRS_EN_GPIO_Port GPIOA
+#define DEBUG_LED_1_Pin GPIO_PIN_10
+#define DEBUG_LED_1_GPIO_Port GPIOC
+#define DEBUG_LED_2_Pin GPIO_PIN_11
+#define DEBUG_LED_2_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
 

@@ -53,40 +53,34 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, BATT_UV_Pin|BATT_HI_Pin|BATT_FLT_Pin|BATT_OT_Pin
                           |DCH_OC_Pin|CH_OC_Pin|MTR_FLT_Pin|MTR_OC_Pin
-                          |MTR_OT_Pin, GPIO_PIN_RESET);
+                          |MTR_OT_Pin|GPIO_PIN_9|DEBUG_LED_1_Pin|DEBUG_LED_2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, BATT_OV_Pin|DISPLAY_A0_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|BATT_OV_Pin|DISPLAY_A0_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, BMS_COMM_FLT_Pin|DISPLAY__RESET_Pin|DTR_OUT_Pin|RTS_OUT_Pin
                           |LTS_OUT_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : DTR_IN_Pin ESTOP_Pin */
-  GPIO_InitStruct.Pin = DTR_IN_Pin|ESTOP_Pin;
+  /*Configure GPIO pin : DTR_IN_Pin */
+  GPIO_InitStruct.Pin = DTR_IN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(DTR_IN_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : BATT_UV_Pin BATT_HI_Pin BATT_FLT_Pin BATT_OT_Pin
                            DCH_OC_Pin CH_OC_Pin MTR_FLT_Pin MTR_OC_Pin
-                           MTR_OT_Pin */
+                           MTR_OT_Pin PC9 DEBUG_LED_1_Pin DEBUG_LED_2_Pin */
   GPIO_InitStruct.Pin = BATT_UV_Pin|BATT_HI_Pin|BATT_FLT_Pin|BATT_OT_Pin
                           |DCH_OC_Pin|CH_OC_Pin|MTR_FLT_Pin|MTR_OC_Pin
-                          |MTR_OT_Pin;
+                          |MTR_OT_Pin|GPIO_PIN_9|DEBUG_LED_1_Pin|DEBUG_LED_2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : BATT_LO_Pin */
-  GPIO_InitStruct.Pin = BATT_LO_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(BATT_LO_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : BATT_OV_Pin DISPLAY_A0_Pin */
-  GPIO_InitStruct.Pin = BATT_OV_Pin|DISPLAY_A0_Pin;
+  /*Configure GPIO pins : PA0 BATT_OV_Pin DISPLAY_A0_Pin */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|BATT_OV_Pin|DISPLAY_A0_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
