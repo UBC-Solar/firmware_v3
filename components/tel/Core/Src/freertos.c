@@ -31,6 +31,8 @@
 #include "canload.h"
 #include "can.h"
 #include "radio.h"
+#include "gps.h"
+#include "nmea_parse.h"
 #include "imu.h"
 
 /* USER CODE END Includes */
@@ -104,7 +106,7 @@ const osThreadAttr_t IMU_Task_attributes = {
 };
 /* Definitions for GPS_Task */
 osThreadId_t GPS_TaskHandle;
-uint32_t GPS_TaskBuffer[ 128 ];
+uint32_t GPS_TaskBuffer[ 512 ];
 osStaticThreadDef_t GPS_TaskControlBlock;
 const osThreadAttr_t GPS_Task_attributes = {
   .name = "GPS_Task",
@@ -247,10 +249,7 @@ void GPS_task(void *argument)
 {
   /* USER CODE BEGIN GPS_task */
   /* Infinite loop */
-  for(;;)
-  {
-	  osDelay(1);
-  }
+  gps_task();
   /* USER CODE END GPS_task */
 }
 
@@ -268,7 +267,7 @@ void CANLoad_task(void *argument)
   for(;;)
   {
    CANLOAD_update_sliding_window();
-   CAN_tx_canload_msg();
+  //  CAN_tx_canload_msg();
    osDelay(CANLOAD_MSG_RATE);
   }
   /* USER CODE END CANLoad_task */

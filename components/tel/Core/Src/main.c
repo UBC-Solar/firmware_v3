@@ -107,6 +107,7 @@ int main(void)
   MX_TIM2_Init();
   MX_I2C2_Init();
   MX_UART5_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   
   IWDG_perform_reset_sequence();      // Check for IWDG reset    

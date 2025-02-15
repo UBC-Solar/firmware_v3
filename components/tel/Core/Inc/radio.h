@@ -53,6 +53,7 @@ extern Radio_diagnostics_t Radio_diagnostic;
 
 /* PROTOTYPES */
 void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg);
+void RADIO_filter_and_queue_msg_tx(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg);
 
 
 #endif /* __RADIO_H__ */

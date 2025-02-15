@@ -29,7 +29,8 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "gps.h"
+#include "nmea_parse.h"
 /* USER CODE END Includes */
 
 extern CAN_HandleTypeDef hcan;
@@ -47,6 +48,7 @@ void CAN_filter_init(CAN_FilterTypeDef* can_filter);
 void CAN_tx_canload_msg();
 void CAN_tasks_init();
 void CAN_cpu_load_can_tx();
+void CAN_tx_gps_data_msg(GPS* gps_data);
 
 void CAN_tx_ag_x_msg(float accel_x, float gyros_x);
 void CAN_tx_ag_y_msg(float accel_y, float gyro_y);
