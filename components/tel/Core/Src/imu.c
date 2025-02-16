@@ -1,11 +1,9 @@
 #include "main.h"
 #include "i2c.h"
-#include "usart.h"
 #include "imu.h"
-#include <stdio.h>
-#include <string.h>
 #include "can.h"
 
+//Struct for the IMU data
 typedef struct {
 	float accelx;
 	float accely;
@@ -15,6 +13,36 @@ typedef struct {
 	float gyroz;
 } IMU;
 
+
+/**
+ * @brief Write a single byte to an IMU register.
+ * @param reg The register address.
+ * @param value The value to write.
+ * @return HAL status.
+ */
+static HAL_StatusTypeDef write_imu_register (uint16_t reg, uint8_t val){
+    return HAL_I2C_Mem_Write(&hi2c2, IMU_ADDRESS, reg, 1, &val, 1, 10);
+}
+
+/**
+ * @brief Read two bytes from an IMU register and return the 16-bit value.
+ *        If the read fails, 0 is returned.
+ * @param reg The starting register address.
+ * @return The 16-bit value read from the sensor.
+ */
+static uint16_t read_imu_register (uint16_t reg){
+	uint8_t data[2];
+	if(HAL_I2C_Mem_Read(&hi2c2, IMU_ADDRESS, reg, 1, data, 2, 10) != HAL_OK){
+		return 0;
+	}
+
+	return (int16_t)(data[1] << 8 | data[0]);
+}
+
+
+/**
+ * @brief Task to read IMU data and transmit it over the CAN bus.
+ */
 void imu_task()
 {
     int8_t bufx[2];
@@ -30,115 +58,47 @@ void imu_task()
 	HAL_StatusTypeDef ret_gyroy;
 	HAL_StatusTypeDef ret_gyroz;
 
-    // Read OUTX_L_A and OUTX_H_A
-    // Write to CTRL1 register
-    bufx[0] = 0x74; // Set ODR to 30 Hz, normal mode
-    ret_accelx = HAL_I2C_Mem_Write(&hi2c2, IMU_ADDRESS, CTRL_1, 1, bufx, 1, 10);
-    bufy[0] = 0x02; // Set the range to +-8g (might have to change later - check if sufficient for cornering?)
-    ret_accely = HAL_I2C_Mem_Write(&hi2c2, IMU_ADDRESS, CTRL_8, 1, bufy, 1, 10);
-
-    if (ret_accelx != HAL_OK) {
-        sprintf((char*)debug_buf, "Error writing CTRL1: %d\r\n", ret_accelx);
-        HAL_UART_Transmit(&huart5, debug_buf, sizeof(debug_buf), 10);
+	//Writing to CTRL_1 register, sets ODR to 30 Hz in normal mode and the range to +-8g in CTRL_8 register
+    if(write_imu_register(CTRL_1, 0x74) != HAL_OK || write_imu_register(CTRL_8, 0x02)){
+    	return 0;
     }
 
-    if (ret_accely != HAL_OK) {
-        sprintf((char*)debug_buf, "Error writing CTRL8: %d\r\n", ret_accely);
-        HAL_UART_Transmit(&huart5, debug_buf, sizeof(debug_buf), 10);
+    //Writing to CTRL_2 register, sets ODR to 30 Hz in low power mode and the scale to +- 250 dps in CTRL_6 register
+    if(write_imu_register(CTRL_2, 0x54) != HAL_OK || write_imu_register(CTRL_6, 0x01)){
+        return 0;
     }
-
-    // Write to CTRL2 register
-    bufx[0] = 0x54; // Set ODR to 30HZ, low-power mode;
-    ret_accelx = HAL_I2C_Mem_Write(&hi2c2, IMU_ADDRESS, CTRL_2, 1, bufx, 1, 10);
-    bufy[0] = 0x01; // Set the scale to +-250 degrees per sec (dps) (might have to change later - check if sufficient for cornering?)
-    ret_accely = HAL_I2C_Mem_Write(&hi2c2, IMU_ADDRESS, CTRL_6, 1, bufy, 1, 10);
-
-    if (ret_accelx != HAL_OK) {
-        sprintf((char*)debug_buf, "Error writing CTRL2: %d\r\n", ret_accelx);
-        HAL_UART_Transmit(&huart5, debug_buf, sizeof(debug_buf), 10);
-    }
-
-    if (ret_accely != HAL_OK) {
-        sprintf((char*)debug_buf, "Error writing CTRL6: %d\r\n", ret_accely);
-        HAL_UART_Transmit(&huart5, debug_buf, sizeof(debug_buf), 10);
-    }
-
-
 
     for (;;)
     {
-    	//Reading Accelerometer data
     	IMU imu_data;
 
-		ret_accelx = HAL_I2C_Mem_Read(&hi2c2, IMU_ADDRESS, OUTX_L_A, 1, bufx, 2, 10);
-		ret_accely = HAL_I2C_Mem_Read(&hi2c2, IMU_ADDRESS, OUTY_L_A, 1, bufy, 2, 10);
+    	//Reading Accelerometer data
+    	int16_t Accel_X_RAW = read_imu_register(OUTX_L_A);
+    	int16_t Accel_Y_RAW = read_imu_register(OUTY_L_A);
+    	int16_t Accel_Z_RAW = read_imu_register(OUTZ_L_A);
 
-		if (ret_accelx != HAL_OK || ret_accely != HAL_OK) {
-			sprintf((char*)debug_buf, "Error reading accel: %d\r\n", ret_accelx);
-			HAL_UART_Transmit(&huart5, debug_buf, sizeof(debug_buf), 10);
-		}
+    	//Converting raw values to mg according to datasheet, where mg=9.81 * 10^-3 m/s^2.
+    	imu_data.accelx = (float)Accel_X_RAW * 0.244; // Convert to mg
+    	imu_data.accely = (float)Accel_Y_RAW * 0.244; // Convert to mg
+    	imu_data.accelz = (float)Accel_Z_RAW * 0.244; // Convert to mg
 
-		else {
-			int16_t Accel_X_RAW = (int16_t)(bufx[1] << 8 | bufx[0]);
-			int16_t Accel_Y_RAW = (int16_t)(bufy[1] << 8 | bufy[0]);
+    	//Reading Gyroscopic data
+    	int16_t Gyro_X_RAW = read_imu_register(OUTX_L_G);
+		int16_t Gyro_Y_RAW = read_imu_register(OUTY_L_G);
+		int16_t Gyro_Z_RAW = read_imu_register(OUTZ_L_G);
 
-			float accel_x = (float)Accel_X_RAW * 0.244; // Convert to mg (Multiply by Datasheet value of 0.244)
-			float accel_y = (float)Accel_Y_RAW * 0.244; // Convert to mg
+		//Converting raw values to milli degrees per sec (mdps) according to datasheet.
+		imu_data.gyrox = (float)Gyro_X_RAW * 8.75; // Convert to mdps
+		imu_data.gyroy = (float)Gyro_Y_RAW * 8.75; // Convert to mdps
+		imu_data.gyroz = (float)Gyro_Z_RAW * 8.75; // Convert to mdps
 
-			imu_data.accelx = accel_x;
-			imu_data.accely = accel_y;
-		}
-
-
-		ret_accelz = HAL_I2C_Mem_Read(&hi2c2, IMU_ADDRESS, OUTZ_L_A, 1, bufz, 2, 10);
-		ret_gyrox = HAL_I2C_Mem_Read(&hi2c2, IMU_ADDRESS, OUTX_L_G, 1, bufx, 2, 10);
-
-		if (ret_accely != HAL_OK || ret_gyrox != HAL_OK) {
-			sprintf((char*)debug_buf, "Error reading accel: %d\r\n", ret_accelx);
-			HAL_UART_Transmit(&huart5, debug_buf, sizeof(debug_buf), 10);
-		}
-
-		else {
-			int16_t Accel_Z_RAW = (int16_t)(bufz[1] << 8 | bufz[0]);
-			int16_t Gyro_X_RAW = (int16_t)(bufx[1] << 8 | bufx[0]);
-
-
-			float accel_z = (float)Accel_Z_RAW * 0.244; // Convert to mg
-			float gyro_x = Gyro_X_RAW * 8.75; // Convert to milli degrees per sec (mdps) (Multiply by Datasheet value of 8.75)
-
-			imu_data.accelz = accel_z;
-			imu_data.gyrox = gyro_x;
-		}
-
-
-		ret_gyroy = HAL_I2C_Mem_Read(&hi2c2, IMU_ADDRESS, OUTY_L_G, 1, bufy, 2, 10);
-		ret_gyroz = HAL_I2C_Mem_Read(&hi2c2, IMU_ADDRESS, OUTZ_L_G, 1, bufz, 2, 10);
-
-		if (ret_gyroy != HAL_OK || ret_gyroz != HAL_OK) {
-			sprintf((char*)debug_buf, "Error reading gyro: %d\r\n", ret_accelx);
-			HAL_UART_Transmit(&huart5, debug_buf, sizeof(debug_buf), 10);
-		}
-
-		else {  
-
-			int16_t Gyro_Y_RAW = (int16_t)(bufy[1] << 8 | bufy[0]);
-			int16_t Gyro_Z_RAW = (int16_t)(bufz[1] << 8 | bufz[0]);
-
-
-			float gyro_y = Gyro_Y_RAW * 8.75; // Convert to mdps
-			float gyro_z = Gyro_Z_RAW * 8.75; // Convert to mdps
-
-			imu_data.gyroy = gyro_y;
-			imu_data.gyroz = gyro_z;
-		}
-
+		//Sending message over to the CAN bus
 		osDelay(3);
 		CAN_tx_ag_x_msg(imu_data.accelx, imu_data.gyrox);
 		osDelay(3);
 		CAN_tx_ag_y_msg(imu_data.accely, imu_data.gyroy);
 		osDelay(3);
 		CAN_tx_ag_z_msg(imu_data.accelz, imu_data.gyroz);
-
         osDelay(100);
 	}
 }

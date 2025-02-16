@@ -36,21 +36,16 @@ extern "C" {
 
 /* USER CODE END Includes */
 
-<<<<<<< HEAD
-extern I2C_HandleTypeDef hi2c2;
-=======
 extern I2C_HandleTypeDef hi2c1;
->>>>>>> 3cdb5076d698d2dbbe5f634b47c7a58db6642306
+
+extern I2C_HandleTypeDef hi2c2;
 
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
-<<<<<<< HEAD
-void MX_I2C2_Init(void);
-=======
 void MX_I2C1_Init(void);
->>>>>>> 3cdb5076d698d2dbbe5f634b47c7a58db6642306
+void MX_I2C2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 

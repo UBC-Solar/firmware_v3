@@ -387,6 +387,7 @@ void CAN_tx_ag_x_msg(float accel_x, float gyros_x) {
     }
 
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+  RADIO_filter_and_queue_msg_tx(&CAN_comms_Tx_msg);
 }
 
 
@@ -414,6 +415,7 @@ void CAN_tx_ag_y_msg(float accel_y, float gyro_y) {
     }
 
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+  RADIO_filter_and_queue_msg_tx(&CAN_comms_Tx_msg);
 }
 
 
@@ -441,12 +443,9 @@ void CAN_tx_ag_z_msg(float accel_z, float gyro_z) {
     }
 
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
+  RADIO_filter_and_queue_msg_tx(&CAN_comms_Tx_msg);
 }
 
-union {
-      float value;
-      uint8_t bytes[4];
-    } float_bytes;
 
 /**
  * @brief CAN message for latitude and longitude GPS fields

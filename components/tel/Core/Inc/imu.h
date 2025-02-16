@@ -1,37 +1,44 @@
 /**
  *  @file imu.h
- *  @brief header file for imu.c. 
- * 
+ *  @brief Header file for IMU communication.
+ *
+ *  This file contains macros for IMU register addresses and function declarations
+ *  for interfacing with the IMU.
  */
 
-
-/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __IMU_H__
 #define __IMU_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#define IMU_ADDRESS (0x6B << 1)
+/* IMU I2C Address */
+#define IMU_ADDRESS (0x6B << 1)  ///< IMU I2C device address (shifted for STM32 HAL)
 
-#define OUTX_L_G 0x22 //Angular rate x-axis register address lower 8 bits
-#define OUTX_H_G 0x23 //Angular rate x-axis register address upper 8 bits
-#define OUTY_L_G 0x24 //Angular rate y-axis register address
-#define OUTY_H_G 0x25 //Angular rate y-axis register address
-#define OUTZ_L_G 0x26 //Angular rate z-axis register address
-#define OUTZ_H_G 0x27 //Angular rate z-axis register address
+/* Gyroscope Output Registers */
+#define OUTX_L_G  0x22 // Gyro X-axis (low byte)
+#define OUTY_L_G  0x24 // Gyro Y-axis (low byte)
+#define OUTZ_L_G  0x26 // Gyro Z-axis (low byte)
 
-#define OUTX_L_A 0x28 //Linear Acceleration x-axis register address lower 8 bits
-#define OUTX_H_A 0x29 //Linear Acceleration x-axis register address upper 8 bits
-#define OUTY_L_A 0x2A //Linear Acceleration y-axis register address
-#define OUTY_H_A 0x2B //Linear Acceleration y-axis register address
-#define OUTZ_L_A 0x2C //Linear Acceleration z-axis register address
-#define OUTZ_H_A 0x2D //Linear Acceleration z-axis register address
+/* Accelerometer Output Registers */
+#define OUTX_L_A  0x28 // Accel X-axis (low byte)
+#define OUTY_L_A  0x2A // Accel Y-axis (low byte)
+#define OUTZ_L_A  0x2C // Accel Z-axis (low byte)
 
-#define CTRL_1 0x10 //Address of CTRL1 register (Sets ODR for linear accel)
-#define CTRL_2 0x11 //Address of CTRL1 register (Sets ODR for angular rate)
+/* Control Registers */
+#define CTRL_1    0x10 // Control register for linear acceleration ODR
+#define CTRL_2    0x11 // Control register for angular rate ODR
+#define CTRL_6    0x15 // Control register for gyroscope full-scale range
+#define CTRL_8    0x17 // Control register for accelerometer full-scale range
 
-#define CTRL_8 0x17 //Address of CTRL8 register (Sets full scale range for linear accel)
-#define CTRL_6 0x15 //Address of CTRL6 register (Sets full scale range for angular rate)
+/**
+ * @brief Task function for getting IMU data and transmitting over CAN.
+ */
+void imu_task(void);
 
-void imu_task();
+#ifdef __cplusplus
+}
+#endif
 
-#endif /* __RADIO_H__ */
+#endif /* __IMU_H__ */
