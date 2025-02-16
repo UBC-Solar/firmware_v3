@@ -214,22 +214,24 @@ float volts2temp(uint16_t adc_voltage)
  * @param adc_voltage voltage reading from the batt_curr_sense pin
  * @param adc_reading adc reading from the batt_curr_sense pin, before being converted into a voltage reading
  * 
- * @return Current reading in amps
+ * @return Current reading in amps as int32_t
  */
 int32_t hass100s_voltagetocurrent(uint16_t adc_voltage, uint16_t adc_reading){
-  int16_t adc_error = -65.4 + 0.0104 * adc_reading + 105; // ADC error offset, see TODO LINK HERE DONT FORGET
+  int16_t adc_error = 105 - 61.1 + (0.0116 * adc_reading); // ADC error offset, see TODO LINK HERE DONT FORGET + note why the 105 is there because ECU's DMA is being goofy
   int16_t adc_volt_error = adc_error * ADC_VOLTAGE_SCALING * ADC_MAX_VOLT_READING/ADC_RESOLUTION; // Convert adc bits into voltage reading
+  
+  int16_t curr_adc_error = 51.1 + (-0.0239 * adc_reading); // Current sensor error as a function of adc bits, see TODO LINK HERE DONT FORGET
+  int16_t curr_volt_error = curr_adc_error * ADC_VOLTAGE_SCALING * ADC_MAX_VOLT_READING/ADC_RESOLUTION; // Convert adc bits into voltage reading
+
   adc_reading -= adc_error;
   adc_voltage -= adc_volt_error;
 
-  int16_t curr_adc_error = 91.6 - 0.04132 * adc_reading; // Apply current sensor error term in adc bits, see TODO LINK HERE DONT FORGET
-  int16_t curr_volt_error = curr_adc_error * ADC_VOLTAGE_SCALING * ADC_MAX_VOLT_READING/ADC_RESOLUTION; // Convert adc bits into voltage reading
-
   // TODO DELETE, if your seeing this just delete these 3 comments and push to main tbh
-  // TDOD DELETE Set ADC_pack_current_offset to 1811 mv? for default 0 reading since the pack_current_offset reading can't be trusted?
+  // TODO DELETE Set ADC_pack_current_offset to 1811 mv? for default 0 reading since the pack_current_offset reading can't be trusted?
   // TODO DELETE ecu_data.adc_data.ADC_pack_current_offset
   int32_t current_reading = (int32_t)100*(adc_voltage-curr_volt_error-1811)/0.625; //see HASS100-S datasheet 
 
+  // TODO DELETE
   printf(" - - - - - \r\n");
   printf("adc_reading_raw %d, adc_error %d, adc_voltage %d, current_reading %d, curr_adc_error %d, curr_volt_error %d, pack_current_offset %d\r\n", adc_reading, adc_error, adc_voltage, current_reading, curr_adc_error, curr_volt_error, ecu_data.adc_data.ADC_pack_current_offset); // TODO: delete when done testing
   printf(" - - - - - \r\n");
