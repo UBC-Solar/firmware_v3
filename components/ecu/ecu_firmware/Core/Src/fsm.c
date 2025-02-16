@@ -100,7 +100,7 @@ void FSM_reset()
     FSM_state = WAIT_FOR_BMS_POWERUP;
 
     ticks.last_generic_tick = HAL_GetTick();
-    printf("end of FSM reset \r\n");
+    printf("");//FSM reset \r\n");
     return;
 }
 
@@ -154,7 +154,7 @@ void BMS_ready()
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = HV_CONNECT;
     }
-    printf("end of BMS ready\r\n");
+    printf("");//BMS ready\r\n");
 
     return;
 }
@@ -244,7 +244,7 @@ void disable_MDU_DCH()
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = CHECK_LLIM;
     }
-    printf("end of MDU dch\r\n");
+    printf("");//MDU dch\r\n");
 
     return;
 }
@@ -274,7 +274,7 @@ void check_LLIM()
         FSM_state = WAIT_FOR_PC;
     }
 
-    printf("end of check LLIM\r\n");
+    printf("");//check LLIM\r\n");
 
     return;
 }
@@ -295,7 +295,7 @@ void PC_wait()
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = LLIM_CLOSED;
     }
-    printf("end of PC wait\r\n");
+    printf("");//PC wait\r\n");
 
     return;
 }
@@ -353,7 +353,7 @@ void check_HLIM()
         FSM_state = TELEM_ON;
     }
 
-    printf("end of check HLIM\r\n");
+    printf("");//check HLIM\r\n");
     return;
 }
 
@@ -372,7 +372,7 @@ void TELEM_on()
         FSM_state = MEM_ON;
     }
 
-    printf("end of TELEM on\r\n");
+    printf("");//TELEM on\r\n");
     return;
 }
 
@@ -391,7 +391,7 @@ void MEM_on()
         FSM_state = DASH_ON;
     }
 
-    printf("end of MEM on\r\n");
+    printf("");//MEM on\r\n");
     return;
 }
 
@@ -411,7 +411,7 @@ void DASH_on()
         FSM_state = MCB_ON;
     }
 
-    printf("end of DASH on\r\n");
+    printf("");//DASH on\r\n");
     return;
 }
 
@@ -431,7 +431,7 @@ void MCB_on()
         FSM_state = MDU_ON;
     }
 
-    printf("end of MCB on\r\n");
+    printf("");//MCB on\r\n");
 
     return;
 }
@@ -457,7 +457,7 @@ void MDU_on()
         FSM_state = AMB_ON;
     }
 
-    printf("end of MDU on\r\n");
+    printf("");//MDU on\r\n");
     return;
 }
 
@@ -478,7 +478,7 @@ void AMB_on()
         FSM_state = MONITORING;
     }
 
-    printf("end of AMB on \r\n");
+    printf("");//AMB on \r\n");
     return;
 }
 
@@ -582,7 +582,7 @@ void ECU_monitor()
  */
 void fault()
 {
-    printf("Fault Start\r\n");
+    //printf("Fault Start\r\n");
     /*************************
     Put Pack in Safe State
     **************************/
