@@ -7,7 +7,11 @@
   ******************************************************************************
   * @attention
   *
+<<<<<<< HEAD
+  * Copyright (c) 2025 STMicroelectronics.
+=======
   * Copyright (c) 2024 STMicroelectronics.
+>>>>>>> 3cdb5076d698d2dbbe5f634b47c7a58db6642306
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -34,11 +38,14 @@ extern "C" {
 
 extern I2C_HandleTypeDef hi2c1;
 
+extern I2C_HandleTypeDef hi2c2;
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
 void MX_I2C1_Init(void);
+void MX_I2C2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 

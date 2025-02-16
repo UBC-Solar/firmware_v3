@@ -50,6 +50,7 @@ void CAN_tasks_init();
 void CAN_cpu_load_can_tx();
 void CAN_tx_gps_data_msg(GPS* gps_data);
 
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
