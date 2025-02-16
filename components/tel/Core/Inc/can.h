@@ -50,10 +50,6 @@ void CAN_tasks_init();
 void CAN_cpu_load_can_tx();
 void CAN_tx_gps_data_msg(GPS* gps_data);
 
-void CAN_tx_ag_x_msg(float accel_x, float gyros_x);
-void CAN_tx_ag_y_msg(float accel_y, float gyro_y);
-void CAN_tx_ag_z_msg(float accel_z, float gyro_z);
-
 
 /* USER CODE END Prototypes */
 
