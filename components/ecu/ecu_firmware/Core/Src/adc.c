@@ -224,6 +224,7 @@ int32_t hass100s_voltagetocurrent(uint16_t adc_voltage, uint16_t adc_reading){
   int16_t curr_volt_error = curr_adc_error * ADC_VOLTAGE_SCALING * ADC_MAX_VOLT_READING/ADC_RESOLUTION; // Convert adc bits into voltage reading
 
   adc_reading -= adc_error;
+  int16_t raw_adc_reading = adc_reading + adc_error;
   adc_voltage -= adc_volt_error;
 
   // TODO DELETE, if your seeing this just delete these 3 comments and push to main tbh
@@ -233,7 +234,7 @@ int32_t hass100s_voltagetocurrent(uint16_t adc_voltage, uint16_t adc_reading){
 
   // TODO DELETE
   printf(" - - - - - \r\n");
-  printf("adc_reading_raw %d, adc_error %d, adc_voltage %d, current_reading %d, curr_adc_error %d, curr_volt_error %d, pack_current_offset %d\r\n", adc_reading, adc_error, adc_voltage, current_reading, curr_adc_error, curr_volt_error, ecu_data.adc_data.ADC_pack_current_offset); // TODO: delete when done testing
+  printf("adc_reading_raw %d, adc_error %d, adc_voltage %d, current_reading %d, curr_adc_error %d, curr_volt_error %d, pack_current_offset %d\r\n", raw_adc_reading, adc_error, adc_voltage, current_reading, curr_adc_error, curr_volt_error, ecu_data.adc_data.ADC_pack_current_offset); // TODO: delete when done testing
   printf(" - - - - - \r\n");
 
   return current_reading;   
