@@ -29,7 +29,8 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+extern int rts_reading;
+extern int lts_reading;
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN Private defines */

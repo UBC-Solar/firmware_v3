@@ -22,7 +22,8 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN 0 */
-
+int rts_reading;
+int lts_reading;
 /* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/
@@ -76,5 +77,24 @@ void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 2 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if((GPIO_Pin == RTS_IN_Pin) && (HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin) == GPIO_PIN_SET)) {
 
+    rts_reading = 1;
+
+  } else {
+
+    rts_reading = 0;
+  }
+
+  if((GPIO_Pin == LTS_IN_Pin) && (HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin) == GPIO_PIN_SET)) {
+
+    lts_reading = 1;
+    
+  } else {
+
+    lts_reading = 0;
+  }
+}
 /* USER CODE END 2 */
