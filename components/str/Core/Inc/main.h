@@ -57,6 +57,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define LTS_IN_Pin GPIO_PIN_0
+#define LTS_IN_GPIO_Port GPIOA
+#define RTS_IN_Pin GPIO_PIN_1
+#define RTS_IN_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 
