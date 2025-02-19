@@ -61,6 +61,8 @@ void Error_Handler(void);
 #define LTS_IN_GPIO_Port GPIOA
 #define RTS_IN_Pin GPIO_PIN_1
 #define RTS_IN_GPIO_Port GPIOA
+#define DEBUG_Pin GPIO_PIN_6
+#define DEBUG_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 
