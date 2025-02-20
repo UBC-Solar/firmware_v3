@@ -230,11 +230,7 @@ void IMU_task(void *argument)
 {
   /* USER CODE BEGIN IMU_task */
   /* Infinite loop */
-//   for(;;)
-//   {
-//     osDelay(1);
-//   }
-    imu_task();
+  imu_task();
   /* USER CODE END IMU_task */
 }
 
