@@ -57,7 +57,7 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PAPin PAPin */
   GPIO_InitStruct.Pin = LTS_IN_Pin|RTS_IN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -81,7 +81,7 @@ void MX_GPIO_Init(void)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 
-  if((GPIO_Pin == RTS_IN_Pin) && (HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin) == GPIO_PIN_SET)) {
+  if((GPIO_Pin == RTS_IN_Pin) && (HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin) == GPIO_PIN_RESET)) {
 
     g_rts_reading = 1;
 
@@ -90,7 +90,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     g_rts_reading = 0;
   }
 
-  if((GPIO_Pin == LTS_IN_Pin) && (HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin) == GPIO_PIN_SET)) {
+  if((GPIO_Pin == LTS_IN_Pin) && (HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin) == GPIO_PIN_RESET)) {
 
     g_lts_reading = 1;
     
