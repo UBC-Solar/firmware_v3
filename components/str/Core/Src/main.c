@@ -105,8 +105,6 @@ int main(void)
 	  // HAL_GPIO_TogglePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin);
 	  // HAL_Delay(500);
 
-    HAL_GPIO_EXTI_Callback(GPIO_Pin);
-
     CAN_tx_turn_signal_msg(rts_reading, lts_reading);
 
     /* USER CODE END WHILE */
