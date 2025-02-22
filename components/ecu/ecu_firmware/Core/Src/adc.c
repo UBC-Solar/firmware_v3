@@ -112,9 +112,8 @@ void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float resul
   {
     for(int channel = 0; channel < ADC1_NUM_ANALOG_CHANNELS; channel++)
     {
-      // adc1_buf is organized as [supp batt x 200 ... motor curr x 200 ... array curr x 200] ... TODO (no it isn't) - Chris
+      // adc1_buf is organized as [supp batt x 200 ... motor curr x 200 ... array curr x 200]
       // when sampling at 100Hz (not sure if that 100Hz number is correct)
-      if (channel == PACK_CURRENT_SENSE__ADC1_IN14 && sample_num%15==0) printf("adc1_buf[%d] = %f\r\n", ADC1_NUM_ANALOG_CHANNELS * sample_num + channel, (float)adc1_buf[ADC1_NUM_ANALOG_CHANNELS * sample_num + channel]);
       sum[channel] += (float)adc1_buf[ADC1_NUM_ANALOG_CHANNELS * sample_num + channel];
     }
   }
