@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "cmsis_os.h"
+#include "bitops.h"
+#include "radio.h"
 
 /* Define the CAN message length for IMU messages */
 #define IMU_CAN_MESSAGE_LENGTH 8
@@ -13,6 +15,10 @@
 #define IMU_AG_X_CAN_MESSAGE_ID 0x752
 #define IMU_AG_Y_CAN_MESSAGE_ID 0x753
 #define IMU_AG_Z_CAN_MESSAGE_ID 0x754
+
+/* Define the multiplication factors as per the datasheet table 3: https://www.st.com/resource/en/datasheet/lsm6dsv16x.pdf" */
+#define ACCEL_FS_MULTIPLIER_8G 0.244
+#define GYRO_FS_MULTIPLIER_250D 8.75
 
 //Struct for the IMU data
 typedef struct {
@@ -49,11 +55,6 @@ static CAN_TxHeaderTypeDef imu_ag_z = {
     .DLC   = IMU_CAN_MESSAGE_LENGTH
 };
 
-/* A union for converting between float and a 4-byte array */
-static union {
-    float value;
-    int8_t bytes[4];
-} float_bytes;
 
 /**
  * @brief Sends the combined accel_x and gyro_x values over CAN.
@@ -62,22 +63,25 @@ static union {
  */
 static void CAN_tx_ag_x_msg(float accel_x, float gyro_x)
 {
-    float_bytes.value = accel_x;
+	FloatToBytes float_bytes_x;
+    float_bytes_x.f = accel_x;
     CAN_comms_Tx_msg_t msg = { .header = imu_ag_x };
 
     for (int i = 0; i < 4; i++)
     {
-        msg.data[i] = float_bytes.bytes[i];
+        msg.data[i] = float_bytes_x.bytes[i];
     }
 
-    float_bytes.value = gyro_x;
+    float_bytes_x.f = gyro_x;
     for (int i = 0; i < 4; i++)
     {
-        msg.data[i + 4] = float_bytes.bytes[i];
+        msg.data[i + 4] = float_bytes_x.bytes[i];
     }
 
     CAN_comms_Add_Tx_message(&msg);
+    osDelay(2);
     RADIO_filter_and_queue_msg_tx(&msg);
+    osDelay(2);
 }
 
 /**
@@ -87,22 +91,25 @@ static void CAN_tx_ag_x_msg(float accel_x, float gyro_x)
  */
 static void CAN_tx_ag_y_msg(float accel_y, float gyro_y)
 {
-    float_bytes.value = accel_y;
+	FloatToBytes float_bytes_y;
+    float_bytes_y.f = accel_y;
     CAN_comms_Tx_msg_t msg = { .header = imu_ag_y };
 
     for (int i = 0; i < 4; i++)
     {
-        msg.data[i] = float_bytes.bytes[i];
+        msg.data[i] = float_bytes_y.bytes[i];
     }
 
-    float_bytes.value = gyro_y;
+    float_bytes_y.f = gyro_y;
     for (int i = 0; i < 4; i++)
     {
-        msg.data[i + 4] = float_bytes.bytes[i];
+        msg.data[i + 4] = float_bytes_y.bytes[i];
     }
 
     CAN_comms_Add_Tx_message(&msg);
+    osDelay(2);
     RADIO_filter_and_queue_msg_tx(&msg);
+    osDelay(2);
 }
 
 /**
@@ -113,22 +120,25 @@ static void CAN_tx_ag_y_msg(float accel_y, float gyro_y)
  */
 static void CAN_tx_ag_z_msg(float accel_z, float gyro_z)
 {
-    float_bytes.value = accel_z;
+	FloatToBytes float_bytes_z;
+    float_bytes_z.f = accel_z;
     CAN_comms_Tx_msg_t msg = { .header = imu_ag_z };
 
     for (int i = 0; i < 4; i++)
     {
-        msg.data[i] = float_bytes.bytes[i];
+        msg.data[i] = float_bytes_z.bytes[i];
     }
 
-    float_bytes.value = gyro_z;
+    float_bytes_z.f = gyro_z;
     for (int i = 0; i < 4; i++)
     {
-        msg.data[i + 4] = float_bytes.bytes[i];
+        msg.data[i + 4] = float_bytes_z.bytes[i];
     }
 
     CAN_comms_Add_Tx_message(&msg);
+    osDelay(2);
     RADIO_filter_and_queue_msg_tx(&msg);
+    osDelay(2);
 }
 
 
@@ -165,12 +175,12 @@ void imu_task()
 {
 	//Writing to CTRL_1 register, sets ODR to 30 Hz in normal mode and the range to +-8g in CTRL_8 register
     if(write_imu_register(CTRL_1, 0x74) != HAL_OK || write_imu_register(CTRL_8, 0x02) != HAL_OK){
-    	return 0;
+    	return;
     }
 
     //Writing to CTRL_2 register, sets ODR to 30 Hz in low power mode and the scale to +- 250 dps in CTRL_6 register
     if(write_imu_register(CTRL_2, 0x54) != HAL_OK || write_imu_register(CTRL_6, 0x01) != HAL_OK){
-        return 0;
+        return;
     }
 
     for (;;)
@@ -183,9 +193,9 @@ void imu_task()
     	int16_t Accel_Z_RAW = read_imu_register(OUTZ_L_A);
 
     	//Converting raw values to mg according to datasheet, where mg=9.81 * 10^-3 m/s^2.
-    	imu_data.accelx = (float)Accel_X_RAW * 0.244; // Convert to mg
-    	imu_data.accely = (float)Accel_Y_RAW * 0.244; // Convert to mg
-    	imu_data.accelz = (float)Accel_Z_RAW * 0.244; // Convert to mg
+    	imu_data.accelx = (float)Accel_X_RAW * ACCEL_FS_MULTIPLIER_8G; // Convert to mg
+    	imu_data.accely = (float)Accel_Y_RAW * ACCEL_FS_MULTIPLIER_8G; // Convert to mg
+    	imu_data.accelz = (float)Accel_Z_RAW * ACCEL_FS_MULTIPLIER_8G; // Convert to mg
 
     	//Reading Gyroscopic data
     	int16_t Gyro_X_RAW = read_imu_register(OUTX_L_G);
@@ -193,9 +203,9 @@ void imu_task()
 		int16_t Gyro_Z_RAW = read_imu_register(OUTZ_L_G);
 
 		//Converting raw values to milli degrees per sec (mdps) according to datasheet.
-		imu_data.gyrox = (float)Gyro_X_RAW * 8.75; // Convert to mdps
-		imu_data.gyroy = (float)Gyro_Y_RAW * 8.75; // Convert to mdps
-		imu_data.gyroz = (float)Gyro_Z_RAW * 8.75; // Convert to mdps
+		imu_data.gyrox = (float)Gyro_X_RAW * GYRO_FS_MULTIPLIER_250D; // Convert to mdps
+		imu_data.gyroy = (float)Gyro_Y_RAW * GYRO_FS_MULTIPLIER_250D; // Convert to mdps
+		imu_data.gyroz = (float)Gyro_Z_RAW * GYRO_FS_MULTIPLIER_250D; // Convert to mdps
 
 		//Sending message over to the CAN bus
 		osDelay(3);
