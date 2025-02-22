@@ -489,7 +489,7 @@ static void MX_TIM3_Init(void)
   /* USER CODE END TIM3_Init 0 */
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0}; 
 
   /* USER CODE BEGIN TIM3_Init 1 */
 
