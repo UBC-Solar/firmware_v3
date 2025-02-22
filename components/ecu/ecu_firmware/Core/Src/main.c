@@ -177,6 +177,8 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+    current_time = HAL_GetTick();
+
     if (current_time - last_blink_time >= DEBUG_LED_BLINK_INTERVAL)
     {
       HAL_GPIO_TogglePin(LED_OUT_GPIO_Port, LED_OUT_Pin);
