@@ -330,7 +330,7 @@ void CAN_cpu_load_can_tx(){
 
 union {
 	float value;
-	int8_t bytes[4];
+	uint8_t bytes[4];
 }float_bytes;
 
 /**
