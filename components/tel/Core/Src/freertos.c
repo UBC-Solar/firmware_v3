@@ -231,6 +231,7 @@ void IMU_task(void *argument)
   /* USER CODE BEGIN IMU_task */
   /* Infinite loop */
     imu_task();
+  imu_task();
   /* USER CODE END IMU_task */
 }
 
