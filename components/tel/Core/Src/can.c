@@ -327,10 +327,11 @@ void CAN_cpu_load_can_tx(){
   
   CAN_comms_Add_Tx_message(&CPU_LOAD_can_tx);
 }
+
 union {
-      float value;
-      uint8_t bytes[4];
-    } float_bytes;
+	float value;
+	uint8_t bytes[4];
+}float_bytes;
 
 /**
  * @brief CAN message for latitude and longitude GPS fields
