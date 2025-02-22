@@ -21,6 +21,11 @@
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
+#include "CAN_comms.h"
+#include "external_lights.h"
+
+void CAN_filter_init(CAN_FilterTypeDef* can_filter);
+
 
 /* USER CODE END 0 */
 
@@ -126,5 +131,61 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+
+/**
+ * @brief Allows all messages to be received
+ */
+
+void CAN_filter_init(CAN_FilterTypeDef* can_filter)
+{
+    /* TODO: Review Filter Implementation */
+    // Change Filter to only get STR messages (or any other messages to DRD)
+
+    can_filter->FilterIdHigh = 0x0000;
+    can_filter->FilterMaskIdHigh = 0x0000;
+
+    can_filter->FilterIdLow = 0x0000;
+    can_filter->FilterMaskIdLow = 0x0000;
+
+    can_filter->FilterFIFOAssignment = CAN_FILTER_FIFO0;
+    can_filter->FilterBank = (uint32_t) 0;
+    can_filter->FilterMode = CAN_FILTERMODE_IDMASK;
+    can_filter->FilterScale = CAN_FILTERSCALE_16BIT;
+    can_filter->FilterActivation = CAN_FILTER_ENABLE;
+}
+
+
+/**
+ * @brief Initializes the CAN filter and CAN Rx callback function as CAN_comms_Rx_callback().
+ *
+ * Note: This uses the CAN_comms abstraction layer which will initialize two freeRTOS tasks. As a result it is recommend to
+ * Call this function inside the MX_FREERTOS_Init() function in freertos.c
+ */
+void CAN_tasks_init()
+{
+    CAN_comms_config_t CAN_comms_config_tel = {0};
+
+    CAN_FilterTypeDef CAN_filter = {0};
+    CAN_filter_init(&CAN_filter);
+
+    CAN_comms_config_tel.hcan = &hcan;
+    CAN_comms_config_tel.CAN_Filter = CAN_filter;
+    CAN_comms_config_tel.CAN_comms_Rx_callback = CAN_comms_Rx_callback;
+
+    CAN_comms_init(&CAN_comms_config_tel);
+}
+
+
+
+
+void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
+{
+
+	//Todo: handle parsing rx messages
+
+	Lights_turn_signal_t signal = TURN_SIGNAL_OFF; //get signal from RX message wants format is decided
+	External_Lights_set_turn_signals(signal);
+}
 
 /* USER CODE END 1 */

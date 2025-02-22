@@ -25,10 +25,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "can.h"
+#include "external_lights.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
+typedef StaticTask_t osStaticThreadDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -54,11 +56,16 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for myTask02 */
-osThreadId_t myTask02Handle;
-const osThreadAttr_t myTask02_attributes = {
-  .name = "myTask02",
-  .stack_size = 128 * 4,
+/* Definitions for ExternalLights_ */
+osThreadId_t ExternalLights_Handle;
+uint32_t ExternalLights_Buffer[ 256 ];
+osStaticThreadDef_t ExternalLights_ControlBlock;
+const osThreadAttr_t ExternalLights__attributes = {
+  .name = "ExternalLights_",
+  .cb_mem = &ExternalLights_ControlBlock,
+  .cb_size = sizeof(ExternalLights_ControlBlock),
+  .stack_mem = &ExternalLights_Buffer[0],
+  .stack_size = sizeof(ExternalLights_Buffer),
   .priority = (osPriority_t) osPriorityLow,
 };
 
@@ -68,7 +75,7 @@ const osThreadAttr_t myTask02_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-void StartTask02(void *argument);
+void ExternalLights_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -79,7 +86,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-
+	CAN_tasks_init();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -102,8 +109,8 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* creation of myTask02 */
-  myTask02Handle = osThreadNew(StartTask02, NULL, &myTask02_attributes);
+  /* creation of ExternalLights_ */
+  ExternalLights_Handle = osThreadNew(ExternalLights_task, NULL, &ExternalLights__attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -133,22 +140,24 @@ void StartDefaultTask(void *argument)
   /* USER CODE END StartDefaultTask */
 }
 
-/* USER CODE BEGIN Header_StartTask02 */
+/* USER CODE BEGIN Header_ExternalLights_task */
 /**
-* @brief Function implementing the myTask02 thread.
+* @brief Function implementing the ExternalLights_ thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartTask02 */
-void StartTask02(void *argument)
+/* USER CODE END Header_ExternalLights_task */
+void ExternalLights_task(void *argument)
 {
-  /* USER CODE BEGIN StartTask02 */
+  /* USER CODE BEGIN ExternalLights_task */
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	  ExternalLights_state_machine();
+	  osDelay(LIGHTS_STATE_MACHINE_DELAY);
+
   }
-  /* USER CODE END StartTask02 */
+  /* USER CODE END ExternalLights_task */
 }
 
 /* Private application code --------------------------------------------------*/
