@@ -16,7 +16,6 @@
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
 float volts2temp(uint16_t adc_voltage);
-int32_t hass100s_voltagetocurrent(uint16_t adc_voltage, uint16_t adc_reading);
 /*============================================================================*/
 /* PUBLIC FUNCTIONS */
 
@@ -60,7 +59,7 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
     break;
   
   case PACK_CURRENT_SENSE__ADC1_IN14: // Pack current sense (mA)
-    ecu_data.adc_data.ADC_pack_current = hass100s_voltagetocurrent(adc_voltage, (uint16_t)adc_reading);
+    ecu_data.adc_data.ADC_pack_current = (int32_t)(HASS100S_STD_DEV + HASS100S_INTERNAL_OFFSET + 100*(adc_voltage - HASS100S_VOLTAGE_OFFSET - ecu_data.adc_data.ADC_pack_current_offset) / 0.625); //see HASS100-S datasheet     
     break;
 
   case T_AMBIENT_SENSE__ADC1_IN15: // Ambient controlboard temperature (deg C)
@@ -206,36 +205,4 @@ float volts2temp(uint16_t adc_voltage)
   temp_kelvin = (beta * room_temp) / (beta + (room_temp * logf(R_therm / R_room_temp)));
   
   return temp_kelvin - 273.15;
-}
-
-/**
- * @brief Converts the raw ADC reading from the batt_curr_sense pin into the current observation of the sensor, while applying error terms to get a more accurate result
- * 
- * @param adc_voltage voltage reading from the batt_curr_sense pin
- * @param adc_reading adc reading from the batt_curr_sense pin, before being converted into a voltage reading
- * 
- * @return Current reading in amps as int32_t
- */
-int32_t hass100s_voltagetocurrent(uint16_t adc_voltage, uint16_t adc_reading){
-  int16_t adc_error = 105 - 61.1 + (0.0116 * adc_reading); // ADC error offset, see TODO LINK HERE DONT FORGET + note why the 105 is there because ECU's DMA is being goofy
-  int16_t adc_volt_error = adc_error * ADC_VOLTAGE_SCALING * ADC_MAX_VOLT_READING/ADC_RESOLUTION; // Convert adc bits into voltage reading
-  
-  int16_t curr_adc_error = 51.1 + (-0.0239 * adc_reading); // Current sensor error as a function of adc bits, see TODO LINK HERE DONT FORGET
-  int16_t curr_volt_error = curr_adc_error * ADC_VOLTAGE_SCALING * ADC_MAX_VOLT_READING/ADC_RESOLUTION; // Convert adc bits into voltage reading
-
-  adc_reading -= adc_error;
-  int16_t raw_adc_reading = adc_reading + adc_error;
-  adc_voltage -= adc_volt_error;
-
-  // TODO DELETE, if your seeing this just delete these 3 comments and push to main tbh
-  // TODO DELETE Set ADC_pack_current_offset to 1811 mv? for default 0 reading since the pack_current_offset reading can't be trusted?
-  // TODO DELETE ecu_data.adc_data.ADC_pack_current_offset
-  int32_t current_reading = (int32_t)100*(adc_voltage-curr_volt_error-1811)/0.625; //see HASS100-S datasheet 
-
-  // TODO DELETE
-  printf(" - - - - - \r\n");
-  printf("adc_reading_raw %d, adc_error %d, adc_voltage %d, current_reading %d, curr_adc_error %d, curr_volt_error %d, pack_current_offset %d\r\n", raw_adc_reading, adc_error, adc_voltage, current_reading, curr_adc_error, curr_volt_error, ecu_data.adc_data.ADC_pack_current_offset); // TODO: delete when done testing
-  printf(" - - - - - \r\n");
-
-  return current_reading;   
 }

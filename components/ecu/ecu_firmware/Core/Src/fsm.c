@@ -492,7 +492,7 @@ void AMB_on()
 void ECU_monitor()
 {
 
-    printf("Monitoring Start\r\n");
+    //printf("Monitoring Start\r\n");
     startup_complete = true; // Indicates all LV boards are up
 
     // Additional ESTOP check to catch case where ESTOP is pressed during startup (see note in fault state)
@@ -565,6 +565,7 @@ void ECU_monitor()
     if (timer_check(MESSAGE_INTERVAL_0X450, &(ticks.last_generic_tick) ))
     {
         CAN_SendMessage450();
+        printf("CAN sent\r\n");
     }
 
     /*************************
