@@ -21,12 +21,15 @@
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
-
+static int fail_count = 0;
 /* PRIVATE INCLUDES */
 #define TURN_SIGNAL_CAN_DATA_LENGTH 1
 
 #define TURN_SIGNAL_MSG_ID  0x400
 
+/**
+ * @brief CAN message headers for STR
+ */
 CAN_TxHeaderTypeDef turn_signal = {
     .StdId = TURN_SIGNAL_MSG_ID,
     .ExtId = 0x0000,
@@ -37,6 +40,7 @@ CAN_TxHeaderTypeDef turn_signal = {
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
+CAN_FilterTypeDef can_filter;
 
 /* CAN init function */
 void MX_CAN_Init(void)
@@ -66,7 +70,8 @@ void MX_CAN_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN_Init 2 */
-
+  HAL_CAN_ConfigFilter(&hcan, &can_filter);
+  HAL_CAN_Start(&hcan);
   /* USER CODE END CAN_Init 2 */
 
 }
@@ -130,12 +135,45 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
+/**
+ * @brief Allows all messages to be received
+ */
+void CAN_filter_init()
+{
+    /* TODO: Review Filter Implementation */
+    // Use mask and list mode to filter IDs from the CAN ID BOM
+
+    CAN_FilterTypeDef can_filter = {0};
+
+    can_filter.FilterIdHigh = 0x0000;
+    can_filter.FilterMaskIdHigh = 0x0000;
+
+    can_filter.FilterIdLow = 0x0000;
+    can_filter.FilterMaskIdLow = 0x0000;
+
+    can_filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+    can_filter.FilterBank = (uint32_t) 0;
+    can_filter.FilterMode = CAN_FILTERMODE_IDMASK;
+    can_filter.FilterScale = CAN_FILTERSCALE_16BIT;
+    can_filter.FilterActivation = CAN_FILTER_ENABLE;
+}
+
+/**
+ * @brief CAN message for true/false of the RTS_IN and LTS_IN pins
+ * 
+ * Packages the two variables into a one byte CAN message
+ */
 void CAN_tx_turn_signal_msg(int rts_reading, int lts_reading) {
 
-  uint8_t turn_signal_reading = ((rts_reading << 1) | (lts_reading));
+  uint8_t turn_signal_reading[1];
+  turn_signal_reading[0] = ((rts_reading << 1) | (lts_reading));
 
   uint32_t mailbox;
 
-  HAL_CAN_AddTxMessage(&hcan, &turn_signal, &turn_signal_reading, &mailbox);
+  // if(HAL_OK != HAL_CAN_AddTxMessage(&hcan, &turn_signal, turn_signal_reading, &mailbox)) {
+  //   fail_count++;
+  // }
+
+  HAL_CAN_AddTxMessage(&hcan, &turn_signal, turn_signal_reading, &mailbox);
 }
 /* USER CODE END 1 */

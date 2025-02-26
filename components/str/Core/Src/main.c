@@ -77,7 +77,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -107,6 +107,10 @@ int main(void)
       CAN_tx_turn_signal_msg(g_rts_reading, g_lts_reading);
       g_reading_status = 0;
     }
+
+    // CAN_tx_turn_signal_msg(1, 1);
+    // HAL_Delay(200);
+    
   }
   /* USER CODE END 3 */
 }

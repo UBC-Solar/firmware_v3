@@ -22,8 +22,8 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN 0 */
-volatile int g_rts_reading;
-volatile int g_lts_reading;
+volatile int g_rts_reading = 0;
+volatile int g_lts_reading = 0;
 volatile int g_reading_status;
 /* USER CODE END 0 */
 
@@ -78,6 +78,10 @@ void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 2 */
+/**
+ * @brief Interrupt checking whether the RTS or LTS pin has been switched and sets a reading variable to true
+ * @param GPIO_PIN is the pin that contains the RTS and LTS pins
+ */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 
