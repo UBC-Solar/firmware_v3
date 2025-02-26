@@ -21,7 +21,7 @@
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
-static int fail_count = 0;
+
 /* PRIVATE INCLUDES */
 #define TURN_SIGNAL_CAN_DATA_LENGTH 1
 
@@ -37,10 +37,11 @@ CAN_TxHeaderTypeDef turn_signal = {
     .RTR = CAN_RTR_DATA,
     .DLC = TURN_SIGNAL_CAN_DATA_LENGTH};
 
+CAN_FilterTypeDef can_filter;
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
-CAN_FilterTypeDef can_filter;
 
 /* CAN init function */
 void MX_CAN_Init(void)
