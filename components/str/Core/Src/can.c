@@ -170,10 +170,6 @@ void CAN_tx_turn_signal_msg(int rts_reading, int lts_reading) {
 
   uint32_t mailbox;
 
-  // if(HAL_OK != HAL_CAN_AddTxMessage(&hcan, &turn_signal, turn_signal_reading, &mailbox)) {
-  //   fail_count++;
-  // }
-
   HAL_CAN_AddTxMessage(&hcan, &turn_signal, turn_signal_reading, &mailbox);
 }
 /* USER CODE END 1 */
