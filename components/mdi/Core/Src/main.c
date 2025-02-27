@@ -49,8 +49,8 @@
 
 /* USER CODE BEGIN PV */
 
+MDI_motor_command_t g_MDI_motor_command = {0};
 bool g_motor_command_received = false;
-
 uint32_t g_last_command_time = 0;
 
 /* USER CODE END PV */
@@ -106,30 +106,25 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-
-  // Set the DACs to 0 in the beginning
-  MDI_set_DAC_voltage(ACCEL_DAC, 0);
-  MDI_set_DAC_voltage(REGEN_DAC, 0);
+  // Make sure we set DACs to 0 for redundancy.
+  MDI_stop();
 
   // Set reset timeout to the current time
   g_last_command_time = HAL_GetTick();
 
   while (1)
   {
-
-    // If MDI hasn't received a CAN message for MAX_TIMEOUT_VALUE, set accel and regen DACs to 0 for safety
+    // If MDI hasn't received a CAN message for MAX_TIMEOUT_VALUE, stop MDI for safety
     if(g_last_command_time + MAX_TIMEOUT_VALUE > HAL_GetTick())
     {
-      MDI_set_DAC_voltage(ACCEL_DAC, 0);
-      MDI_set_DAC_voltage(REGEN_DAC, 0);
+      MDI_stop();
     }
-
 
     // Wait until motor command is received over CAN
     if(g_motor_command_received == true)
     {
-      // Set DACs
-      MDI_set_DACs();
+      // Set motor command
+      MDI_set_motor_command(&g_MDI_motor_command);
 
       // Reset timeout
       g_last_command_time = HAL_GetTick();
@@ -189,10 +184,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   {
     if(CAN_Rx_header.IDE == DRD_MOTOR_COMMAND_CAN_ID)
     {
-      // Set flag
-      g_motor_command_received = true;
+      // Parse motor command and update the global MDI motor command variable
+      MDI_parse_motor_command(CAN_Rx_data, &g_MDI_motor_command);
 
-      MDI_parse_motor_command(CAN_Rx_data);
+      // Set motor command received flag to true
+      g_motor_command_received = true;
     }
   }
   else

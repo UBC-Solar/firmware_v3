@@ -7,12 +7,12 @@
  * @attention See datasheets for the DRD and Mitsuba for full breakdown
  */
 
+
+#include <stdbool.h>
 #include "mdi.h"
 #include "i2c.h"
+#include "gpio.h"
 
-// Private Variables
-uint16_t g_accel_DAC_value = 0;
-uint16_t g_regen_DAC_value = 0;
 
 /**
  * @brief Sets the voltage of an individual DAC
@@ -30,7 +30,7 @@ void MDI_set_DAC_voltage(motor_DAC_addr_t DAC_addr, uint16_t voltage_value)
     i2c_buffer[0] = voltage_value >> 8;
     i2c_buffer[1] = voltage_value;
 
-    // TODO: Replace blocking call HAL_MAX_DELAY
+    // TODO: Replace blocking call
     HAL_I2C_Master_Transmit(&hi2c2, DAC_addr, i2c_buffer, sizeof(i2c_buffer), HAL_MAX_DELAY);
 }
 
@@ -39,11 +39,15 @@ void MDI_set_DAC_voltage(motor_DAC_addr_t DAC_addr, uint16_t voltage_value)
  * @brief Sets the DAC voltages based on the global accel and regen DAC values
  * @note Must call MDI_parse_motor_command() to set the global accel and regen DAC values
  */
-void MDI_set_DACs()
+void MDI_set_motor_command(MDI_motor_command_t* MDI_motor_command)
 {
-    MDI_set_DAC_voltage(ACCEL_DAC, g_accel_DAC_value);
-    MDI_set_DAC_voltage(REGEN_DAC, g_regen_DAC_value);
+    MDI_set_DAC_voltage(ACCEL_DAC, MDI_motor_command->accel_DAC_value);
+    MDI_set_DAC_voltage(REGEN_DAC, MDI_motor_command->regen_DAC_value);
+
+    HAL_GPIO_WritePin(DIR_GPIO_Port, DIR_Pin, MDI_motor_command->direction_value);
+    HAL_GPIO_WritePin(DIR_GPIO_Port, DIR_Pin, MDI_motor_command->eco_mode_value);
 }
+
 
 /**
  * @brief Sets the global accel and regen DAC values based on the input buffer
@@ -51,16 +55,38 @@ void MDI_set_DACs()
  * @param buffer Input CAN buffer
  * 
  * @note This function is designed to be called in the CAN Rx ISR and only parses and updates the global variables.
- * Call MDI_set_DACs() after ISR to set the DAC values
+ * Call MDI_set_motor_command() after ISR to set the DAC values
  */
-void MDI_parse_motor_command(uint8_t* buffer)
+void MDI_parse_motor_command(uint8_t* buffer, MDI_motor_command_t* MDI_motor_command)
 {
-    g_accel_DAC_value = 0;
-    g_regen_DAC_value = 0;
+    // Reset to 0
+    MDI_motor_command->accel_DAC_value = 0;
+    MDI_motor_command->regen_DAC_value = 0;
 
-    g_accel_DAC_value |= buffer[0];
-    g_accel_DAC_value |= buffer[1] << 8;
+    // Populate accel and regen DAC values
+    MDI_motor_command->accel_DAC_value |= buffer[0];
+    MDI_motor_command->accel_DAC_value |= buffer[1] << 8;
 
-    g_regen_DAC_value |= buffer[2];
-    g_regen_DAC_value |= buffer[3] << 8;
+    MDI_motor_command->regen_DAC_value |= buffer[2];
+    MDI_motor_command->regen_DAC_value |= buffer[3] << 8;
+
+    // Set direction and eco mode values
+    MDI_motor_command->direction_value = IS_BIT_SET(buffer[4], 0);
+    MDI_motor_command->eco_mode_value = IS_BIT_SET(buffer[4], 1);
+}
+
+/**
+ * @brief Sets the inputs to the MDU to the default values for safety.
+ * Both DACs are set to 0. Direction is forward and eco mode is turned on
+ * 
+ */
+void MDI_stop()
+{
+    MDI_motor_command_t MDI_motor_command;
+    MDI_motor_command.accel_DAC_value = 0;
+    MDI_motor_command.regen_DAC_value = 0;
+    MDI_motor_command.direction_value = 1;
+    MDI_motor_command.eco_mode_value = 0;
+
+    MDI_set_motor_command(&MDI_motor_command);
 }
