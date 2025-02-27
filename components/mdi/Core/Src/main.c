@@ -18,13 +18,15 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
 #include "can.h"
 #include "i2c.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include <stdbool.h>
+#include "mdi.h"
 
 /* USER CODE END Includes */
 
@@ -47,11 +49,14 @@
 
 /* USER CODE BEGIN PV */
 
+bool g_motor_command_received = false;
+
+uint32_t g_last_command_time = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -95,23 +100,41 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   HAL_CAN_Start(&hcan);
+
   /* USER CODE END 2 */
-
-  /* Init scheduler */
-  osKernelInitialize();
-
-  /* Call init function for freertos objects (in cmsis_os2.c) */
-  MX_FREERTOS_Init();
-
-  /* Start scheduler */
-  osKernelStart();
-
-  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+
+  // Set the DACs to 0 in the beginning
+  MDI_set_DAC_voltage(ACCEL_DAC, 0);
+  MDI_set_DAC_voltage(REGEN_DAC, 0);
+
+  // Set reset timeout to the current time
+  g_last_command_time = HAL_GetTick();
+
   while (1)
   {
+
+    // If MDI hasn't received a CAN message for MAX_TIMEOUT_VALUE, set accel and regen DACs to 0 for safety
+    if(g_last_command_time + MAX_TIMEOUT_VALUE > HAL_GetTick())
+    {
+      MDI_set_DAC_voltage(ACCEL_DAC, 0);
+      MDI_set_DAC_voltage(REGEN_DAC, 0);
+    }
+
+
+    // Wait until motor command is received over CAN
+    if(g_motor_command_received == true)
+    {
+      // Set DACs
+      MDI_set_DACs();
+
+      // Reset timeout
+      g_last_command_time = HAL_GetTick();
+    }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -156,6 +179,27 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  uint8_t CAN_Rx_data[8] = {0};
+  CAN_RxHeaderTypeDef CAN_Rx_header;
+
+  if(HAL_OK == HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &CAN_Rx_header, CAN_Rx_data))
+  {
+    if(CAN_Rx_header.IDE == DRD_MOTOR_COMMAND_CAN_ID)
+    {
+      // Set flag
+      g_motor_command_received = true;
+
+      MDI_parse_motor_command(CAN_Rx_data);
+    }
+  }
+  else
+  {
+    // TODO: Error handling
+  }
+}
 
 /* USER CODE END 4 */
 
