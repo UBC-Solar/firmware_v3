@@ -13,9 +13,9 @@
 #include "CAN_comms.h"
 
 /*	Symbolic Constants	*/
-#define LIGHTS_STATE_MACHINE_DELAY 50
-#define LIGHTS_STATE_PERIOD 1000 //lights are on or off for 1 second at a time
-#define LIGHTS_FLIP_COUNT  LIGHTS_STATE_PERIOD/LIGHTS_STATE_MACHINE_DELAY
+#define LIGHTS_STATE_MACHINE_DELAY 		50
+#define LIGHTS_STATE_PERIOD 			1000 //lights are on or off for 1 second at a time
+#define LIGHTS_FLIP_COUNT  				(LIGHTS_STATE_PERIOD)/(LIGHTS_STATE_MACHINE_DELAY)
 
 
 /*	Typedefs 	*/
