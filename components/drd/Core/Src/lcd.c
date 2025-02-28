@@ -280,13 +280,13 @@ void LCD_display_speed(uint32_t speed, int units)
     /* Draw the speed units */
     switch (units) {
         case KPH:
-            old_bb_speed_units = draw_text("kph", old_bb_speed.x2 + SPEED_SPACING, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+            old_bb_speed_units = draw_text("kph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
             break;
-        case MPH:
-            old_bb_speed_units = draw_text("mph", old_bb_speed.x2 + SPEED_SPACING, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+            case MPH:
+            old_bb_speed_units = draw_text("mph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
             break;
         default:
-            old_bb_speed_units = draw_text("xxx", old_bb_speed.x2 + SPEED_SPACING, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+            old_bb_speed_units = draw_text("xxx", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
             break;
     }
     lcd_refresh();
@@ -337,7 +337,10 @@ void LCD_display_SOC(uint32_t soc)
         sprintf(soc_str, "%02lu", (unsigned long)soc);
         bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
     }
-    old_bb_soc = draw_char(SOC_UNITS, bb.x2 + 2, SOC_Y, SOC_UNITS_FONT);
+
+    UNUSED(bb);     // remove warnigin
+
+    old_bb_soc = draw_char(SOC_UNITS, SOC_X + 2 * WIDEST_NUM_LEN_VERDANA16 + 2, SOC_Y, SOC_UNITS_FONT);
     lcd_refresh();
 }
 
@@ -424,9 +427,9 @@ void LCD_write_data(uint8_t data)
  */
 void LCD_init(SPI_HandleTypeDef* hspi)
 {
-    HAL_GPIO_WritePin(DISPLAY__RESET_GPIO_Port, DISPLAY__RESET_Pin, GPIO_PIN_RESET); 
+    HAL_GPIO_WritePin(DISPLAY_RESET_GPIO_Port, DISPLAY_RESET_Pin, GPIO_PIN_RESET); 
     HAL_Delay(30);
-    HAL_GPIO_WritePin(DISPLAY__RESET_GPIO_Port, DISPLAY__RESET_Pin, GPIO_PIN_SET); 
+    HAL_GPIO_WritePin(DISPLAY_RESET_GPIO_Port, DISPLAY_RESET_Pin, GPIO_PIN_SET); 
     HAL_Delay(30);
 
     sg_spi_handle = hspi;

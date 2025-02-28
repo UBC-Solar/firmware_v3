@@ -59,7 +59,7 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|BATT_OV_Pin|DISPLAY_A0_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, BMS_COMM_FLT_Pin|DISPLAY__RESET_Pin|DTR_OUT_Pin|RTS_OUT_Pin
+  HAL_GPIO_WritePin(GPIOB, BMS_COMM_FLT_Pin|DISPLAY_RESET_Pin|DTR_OUT_Pin|RTS_OUT_Pin
                           |LTS_OUT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : DTR_IN_Pin */
@@ -86,9 +86,9 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BMS_COMM_FLT_Pin DISPLAY__RESET_Pin DTR_OUT_Pin RTS_OUT_Pin
+  /*Configure GPIO pins : BMS_COMM_FLT_Pin DISPLAY_RESET_Pin DTR_OUT_Pin RTS_OUT_Pin
                            LTS_OUT_Pin */
-  GPIO_InitStruct.Pin = BMS_COMM_FLT_Pin|DISPLAY__RESET_Pin|DTR_OUT_Pin|RTS_OUT_Pin
+  GPIO_InitStruct.Pin = BMS_COMM_FLT_Pin|DISPLAY_RESET_Pin|DTR_OUT_Pin|RTS_OUT_Pin
                           |LTS_OUT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;

@@ -56,13 +56,16 @@ void ExternalLights_state_machine()
 
 		flash_count++;
 
-		if (flash_count >= LIGHTS_FLIP_COUNT)
-		{
-			flash_count = 0;
-			lts = !lts;
-			rts = !rts;
-		}
-
+		// if (flash_count >= LIGHTS_FLIP_COUNT)
+		// {
+		// 	flash_count = 0;
+		// 	lts = !lts;
+		// 	rts = !rts;
+		// }
+        flash_count = 0;
+        lts = !lts;
+        rts = !rts;
+        
 		dtr = 0;
 		prev_state = HAZARD_STATE;
 	}

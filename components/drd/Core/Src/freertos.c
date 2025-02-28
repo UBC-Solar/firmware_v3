@@ -70,6 +70,18 @@ const osThreadAttr_t ExternalLights__attributes = {
   .stack_size = sizeof(ExternalLights_Buffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for LCDUpdateTask */
+osThreadId_t LCDUpdateTaskHandle;
+uint32_t LCDUpdateTaskBuffer[ 256 ];
+osStaticThreadDef_t LCDUpdateTaskControlBlock;
+const osThreadAttr_t LCDUpdateTask_attributes = {
+  .name = "LCDUpdateTask",
+  .cb_mem = &LCDUpdateTaskControlBlock,
+  .cb_size = sizeof(LCDUpdateTaskControlBlock),
+  .stack_mem = &LCDUpdateTaskBuffer[0],
+  .stack_size = sizeof(LCDUpdateTaskBuffer),
+  .priority = (osPriority_t) osPriorityNormal,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -78,6 +90,7 @@ const osThreadAttr_t ExternalLights__attributes = {
 
 void StartDefaultTask(void *argument);
 void ExternalLights_task(void *argument);
+void LCDUpdatetask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -114,6 +127,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of ExternalLights_ */
   ExternalLights_Handle = osThreadNew(ExternalLights_task, NULL, &ExternalLights__attributes);
 
+  /* creation of LCDUpdateTask */
+  LCDUpdateTaskHandle = osThreadNew(LCDUpdatetask, NULL, &LCDUpdateTask_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -135,20 +151,9 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
-  LCD_init(&hspi1);
-  int v1 = 0;
-  float v2 = -20;
   for(;;)
   {
-    LCD_display_power_bar(v2, 130.0f);
-    LCD_display_speed(v1 % 100, 1);
-    LCD_display_drive_state(v1 % 5);
-    LCD_display_SOC(v1 % 101);  
-
-    ++v1;
-    v2 += 0.4;
-
-    osDelay(200);
+    osDelay(1);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -172,6 +177,35 @@ void ExternalLights_task(void *argument)
 
   }
   /* USER CODE END ExternalLights_task */
+}
+
+/* USER CODE BEGIN Header_LCDUpdatetask */
+/**
+* @brief Function implementing the LCDUpdateTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_LCDUpdatetask */
+void LCDUpdatetask(void *argument)
+{
+  /* USER CODE BEGIN LCDUpdatetask */
+  /* Infinite loop */
+  LCD_init(&hspi1);
+  int v1 = 0;
+  float v2 = -20;
+  for(;;)
+  {
+    LCD_display_power_bar(v2, 130.0f);
+    LCD_display_speed(v1 % 100, 1);
+    LCD_display_drive_state(v1 % 5);
+    LCD_display_SOC(v1 % 101);  
+
+    ++v1;
+    v2 += 0.4;
+
+    osDelay(200);
+  }
+  /* USER CODE END LCDUpdatetask */
 }
 
 /* Private application code --------------------------------------------------*/

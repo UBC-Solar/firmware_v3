@@ -12,14 +12,14 @@
 
 
 /** Display Parameters */
+#define BOTTOM_RIGHT_X      127
+#define BOTTOM_RIGHT_Y      63
+
 #define SPEED_FONT          (Verdana32)
 #define SPEED_X             36
 #define SPEED_Y             29
 #define SPEED_SPACING       2
-
-#define BOTTOM_RIGHT_X      127
-#define BOTTOM_RIGHT_Y      63
-
+#define WIDEST_NUM_LEN_VERDANA32           24      // pixels
 #define MPH                 0
 #define KPH                 1
 #define SPEED_UNITS_FONT    (Verdana8)
@@ -44,6 +44,7 @@
 #define SOC_SPACING         1
 #define SOC_UNITS_FONT      (Verdana8)
 #define SOC_UNITS           '%'
+#define WIDEST_NUM_LEN_VERDANA16        11  // pixels
 
 #define MAX_POSITIVE_POWER              5400.0f
 #define MAX_NEGATIVE_POWER              3000.0f   // use the absolute value for negative power

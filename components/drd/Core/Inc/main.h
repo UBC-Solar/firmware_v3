@@ -85,8 +85,8 @@ void Error_Handler(void);
 #define BMS_COMM_FLT_GPIO_Port GPIOB
 #define REGEN_EN_Pin GPIO_PIN_1
 #define REGEN_EN_GPIO_Port GPIOB
-#define DISPLAY__RESET_Pin GPIO_PIN_10
-#define DISPLAY__RESET_GPIO_Port GPIOB
+#define DISPLAY_RESET_Pin GPIO_PIN_10
+#define DISPLAY_RESET_GPIO_Port GPIOB
 #define HAZARD_Pin GPIO_PIN_11
 #define HAZARD_GPIO_Port GPIOB
 #define BRK_IN_Pin GPIO_PIN_12
