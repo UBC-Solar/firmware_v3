@@ -27,6 +27,8 @@
 /* USER CODE BEGIN Includes */
 #include "can.h"
 #include "external_lights.h"
+#include "lcd.h"
+#include "spi.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -133,9 +135,20 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
+  LCD_init(&hspi1);
+  int v1 = 0;
+  float v2 = -20;
   for(;;)
   {
-    osDelay(1);
+    LCD_display_power_bar(v2, 130.0f);
+    LCD_display_speed(v1 % 100, 1);
+    LCD_display_drive_state(v1 % 5);
+    LCD_display_SOC(v1 % 101);  
+
+    ++v1;
+    v2 += 0.4;
+
+    osDelay(200);
   }
   /* USER CODE END StartDefaultTask */
 }
