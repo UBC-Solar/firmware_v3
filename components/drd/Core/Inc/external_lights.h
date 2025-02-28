@@ -10,22 +10,20 @@
 
 /*	Includes	*/
 #include "main.h"
-
+#include "CAN_comms.h"
 
 /*	Symbolic Constants	*/
 #define LIGHTS_STATE_MACHINE_DELAY 50
+#define LIGHTS_STATE_PERIOD 1000 //lights are on or off for 1 second at a time
+#define LIGHTS_FLIP_COUNT  LIGHTS_STATE_PERIOD/LIGHTS_STATE_MACHINE_DELAY
 
 
 /*	Typedefs 	*/
-typedef enum {
-	TURN_SIGNAL_OFF  = 0,
-	TURN_SIGNAL_LEFT = 1,
-	TURN_SIGNAL_RIGHT = 2
-}Lights_turn_signal_t;
+
 
 /*	Function Prototypes	*/
 void ExternalLights_state_machine();
-void External_Lights_set_turn_signals(Lights_turn_signal_t signal);
+void External_Lights_set_turn_signals(CAN_comms_Rx_msg_t*  msg);
 
 
 #endif /* INC_EXTERNAL_LIGHTS_H_ */

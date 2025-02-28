@@ -182,10 +182,14 @@ void CAN_tasks_init()
 void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
 
-	//Todo: handle parsing rx messages
-
-	Lights_turn_signal_t signal = TURN_SIGNAL_OFF; //get signal from RX message wants format is decided
-	External_Lights_set_turn_signals(signal);
+//	//Todo: handle parsing rx messages
+//	case(CAN_comms_Rx_msg)
+//
+//		fault: fault_light_handle(CAN_comms_Rx_msg);
+//		turn: turn_signal_handle(CAN_comms_Rx_msg);
+//
+	//Todo: add logic to only pass in CAN messages with the right ID
+	External_Lights_set_turn_signals(CAN_comms_Rx_msg);
 }
 
 /* USER CODE END 1 */

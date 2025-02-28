@@ -23,10 +23,10 @@ static void Set_ExternalLights(uint8_t dtr, uint8_t lts, uint8_t rts);
 #define LTS_STATE 		2
 #define RTS_STATE 		3
 
+
 /*	Global Variables	*/
 volatile uint8_t left_turn_signal = 0;
 volatile uint8_t right_turn_signal = 0;
-
 
 
 /*
@@ -37,10 +37,10 @@ volatile uint8_t right_turn_signal = 0;
  */
 void ExternalLights_state_machine()
 {
-	uint32_t dtr = HAL_GPIO_ReadPin(DTR_IN_Pin, DTR_IN_Pin);
-	uint32_t hazard_on = HAL_GPIO_ReadPin(HAZARD_GPIO_Port, HAZARD_Pin);
-	static uint8_t prev_state = DTR_STATE;
-	static uint8_t count = 0;
+	uint32_t dtr = HAL_GPIO_ReadPin(DTR_IN_GPIO_Port, DTR_IN_Pin);
+	uint32_t hazard_on =  HAL_GPIO_ReadPin(HAZARD_GPIO_Port, HAZARD_Pin);
+	static uint8_t prev_state = DTR_STATE; //keep track of previous state to reset flash counts
+	static uint8_t flash_count = 0; //every xth count, the pin flips state, causing flash
 	static uint8_t lts = 0;
 	static uint8_t rts = 0;
 
@@ -48,33 +48,37 @@ void ExternalLights_state_machine()
 	{
 		if (prev_state != HAZARD_STATE)
 		{
-			count = 0;
+			flash_count = 0;
+			rts = 0; //reset signals as we are switching states
+			lts = 0;
+
 		}
 
-		count++;
+		flash_count++;
 
-		if (count >= 10)
+		if (flash_count >= LIGHTS_FLIP_COUNT)
 		{
-			count = 0;
+			flash_count = 0;
 			lts = !lts;
 			rts = !rts;
-			dtr = 0;
 		}
 
+		dtr = 0;
 		prev_state = HAZARD_STATE;
 	}
 	else if (left_turn_signal)
 	{
 		if(prev_state != LTS_STATE)
 		{
-			count = 0;
+			flash_count = 0;
 		}
 
-		count++;
+		flash_count++;
 
-		if (count >= 10)
+		if (flash_count >= LIGHTS_FLIP_COUNT)
 		{
 			lts = !lts;
+			flash_count = 0;
 		}
 
 		rts = 0;
@@ -85,14 +89,15 @@ void ExternalLights_state_machine()
 	{
 		if (prev_state != RTS_STATE)
 		{
-			count = 0;
+			flash_count = 0;
 		}
 
-		count++;
+		flash_count++;
 
-		if (count >= 10)
+		if (flash_count >= LIGHTS_FLIP_COUNT)
 		{
 			rts = !rts;
+			flash_count = 0;
 		}
 
 		lts = 0;
@@ -101,6 +106,7 @@ void ExternalLights_state_machine()
 	}
 	else
 	{
+		//default state. Output is simply day time running lights input.
 		lts = 0;
 		rts = 0;
 		prev_state = DTR_STATE;
@@ -133,24 +139,25 @@ void Set_ExternalLights(uint8_t dtr, uint8_t lts, uint8_t rts)
  * @param Lights_turn_signal_t signal indicating turn signal state
  */
 //call this from CAN rx callback
-void External_Lights_set_turn_signals(Lights_turn_signal_t signal)
+void External_Lights_set_turn_signals(CAN_comms_Rx_msg_t*  msg)
 {
-	switch (signal)
+	uint8_t lts = (msg->data[0] & 1);
+	uint8_t rts = (msg->data[0] & 1 << 1);
+
+	if (lts)
 	{
-		case TURN_SIGNAL_OFF:
-			left_turn_signal = 0;
-			right_turn_signal = 0;
-			break;
-
-		case TURN_SIGNAL_LEFT:
-			left_turn_signal = 1;
-			right_turn_signal = 0;
-			break;
-
-		case TURN_SIGNAL_RIGHT:
-			right_turn_signal = 1;
-			left_turn_signal = 0;
-			break;
+		left_turn_signal = 1;
+		right_turn_signal = 0;
+	}
+	else if (rts)
+	{
+		right_turn_signal = 1;
+		left_turn_signal = 0;
+	}
+	else //neither the left or right turn signals are on.
+	{
+		left_turn_signal = 0;
+		right_turn_signal = 0;
 	}
 
 

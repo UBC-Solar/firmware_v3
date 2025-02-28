@@ -154,6 +154,7 @@ void ExternalLights_task(void *argument)
   for(;;)
   {
 	  ExternalLights_state_machine();
+
 	  osDelay(LIGHTS_STATE_MACHINE_DELAY);
 
   }
