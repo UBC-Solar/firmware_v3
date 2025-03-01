@@ -8,7 +8,6 @@
  */
 
 
-#include <stdbool.h>
 #include "mdi.h"
 #include "i2c.h"
 #include "gpio.h"
@@ -20,7 +19,7 @@
  * @param DAC_addr enum address of the DAC. Either the accel or regen DAC
  * @param voltage_value 10 bit unsigned integer. Scaled linearly to the voltage value
  */
-void MDI_set_DAC_voltage(motor_DAC_addr_t DAC_addr, uint16_t voltage_value)
+void MDI_set_DAC_voltage(MDI_DAC_addr_t DAC_addr, uint16_t voltage_value)
 {
     // Truncate if voltage_value is greater than max
     voltage_value = (voltage_value > MAX_DAC_VALUE) ? MAX_DAC_VALUE : voltage_value;
@@ -45,7 +44,7 @@ void MDI_set_motor_command(MDI_motor_command_t* MDI_motor_command)
     MDI_set_DAC_voltage(REGEN_DAC, MDI_motor_command->regen_DAC_value);
 
     HAL_GPIO_WritePin(DIR_GPIO_Port, DIR_Pin, MDI_motor_command->direction_value);
-    HAL_GPIO_WritePin(DIR_GPIO_Port, DIR_Pin, MDI_motor_command->eco_mode_value);
+    HAL_GPIO_WritePin(ECO_GPIO_Port, ECO_Pin, MDI_motor_command->eco_mode_value);
 }
 
 
@@ -75,18 +74,19 @@ void MDI_parse_motor_command(uint8_t* buffer, MDI_motor_command_t* MDI_motor_com
     MDI_motor_command->eco_mode_value = IS_BIT_SET(buffer[4], 1);
 }
 
+
 /**
  * @brief Sets the inputs to the MDU to the default values for safety.
  * Both DACs are set to 0. Direction is forward and eco mode is turned on
  * 
  */
-void MDI_stop()
+void MDI_stop_motor()
 {
     MDI_motor_command_t MDI_motor_command;
     MDI_motor_command.accel_DAC_value = 0;
     MDI_motor_command.regen_DAC_value = 0;
-    MDI_motor_command.direction_value = 1;
-    MDI_motor_command.eco_mode_value = 0;
+    MDI_motor_command.direction_value = FORWARD;
+    MDI_motor_command.eco_mode_value = ECO_MODE;
 
     MDI_set_motor_command(&MDI_motor_command);
 }

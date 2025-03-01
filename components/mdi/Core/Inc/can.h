@@ -36,6 +36,8 @@ extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
 
+#define DRD_MOTOR_COMMAND_CAN_ID (0x401)
+
 /* USER CODE END Private defines */
 
 void MX_CAN_Init(void);

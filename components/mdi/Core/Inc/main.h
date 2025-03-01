@@ -31,11 +31,14 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "mdi.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+
+extern MDI_motor_command_t g_MDI_motor_command;
+extern bool g_motor_command_received;
 
 /* USER CODE END ET */
 

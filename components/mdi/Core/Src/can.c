@@ -21,6 +21,9 @@
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
+#include "main.h"
+
+void CAN_Filter_Config();
 
 /* USER CODE END 0 */
 
@@ -55,6 +58,8 @@ void MX_CAN_Init(void)
   }
   /* USER CODE BEGIN CAN_Init 2 */
 
+  CAN_Filter_Config();
+
   /* USER CODE END CAN_Init 2 */
 
 }
@@ -88,6 +93,9 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
 
     __HAL_AFIO_REMAP_CAN1_2();
 
+    /* CAN1 interrupt Init */
+    HAL_NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
   /* USER CODE BEGIN CAN1_MspInit 1 */
 
   /* USER CODE END CAN1_MspInit 1 */
@@ -111,6 +119,8 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8|GPIO_PIN_9);
 
+    /* CAN1 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn);
   /* USER CODE BEGIN CAN1_MspDeInit 1 */
 
   /* USER CODE END CAN1_MspDeInit 1 */
@@ -118,5 +128,46 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  uint8_t CAN_Rx_data[8] = {0};
+  CAN_RxHeaderTypeDef CAN_Rx_header;
+
+  if(HAL_OK == HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &CAN_Rx_header, CAN_Rx_data))
+  {
+    if(CAN_Rx_header.IDE == DRD_MOTOR_COMMAND_CAN_ID)
+    {
+      // Parse motor command and update the global MDI motor command variable
+      MDI_parse_motor_command(CAN_Rx_data, &g_MDI_motor_command);
+
+      // Set motor command received flag to true
+      g_motor_command_received = true;
+    }
+  }
+  else
+  {
+    // TODO: Error handling
+  }
+}
+
+
+void CAN_Filter_Config()
+{
+  CAN_FilterTypeDef canFilterConfig;
+
+  canFilterConfig.FilterBank = 0;                      // Use filter bank 0 (0 to 13 for F103)
+  canFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;  // Mask mode for exact matching
+  canFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT; // 32-bit filter
+  canFilterConfig.FilterIdHigh = (0x401 << 5) >> 16;   // Standard ID shifted
+  canFilterConfig.FilterIdLow = (0x401 << 5) & 0xFFFF;
+  canFilterConfig.FilterMaskIdHigh = (0x7FF << 5) >> 16; // Mask only standard ID bits
+  canFilterConfig.FilterMaskIdLow = (0x7FF << 5) & 0xFFFF;
+  canFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0; // Assign to FIFO 0
+  canFilterConfig.FilterActivation = ENABLE;           // Enable the filter
+
+  HAL_CAN_ConfigFilter(&hcan, &canFilterConfig);
+}
+
 
 /* USER CODE END 1 */

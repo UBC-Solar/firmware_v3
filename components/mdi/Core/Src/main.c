@@ -106,18 +106,18 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  // Make sure we set DACs to 0 for redundancy.
-  MDI_stop();
+  // Stop motor by default for redundancy.
+  MDI_stop_motor();
 
   // Set reset timeout to the current time
   g_last_command_time = HAL_GetTick();
 
   while (1)
   {
-    // If MDI hasn't received a CAN message for MAX_TIMEOUT_VALUE, stop MDI for safety
-    if(g_last_command_time + MAX_TIMEOUT_VALUE > HAL_GetTick())
+    // If MDI hasn't received a CAN message for MAX_TIMEOUT_VALUE, stop motor for safety
+    if((g_last_command_time + MAX_TIMEOUT_VALUE) > HAL_GetTick())
     {
-      MDI_stop();
+      MDI_stop_motor();
     }
 
     // Wait until motor command is received over CAN
@@ -129,7 +129,6 @@ int main(void)
       // Reset timeout
       g_last_command_time = HAL_GetTick();
     }
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -175,50 +174,7 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
-{
-  uint8_t CAN_Rx_data[8] = {0};
-  CAN_RxHeaderTypeDef CAN_Rx_header;
-
-  if(HAL_OK == HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &CAN_Rx_header, CAN_Rx_data))
-  {
-    if(CAN_Rx_header.IDE == DRD_MOTOR_COMMAND_CAN_ID)
-    {
-      // Parse motor command and update the global MDI motor command variable
-      MDI_parse_motor_command(CAN_Rx_data, &g_MDI_motor_command);
-
-      // Set motor command received flag to true
-      g_motor_command_received = true;
-    }
-  }
-  else
-  {
-    // TODO: Error handling
-  }
-}
-
 /* USER CODE END 4 */
-
-/**
-  * @brief  Period elapsed callback in non blocking mode
-  * @note   This function is called  when TIM1 interrupt took place, inside
-  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
-  * a global variable "uwTick" used as application time base.
-  * @param  htim : TIM handle
-  * @retval None
-  */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  /* USER CODE BEGIN Callback 0 */
-
-  /* USER CODE END Callback 0 */
-  if (htim->Instance == TIM1) {
-    HAL_IncTick();
-  }
-  /* USER CODE BEGIN Callback 1 */
-
-  /* USER CODE END Callback 1 */
-}
 
 /**
   * @brief  This function is executed in case of error occurrence.
