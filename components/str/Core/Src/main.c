@@ -108,11 +108,14 @@ int main(void)
     //   g_reading_status = 0;
     // }
 
-    g_rts_reading = !(HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin));
+    if(g_rts_reading == HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin) || g_lts_reading == HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin))
+    {
+      CAN_tx_turn_signal_msg(g_rts_reading, g_lts_reading);
 
-    g_lts_reading = !(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin));
+      g_rts_reading = !(HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin));
 
-    CAN_tx_turn_signal_msg(g_rts_reading, g_lts_reading);
+      g_lts_reading = !(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin));
+    }
 
     HAL_Delay(200);
   }

@@ -164,10 +164,10 @@ void CAN_filter_init()
  * 
  * Packages the two variables into a one byte CAN message
  */
-void CAN_tx_turn_signal_msg(int rts_reading, int lts_reading) {
+void CAN_tx_turn_signal_msg(bool rts_reading, bool lts_reading) {
 
   uint8_t turn_signal_reading[1];
-  turn_signal_reading[0] = ((rts_reading << 1) | (lts_reading));
+  turn_signal_reading[0] = ((lts_reading << 1) | (rts_reading << 0));
 
   uint32_t mailbox;
 
