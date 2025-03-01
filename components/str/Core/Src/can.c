@@ -25,7 +25,7 @@
 /* PRIVATE INCLUDES */
 #define TURN_SIGNAL_CAN_DATA_LENGTH 1
 
-#define TURN_SIGNAL_MSG_ID  0x400
+#define TURN_SIGNAL_MSG_ID  0x580
 
 /**
  * @brief CAN message headers for STR

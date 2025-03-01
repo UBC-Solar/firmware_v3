@@ -74,3 +74,6 @@ Doxyfile-firmwarev3
 # Build Folders
 Debug/
 Release/
+
+# Environment
+.settings/
