@@ -22,9 +22,10 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN 0 */
-volatile int g_rts_reading = 0;
-volatile int g_lts_reading = 0;
-volatile int g_reading_status;
+#include <stdbool.h>
+
+volatile bool g_rts_reading = 0;
+volatile bool g_lts_reading = 0;
 /* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/
@@ -82,27 +83,27 @@ void MX_GPIO_Init(void)
  * @brief Interrupt checking whether the RTS or LTS pin has been switched and sets a reading variable to true
  * @param GPIO_PIN is the pin that contains the RTS and LTS pins
  */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
+// void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+// {
 
-  if((GPIO_Pin == RTS_IN_Pin) && (HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin) == GPIO_PIN_RESET)) {
+//   if((GPIO_Pin == RTS_IN_Pin) && (HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin) == GPIO_PIN_RESET)) {
 
-    g_rts_reading = 1;
+//     g_rts_reading = 1;
 
-  } else {
+//   } else {
 
-    g_rts_reading = 0;
-  }
+//     g_rts_reading = 0;
+//   }
 
-  if((GPIO_Pin == LTS_IN_Pin) && (HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin) == GPIO_PIN_RESET)) {
+//   if((GPIO_Pin == LTS_IN_Pin) && (HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin) == GPIO_PIN_RESET)) {
 
-    g_lts_reading = 1;
+//     g_lts_reading = 1;
     
-  } else {
+//   } else {
 
-    g_lts_reading = 0;
-  }
+//     g_lts_reading = 0;
+//   }
 
-  g_reading_status = 1;
-}
+//   g_reading_status = 1;
+// }
 /* USER CODE END 2 */
