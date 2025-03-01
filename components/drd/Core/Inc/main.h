@@ -103,6 +103,8 @@ void Error_Handler(void);
 #define MTR_OC_GPIO_Port GPIOC
 #define MTR_OT_Pin GPIO_PIN_8
 #define MTR_OT_GPIO_Port GPIOC
+#define ESTOP_Pin GPIO_PIN_9
+#define ESTOP_GPIO_Port GPIOC
 #define PARK_EN_Pin GPIO_PIN_8
 #define PARK_EN_GPIO_Port GPIOA
 #define FWRD_EN_Pin GPIO_PIN_9

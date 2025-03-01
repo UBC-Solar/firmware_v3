@@ -3,6 +3,7 @@
 * @brief   Source code for the CPU Load software component
 ******************************************************************************/
 
+
 #include "cpu_load.h"
 #include "circular_buffer.h"
 
