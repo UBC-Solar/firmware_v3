@@ -58,12 +58,12 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for ExternalLights_ */
-osThreadId_t ExternalLights_Handle;
+/* Definitions for ExtLightsTask */
+osThreadId_t ExtLightsTaskHandle;
 uint32_t ExternalLights_Buffer[ 256 ];
 osStaticThreadDef_t ExternalLights_ControlBlock;
-const osThreadAttr_t ExternalLights__attributes = {
-  .name = "ExternalLights_",
+const osThreadAttr_t ExtLightsTask_attributes = {
+  .name = "ExtLightsTask",
   .cb_mem = &ExternalLights_ControlBlock,
   .cb_size = sizeof(ExternalLights_ControlBlock),
   .stack_mem = &ExternalLights_Buffer[0],
@@ -82,6 +82,18 @@ const osThreadAttr_t LCDUpdateTask_attributes = {
   .stack_size = sizeof(LCDUpdateTaskBuffer),
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for DriveStateTask */
+osThreadId_t DriveStateTaskHandle;
+uint32_t DriveStateTaskBuffer[ 256 ];
+osStaticThreadDef_t DriveStateTaskControlBlock;
+const osThreadAttr_t DriveStateTask_attributes = {
+  .name = "DriveStateTask",
+  .cb_mem = &DriveStateTaskControlBlock,
+  .cb_size = sizeof(DriveStateTaskControlBlock),
+  .stack_mem = &DriveStateTaskBuffer[0],
+  .stack_size = sizeof(DriveStateTaskBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -91,6 +103,7 @@ const osThreadAttr_t LCDUpdateTask_attributes = {
 void StartDefaultTask(void *argument);
 void ExternalLights_task(void *argument);
 void LCDUpdatetask(void *argument);
+void DriveState_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -124,11 +137,14 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* creation of ExternalLights_ */
-  ExternalLights_Handle = osThreadNew(ExternalLights_task, NULL, &ExternalLights__attributes);
+  /* creation of ExtLightsTask */
+  ExtLightsTaskHandle = osThreadNew(ExternalLights_task, NULL, &ExtLightsTask_attributes);
 
   /* creation of LCDUpdateTask */
   LCDUpdateTaskHandle = osThreadNew(LCDUpdatetask, NULL, &LCDUpdateTask_attributes);
+
+  /* creation of DriveStateTask */
+  DriveStateTaskHandle = osThreadNew(DriveState_task, NULL, &DriveStateTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -206,6 +222,24 @@ void LCDUpdatetask(void *argument)
     osDelay(200);
   }
   /* USER CODE END LCDUpdatetask */
+}
+
+/* USER CODE BEGIN Header_DriveState_task */
+/**
+* @brief Function implementing the DriveStateTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_DriveState_task */
+void DriveState_task(void *argument)
+{
+  /* USER CODE BEGIN DriveState_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(DRIVE_STATE_MACHINE_DELAY);
+  }
+  /* USER CODE END DriveState_task */
 }
 
 /* Private application code --------------------------------------------------*/
