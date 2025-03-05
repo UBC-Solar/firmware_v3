@@ -104,10 +104,12 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+    // Checks if either the LTS_IN or RTS_IN pin has changed in value, then sends a CAN message
     if(g_rts_reading == HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin) || g_lts_reading == HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin))
     {
       CAN_tx_turn_signal_msg(g_rts_reading, g_lts_reading);
 
+      // Sets RTS and LTS reading variables to new boolean value
       g_rts_reading = !(HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin));
 
       g_lts_reading = !(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin));
