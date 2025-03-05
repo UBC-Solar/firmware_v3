@@ -35,7 +35,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define TURN_SIGNAL_DELAY 200
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -93,7 +93,9 @@ int main(void)
   MX_UART5_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
+  g_rts_reading = !(HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin));
 
+  g_lts_reading = !(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin));
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -115,7 +117,7 @@ int main(void)
       g_lts_reading = !(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin));
     }
 
-    HAL_Delay(200);
+    HAL_Delay(TURN_SIGNAL_DELAY);
   }
   /* USER CODE END 3 */
 }
