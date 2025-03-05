@@ -136,28 +136,6 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
-/**
- * @brief Allows all messages to be received
- */
-void CAN_filter_init()
-{
-    /* TODO: Review Filter Implementation */
-    // Use mask and list mode to filter IDs from the CAN ID BOM
-
-    CAN_FilterTypeDef can_filter = {0};
-
-    can_filter.FilterIdHigh = 0x0000;
-    can_filter.FilterMaskIdHigh = 0x0000;
-
-    can_filter.FilterIdLow = 0x0000;
-    can_filter.FilterMaskIdLow = 0x0000;
-
-    can_filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-    can_filter.FilterBank = (uint32_t) 0;
-    can_filter.FilterMode = CAN_FILTERMODE_IDMASK;
-    can_filter.FilterScale = CAN_FILTERSCALE_16BIT;
-    can_filter.FilterActivation = CAN_FILTER_ENABLE;
-}
 
 /**
  * @brief CAN message for true/false of the RTS_IN and LTS_IN pins
