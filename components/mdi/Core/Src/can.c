@@ -136,7 +136,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
   if(HAL_OK == HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &CAN_Rx_header, CAN_Rx_data))
   {
-    if(CAN_Rx_header.IDE == DRD_MOTOR_COMMAND_CAN_ID)
+    if(CAN_Rx_header.StdId == DRD_MOTOR_COMMAND_CAN_ID)
     {
       // Parse motor command and update the global MDI motor command variable
       MDI_parse_motor_command(CAN_Rx_data, &g_MDI_motor_command);
