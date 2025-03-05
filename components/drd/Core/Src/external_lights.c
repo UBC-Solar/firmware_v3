@@ -141,8 +141,8 @@ void Set_ExternalLights(uint8_t dtr, uint8_t lts, uint8_t rts)
 //call this from CAN rx callback
 void External_Lights_set_turn_signals(CAN_comms_Rx_msg_t*  msg)
 {
-	uint8_t lts = (msg->data[0] & 1);
-	uint8_t rts = (msg->data[0] & 1 << 1);
+	uint8_t rts = (msg->data[0] & 1);
+	uint8_t lts = (msg->data[0] & (1 << 1));
 
 	if (lts)
 	{
