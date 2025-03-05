@@ -14,7 +14,7 @@
 
 /*	Symbolic Constants	*/
 #define LIGHTS_STATE_MACHINE_DELAY 		50
-#define LIGHTS_STATE_PERIOD 			1000 //lights are on or off for 1 second at a time
+#define LIGHTS_STATE_PERIOD 			650    // period of signal (on -> off -> on)
 #define LIGHTS_FLIP_COUNT  				(LIGHTS_STATE_PERIOD)/(LIGHTS_STATE_MACHINE_DELAY)
 
 
