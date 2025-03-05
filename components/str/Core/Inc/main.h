@@ -65,7 +65,11 @@ void Error_Handler(void);
 #define DEBUG_LED_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
-
+typedef enum {
+  TS_Off = 0b00,
+  TS_Right = 0b01,
+  TS_Left = 0b10,
+} turn_signal_status_t;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

@@ -30,7 +30,7 @@
 /**
  * @brief CAN message headers for STR
  */
-CAN_TxHeaderTypeDef turn_signal = {
+CAN_TxHeaderTypeDef turn_signal_can_header = {
     .StdId = TURN_SIGNAL_MSG_ID,
     .ExtId = 0x0000,
     .IDE = CAN_ID_STD,
@@ -162,15 +162,15 @@ void CAN_filter_init()
 /**
  * @brief CAN message for true/false of the RTS_IN and LTS_IN pins
  * 
- * Packages the two variables into a one byte CAN message
+ * Sends over the turn_signal value being either 1 or 0 for RTS/LTS reading
  */
-void CAN_tx_turn_signal_msg(bool rts_reading, bool lts_reading) {
+void CAN_tx_turn_signal_msg(turn_signal_status_t turn_signal) {
 
   uint8_t turn_signal_reading[1];
-  turn_signal_reading[0] = ((lts_reading << 1) | (rts_reading << 0));
+  turn_signal_reading[0] = (turn_signal);
 
   uint32_t mailbox;
 
-  HAL_CAN_AddTxMessage(&hcan, &turn_signal, turn_signal_reading, &mailbox);
+  HAL_CAN_AddTxMessage(&hcan, &turn_signal_can_header, turn_signal_reading, &mailbox);
 }
 /* USER CODE END 1 */

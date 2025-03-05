@@ -37,8 +37,7 @@
 /* USER CODE BEGIN PD */
 #define TURN_SIGNAL_DELAY 200
 
-volatile bool g_rts_reading = 0;
-volatile bool g_lts_reading = 0;
+volatile turn_signal_status_t g_turn_signal_status = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -60,7 +59,29 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+  
+/**
+ * @brief Reads the RTS and LTS pins and sets status to whichever pin is switched on 
+ * @return returns the value of status being 0 for none, 1 for RTS and 2 for LTS
+ */
+  turn_signal_status_t get_turn_signal_status() {
 
+    turn_signal_status_t status;
+
+    status = TS_Off;
+
+    if(!(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin)) && (HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin))) 
+    {
+      status = TS_Left;
+    }
+
+    else if(!(HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin)) && (HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin))) 
+    {
+      status = TS_Right;
+    }
+
+    return status;
+  }
 /* USER CODE END 0 */
 
 /**
@@ -96,9 +117,7 @@ int main(void)
   MX_UART5_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-  g_rts_reading = !(HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin));
-
-  g_lts_reading = !(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin));
+  
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -109,15 +128,13 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    // Checks if either the LTS_IN or RTS_IN pin has changed in value, then sends a CAN message
-    if(g_rts_reading == !(HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin)) || g_lts_reading == !(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin)))
+    turn_signal_status_t current_status = get_turn_signal_status();
+
+    if(g_turn_signal_status != current_status)
     {
-      CAN_tx_turn_signal_msg(g_rts_reading, g_lts_reading);
+      g_turn_signal_status = current_status;
 
-      // Sets the RTS and LTS variables to new boolean values
-      g_rts_reading = !(HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin));
-
-      g_lts_reading = !(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin));
+      CAN_tx_turn_signal_msg(g_turn_signal_status);
     }
 
     HAL_Delay(TURN_SIGNAL_DELAY);

@@ -31,9 +31,6 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 #include "stdbool.h"
 
-extern volatile bool g_rts_reading;
-extern volatile bool g_lts_reading;
-extern volatile bool g_reading_status;
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN Private defines */
