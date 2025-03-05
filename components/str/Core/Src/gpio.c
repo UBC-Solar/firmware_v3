@@ -22,8 +22,6 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN 0 */
-volatile bool g_rts_reading = 0;
-volatile bool g_lts_reading = 0;
 /* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/

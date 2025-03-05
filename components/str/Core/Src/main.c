@@ -36,6 +36,9 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define TURN_SIGNAL_DELAY 200
+
+volatile bool g_rts_reading = 0;
+volatile bool g_lts_reading = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
