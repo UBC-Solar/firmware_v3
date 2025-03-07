@@ -21,14 +21,23 @@
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
-#include "CAN_comms.h"
-#include "external_lights.h"
 
-#define TURN_SIGNAL_MSG_ID      0x580
+/* PRIVATE INCLUDES */
+#define TURN_SIGNAL_CAN_DATA_LENGTH 1
 
-void CAN_filter_init(CAN_FilterTypeDef* can_filter);
+#define TURN_SIGNAL_MSG_ID  0x580
 
+/**
+ * @brief CAN message headers for STR
+ */
+CAN_TxHeaderTypeDef turn_signal_can_header = {
+    .StdId = TURN_SIGNAL_MSG_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = TURN_SIGNAL_CAN_DATA_LENGTH};
 
+CAN_FilterTypeDef can_filter;
 
 /* USER CODE END 0 */
 
@@ -62,7 +71,8 @@ void MX_CAN_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN_Init 2 */
-
+  HAL_CAN_ConfigFilter(&hcan, &can_filter);
+  HAL_CAN_Start(&hcan);
   /* USER CODE END CAN_Init 2 */
 
 }
@@ -96,11 +106,6 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
 
     __HAL_AFIO_REMAP_CAN1_2();
 
-    /* CAN1 interrupt Init */
-    HAL_NVIC_SetPriority(USB_HP_CAN1_TX_IRQn, 5, 0);
-    HAL_NVIC_EnableIRQ(USB_HP_CAN1_TX_IRQn);
-    HAL_NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 5, 0);
-    HAL_NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
   /* USER CODE BEGIN CAN1_MspInit 1 */
 
   /* USER CODE END CAN1_MspInit 1 */
@@ -124,9 +129,6 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8|GPIO_PIN_9);
 
-    /* CAN1 interrupt Deinit */
-    HAL_NVIC_DisableIRQ(USB_HP_CAN1_TX_IRQn);
-    HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn);
   /* USER CODE BEGIN CAN1_MspDeInit 1 */
 
   /* USER CODE END CAN1_MspDeInit 1 */
@@ -135,77 +137,18 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 
 /* USER CODE BEGIN 1 */
 
-
 /**
- * @brief Allows all messages to be received
+ * @brief CAN message for true/false of the RTS_IN and LTS_IN pins
+ * 
+ * Sends over the turn_signal value being either 1 or 0 for RTS/LTS reading
  */
+void CAN_tx_turn_signal_msg(turn_signal_status_t turn_signal) {
 
-void CAN_filter_init(CAN_FilterTypeDef* can_filter)
-{
-    /* TODO: Review Filter Implementation */
-    // Change Filter to only get STR messages (or any other messages to DRD)
+  uint8_t turn_signal_reading[1];
+  turn_signal_reading[0] = (turn_signal);
 
-    can_filter->FilterIdHigh = 0x0000;
-    can_filter->FilterMaskIdHigh = 0x0000;
+  uint32_t mailbox;
 
-    can_filter->FilterIdLow = 0x0000;
-    can_filter->FilterMaskIdLow = 0x0000;
-
-    can_filter->FilterFIFOAssignment = CAN_FILTER_FIFO0;
-    can_filter->FilterBank = (uint32_t) 0;
-    can_filter->FilterMode = CAN_FILTERMODE_IDMASK;
-    can_filter->FilterScale = CAN_FILTERSCALE_16BIT;
-    can_filter->FilterActivation = CAN_FILTER_ENABLE;
+  HAL_CAN_AddTxMessage(&hcan, &turn_signal_can_header, turn_signal_reading, &mailbox);
 }
-
-
-/**
- * @brief Initializes the CAN filter and CAN Rx callback function as CAN_comms_Rx_callback().
- *
- * Note: This uses the CAN_comms abstraction layer which will initialize two freeRTOS tasks. As a result it is recommend to
- * Call this function inside the MX_FREERTOS_Init() function in freertos.c
- */
-void CAN_tasks_init()
-{
-    CAN_comms_config_t CAN_comms_config_tel = {0};
-
-    CAN_FilterTypeDef CAN_filter = {0};
-    CAN_filter_init(&CAN_filter);
-
-    CAN_comms_config_tel.hcan = &hcan;
-    CAN_comms_config_tel.CAN_Filter = CAN_filter;
-    CAN_comms_config_tel.CAN_comms_Rx_callback = CAN_comms_Rx_callback;
-
-    CAN_comms_init(&CAN_comms_config_tel);
-}
-
-
-void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
-{
-
-//	//Todo: handle parsing rx messages
-//	case(CAN_comms_Rx_msg)
-//
-//		fault: fault_light_handle(CAN_comms_Rx_msg);
-//		turn: turn_signal_handle(CAN_comms_Rx_msg);
-//
-	//Todo: add logic to only pass in CAN messages with the right ID
-
-uint32_t CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
-	switch(CAN_ID){
-		case CAN_ID_PACK_CURRENT:
-		case CAN_ID_MTR_FAULTS:
-		case CAN_ID_BATT_FAULTS:
-		case CAN_ID_PACK_VOLTAGE:
-			Set_fault_lights(CAN_ID, CAN_comms_Rx_msg->data);
-
-		case CAN_ID_TURN_SIGNALS:
-			External_Lights_set_turn_signals(CAN_comms_Rx_msg);
-			break;
-
-		default:
-			break;
-	}
-}
-
 /* USER CODE END 1 */
