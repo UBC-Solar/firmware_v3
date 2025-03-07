@@ -18,7 +18,7 @@
 
 void Set_fault_lights(uint32_t CAN_ID, uint8_t* data){
 
-	uint8_t pack_current_sign;
+	uint8_t pack_current_sign = 0;
 
 	switch(CAN_ID){
 		case CAN_ID_PACK_CURRENT:
@@ -36,7 +36,7 @@ void Set_fault_lights(uint32_t CAN_ID, uint8_t* data){
 			break;
 
 		case CAN_ID_PACK_VOLTAGE:
-
+			batt_pack_voltage_fault(data);
 			break;
 
 		default:
@@ -84,3 +84,34 @@ void parse_batt_faults(uint8_t* can_rx_data, uint8_t current_sign){
 
 	return;
 }
+
+void batt_pack_voltage_fault(uint8_t* can_rx_data){
+	U16Bytes temp_pack_voltage;
+	temp_pack_voltage.bytes[0] = can_rx_data[0];
+	temp_pack_voltage.bytes[1] = can_rx_data[1];
+	temp_pack_voltage.U16_value = temp_pack_voltage.U16_value / PACK_VOLTAGE_DIVISOR;
+
+	if (temp_pack_voltage.U16_value >= MAX_PACK_VOLTAGE){
+		HAL_GPIO_WritePin(BATT_HI_GPIO_Port, BATT_HI_Pin, HIGH);
+	}
+
+	else if(temp_pack_voltage.U16_value <= MIN_PACK_VOLTAGE){
+		HAL_GPIO_WritePin(BATT_LO_GPIO_Port, BATT_LO_Pin, HIGH);
+	}
+
+	else{
+		HAL_GPIO_WritePin(BATT_HI_GPIO_Port, BATT_HI_Pin, LOW);
+		HAL_GPIO_WritePin(BATT_HI_GPIO_Port, BATT_HI_Pin, LOW);
+	}
+
+	return;
+}
+
+
+
+
+
+
+
+
+

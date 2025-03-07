@@ -162,7 +162,7 @@ void CAN_filter_init(CAN_FilterTypeDef* can_filter)
 /**
  * @brief Initializes the CAN filter and CAN Rx callback function as CAN_comms_Rx_callback().
  *
- * Note: This uses the CAN_comms abstraction layer which will initialize two freeRTOS tasks. As a result it is recommend to
+ * Note: This uses the CAN_comms abstraction layer which will initialize two freeRTOS tasks. As a result it is recommended to
  * Call this function inside the MX_FREERTOS_Init() function in freertos.c
  */
 void CAN_tasks_init()
