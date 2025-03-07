@@ -162,7 +162,7 @@ void CAN_filter_init(CAN_FilterTypeDef* can_filter)
 /**
  * @brief Initializes the CAN filter and CAN Rx callback function as CAN_comms_Rx_callback().
  *
- * Note: This uses the CAN_comms abstraction layer which will initialize two freeRTOS tasks. As a result it is recommend to
+ * Note: This uses the CAN_comms abstraction layer which will initialize two freeRTOS tasks. As a result it is recommended to
  * Call this function inside the MX_FREERTOS_Init() function in freertos.c
  */
 void CAN_tasks_init()
@@ -183,10 +183,29 @@ void CAN_tasks_init()
 void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
 
-    if (CAN_comms_Rx_msg->header.StdId == TURN_SIGNAL_MSG_ID) 
-    {
-        External_Lights_set_turn_signals(CAN_comms_Rx_msg);
-    }
+//	//Todo: handle parsing rx messages
+//	case(CAN_comms_Rx_msg)
+//
+//		fault: fault_light_handle(CAN_comms_Rx_msg);
+//		turn: turn_signal_handle(CAN_comms_Rx_msg);
+//
+	//Todo: add logic to only pass in CAN messages with the right ID
+
+uint32_t CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
+	switch(CAN_ID){
+		case CAN_ID_PACK_CURRENT:
+		case CAN_ID_MTR_FAULTS:
+		case CAN_ID_BATT_FAULTS:
+		case CAN_ID_PACK_VOLTAGE:
+			Set_fault_lights(CAN_ID, CAN_comms_Rx_msg->data);
+
+		case CAN_ID_TURN_SIGNALS:
+			External_Lights_set_turn_signals(CAN_comms_Rx_msg);
+			break;
+
+		default:
+			break;
+	}
 }
 
 /* USER CODE END 1 */
