@@ -29,6 +29,7 @@
 #include "external_lights.h"
 #include "lcd.h"
 #include "spi.h"
+#include "drive_state.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

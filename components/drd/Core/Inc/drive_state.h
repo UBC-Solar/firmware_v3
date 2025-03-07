@@ -24,8 +24,13 @@
 
 #define THROTTLE_ADC_MIN_VALUE 200
 #define THROTTLE_ADC_MAX_VALUE 3896
-
-
+#define ADC_MAX_DIFFERENCE 100 // change when we have a better idea
+#define REGEN_DAC_DEFAULT 1023
+#define ADC_NO_THROTTLE_MAX 0 //figure out
+#define ADC_FULL_THROTTLE_MIN 0 //figure out
+#define ADC_THROTTLE_MAX	0 //figure out
+#define ADC_LOWER_DEADZONE 0 //tbd
+#define ADC_UPPER_DEADZONE 0 //tbd
 
 /*	Data Types	*/
 typedef struct{
@@ -37,9 +42,9 @@ typedef struct{
 	volatile bool reverse_state_request;
 	volatile bool park_state_request;
 	volatile bool throttle_ADC_out_of_range;
-	volatile bool eco_mode_value;
+	volatile bool eco_mode_on;
 	volatile uint16_t accel_DAC_value;
-	volatile uint16_t regen_DAC_value;
+	volatile uint16_t regen_DAC_value; //currently unused, but we could implemented down the line
 } input_flags_t;
 
 typedef struct {
@@ -63,7 +68,9 @@ extern drive_state_t state;
 
 
 /*	Functions	*/
-
+void drive_state_interrupt_handler(uint16_t pin);
+void Drive_State_can_rx_handle(CAN_comms_Rx_msg_t* can_msg);
+void Drive_State_Machine_handler();
 
 
 

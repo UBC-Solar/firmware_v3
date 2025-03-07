@@ -113,14 +113,29 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(DISPLAY_RESET_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PARK_EN_Pin FWRD_EN_Pin RVRS_EN_Pin */
-  GPIO_InitStruct.Pin = PARK_EN_Pin|FWRD_EN_Pin|RVRS_EN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pins : PARK_EN_Pin FORWARD_EN_Pin REVERSE_EN_Pin */
+  GPIO_InitStruct.Pin = PARK_EN_Pin|FORWARD_EN_Pin|REVERSE_EN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
 
 /* USER CODE BEGIN 2 */
 
+
+/**
+ * @brief GPIO Interrupt Handler
+ */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	drive_state_interrupt_handler(GPIO_Pin);
+}
 /* USER CODE END 2 */

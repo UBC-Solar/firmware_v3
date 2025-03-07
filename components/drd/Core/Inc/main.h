@@ -107,10 +107,13 @@ void Error_Handler(void);
 #define ESTOP_GPIO_Port GPIOC
 #define PARK_EN_Pin GPIO_PIN_8
 #define PARK_EN_GPIO_Port GPIOA
-#define FWRD_EN_Pin GPIO_PIN_9
-#define FWRD_EN_GPIO_Port GPIOA
-#define RVRS_EN_Pin GPIO_PIN_10
-#define RVRS_EN_GPIO_Port GPIOA
+#define PARK_EN_EXTI_IRQn EXTI9_5_IRQn
+#define FORWARD_EN_Pin GPIO_PIN_9
+#define FORWARD_EN_GPIO_Port GPIOA
+#define FORWARD_EN_EXTI_IRQn EXTI9_5_IRQn
+#define REVERSE_EN_Pin GPIO_PIN_10
+#define REVERSE_EN_GPIO_Port GPIOA
+#define REVERSE_EN_EXTI_IRQn EXTI15_10_IRQn
 #define DEBUG_LED_1_Pin GPIO_PIN_10
 #define DEBUG_LED_1_GPIO_Port GPIOC
 #define DEBUG_LED_2_Pin GPIO_PIN_11

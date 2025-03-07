@@ -108,12 +108,38 @@ int main(void)
   MX_FREERTOS_Init();
 
   /* Start scheduler */
-  osKernelStart();
+ // osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+
+  HAL_GPIO_TogglePin(BATT_UV_GPIO_Port, BATT_UV_Pin);
+  HAL_GPIO_TogglePin(BATT_HI_GPIO_Port, BATT_HI_Pin);
+  HAL_GPIO_TogglePin(BATT_FLT_GPIO_Port, BATT_FLT_Pin);
+  HAL_GPIO_TogglePin(BATT_OT_GPIO_Port, BATT_OT_Pin);
+  HAL_GPIO_TogglePin(BATT_OV_GPIO_Port, BATT_OV_Pin);
+  HAL_GPIO_TogglePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin);
+  HAL_GPIO_TogglePin(DISPLAY_A0_GPIO_Port, DISPLAY_A0_Pin);
+  HAL_GPIO_TogglePin(DCH_OC_GPIO_Port, DCH_OC_Pin);
+  HAL_GPIO_TogglePin(CH_OC_GPIO_Port, CH_OC_Pin);
+  HAL_GPIO_TogglePin(BMS_COMM_FLT_GPIO_Port, BMS_COMM_FLT_Pin);
+  HAL_GPIO_TogglePin(DISPLAY_RESET_GPIO_Port, DISPLAY_RESET_Pin);
+  HAL_GPIO_TogglePin(HAZARD_GPIO_Port, HAZARD_Pin);
+  HAL_GPIO_TogglePin(DTR_OUT_GPIO_Port, DTR_OUT_Pin);
+  HAL_GPIO_TogglePin(RTS_OUT_GPIO_Port, RTS_OUT_Pin);
+  HAL_GPIO_TogglePin(LTS_OUT_GPIO_Port, LTS_OUT_Pin);
+  HAL_GPIO_TogglePin(MTR_FLT_GPIO_Port, MTR_FLT_Pin);
+  HAL_GPIO_TogglePin(MTR_OC_GPIO_Port, MTR_OC_Pin);
+  HAL_GPIO_TogglePin(MTR_OT_GPIO_Port, MTR_OT_Pin);
+  HAL_GPIO_TogglePin(ESTOP_GPIO_Port, ESTOP_Pin);
+  HAL_GPIO_TogglePin(DEBUG_LED_1_GPIO_Port, DEBUG_LED_1_Pin);
+  HAL_GPIO_TogglePin(DEBUG_LED_2_GPIO_Port, DEBUG_LED_2_Pin);
+
+
+
 
   while (1)
   {
