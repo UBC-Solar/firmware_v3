@@ -63,7 +63,7 @@ void SystemClock_Config(void);
   
 /**
  * @brief Reads the RTS and LTS pins and sets status to whichever pin is switched on 
- * @return returns the value of status being 0 for none, 1 for RTS and 2 for LTS
+ * @return Returns the value of status being 0 for none, 1 for RTS and 2 for LTS
  */
 turn_signal_status_t get_turn_signal_status() {
 
@@ -85,8 +85,8 @@ turn_signal_status_t get_turn_signal_status() {
 }
 
 /**
- * @brief 
- * @return 
+ * @brief Checks the status and reads if it is on power mode or eco mode
+ * @return Returns the status of the mode being 0 or 1
  */
 mode_status_t get_mode_status() {
 
