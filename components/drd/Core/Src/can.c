@@ -191,20 +191,20 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 	//Todo: add logic to only pass in CAN messages with the right ID
 
 uint32_t CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
-switch(CAN_ID){
-  case CAN_ID_PACK_CURRENT:
-  case CAN_ID_MTR_FAULTS:
-  case CAN_ID_BATT_FAULTS:
-  case CAN_ID_PACK_VOLTAGE:
-    Set_fault_lights(CAN_ID, CAN_comms_Rx_msg->data);
-    
-  case CAN_ID_TURN_SIGNALS:
-    External_Lights_set_turn_signals(CAN_comms_Rx_msg);
-    break;
+	switch(CAN_ID){
+		case CAN_ID_PACK_CURRENT:
+		case CAN_ID_MTR_FAULTS:
+		case CAN_ID_BATT_FAULTS:
+		case CAN_ID_PACK_VOLTAGE:
+			Set_fault_lights(CAN_ID, CAN_comms_Rx_msg->data);
 
-  default:
-    break; 
-  }
+		case CAN_ID_TURN_SIGNALS:
+			External_Lights_set_turn_signals(CAN_comms_Rx_msg);
+			break;
+
+		default:
+			break;
+	}
 }
 
 /* USER CODE END 1 */
