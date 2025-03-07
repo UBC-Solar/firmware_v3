@@ -70,6 +70,11 @@ typedef enum {
   TS_Right = 0b01,
   TS_Left = 0b10,
 } turn_signal_status_t;
+
+typedef enum {
+  Power_Mode = 0b00,
+  Eco_Mode = 0b01,
+} mode_status_t;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
