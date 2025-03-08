@@ -111,7 +111,6 @@ void InitLEDs(void)
   */
 int main(void)
 {
-
   /* USER CODE BEGIN 1 */
   uint8_t CAN_rx_data[8];
   /* USER CODE END 1 */
