@@ -13,19 +13,29 @@
 /*	Includes	*/
 #include "drive_state.h"
 #include "adc.h"
+#include "CAN_comms.h"
+#include <string.h>
 #include <stdlib.h>
-
 /*	Symbolic Constants	*/
 
 
 /*	Local Function Declarations	*/
-static void motor_command_package_and_send(motor_command_t motor_command);
+static void motor_command_package_and_send(motor_command_t* motor_command);
+motor_command_t get_motor_command(uint16_t accel_DAC, uint16_t regen_DAC);
+
+static void normalize_adc_values(uint16_t adc1, uint16_t adc2);
+static bool accel_check_validity(uint16_t adc1, uint16_t adc2);
+
+static motor_command_t forward_state_handle();
+static motor_command_t reverse_state_handle();
+static motor_command_t park_state_handle();
+static void handle_state_transition();
+
 static void brake_press_handle();
 static void update_input_flags();
 static void get_accel_readings();
-static void normalize_adc_values(uint16_t adc1, uint16_t adc2);
-static bool accel_check_validity(uint16_t adc1, uint16_t adc2);
 static uint8_t get_command_flags();
+static void clear_request_flags();
 
 
 /*	Global Variables	*/
@@ -34,32 +44,122 @@ drive_state_t state = PARK;
 uint16_t throttle_DAC = 0;
 
 
+/*		DRIVE STATE MACHINE HANDLING	*/
+
+/**
+ * @brief Drive State Machine. Uses drive state to determine motor command
+ * 		to be sent to the MDI.
+ */
 void Drive_State_Machine_handler()
 {
 	motor_command_t motor_command;
-	update_input_flags();
+	update_input_flags(); //Todo: handle regen adc input
 
 	switch (state)
 	{
-		case DRIVE:
-			//motor_command =
+		case FORWARD:
+			motor_command = forward_state_handle();
+		break;
+
+		case REVERSE:
+			motor_command = reverse_state_handle();
+		break;
+
+		case PARK:
+			motor_command = park_state_handle();
+		break;
+
+		default:
+			motor_command = get_motor_command(ACCEL_DAC_OFF, REGEN_DAC_OFF);
 	}
 
-	//handle_state_transition();
+	motor_command_package_and_send(&motor_command);
+	handle_state_transition();
 }
 
+motor_command_t forward_state_handle()
+{
+	if (input_flags.mech_brake_pressed)
+	{
+		return get_motor_command(ACCEL_DAC_OFF, REGEN_DAC_OFF);
+	}
 
+	if (input_flags.regen_enabled)
+	{
+		return get_motor_command(throttle_DAC, REGEN_DAC_ON);
+	}
+	else
+	{
+		return get_motor_command(throttle_DAC, REGEN_DAC_OFF);
+	}
+}
 
+motor_command_t reverse_state_handle()
+{
+	if (input_flags.mech_brake_pressed)
+	{
+		return get_motor_command(ACCEL_DAC_OFF, REGEN_DAC_OFF);
+	}
 
+	//disable regen in reverse
+	return get_motor_command(throttle_DAC, REGEN_DAC_OFF);
+}
+
+motor_command_t park_state_handle()
+{
+	return get_motor_command(ACCEL_DAC_OFF, REGEN_DAC_OFF);
+}
+
+void handle_state_transition()
+{
+	bool park_request = input_flags.park_state_request;
+	bool forward_request = input_flags.forward_state_request;
+	bool reverse_request = input_flags.reverse_state_request;
+
+	//too many requests have been triggered
+	if (park_request + forward_request + reverse_request > 1)
+	{
+		clear_request_flags();
+		return;
+	}
+
+	switch (state)
+		{
+			case FORWARD:
+			break;
+			case REVERSE:
+			break;
+			case PARK:
+			break;
+
+			default:
+		}
+}
 
 
 /*	DATA TRANSMISSION	*/
 
-void motor_command_package_and_send(motor_command_t motor_command)
+void motor_command_package_and_send(motor_command_t* motor_command)
 {
-//	CAN_comms_Tx_msg_t msg;
-//	CAN_TxHeaderTypeDef header;
-	//Todo: finsish writting function
+	CAN_comms_Tx_msg_t msg;
+	msg.header = drive_command_header;
+	uint8_t data[8] = {0};
+
+	uint8_t accel_first_byte = (uint8_t) (motor_command->accel_DAC_value & 255);
+	uint8_t accel_second_byte = (uint8_t) (motor_command->accel_DAC_value >> 8);
+
+	uint8_t regen_first_byte = (uint8_t) (motor_command->accel_DAC_value & 255);
+	uint8_t regen_second_byte = (uint8_t) (motor_command->accel_DAC_value >> 8);
+
+	data[0] = accel_first_byte;
+	data[1] = accel_second_byte;
+	data[2] = regen_first_byte;
+	data[3] = regen_second_byte;
+	data[4] = motor_command->motor_command_flags;
+
+	memcpy(msg.data, data, CAN_DATA_SIZE);
+
+	CAN_comms_Add_Tx_message(&msg);
 }
 
 void Drive_State_can_rx_handle(CAN_comms_Rx_msg_t* can_msg)
@@ -199,15 +299,18 @@ bool accel_check_validity(uint16_t adc1, uint16_t adc2)
 }
 
 
+
+/*		HELPER FUNCTIONS 	*/
+
+/*
+ * @brief function to send a motor command on a brake press interrupt
+ */
 void brake_press_handle()
 {
-	motor_command_t motor_command;
-	motor_command.accel_DAC_value = 0;
-	motor_command.regen_DAC_value = REGEN_DAC_DEFAULT;
-	motor_command.motor_command_flags = get_command_flags();
-	motor_command_package_and_send(motor_command);
-
+	motor_command_t motor_command = get_motor_command(ACCEL_DAC_OFF, REGEN_DAC_OFF);
+	motor_command_package_and_send(&motor_command);
 }
+
 /*
  * @brief helper functions to return the flags in the motor command message.
  */
@@ -219,5 +322,28 @@ uint8_t get_command_flags()
 	return flags;
 }
 
+/*
+ * @brief helper function that returns a motor command given accelerator and regen DAC values
+ *
+ * @param accel_DAC 10 bit accelerator DAC value
+ * @param regen_DAC 10 bit regen DAC value
+ *
+ * @returns motor_command_t motor_command type
+ *
+ */
+motor_command_t get_motor_command(uint16_t accel_DAC, uint16_t regen_DAC)
+{
+	motor_command_t motor_command;
+	motor_command.accel_DAC_value = accel_DAC;
+	motor_command.regen_DAC_value = regen_DAC;
+	motor_command.motor_command_flags = get_command_flags();
+	return motor_command;
+}
 
+void clear_request_flags()
+{
+	input_flags.park_state_request = false;
+	input_flags.forward_state_request = false;
+	input_flags.reverse_state_request = false;
+}
 

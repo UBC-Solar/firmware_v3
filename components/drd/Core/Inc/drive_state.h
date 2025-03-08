@@ -25,12 +25,19 @@
 #define THROTTLE_ADC_MIN_VALUE 200
 #define THROTTLE_ADC_MAX_VALUE 3896
 #define ADC_MAX_DIFFERENCE 100 // change when we have a better idea
-#define REGEN_DAC_DEFAULT 1023
+
+
+#define REGEN_DAC_ON 1023
+#define REGEN_DAC_OFF 0
+#define ACCEL_DAC_OFF 0
+
 #define ADC_NO_THROTTLE_MAX 0 //figure out
 #define ADC_FULL_THROTTLE_MIN 0 //figure out
 #define ADC_THROTTLE_MAX	0 //figure out
 #define ADC_LOWER_DEADZONE 0 //tbd
 #define ADC_UPPER_DEADZONE 0 //tbd
+
+#define MOTOR_DRIVE_COMMAND_ADDRESS 0x401
 
 /*	Data Types	*/
 typedef struct{
@@ -55,7 +62,7 @@ typedef struct {
 
 typedef enum {
 	INVALID = (uint8_t) 0x00,
-	DRIVE = (uint8_t) 0x01,
+	FORWARD = (uint8_t) 0x01,
 	CRUISE = (uint8_t) 0x02,
 	PARK = (uint8_t) 0x03,
 	REVERSE = (uint8_t) 0x04

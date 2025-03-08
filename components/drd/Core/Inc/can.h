@@ -35,7 +35,7 @@ extern "C" {
 extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
-
+extern const CAN_TxHeaderTypeDef drive_command_header;
 /* USER CODE END Private defines */
 
 void MX_CAN_Init(void);

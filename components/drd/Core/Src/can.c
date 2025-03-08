@@ -23,9 +23,23 @@
 /* USER CODE BEGIN 0 */
 #include "CAN_comms.h"
 #include "external_lights.h"
+#include "drive_state.h"
 
 void CAN_filter_init(CAN_FilterTypeDef* can_filter);
 
+
+/**
+ * 	CAN message header for a drive command. This command header is to
+ * 	send an appropriate drive command to the motor controller.
+ */
+const CAN_TxHeaderTypeDef drive_command_header = {
+    .StdId = MOTOR_DRIVE_COMMAND_ADDRESS,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CAN_DATA_SIZE
+
+};
 
 /* USER CODE END 0 */
 
