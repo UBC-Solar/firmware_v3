@@ -19,12 +19,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
-
 /* USER CODE BEGIN 0 */
 #include "CAN_comms.h"
 #include "external_lights.h"
-
-#define TURN_SIGNAL_MSG_ID      0x580
+#include "fault_lights.h"
 
 void CAN_filter_init(CAN_FilterTypeDef* can_filter);
 
@@ -182,13 +180,10 @@ void CAN_tasks_init()
 
 void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
-//	//Todo: handle parsing rx messages
-//	case(CAN_comms_Rx_msg)
-//
-//		fault: fault_light_handle(CAN_comms_Rx_msg);
-//		turn: turn_signal_handle(CAN_comms_Rx_msg);
-//
-	//Todo: add logic to only pass in CAN messages with the right ID
+/*
+ *	handle parsing rx messages
+ */
+
 	uint32_t CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
 	switch(CAN_ID){
 		case CAN_ID_PACK_CURRENT:
@@ -196,6 +191,7 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 		case CAN_ID_BATT_FAULTS:
 		case CAN_ID_PACK_VOLTAGE:
 			Set_fault_lights(CAN_ID, CAN_comms_Rx_msg->data);
+			break;
 
 		case CAN_ID_TURN_SIGNALS:
 			External_Lights_set_turn_signals(CAN_comms_Rx_msg);
