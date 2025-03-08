@@ -27,12 +27,11 @@ void Set_fault_lights(uint32_t CAN_ID, uint8_t* data){
 			break;
 
 		case CAN_ID_MTR_FAULTS:
-
+			parse_mtr_faults(data);
 			break;
 
 		case CAN_ID_BATT_FAULTS:
 			parse_batt_faults(data, pack_current_sign);
-
 			break;
 
 		case CAN_ID_PACK_VOLTAGE:
@@ -56,11 +55,34 @@ void estop(uint8_t* can_rx_data){
 	return;
 }
 
+void parse_mtr_faults(uint8_t* can_rx_data){
+	uint8_t temp_byte, motor_fault, overtemperature_fault, overcurrent_fault;
+
+	/*Byte 0 reading*/
+	temp_byte = can_rx_data[0]; // Contains bits 0-7
+	overtemperature_fault = GETBIT(temp_byte, 3);
+
+	/*Byte 2 reading*/
+	temp_byte = can_rx_data[2];
+	overcurrent_fault = GETBIT(temp_byte, 1);
+
+	/*Byte 3 reading*/
+	temp_byte = can_rx_data[3];
+	motor_fault = GETBIT(temp_byte, 0);
+
+	HAL_GPIO_WritePin(MTR_OT_GPIO_Port, MTR_OT_Pin, overtemperature_fault); 				// Motor Over Temperature
+	HAL_GPIO_WritePin(MTR_OC_GPIO_Port, MTR_OC_Pin, overcurrent_fault); 					// Motor Over-current fault
+	HAL_GPIO_WritePin(MTR_FLT_GPIO_Port, MTR_FLT_Pin, motor_fault); 					 	// Motor Fault
+
+	return;
+
+}
+
 void parse_batt_faults(uint8_t* can_rx_data, uint8_t current_sign){
 
 	uint8_t temp_byte, slave_board_comm_fault, overvolt_fault, self_test_fault,
-				overtemp_fault, undervolt_fault, discharge_or_charge_overcurr_fault,
-				charge_overcurrent_fault, discharge_overcurrent_fault;
+			overtemp_fault, undervolt_fault, discharge_or_charge_overcurr_fault,
+			charge_overcurrent_fault, discharge_overcurrent_fault;
 
 	/* Byte 0 readings */
 	temp_byte = can_rx_data[0]; // Contains bits 0-7, 7 6 5 4 3 2 1 0

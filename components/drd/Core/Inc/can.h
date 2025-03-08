@@ -42,9 +42,9 @@ extern CAN_HandleTypeDef hcan;
 #define CAN_ID_PACK_CURRENT		    0x450
 #define CAN_ID_BATT_FAULTS		 	0x622
 #define CAN_ID_PACK_VOLTAGE		    0x623
-#define CAN_ID_MTR_FAULTS         	0x08A50225 // Todo: Change this later
-
-#define CAN_ID_TURN_SIGNALS       	0x000 //Todo: Change this later
+#define CAN_ID_MTR_FAULTS         	0x08A50225
+#define CAN_ID_MTR_DATA_REQUEST     0x08F89540 //DRD sends data request to the MCU
+#define CAN_ID_TURN_SIGNALS       	0x580 
 
 /* USER CODE END Private defines */
 
