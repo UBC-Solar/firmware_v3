@@ -56,7 +56,7 @@ dkms.conf
 .metadata*
 .vscode*
 RemoteSystemsTempFiles*
-.settings*
+.settings/*
 **/Backup/
 
 # Compiled binaries
