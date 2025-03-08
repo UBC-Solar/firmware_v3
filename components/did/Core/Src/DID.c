@@ -460,10 +460,9 @@ void parse_warnings(uint8_t* CAN_rx_data)
 
 }
 
-//nothing
 void DID_timeout()
 {
-    static uint8_t lastPage; 
+    static uint8_t lastPage;
     static uint32_t lastPageTime;
 
     // If DID is on a page more than DID_PAGE_TIMEOUT ms, set current page to PAGE_0
