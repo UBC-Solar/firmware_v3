@@ -182,9 +182,6 @@ void CAN_tasks_init()
 
 void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
-
-  CAN_comms_Add_Tx_message()
-  
 //	//Todo: handle parsing rx messages
 //	case(CAN_comms_Rx_msg)
 //
@@ -192,7 +189,7 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 //		turn: turn_signal_handle(CAN_comms_Rx_msg);
 //
 	//Todo: add logic to only pass in CAN messages with the right ID
-  uint32_t CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
+	uint32_t CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
 	switch(CAN_ID){
 		case CAN_ID_PACK_CURRENT:
 		case CAN_ID_MTR_FAULTS:
