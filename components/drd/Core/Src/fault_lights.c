@@ -121,10 +121,12 @@ void batt_pack_voltage_fault(uint8_t* can_rx_data){
 
 	if (temp_pack_voltage.U16_value >= MAX_PACK_VOLTAGE){
 		HAL_GPIO_WritePin(BATT_HI_GPIO_Port, BATT_HI_Pin, HIGH);
+		HAL_GPIO_WritePin(BATT_LO_GPIO_Port, BATT_LO_Pin, LOW);
 	}
 
 	else if(temp_pack_voltage.U16_value <= MIN_PACK_VOLTAGE){
 		HAL_GPIO_WritePin(BATT_LO_GPIO_Port, BATT_LO_Pin, HIGH);
+		HAL_GPIO_WritePin(BATT_HI_GPIO_Port, BATT_HI_Pin, LOW);
 	}
 
 	else{
