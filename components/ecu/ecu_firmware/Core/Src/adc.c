@@ -36,6 +36,8 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
   else if (adc_voltage >= ADC_RESOLUTION) adc_voltage = ADC_RESOLUTION;
   adc_voltage = adc_voltage * ADC_VOLTAGE_SCALING * ADC_MAX_VOLT_READING/ADC_RESOLUTION;
 
+  int32_t current_sensor_voltage_reading_error = 0; // Can't define variable inside case statement
+
   switch (adc_channel)
   {
   case OD_REF_SENSE__ADC1_IN5: // Overdischarge current threshold (mV)
@@ -59,7 +61,8 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
     break;
   
   case PACK_CURRENT_SENSE__ADC1_IN14: // Pack current sense (mA)
-    ecu_data.adc_data.ADC_pack_current = (int32_t)(HASS100S_STD_DEV + HASS100S_INTERNAL_OFFSET + 100*(adc_voltage - HASS100S_VOLTAGE_OFFSET - ecu_data.adc_data.ADC_pack_current_offset) / 0.625); //see HASS100-S datasheet     
+    current_sensor_voltage_reading_error = HASS100S_VOLTAGE_ERROR_TERM_CONSTANT + (HASS100S_VOLTAGE_ERROR_TERM_MULTIPLE * adc_voltage); // See https://ubcsolar26.monday.com/boards/7524367629/pulses/7524367868
+    ecu_data.adc_data.ADC_pack_current = (int32_t)(HASS100S_STD_DEV + HASS100S_INTERNAL_OFFSET + 100*(adc_voltage + current_sensor_voltage_reading_error - ecu_data.adc_data.ADC_pack_current_offset) / 0.625); //see HASS100-S datasheet
     break;
 
   case T_AMBIENT_SENSE__ADC1_IN15: // Ambient controlboard temperature (deg C)
