@@ -16,14 +16,20 @@
 
 #define GETBIT(var, bit)	(((var) >> (bit)) & 1) // gives bit position
 
+// Global variable for pack_current_sign
+static uint8_t last_pack_current_sign = 0;
+
+
 void Set_fault_lights(uint32_t CAN_ID, uint8_t* data){
 
-	uint8_t pack_current_sign = 0;
+	if (data == NULL) {
+	    return; // Handle error gracefully
+	}
 
 	switch(CAN_ID){
 		case CAN_ID_PACK_CURRENT:
 			estop(data);
-			pack_current_sign = GETBIT(data[1],7); //reading the 2's compliment pack current's MSB to get the sign
+			last_pack_current_sign = GETBIT(data[1],7); //reading the 2's compliment pack current's MSB to get the sign
 			break;
 
 		case CAN_ID_MTR_FAULTS:
@@ -31,7 +37,7 @@ void Set_fault_lights(uint32_t CAN_ID, uint8_t* data){
 			break;
 
 		case CAN_ID_BATT_FAULTS:
-			parse_batt_faults(data, pack_current_sign);
+			parse_batt_faults(data);
 			break;
 
 		case CAN_ID_PACK_VOLTAGE:
@@ -78,7 +84,7 @@ void parse_mtr_faults(uint8_t* can_rx_data){
 
 }
 
-void parse_batt_faults(uint8_t* can_rx_data, uint8_t current_sign){
+void parse_batt_faults(uint8_t* can_rx_data){
 
 	uint8_t temp_byte, slave_board_comm_fault, overvolt_fault, self_test_fault,
 			overtemp_fault, undervolt_fault, discharge_or_charge_overcurr_fault,
@@ -93,8 +99,8 @@ void parse_batt_faults(uint8_t* can_rx_data, uint8_t current_sign){
 	undervolt_fault = GETBIT(temp_byte, 3);
 	overvolt_fault = GETBIT(temp_byte, 4);
 	discharge_or_charge_overcurr_fault = GETBIT(temp_byte, 6);
-	charge_overcurrent_fault = (discharge_or_charge_overcurr_fault && current_sign);  	 	// Charging overcurrent fault if pack current is negative(MSB = 1)
-	discharge_overcurrent_fault = (discharge_or_charge_overcurr_fault && (!current_sign));  // Discharging overcurrent fault if pack current is positive (MSB = 0)
+	charge_overcurrent_fault = (discharge_or_charge_overcurr_fault && last_pack_current_sign);  	 	// Charging overcurrent fault if pack current is negative(MSB = 1)
+	discharge_overcurrent_fault = (discharge_or_charge_overcurr_fault && (!last_pack_current_sign));  	// Discharging overcurrent fault if pack current is positive (MSB = 0)
 
 	HAL_GPIO_WritePin(BMS_COMM_FLT_GPIO_Port, BMS_COMM_FLT_Pin, slave_board_comm_fault); 	// BMS communications fault
 	HAL_GPIO_WritePin(BATT_OV_GPIO_Port, BATT_OV_Pin, overvolt_fault); 					 	// Battery over voltage fault
@@ -123,7 +129,7 @@ void batt_pack_voltage_fault(uint8_t* can_rx_data){
 
 	else{
 		HAL_GPIO_WritePin(BATT_HI_GPIO_Port, BATT_HI_Pin, LOW);
-		HAL_GPIO_WritePin(BATT_HI_GPIO_Port, BATT_HI_Pin, LOW);
+		HAL_GPIO_WritePin(BATT_LO_GPIO_Port, BATT_LO_Pin, LOW);
 	}
 
 	return;

@@ -180,11 +180,16 @@ void CAN_tasks_init()
 
 void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
-/*
- *	handle parsing rx messages
- */
+	/*
+	 *	handle parsing rx messages
+	 */
+
+	if (CAN_comms_Rx_msg == NULL) {
+		    return;
+	}
 
 	uint32_t CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
+
 	switch(CAN_ID){
 		case CAN_ID_PACK_CURRENT:
 		case CAN_ID_MTR_FAULTS:
