@@ -26,6 +26,9 @@
 #define HASS100S_INTERNAL_OFFSET -2551.5 // (mA) see spreadsheet in BMS BOM for sensor default offset characterization
 // add this value to standard current measurement to get correct current
 
+#define HASS100S_VOLTAGE_ERROR_TERM_CONSTANT -9 // (mV) subtract from ADC measurement of BATT_CURR_SENSE pin to get accurate current reading, see https://ubcsolar26.monday.com/boards/7524367629/pulses/7524367868
+#define HASS100S_VOLTAGE_ERROR_TERM_MULTIPLE -0.0000000288
+
 #define SUPP_VOLT_DIVIDER_SCALING 0.2249408050513023 //divide ADC reading by this value to get actual SUPP voltage
 
 #define SUPP_BATT_VOLTAGE_DIVIDER 11.0
