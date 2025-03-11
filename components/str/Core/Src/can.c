@@ -145,7 +145,7 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 void CAN_tx_turn_signal_mode_msg(turn_signal_status_t turn_signal, mode_status_t mode_status) {
 
   uint8_t turn_signal_mode_reading[1];
-  turn_signal_reading[0] = (mode_status << 2) | (turn_signal);
+  turn_signal_mode_reading[0] = (mode_status << 2) | (turn_signal);
 
   uint32_t mailbox;
 
