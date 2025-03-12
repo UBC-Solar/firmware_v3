@@ -317,7 +317,7 @@ void LCD_display_drive_state(int state)
             break;
     }
     old_bb_drive_state = draw_text(state_str, STATE_X, STATE_Y, STATE_FONT, STATE_SPACING);
-    // lcd_refresh();
+    lcd_refresh();
 }
 
 /**

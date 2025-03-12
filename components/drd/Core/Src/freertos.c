@@ -49,7 +49,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-lcd_data_t lcd_data;
+
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -191,19 +191,15 @@ void LCDUpdatetask(void *argument)
   /* USER CODE BEGIN LCDUpdatetask */
   /* Infinite loop */
   LCD_init(&hspi1);
-  int v1 = 0;
-  float v2 = -20;
+
   for(;;)
   {
-    LCD_display_power_bar(lcd_data.pack_current, lcd_data.pack_voltage);
-    LCD_display_speed(lcd_data.speed % 100, lcd_data.speed_units);
-    LCD_display_drive_state(lcd_data.drive_state % 5);
-    LCD_display_SOC(lcd_data.soc % 101);
+    LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
+    LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
+    LCD_display_drive_state(g_lcd_data.drive_state);
+    LCD_display_SOC(g_lcd_data.soc);
 
-    ++v1;
-    v2 += 0.4;
-
-    osDelay(200);
+    osDelay(LCD_UPDATE_DELAY);
   }
   /* USER CODE END LCDUpdatetask */
 }

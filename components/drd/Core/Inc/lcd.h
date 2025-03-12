@@ -91,6 +91,7 @@
  #define CMD_COLUMN_UPPER		0b00010000
  #define CMD_DISPLAY_START		0b01000000
 
+ #define LCD_UPDATE_DELAY 200
  typedef struct {
     // Values will be set from drive_state.c
     uint8_t speed;
@@ -101,6 +102,8 @@
     uint8_t soc;
     uint8_t drive_mode;
 } lcd_data_t;
+
+extern lcd_data_t g_lcd_data;
 
 /** 
  * @brief Displays the speed on the LCD.
