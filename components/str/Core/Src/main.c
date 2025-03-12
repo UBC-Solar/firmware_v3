@@ -69,30 +69,39 @@ turn_signal_status_t get_turn_signal_status() {
 
   turn_signal_status_t status;
 
-  status = TS_Off;
+  status = TS_OFF;
 
   if(!(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin)) && (HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin))) 
   {
-    status = TS_Left;
+    status = TS_LEFT;
   }
 
   else if(!(HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin)) && (HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin))) 
   {
-    status = TS_Right;
+    status = TS_RIGHT;
   }
 
   return status;
 }
 
 /**
- * @brief Checks the status and reads if it is on power mode or eco mode
+ * @brief Checks the status on the MODE_PW Pin and reads if it is on power mode or eco mode
  * @return Returns the status of the mode being 0 or 1
  */
 mode_status_t get_mode_status() {
 
   mode_status_t status;
 
-  // TODO: check pin status and set it to power/eco mode
+  status = ECO_MODE;
+
+  if(!(HAL_GPIO_ReadPin(MODE_PW_GPIO_Port, MODE_PW_Pin)))
+  {
+    status = POWER_MODE;
+  } else {
+    status = ECO_MODE;
+  }
+
+  return status;
 }
 /* USER CODE END 0 */
 
@@ -126,10 +135,10 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN_Init();
-  MX_UART5_Init();
   MX_ADC1_Init();
+  MX_UART5_Init();
   /* USER CODE BEGIN 2 */
-  turn_signal_status_t current_status = get_turn_signal_status();
+  turn_signal_status_t turn_status = get_turn_signal_status();
 
   mode_status_t mode_status = get_mode_status();
 
@@ -144,13 +153,14 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    turn_signal_status_t current_status = get_turn_signal_status();
+    turn_signal_status_t turn_status = get_turn_signal_status();
 
     mode_status_t mode_status = get_mode_status();
 
-    if(g_turn_signal_status != current_status || g_mode_status != mode_status)
+    // Checks if either the turn signal or mode status value changes
+    if(g_turn_signal_status != turn_status || g_mode_status != mode_status)
     {
-      g_turn_signal_status = current_status;
+      g_turn_signal_status = turn_status;
 
       g_mode_status = mode_status;
 

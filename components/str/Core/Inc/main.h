@@ -66,14 +66,14 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN Private defines */
 typedef enum {
-  TS_Off = 0b00,
-  TS_Right = 0b01,
-  TS_Left = 0b10,
+  TS_OFF = 0b00,
+  TS_RIGHT = 0b01,
+  TS_LEFT = 0b10,
 } turn_signal_status_t;
 
 typedef enum {
-  Power_Mode = 0b00,
-  Eco_Mode = 0b01,
+  POWER_MODE = 0b00,
+  ECO_MODE = 0b01,
 } mode_status_t;
 /* USER CODE END Private defines */
 
