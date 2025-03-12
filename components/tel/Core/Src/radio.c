@@ -64,6 +64,7 @@ void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 	 UART_radio_transmit(&radio_msg);
 }
 
+
 void RADIO_filter_and_queue_msg_tx(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
 {
 	// TODO: Implement filtering
@@ -73,7 +74,7 @@ void RADIO_filter_and_queue_msg_tx(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
 	set_radio_msg_tx(&(CAN_comms_Tx_msg->header), CAN_comms_Tx_msg->data, &radio_msg);
 
 	/* Transmit Radio Message */
-	 UART_radio_transmit(&radio_msg);
+	UART_radio_transmit(&radio_msg);
 }
 
 

@@ -32,6 +32,9 @@ extern "C" {
 #define CTRL_6    0x15 // Control register for gyroscope full-scale range
 #define CTRL_8    0x17 // Control register for accelerometer full-scale range
 
+#define IMU_TASK_DELAY      100
+#define IMU_TASK_OFFSET_DELAY       33
+
 /**
  * @brief Task function for getting IMU data and transmitting over CAN.
  */

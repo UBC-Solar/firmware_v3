@@ -108,6 +108,7 @@ int main(void)
   MX_TIM2_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
+  MX_UART5_Init();
   /* USER CODE BEGIN 2 */
   
   IWDG_perform_reset_sequence();      // Check for IWDG reset    
@@ -115,13 +116,13 @@ int main(void)
   /* USER CODE END 2 */
 
   /* Init scheduler */
-//   osKernelInitialize();
+  osKernelInitialize();
 
-//   /* Call init function for freertos objects (in cmsis_os2.c) */
-//   MX_FREERTOS_Init();
+  /* Call init function for freertos objects (in cmsis_os2.c) */
+  MX_FREERTOS_Init();
 
-//   /* Start scheduler */
-//   osKernelStart();
+  /* Start scheduler */
+  osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
 
@@ -132,7 +133,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    gps_task();
   }
   /* USER CODE END 3 */
 }
