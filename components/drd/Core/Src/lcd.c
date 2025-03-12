@@ -94,7 +94,8 @@ static void lcd_clear_bounding_box(unsigned char x1, unsigned char y1, unsigned 
 /**
  * @brief Refreshes the LCD display by calling the ST7565 display update.
  */
-static void lcd_refresh() {
+static void lcd_refresh() 
+{
     for (int y = 0; y < 8; y++) {
 
     #ifdef ST7565_DIRTY_PAGES
@@ -316,7 +317,7 @@ void LCD_display_drive_state(int state)
             break;
     }
     old_bb_drive_state = draw_text(state_str, STATE_X, STATE_Y, STATE_FONT, STATE_SPACING);
-    lcd_refresh();
+    // lcd_refresh();
 }
 
 /**

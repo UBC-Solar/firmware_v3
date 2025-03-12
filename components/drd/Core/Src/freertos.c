@@ -49,7 +49,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
+lcd_data_t lcd_data;
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -195,10 +195,10 @@ void LCDUpdatetask(void *argument)
   float v2 = -20;
   for(;;)
   {
-    LCD_display_power_bar(v2, 130.0f);
-    LCD_display_speed(v1 % 100, 1);
-    LCD_display_drive_state(v1 % 5);
-    LCD_display_SOC(v1 % 101);  
+    LCD_display_power_bar(lcd_data.pack_current, lcd_data.pack_voltage);
+    LCD_display_speed(lcd_data.speed % 100, lcd_data.speed_units);
+    LCD_display_drive_state(lcd_data.drive_state % 5);
+    LCD_display_SOC(lcd_data.soc % 101);
 
     ++v1;
     v2 += 0.4;
