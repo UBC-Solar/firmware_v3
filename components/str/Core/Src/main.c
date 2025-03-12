@@ -35,9 +35,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TURN_SIGNAL_DELAY 200
+#define TURN_SIGNAL_MODE_DELAY 200
 
 volatile turn_signal_status_t g_turn_signal_status = 0;
+volatile mode_status_t g_mode_status = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -62,26 +63,46 @@ void SystemClock_Config(void);
   
 /**
  * @brief Reads the RTS and LTS pins and sets status to whichever pin is switched on 
- * @return returns the value of status being 0 for none, 1 for RTS and 2 for LTS
+ * @return Returns the value of status being 0 for none, 1 for RTS and 2 for LTS
  */
-  turn_signal_status_t get_turn_signal_status() {
+turn_signal_status_t get_turn_signal_status() {
 
-    turn_signal_status_t status;
+  turn_signal_status_t status;
 
-    status = TS_Off;
+  status = TS_OFF;
 
-    if(!(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin)) && (HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin))) 
-    {
-      status = TS_Left;
-    }
-
-    else if(!(HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin)) && (HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin))) 
-    {
-      status = TS_Right;
-    }
-
-    return status;
+  if(!(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin)) && (HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin))) 
+  {
+    status = TS_LEFT;
   }
+
+  else if(!(HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin)) && (HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin))) 
+  {
+    status = TS_RIGHT;
+  }
+
+  return status;
+}
+
+/**
+ * @brief Checks the status on the MODE_PW Pin and reads if it is on power mode or eco mode
+ * @return Returns the status of the mode being 0 or 1
+ */
+mode_status_t get_mode_status() {
+
+  mode_status_t status;
+
+  status = ECO_MODE;
+
+  if(!(HAL_GPIO_ReadPin(MODE_PW_GPIO_Port, MODE_PW_Pin)))
+  {
+    status = POWER_MODE;
+  } else {
+    status = ECO_MODE;
+  }
+
+  return status;
+}
 /* USER CODE END 0 */
 
 /**
@@ -114,10 +135,14 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN_Init();
-  MX_UART5_Init();
   MX_ADC1_Init();
+  MX_UART5_Init();
   /* USER CODE BEGIN 2 */
-  
+  turn_signal_status_t turn_status = get_turn_signal_status();
+
+  mode_status_t mode_status = get_mode_status();
+
+  CAN_tx_turn_signal_mode_msg(g_turn_signal_status, g_mode_status);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -128,16 +153,21 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    turn_signal_status_t current_status = get_turn_signal_status();
+    turn_signal_status_t turn_status = get_turn_signal_status();
 
-    if(g_turn_signal_status != current_status)
+    mode_status_t mode_status = get_mode_status();
+
+    // Checks if either the turn signal or mode status value changes
+    if(g_turn_signal_status != turn_status || g_mode_status != mode_status)
     {
-      g_turn_signal_status = current_status;
+      g_turn_signal_status = turn_status;
 
-      CAN_tx_turn_signal_msg(g_turn_signal_status);
+      g_mode_status = mode_status;
+
+      CAN_tx_turn_signal_mode_msg(g_turn_signal_status, g_mode_status);
     }
 
-    HAL_Delay(TURN_SIGNAL_DELAY);
+    HAL_Delay(TURN_SIGNAL_MODE_DELAY);
   }
   /* USER CODE END 3 */
 }
