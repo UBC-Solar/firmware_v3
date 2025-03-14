@@ -191,19 +191,15 @@ void LCDUpdatetask(void *argument)
   /* USER CODE BEGIN LCDUpdatetask */
   /* Infinite loop */
   LCD_init(&hspi1);
-  int v1 = 0;
-  float v2 = -20;
+
   for(;;)
   {
-    LCD_display_power_bar(v2, 130.0f);
-    LCD_display_speed(v1 % 100, 1);
-    LCD_display_drive_state(v1 % 5);
-    LCD_display_SOC(v1 % 101);  
+    LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
+    LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
+    LCD_display_drive_state(g_lcd_data.drive_state);
+    LCD_display_SOC(g_lcd_data.soc);
 
-    ++v1;
-    v2 += 0.4;
-
-    osDelay(200);
+    osDelay(LCD_UPDATE_DELAY);
   }
   /* USER CODE END LCDUpdatetask */
 }
