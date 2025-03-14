@@ -32,13 +32,16 @@
 #define REGEN_DAC_OFF 0
 #define ACCEL_DAC_OFF 0
 
-#define ADC_NO_THROTTLE_MAX 0 //figure out
-#define ADC_FULL_THROTTLE_MIN 0 //figure out
+#define ADC_NO_THROTTLE_MAX 1300 //figure out
+#define ADC_FULL_THROTTLE_MIN 1850 //figure out
 #define ADC_THROTTLE_MAX	0 //figure out
-#define ADC_LOWER_DEADZONE 0 //tbd
-#define ADC_UPPER_DEADZONE 0 //tbd
+#define ADC_LOWER_DEADZONE 900 //tbd
+#define ADC_UPPER_DEADZONE 4000 //tbd
 
-#define MOTOR_DRIVE_COMMAND_ADDRESS 0x401
+
+#define WHEEL_RADIUS 0.283
+#define M_PI 3.14159
+#define VELOCITY_THRESHOLD 0.5     	  // Max velocity allowed during a drive state change (m/s)
 
 /*	Data Types	*/
 typedef struct{
@@ -71,12 +74,13 @@ typedef enum {
 /*	Global Variables	*/
 
 extern input_flags_t input_flags;
-extern drive_state_t state;
-
+extern drive_state_t drive_state;
+extern volatile bool eco_mode;
+extern volatile uint32_t car_velocity;
 
 /*	Functions	*/
 void drive_state_interrupt_handler(uint16_t pin);
-void Drive_State_can_rx_handle(uint8_t* data, uint32_t msg_id);
+void Drive_State_can_rx_handle(uint32_t msg_id, uint8_t* data);
 void Drive_State_Machine_handler();
 void Motor_Controller_query_data();
 

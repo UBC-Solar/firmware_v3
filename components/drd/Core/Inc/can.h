@@ -44,6 +44,8 @@ extern const CAN_TxHeaderTypeDef mdu_request_header;
 /*
  *	CAN IDs
  */
+
+#define MOTOR_DRIVE_COMMAND_ADDRESS 0x401
 #define CAN_ID_PACK_CURRENT		    0x450
 #define CAN_ID_BATT_FAULTS		 	0x622
 #define CAN_ID_PACK_VOLTAGE		    0x623

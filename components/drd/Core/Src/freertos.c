@@ -208,17 +208,16 @@ void LCDUpdatetask(void *argument)
 {
   /* USER CODE BEGIN LCDUpdatetask */
   /* Infinite loop */
+
   LCD_init(&hspi1);
-  int v1 = 0;
   float v2 = -20;
   for(;;)
   {
     LCD_display_power_bar(v2, 130.0f);
-    LCD_display_speed(v1 % 100, 1);
-    LCD_display_drive_state(v1 % 5);
-    LCD_display_SOC(v1 % 101);  
+    LCD_display_speed(car_velocity % 100, 1);
+    LCD_display_drive_state(drive_state);
+    LCD_display_SOC(5 % 101);
 
-    ++v1;
     v2 += 0.4;
 
     osDelay(200);
@@ -240,6 +239,7 @@ void DriveState_task(void *argument)
   for(;;)
   {
     osDelay(DRIVE_STATE_MACHINE_DELAY);
+    Drive_State_Machine_handler();
   }
   /* USER CODE END DriveState_task */
 }

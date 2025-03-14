@@ -40,9 +40,10 @@ static void clear_request_flags();
 
 
 /*	Global Variables	*/
-volatile uint32_t velocity = 0;
+volatile uint32_t car_velocity = 0;
+volatile bool eco_mode = true;
 input_flags_t input_flags;
-drive_state_t state = PARK;
+drive_state_t drive_state = PARK;
 uint16_t throttle_DAC = 0;
 
 
@@ -57,7 +58,7 @@ void Drive_State_Machine_handler()
 	motor_command_t motor_command;
 	update_input_flags();
 
-	switch (state)
+	switch (drive_state)
 	{
 		case FORWARD:
 			motor_command = forward_state_handle();
@@ -137,48 +138,46 @@ void handle_state_transition()
 		return;
 	}
 
-	switch (state)
+	switch (drive_state)
 		{
 			case FORWARD:
 				if(reverse_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 				{
-					state = REVERSE;
+					drive_state = REVERSE;
 				}
 				else if(park_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 				{
-					state = PARK;
+					drive_state = PARK;
 				}
 			break;
 
 			case REVERSE:
 				if(forward_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 				{
-					state = FORWARD;
+					drive_state = FORWARD;
 				}
 				else if(park_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 				{
-					state = PARK;
+					drive_state = PARK;
 				}
 			break;
 
 			case PARK:
 				if (forward_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 				{
-					state = FORWARD;
+					drive_state = FORWARD;
 				}
 				else if(reverse_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
 				{
-					state = REVERSE;
+					drive_state = REVERSE;
 				}
 			break;
 
 			default:
-				state = PARK;
+				drive_state = PARK;
 		}
 	//reset state transition requests
-	input_flags.forward_state_request = 0;
-	input_flags.reverse_state_request = 0;
-	input_flags.park_state_request = 0;
+	clear_request_flags();
 }
 
 
@@ -215,16 +214,30 @@ void motor_command_package_and_send(motor_command_t* motor_command)
 /*
  * @brief Handles Received CAN Messages relevant
  */
-void Drive_State_can_rx_handle(uint8_t* data, uint32_t msg_id)
+void Drive_State_can_rx_handle(uint32_t msg_id, uint8_t* data)
 {
 	switch(msg_id)
 	{
 		case(MDU_REQUEST_COMMAND_ID):
-			velocity = (data[4] >> 2) | (data[5] & 0x3f); //35th to 46th bit
+
+			uint32_t rpm = (data[4] >> 2) | (data[5] & 0x3f); //35th to 46th bit
+			float velocity =(WHEEL_RADIUS * 2.0 * M_PI * rpm) / 60.0;
+			car_velocity = velocity * 3.6;
+
+			if (velocity < VELOCITY_THRESHOLD)
+			{
+				input_flags.velocity_under_threshold = true;
+			}
+			else
+			{
+				input_flags.velocity_under_threshold = false;
+			}
+
 		break;
 
 		case(STR_CAN_MSG_ID):
 			input_flags.eco_mode_on = (data[0] >> 2); //third bit of steering CAN message
+			eco_mode = input_flags.eco_mode_on; //global variable for LCD
 		break;
 	}
 
@@ -264,6 +277,7 @@ void update_input_flags()
  */
 void drive_state_interrupt_handler(uint16_t pin)
 {
+	HAL_GPIO_TogglePin(DEBUG_LED_1_GPIO_Port, DEBUG_LED_1_Pin);
 	if (pin == BRK_IN_Pin)
 	{
 		brake_press_handle();
@@ -385,7 +399,7 @@ void brake_press_handle()
 uint8_t get_command_flags()
 {
 	uint8_t flags = 0;
-	flags |= (input_flags.eco_mode_on ? 1: 0);
+	flags |= (input_flags.mech_brake_pressed ? 1: 0);
 	flags |= (input_flags.eco_mode_on ? 1 << 1: 0);
 	return flags;
 }
