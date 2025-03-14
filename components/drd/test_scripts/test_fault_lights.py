@@ -245,7 +245,7 @@ def send_batt_flt(bus, val):
     send_can_msg(bus, msg.id, msg.data, msg.is_extended)
 
 def send_estop(bus, val):
-    msg = CANMessage(BMS_FAULT_ID, is_extended=False)
+    msg = CANMessage(PACK_CURRENT_ID, is_extended=False)
     msg.set_estop_pressed(val)
     send_can_msg(bus, msg.id, msg.data, msg.is_extended)
 
@@ -281,8 +281,9 @@ def main():
         sys.exit(1)
 
 
-    send_bms_comm_fault(bus, FAULT)
-    # send_batt_hi(bus, 139)
+    # send_bms_comm_fault(bus, FAULT)
+    # send_batt_hi(bus)
+    # send_batt(bus, 100)
     # send_mtr_oc(bus, FAULT)
     # send_mtr_flt(bus, FAULT)
     # send_mtr_ot(bus, FAULT)
@@ -292,7 +293,7 @@ def main():
     # send_batt_uv(bus, FAULT)
     # send_batt_ot(bus, FAULT)
     # send_batt_flt(bus, FAULT)
-    # send_estop(bus, FAULT)
+    send_estop(bus, FAULT)
 
 
     bus.shutdown()
