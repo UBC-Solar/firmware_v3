@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
+
 /* USER CODE BEGIN 0 */
 #include "CAN_comms.h"
 #include "external_lights.h"

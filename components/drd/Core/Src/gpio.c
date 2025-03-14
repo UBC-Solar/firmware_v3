@@ -22,7 +22,7 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN 0 */
-
+#include "drive_state.h"
 /* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/
@@ -100,8 +100,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : REGEN_EN_Pin HAZARD_Pin BRK_IN_Pin */
-  GPIO_InitStruct.Pin = REGEN_EN_Pin|HAZARD_Pin|BRK_IN_Pin;
+  /*Configure GPIO pins : REGEN_EN_Pin HAZARD_Pin */
+  GPIO_InitStruct.Pin = REGEN_EN_Pin|HAZARD_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -113,10 +113,22 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(DISPLAY_RESET_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PARK_EN_Pin FORWARD_EN_Pin REVERSE_EN_Pin */
-  GPIO_InitStruct.Pin = PARK_EN_Pin|FORWARD_EN_Pin|REVERSE_EN_Pin;
+  /*Configure GPIO pin : BRK_IN_Pin */
+  GPIO_InitStruct.Pin = BRK_IN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(BRK_IN_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PARK_EN_Pin */
+  GPIO_InitStruct.Pin = PARK_EN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(PARK_EN_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : FORWARD_EN_Pin REVERSE_EN_Pin */
+  GPIO_InitStruct.Pin = FORWARD_EN_Pin|REVERSE_EN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/

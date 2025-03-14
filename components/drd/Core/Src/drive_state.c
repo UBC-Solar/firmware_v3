@@ -21,7 +21,7 @@
 
 
 /*	Local Function Declarations	*/
-static void motor_command_package_and_send(motor_command_t* motor_command);
+static void motor_command_package_and_send(motor_command_t* motor_command, bool from_ISR);
 motor_command_t get_motor_command(uint16_t accel_DAC, uint16_t regen_DAC);
 
 static void normalize_adc_values(uint16_t adc1, uint16_t adc2);
@@ -40,11 +40,12 @@ static void clear_request_flags();
 
 
 /*	Global Variables	*/
-volatile uint32_t car_velocity = 0;
+volatile uint32_t velocity_kmh = 0;
 volatile bool eco_mode = true;
 input_flags_t input_flags;
-drive_state_t drive_state = PARK;
+volatile drive_state_t drive_state = PARK;
 uint16_t throttle_DAC = 0;
+
 
 
 /*		DRIVE STATE MACHINE HANDLING	*/
@@ -76,7 +77,7 @@ void Drive_State_Machine_handler()
 			motor_command = get_motor_command(ACCEL_DAC_OFF, REGEN_DAC_OFF);
 	}
 
-	motor_command_package_and_send(&motor_command);
+	motor_command_package_and_send(&motor_command, false);
 	handle_state_transition();
 }
 
@@ -188,7 +189,7 @@ void handle_state_transition()
  *
  * @param motor_command, struct containing all motor command information to be sent over CAN
  */
-void motor_command_package_and_send(motor_command_t* motor_command)
+void motor_command_package_and_send(motor_command_t* motor_command, bool from_ISR)
 {
 	CAN_comms_Tx_msg_t msg;
 	msg.header = drive_command_header;
@@ -196,8 +197,8 @@ void motor_command_package_and_send(motor_command_t* motor_command)
 
 	uint8_t accel_first_byte = (uint8_t) (motor_command->accel_DAC_value & 255);
 	uint8_t accel_second_byte = (uint8_t) (motor_command->accel_DAC_value >> 8);
-	uint8_t regen_first_byte = (uint8_t) (motor_command->accel_DAC_value & 255);
-	uint8_t regen_second_byte = (uint8_t) (motor_command->accel_DAC_value >> 8);
+	uint8_t regen_first_byte = (uint8_t) (motor_command->regen_DAC_value & 255);
+	uint8_t regen_second_byte = (uint8_t) (motor_command->regen_DAC_value >> 8);
 
 	data[0] = accel_first_byte;
 	data[1] = accel_second_byte;
@@ -207,7 +208,15 @@ void motor_command_package_and_send(motor_command_t* motor_command)
 
 	memcpy(msg.data, data, CAN_DATA_SIZE);
 
-	CAN_comms_Add_Tx_message(&msg);
+	if (from_ISR)
+	{
+		CAN_comms_Add_Tx_messageISR(&msg);
+	}
+	else
+	{
+		CAN_comms_Add_Tx_message(&msg);
+	}
+
 }
 
 
@@ -218,11 +227,11 @@ void Drive_State_can_rx_handle(uint32_t msg_id, uint8_t* data)
 {
 	switch(msg_id)
 	{
-		case(MDU_REQUEST_COMMAND_ID):
+		case(FRAME0):
 
-			uint32_t rpm = (data[4] >> 2) | (data[5] & 0x3f); //35th to 46th bit
-			float velocity =(WHEEL_RADIUS * 2.0 * M_PI * rpm) / 60.0;
-			car_velocity = velocity * 3.6;
+			uint32_t rpm = (data[4] >> 3) | ((data[5] & 0x7f) << 5); //35th to 46th bit
+			float velocity = (WHEEL_RADIUS * 2.0 * M_PI * rpm) / 60.0;
+			velocity_kmh = velocity * 3.6;
 
 			if (velocity < VELOCITY_THRESHOLD)
 			{
@@ -238,6 +247,22 @@ void Drive_State_can_rx_handle(uint32_t msg_id, uint8_t* data)
 		case(STR_CAN_MSG_ID):
 			input_flags.eco_mode_on = (data[0] >> 2); //third bit of steering CAN message
 			eco_mode = input_flags.eco_mode_on; //global variable for LCD
+		break;
+
+		case(0x500):
+			int value = data[0];
+			if (value == 0)
+			{
+				input_flags.park_state_request = true;
+			}
+			else if (value == 1)
+			{
+				input_flags.reverse_state_request = true;
+			}
+			else if (value == 2)
+			{
+				input_flags.forward_state_request = true;
+			}
 		break;
 	}
 
@@ -335,21 +360,21 @@ void get_accel_readings()
 void normalize_adc_values(uint16_t adc1, uint16_t adc2)
 {
 	//Todo: confirm ADC orientation
-	uint16_t uniform_adc = ((adc1 + adc2)/2) >> 2; //get rid of lowest 2 bits
+	uint16_t average_adc = ((adc1 + adc2)/2);
 
-	if (uniform_adc < ADC_NO_THROTTLE_MAX)
+	if (average_adc < ADC_NO_THROTTLE_MAX)
 	{
 		throttle_DAC = 0;
 		return;
 	}
 
-	if (uniform_adc > ADC_FULL_THROTTLE_MIN)
+	if (average_adc > ADC_FULL_THROTTLE_MIN)
 	{
 		throttle_DAC = ADC_THROTTLE_MAX;
 		return;
 	}
 
-	throttle_DAC = uniform_adc;
+	throttle_DAC = average_adc >> 2; //get rid of least 2 bits for 10 bit DAC on MC
 
 }
 
@@ -389,8 +414,9 @@ bool accel_check_validity(uint16_t adc1, uint16_t adc2)
  */
 void brake_press_handle()
 {
+	input_flags.mech_brake_pressed = true;
 	motor_command_t motor_command = get_motor_command(ACCEL_DAC_OFF, REGEN_DAC_OFF);
-	motor_command_package_and_send(&motor_command);
+	motor_command_package_and_send(&motor_command, true);
 }
 
 /*

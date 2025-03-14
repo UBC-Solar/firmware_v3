@@ -214,7 +214,7 @@ void LCDUpdatetask(void *argument)
   for(;;)
   {
     LCD_display_power_bar(v2, 130.0f);
-    LCD_display_speed(car_velocity % 100, 1);
+    LCD_display_speed(velocity_kmh % 100, 1);
     LCD_display_drive_state(drive_state);
     LCD_display_SOC(5 % 101);
 
@@ -235,6 +235,7 @@ void LCDUpdatetask(void *argument)
 void DriveState_task(void *argument)
 {
   /* USER CODE BEGIN DriveState_task */
+	input_flags.velocity_under_threshold = true;
   /* Infinite loop */
   for(;;)
   {

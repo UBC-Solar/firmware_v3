@@ -146,8 +146,8 @@ void External_Lights_set_turn_signals(uint32_t can_id, uint8_t* data)
 
 	if (can_id == STR_CAN_MSG_ID)
 	{
-		uint8_t lts = (data[0] & 1);
-		uint8_t rts = (data[0] & (1 << 1));
+		uint8_t rts = (data[0] & 1);
+		uint8_t lts = (data[0] & (1 << 1));
 
 		if (lts)
 		{

@@ -25,14 +25,14 @@
 
 #define THROTTLE_ADC_MIN_VALUE 200
 #define THROTTLE_ADC_MAX_VALUE 3896
-#define ADC_MAX_DIFFERENCE 100 // change when we have a better idea
+#define ADC_MAX_DIFFERENCE 600 // change when we have a better idea
 
 
 #define REGEN_DAC_ON 1023
 #define REGEN_DAC_OFF 0
 #define ACCEL_DAC_OFF 0
 
-#define ADC_NO_THROTTLE_MAX 1300 //figure out
+#define ADC_NO_THROTTLE_MAX 1000 //figure out
 #define ADC_FULL_THROTTLE_MIN 1850 //figure out
 #define ADC_THROTTLE_MAX	0 //figure out
 #define ADC_LOWER_DEADZONE 900 //tbd
@@ -53,8 +53,6 @@ typedef struct{
 	volatile bool park_state_request;
 	volatile bool throttle_ADC_out_of_range;
 	volatile bool eco_mode_on;
-	volatile uint16_t accel_DAC_value;
-	volatile uint16_t regen_DAC_value; //currently unused, but we could implemented down the line
 } input_flags_t;
 
 typedef struct {
@@ -74,9 +72,9 @@ typedef enum {
 /*	Global Variables	*/
 
 extern input_flags_t input_flags;
-extern drive_state_t drive_state;
+extern volatile drive_state_t drive_state;
 extern volatile bool eco_mode;
-extern volatile uint32_t car_velocity;
+extern volatile uint32_t velocity_kmh;
 
 /*	Functions	*/
 void drive_state_interrupt_handler(uint16_t pin);
