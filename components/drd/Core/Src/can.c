@@ -204,15 +204,8 @@ void CAN_tasks_init()
 void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
 
-//	//Todo: handle parsing rx messages
-//	case(CAN_comms_Rx_msg)
-//
-//		fault: fault_light_handle(CAN_comms_Rx_msg);
-//		turn: turn_signal_handle(CAN_comms_Rx_msg);
-//
-	//Todo: add logic to only pass in CAN messages with the right ID
-
-	External_Lights_set_turn_signals(CAN_comms_Rx_msg);
+	//External_Lights_set_turn_signals(CAN_comms_Rx_msg);
+//	Drive_State_can_rx_handle(uint8_t* data, uint32_t msg_id);
 
 }
 
