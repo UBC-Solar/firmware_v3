@@ -23,7 +23,7 @@
 
 /*	Function Prototypes	*/
 void ExternalLights_state_machine();
-void External_Lights_set_turn_signals(CAN_comms_Rx_msg_t*  msg);
+void External_Lights_set_turn_signals(uint32_t can_id, uint8_t* data);
 
 
 #endif /* INC_EXTERNAL_LIGHTS_H_ */

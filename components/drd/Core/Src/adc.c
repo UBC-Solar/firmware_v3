@@ -199,4 +199,11 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 
 /* USER CODE BEGIN 1 */
 
+uint16_t Read_ADC(ADC_HandleTypeDef* hadc)
+{
+	HAL_ADC_Start(hadc);
+	HAL_ADC_PollForConversion(hadc, HAL_MAX_DELAY);
+	return HAL_ADC_GetValue(hadc);
+}
+
 /* USER CODE END 1 */

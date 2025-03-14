@@ -9,7 +9,7 @@
 #include <main.h>
 #include "stdint.h"
 #include "font_verdana.h"
-
+#include "drive_state.h"
 
 /** Display Parameters */
 #define BOTTOM_RIGHT_X      127
@@ -105,7 +105,7 @@ void LCD_display_speed(uint32_t speed, int units);
  * 
  * @param state The drive state (e.g., FORWARD_STATE, PARK_STATE, REVERSE_STATE).
  */
-void LCD_display_drive_state(int state);
+void LCD_display_drive_state(drive_state_t state);
 
 /**
  * @brief Displays the state of charge (SOC) on the LCD.
