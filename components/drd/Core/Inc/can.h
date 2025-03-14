@@ -36,6 +36,9 @@ extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
 
+#define CAN_ID_STD                  (0x00000000U)  /*!< Standard Id */
+#define CAN_ID_EXT                  (0x00000004U)  /*!< Extended Id */
+
 /*
  *	CAN IDs
  */

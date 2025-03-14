@@ -188,7 +188,15 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 		    return;
 	}
 
-	uint32_t CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
+  uint32_t CAN_ID = 0;
+
+  if(CAN_comms_Rx_msg->header.IDE == CAN_ID_EXT){
+    CAN_ID = CAN_comms_Rx_msg->header.ExtId; // Get CAN ID
+  }
+
+  else{
+    CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
+  }
 
 	switch(CAN_ID){
 		case CAN_ID_PACK_CURRENT:
