@@ -36,6 +36,11 @@ extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
 extern const CAN_TxHeaderTypeDef drive_command_header;
+extern const CAN_TxHeaderTypeDef mdu_request_header;
+
+#define MDU_REQUEST_COMMAND_ID 			0x08F89540
+#define STR_CAN_MSG_ID					0x580
+#define MDU_REQUEST_FRAME_2_0 5
 /* USER CODE END Private defines */
 
 void MX_CAN_Init(void);

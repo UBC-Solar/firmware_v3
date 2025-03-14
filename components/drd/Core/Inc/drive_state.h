@@ -17,6 +17,7 @@
 
 /*	Symbolic Constants	*/
 #define DRIVE_STATE_MACHINE_DELAY 25
+#define DRIVE_COMMAND_SIZE 5
 
 
 #define ADC_MAX 2880		  // Max possible value for ADC
@@ -43,7 +44,6 @@
 typedef struct{
 	volatile bool mech_brake_pressed;
 	volatile bool regen_enabled;
-	volatile bool battery_regen_disabled;
 	volatile bool velocity_under_threshold;
 	volatile bool forward_state_request;
 	volatile bool reverse_state_request;
@@ -57,7 +57,7 @@ typedef struct{
 typedef struct {
 	uint16_t accel_DAC_value;
 	uint16_t regen_DAC_value;
-	uint8_t motor_command_flags; //direction value first bit and eco mode value second bit.
+	uint8_t motor_command_flags; //break pressed first bit and eco mode value second bit.
 } motor_command_t;
 
 typedef enum {
@@ -76,8 +76,9 @@ extern drive_state_t state;
 
 /*	Functions	*/
 void drive_state_interrupt_handler(uint16_t pin);
-void Drive_State_can_rx_handle(CAN_comms_Rx_msg_t* can_msg);
+void Drive_State_can_rx_handle(uint8_t* data, uint32_t msg_id);
 void Drive_State_Machine_handler();
+void Motor_Controller_query_data();
 
 
 

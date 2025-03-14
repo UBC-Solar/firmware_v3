@@ -16,6 +16,7 @@
 #include "CAN_comms.h"
 #include <string.h>
 #include <stdlib.h>
+
 /*	Symbolic Constants	*/
 
 
@@ -39,6 +40,7 @@ static void clear_request_flags();
 
 
 /*	Global Variables	*/
+volatile uint32_t velocity = 0;
 input_flags_t input_flags;
 drive_state_t state = PARK;
 uint16_t throttle_DAC = 0;
@@ -53,7 +55,7 @@ uint16_t throttle_DAC = 0;
 void Drive_State_Machine_handler()
 {
 	motor_command_t motor_command;
-	update_input_flags(); //Todo: handle regen adc input
+	update_input_flags();
 
 	switch (state)
 	{
@@ -77,6 +79,9 @@ void Drive_State_Machine_handler()
 	handle_state_transition();
 }
 
+/*
+ * @brief Handles the motor command when the car is in the forward drive state
+ */
 motor_command_t forward_state_handle()
 {
 	if (input_flags.mech_brake_pressed)
@@ -94,6 +99,9 @@ motor_command_t forward_state_handle()
 	}
 }
 
+/*
+ * @brief Handles the motor command when the car is in the reverse drive state
+ */
 motor_command_t reverse_state_handle()
 {
 	if (input_flags.mech_brake_pressed)
@@ -105,11 +113,17 @@ motor_command_t reverse_state_handle()
 	return get_motor_command(throttle_DAC, REGEN_DAC_OFF);
 }
 
+/*
+ * @brief Handles the motor command when the car is in the park state
+ */
 motor_command_t park_state_handle()
 {
 	return get_motor_command(ACCEL_DAC_OFF, REGEN_DAC_OFF);
 }
 
+/*
+ * @brief Handles the drive state tarnsitions
+ */
 void handle_state_transition()
 {
 	bool park_request = input_flags.park_state_request;
@@ -117,7 +131,7 @@ void handle_state_transition()
 	bool reverse_request = input_flags.reverse_state_request;
 
 	//too many requests have been triggered
-	if (park_request + forward_request + reverse_request > 1)
+	if ((park_request + forward_request + reverse_request) > 1)
 	{
 		clear_request_flags();
 		return;
@@ -126,19 +140,55 @@ void handle_state_transition()
 	switch (state)
 		{
 			case FORWARD:
+				if(reverse_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+				{
+					state = REVERSE;
+				}
+				else if(park_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+				{
+					state = PARK;
+				}
 			break;
+
 			case REVERSE:
+				if(forward_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+				{
+					state = FORWARD;
+				}
+				else if(park_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+				{
+					state = PARK;
+				}
 			break;
+
 			case PARK:
+				if (forward_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+				{
+					state = FORWARD;
+				}
+				else if(reverse_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+				{
+					state = REVERSE;
+				}
 			break;
 
 			default:
+				state = PARK;
 		}
+	//reset state transition requests
+	input_flags.forward_state_request = 0;
+	input_flags.reverse_state_request = 0;
+	input_flags.park_state_request = 0;
 }
 
 
 /*	DATA TRANSMISSION	*/
 
+/*
+ * @brief packages motor_command_t structs into motor command messages to be sent to the MDI
+ *
+ * @param motor_command, struct containing all motor command information to be sent over CAN
+ */
 void motor_command_package_and_send(motor_command_t* motor_command)
 {
 	CAN_comms_Tx_msg_t msg;
@@ -147,7 +197,6 @@ void motor_command_package_and_send(motor_command_t* motor_command)
 
 	uint8_t accel_first_byte = (uint8_t) (motor_command->accel_DAC_value & 255);
 	uint8_t accel_second_byte = (uint8_t) (motor_command->accel_DAC_value >> 8);
-
 	uint8_t regen_first_byte = (uint8_t) (motor_command->accel_DAC_value & 255);
 	uint8_t regen_second_byte = (uint8_t) (motor_command->accel_DAC_value >> 8);
 
@@ -162,16 +211,35 @@ void motor_command_package_and_send(motor_command_t* motor_command)
 	CAN_comms_Add_Tx_message(&msg);
 }
 
-void Drive_State_can_rx_handle(CAN_comms_Rx_msg_t* can_msg)
+
+/*
+ * @brief Handles Received CAN Messages relevant
+ */
+void Drive_State_can_rx_handle(uint8_t* data, uint32_t msg_id)
 {
+	switch(msg_id)
+	{
+		case(MDU_REQUEST_COMMAND_ID):
+			velocity = (data[4] >> 2) | (data[5] & 0x3f); //35th to 46th bit
+		break;
 
-	//Todo: write helper functions for parsing these messages
-	// Velocity from MDU 0x08850225
-	//BMS Regen Disabled (BMS Status 0x622)
+		case(STR_CAN_MSG_ID):
+			input_flags.eco_mode_on = (data[0] >> 2); //third bit of steering CAN message
+		break;
+	}
 
+}
 
-
-
+/*
+* @brief function which transmits a CAN message to the Mitsuba Motor to query their CAN Data Frames
+* 		Should be called from the default task at a regular interval.
+ */
+void Motor_Controller_query_data()
+{
+	CAN_comms_Tx_msg_t msg;
+	msg.header = mdu_request_header;
+	msg.data[0] = MDU_REQUEST_FRAME_2_0; //request frame 2 and 0
+	CAN_comms_Add_Tx_message(&msg);
 }
 
 

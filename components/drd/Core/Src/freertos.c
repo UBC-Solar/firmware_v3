@@ -170,7 +170,8 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	Motor_Controller_query_data();
+    osDelay(100);
   }
   /* USER CODE END StartDefaultTask */
 }

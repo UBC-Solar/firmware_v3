@@ -37,10 +37,18 @@ const CAN_TxHeaderTypeDef drive_command_header = {
     .ExtId = 0x0000,
     .IDE = CAN_ID_STD,
     .RTR = CAN_RTR_DATA,
-    .DLC = CAN_DATA_SIZE
+    .DLC = DRIVE_COMMAND_SIZE
 
 };
 
+
+const CAN_TxHeaderTypeDef mdu_request_header = {
+		.StdId = 0,
+		.ExtId = MDU_REQUEST_COMMAND_ID,
+		.IDE = CAN_ID_EXT,
+		.RTR = CAN_RTR_DATA,
+		.DLC = CAN_DATA_SIZE
+};
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
