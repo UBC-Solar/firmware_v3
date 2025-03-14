@@ -109,6 +109,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -167,7 +168,6 @@ int main(void)
 
   while (1)
   {
-
     FSM_run();
 
     HAL_IWDG_Refresh (&hiwdg);//Programmed in IOC to have refreshed in 150ms due to possible CAN message delays.
@@ -489,7 +489,7 @@ static void MX_TIM3_Init(void)
   /* USER CODE END TIM3_Init 0 */
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0}; 
 
   /* USER CODE BEGIN TIM3_Init 1 */
 
