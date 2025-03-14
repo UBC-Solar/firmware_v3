@@ -23,19 +23,19 @@
 /* USER CODE BEGIN 0 */
 
 /* PRIVATE INCLUDES */
-#define TURN_SIGNAL_CAN_DATA_LENGTH 1
+#define TURN_SIGNAL_MODE_CAN_DATA_LENGTH 1
 
-#define TURN_SIGNAL_MSG_ID  0x580
+#define TURN_SIGNAL_MODE_MSG_ID  0x580
 
 /**
  * @brief CAN message headers for STR
  */
-CAN_TxHeaderTypeDef turn_signal_can_header = {
-    .StdId = TURN_SIGNAL_MSG_ID,
+CAN_TxHeaderTypeDef turn_signal_mode_can_header = {
+    .StdId = TURN_SIGNAL_MODE_MSG_ID,
     .ExtId = 0x0000,
     .IDE = CAN_ID_STD,
     .RTR = CAN_RTR_DATA,
-    .DLC = TURN_SIGNAL_CAN_DATA_LENGTH};
+    .DLC = TURN_SIGNAL_MODE_CAN_DATA_LENGTH};
 
 CAN_FilterTypeDef can_filter;
 
@@ -142,13 +142,13 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
  * 
  * Sends over the turn_signal value being either 1 or 0 for RTS/LTS reading
  */
-void CAN_tx_turn_signal_msg(turn_signal_status_t turn_signal) {
+void CAN_tx_turn_signal_mode_msg(turn_signal_status_t turn_signal, mode_status_t mode_status) {
 
-  uint8_t turn_signal_reading[1];
-  turn_signal_reading[0] = (turn_signal);
+  uint8_t turn_signal_mode_reading[1];
+  turn_signal_mode_reading[0] = (mode_status << 2) | (turn_signal);
 
   uint32_t mailbox;
 
-  HAL_CAN_AddTxMessage(&hcan, &turn_signal_can_header, turn_signal_reading, &mailbox);
+  HAL_CAN_AddTxMessage(&hcan, &turn_signal_mode_can_header, turn_signal_mode_reading, &mailbox);
 }
 /* USER CODE END 1 */
