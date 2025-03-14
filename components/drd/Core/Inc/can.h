@@ -38,6 +38,19 @@ extern CAN_HandleTypeDef hcan;
 extern const CAN_TxHeaderTypeDef drive_command_header;
 extern const CAN_TxHeaderTypeDef mdu_request_header;
 
+#define CAN_ID_STD                  (0x00000000U)  /*!< Standard Id */
+#define CAN_ID_EXT                  (0x00000004U)  /*!< Extended Id */
+
+/*
+ *	CAN IDs
+ */
+#define CAN_ID_PACK_CURRENT		    0x450
+#define CAN_ID_BATT_FAULTS		 	0x622
+#define CAN_ID_PACK_VOLTAGE		    0x623
+#define CAN_ID_MTR_FAULTS         	0x08A50225
+#define CAN_ID_MTR_DATA_REQUEST     0x08F89540 //DRD sends data request to the MCU
+#define CAN_ID_TURN_SIGNALS       	0x580 
+
 #define MDU_REQUEST_COMMAND_ID 			0x08F89540
 #define STR_CAN_MSG_ID					0x580
 #define MDU_REQUEST_FRAME_2_0 5
