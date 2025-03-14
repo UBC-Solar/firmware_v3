@@ -28,6 +28,7 @@
 void CAN_filter_init(CAN_FilterTypeDef* can_filter);
 
 
+
 /**
  * 	CAN message header for a drive command. This command header is to
  * 	send an appropriate drive command to the motor controller.
@@ -199,14 +200,13 @@ void CAN_tasks_init()
 }
 
 
-
-
 void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
 
-	//External_Lights_set_turn_signals(CAN_comms_Rx_msg);
-//	Drive_State_can_rx_handle(uint8_t* data, uint32_t msg_id);
-
+    if (CAN_comms_Rx_msg->header.StdId == TURN_SIGNAL_MSG_ID) 
+    {
+        External_Lights_set_turn_signals(CAN_comms_Rx_msg);
+    }
 }
 
 /* USER CODE END 1 */
