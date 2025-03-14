@@ -143,15 +143,17 @@ class CANMessage:
 
     # Pack Current (ID 0x450, bytes 0-1, scale 0.1, signed)
     def set_pack_current(self, current):
-        self._set_scaled_value(0, current, 0.1, signed=True)
+        self._set_scaled_value(0, current, 65.535)
     def get_pack_current(self):
-        return self._get_scaled_value(0, 0.1, signed=True)
+        return self._get_scaled_value(0, 65.535)
 
 
 FAULT       = 1
 CLEAR       = 0
-BMS_COMM_FAULT_ID   = 0x622
-BATT_VOLTAGE_ID   = 0x623
+BMS_FAULT_ID   = 0x622
+BATT_VOLTAGE_ID     = 0x623
+MC_FLAGS_ID     = 0x08A50225
+PACK_CURRENT_ID = 0x450
 
 def send_can_msg(bus, id, data, is_extended):
     msg = can.Message(
@@ -167,15 +169,85 @@ def send_can_msg(bus, id, data, is_extended):
         print(f"Error sending: {e}")
 
 def send_bms_comm_fault(bus, val):
-    msg = CANMessage(BMS_COMM_FAULT_ID, is_extended=False)
+    msg = CANMessage(BMS_FAULT_ID, is_extended=False)
     msg.set_bms_comm_fault(val)
     send_can_msg(bus, msg.id, msg.data, msg.is_extended)
 
-def send_batt_hi(bus, val):
+def send_batt_hi(bus):
+    msg = CANMessage(BATT_VOLTAGE_ID, is_extended=False)
+    msg.set_batt_voltage(135)
+    send_can_msg(bus, msg.id, msg.data, msg.is_extended)
+
+def send_batt_lo(bus):
+    msg = CANMessage(BATT_VOLTAGE_ID, is_extended=False)
+    msg.set_batt_voltage(85)
+    send_can_msg(bus, msg.id, msg.data, msg.is_extended)
+
+def send_batt(bus, val):
     msg = CANMessage(BATT_VOLTAGE_ID, is_extended=False)
     msg.set_batt_voltage(val)
     send_can_msg(bus, msg.id, msg.data, msg.is_extended)
 
+def send_mtr_oc(bus, val):
+    msg = CANMessage(MC_FLAGS_ID, is_extended=True)
+    msg.set_mtr_oc(val)
+    send_can_msg(bus, msg.id, msg.data, msg.is_extended)
+
+def send_mtr_flt(bus, val):
+    msg = CANMessage(MC_FLAGS_ID, is_extended=True)
+    msg.set_mtr_flt(val)
+    send_can_msg(bus, msg.id, msg.data, msg.is_extended)
+
+def send_mtr_ot(bus, val):
+    msg = CANMessage(MC_FLAGS_ID, is_extended=True)
+    msg.set_mtr_ot(val)
+    send_can_msg(bus, msg.id, msg.data, msg.is_extended)
+
+def send_oc(bus, val):
+    msg = CANMessage(BMS_FAULT_ID, is_extended=False)
+    msg.set_discharge_charge_oc_fault(val)
+    send_can_msg(bus, msg.id, msg.data, msg.is_extended)
+
+def send_pack_current(bus, val):
+    msg = CANMessage(PACK_CURRENT_ID, is_extended=False)
+    msg.set_pack_current(val)
+    send_can_msg(bus, msg.id, msg.data, msg.is_extended)
+
+def send_discharge_oc(bus, val):
+    send_pack_current(bus, 20)
+    time.sleep(0.005)
+    send_oc(bus, val)
+
+def send_charge_oc(bus, val):
+    send_pack_current(bus, -20)
+    time.sleep(0.005)
+    send_oc(bus, val)
+
+def send_batt_ov(bus, val):
+    msg = CANMessage(BMS_FAULT_ID, is_extended=False)
+    msg.set_batt_ov(val)
+    send_can_msg(bus, msg.id, msg.data, msg.is_extended)
+
+
+def send_batt_uv(bus, val):
+    msg = CANMessage(BMS_FAULT_ID, is_extended=False)
+    msg.set_batt_uv(val)
+    send_can_msg(bus, msg.id, msg.data, msg.is_extended)
+
+def send_batt_ot(bus, val):
+    msg = CANMessage(BMS_FAULT_ID, is_extended=False)
+    msg.set_batt_ot(val)
+    send_can_msg(bus, msg.id, msg.data, msg.is_extended)
+
+def send_batt_flt(bus, val):
+    msg = CANMessage(BMS_FAULT_ID, is_extended=False)
+    msg.set_batt_flt(val)
+    send_can_msg(bus, msg.id, msg.data, msg.is_extended)
+
+def send_estop(bus, val):
+    msg = CANMessage(BMS_FAULT_ID, is_extended=False)
+    msg.set_estop_pressed(val)
+    send_can_msg(bus, msg.id, msg.data, msg.is_extended)
 
 def main():
     WINDOWS = 0         # 0 = Linux, 1 = Windows
@@ -210,7 +282,18 @@ def main():
 
 
     send_bms_comm_fault(bus, FAULT)
-    send_batt_hi(bus, 139)
+    # send_batt_hi(bus, 139)
+    # send_mtr_oc(bus, FAULT)
+    # send_mtr_flt(bus, FAULT)
+    # send_mtr_ot(bus, FAULT)
+    # send_charge_oc(bus, FAULT)
+    # send_discharge_oc(bus, FAULT)
+    # send_batt_ov(bus, FAULT)
+    # send_batt_uv(bus, FAULT)
+    # send_batt_ot(bus, FAULT)
+    # send_batt_flt(bus, FAULT)
+    # send_estop(bus, FAULT)
+
 
     bus.shutdown()
 
