@@ -199,11 +199,12 @@ void LCDUpdatetask(void *argument)
     LCD_display_speed(v1 % 100, 1);
     LCD_display_drive_state(v1 % 5);
     LCD_display_SOC(v1 % 101);  
+    LCD_display_drive_mode(v1 % 2);
 
     ++v1;
     v2 += 0.4;
 
-    osDelay(200);
+    osDelay(1000);
   }
   /* USER CODE END LCDUpdatetask */
 }
