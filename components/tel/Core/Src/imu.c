@@ -214,6 +214,6 @@ void imu_task()
 		CAN_tx_ag_y_msg(imu_data.accely, imu_data.gyroy);
 		osDelay(3);
 		CAN_tx_ag_z_msg(imu_data.accelz, imu_data.gyroz);
-        osDelay(100);
+        osDelay(IMU_TASK_DELAY);
 	}
 }

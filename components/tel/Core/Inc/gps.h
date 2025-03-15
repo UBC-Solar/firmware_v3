@@ -13,6 +13,8 @@
 #include "main.h"
 
 #define GPS_MESSAGE_LEN 500
+#define GPS_TASK_DELAY      250
+#define GPS_TASK_OFFSET_DELAY       66
 
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c);
 
