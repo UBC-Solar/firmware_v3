@@ -110,6 +110,7 @@ void Error_Handler(void);
 #define ESTOP_GPIO_Port GPIOC
 #define PARK_EN_Pin GPIO_PIN_8
 #define PARK_EN_GPIO_Port GPIOA
+#define PARK_EN_EXTI_IRQn EXTI9_5_IRQn
 #define FORWARD_EN_Pin GPIO_PIN_9
 #define FORWARD_EN_GPIO_Port GPIOA
 #define FORWARD_EN_EXTI_IRQn EXTI9_5_IRQn

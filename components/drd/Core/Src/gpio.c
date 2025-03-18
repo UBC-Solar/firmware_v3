@@ -119,15 +119,9 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(BRK_IN_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PARK_EN_Pin */
-  GPIO_InitStruct.Pin = PARK_EN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(PARK_EN_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : FORWARD_EN_Pin REVERSE_EN_Pin */
-  GPIO_InitStruct.Pin = FORWARD_EN_Pin|REVERSE_EN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  /*Configure GPIO pins : PARK_EN_Pin FORWARD_EN_Pin REVERSE_EN_Pin */
+  GPIO_InitStruct.Pin = PARK_EN_Pin|FORWARD_EN_Pin|REVERSE_EN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
