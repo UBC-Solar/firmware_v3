@@ -425,7 +425,7 @@ void brake_press_handle()
 uint8_t get_command_flags()
 {
 	uint8_t flags = 0;
-	flags |= (input_flags.mech_brake_pressed ? 1: 0);
+	flags |= (drive_state == REVERSE  ? 0: 1); //direction value: 0 for reverse, 1 for forward or Park
 	flags |= (input_flags.eco_mode_on ? 1 << 1: 0);
 	return flags;
 }

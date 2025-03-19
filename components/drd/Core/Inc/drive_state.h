@@ -59,7 +59,7 @@ typedef struct{
 typedef struct {
 	uint16_t accel_DAC_value;
 	uint16_t regen_DAC_value;
-	uint8_t motor_command_flags; //break pressed first bit and eco mode value second bit.
+	uint8_t motor_command_flags; //direction value first bit and eco mode value second bit.
 } motor_command_t;
 
 typedef enum {
