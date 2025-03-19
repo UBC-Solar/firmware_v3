@@ -54,7 +54,7 @@ void FSM_Init()
         ecu_data.status.bits.reset_from_watchdog = 1; //CAN_message now knows watchdog event has occured
         FSM_state = FAULT;
         
-        // After we're done reading the RCC_CSR_IWDGRSTF flag, reset all flags. This is a non-volatile register, so we have to reset after every power up.
+        // After we're done reading the RCC_CSR_IWDGRSTF flag, reset all flags. RCC_CSR reset bits keep their values until cleared.
         __HAL_RCC_CLEAR_RESET_FLAGS();
     }
     else {
