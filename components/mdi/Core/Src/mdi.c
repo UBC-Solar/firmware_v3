@@ -18,14 +18,18 @@
  * 
  * @param DAC_addr enum address of the DAC. Either the accel or regen DAC
  * @param voltage_value 10 bit unsigned integer. Scaled linearly to the voltage value
+ * 
+ * @note See datasheet for DAC101C08xx
  */
 void MDI_set_DAC_voltage(MDI_DAC_addr_t DAC_addr, uint16_t voltage_value)
 {
     // Truncate if voltage_value is greater than max
     voltage_value = (voltage_value > MAX_DAC_VALUE) ? MAX_DAC_VALUE : voltage_value;
 
-    uint8_t i2c_buffer[2];
+    uint8_t i2c_buffer[2] = {0};
 
+    // 10-bit DAC value is stored in bits 11-2. All other bits are 0s.
+    voltage_value = voltage_value << 2;
     i2c_buffer[0] = voltage_value >> 8;
     i2c_buffer[1] = voltage_value;
 
