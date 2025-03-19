@@ -49,6 +49,10 @@ void FSM_Init()
     uint32_t reset_flags = RCC->CSR;
 
     if (reset_flags & RCC_CSR_IWDGRSTF) {
+        // After we're done reading the RCC_CSR_IWDGRSTF flag, reset all flags. RCC_CSR reset bits keep their values until cleared.
+        // See Monday Update: https://ubcsolar26.monday.com/boards/7524367629/pulses/8628510380/posts/3952602594
+        __HAL_RCC_CLEAR_RESET_FLAGS();
+
         //IWDG triggered
         printf("watchdog-triggered software reset \r\n");
         ecu_data.status.bits.reset_from_watchdog = 1; //CAN_message now knows watchdog event has occured
