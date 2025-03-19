@@ -82,7 +82,8 @@ void FSM_run()
  */
 void FSM_reset()
 {
-    printf("start of FSM reset\r\n");
+    printf("Top of FSM reset\r\n");
+
     //  Turn fans off
     HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, LOW);
     HAL_GPIO_WritePin(MDU_FAN_CTRL_GPIO_Port, MDU_FAN_CTRL_Pin, LOW);
@@ -100,7 +101,9 @@ void FSM_reset()
     FSM_state = WAIT_FOR_BMS_POWERUP;
 
     ticks.last_generic_tick = HAL_GetTick();
-    printf("end of FSM reset \r\n");
+
+    printf("Bottom of FSM reset \r\n");
+    
     return;
 }
 
@@ -117,7 +120,8 @@ void FSM_reset()
  */
 void BMS_powerup()
 {
-    printf("start of BMS_powerup\r\n");
+    printf("Top of BMS_powerup\r\n");
+
     if (timer_check(BMS_STARTUP_INTERVAL, & (ticks.last_generic_tick) ))
     {
         FSM_state = FAULT;
@@ -144,7 +148,8 @@ void BMS_powerup()
  */
 void BMS_ready()
 {
-    printf("beginning of BMS ready\r\n");
+    printf("Top of BMS ready\r\n");
+
     if (timer_check(BMS_STARTUP_INTERVAL, &(ticks.last_generic_tick) ))
     {
         FSM_state = FAULT;
@@ -154,7 +159,8 @@ void BMS_ready()
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = HV_CONNECT;
     }
-    printf("end of BMS ready\r\n");
+    
+    printf("Bottom of BMS ready\r\n");
 
     return;
 }
@@ -168,10 +174,10 @@ void BMS_ready()
  */
 void HV_Connect()
 {
+    printf("Top of HV connect\r\n");
+
     static bool first_delay_tick = false;
     static bool second_delay_tick = false; 
-    
-    printf("beginning of HV connect\r\n");
     
     // delay before closing contactors
     if (timer_check(SHORT_INTERVAL, &(ticks.last_generic_tick) ) && first_delay_tick == false)
@@ -216,8 +222,7 @@ void HV_Connect()
  */
 void swap_DCDC()
 {
-    
-    printf("swap DCDC\r\n");
+    printf("Top of DCDC\r\n");
     
     HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, HIGH);
     HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, HIGH);
@@ -244,8 +249,9 @@ void disable_MDU_DCH()
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = CHECK_LLIM;
     }
-    printf("end of MDU dch\r\n");
 
+    printf("Bottom of MDU dch\r\n");
+    
     return;
 }
 
@@ -274,7 +280,7 @@ void check_LLIM()
         FSM_state = WAIT_FOR_PC;
     }
 
-    printf("end of check LLIM\r\n");
+    printf("Bottom of check LLIM\r\n");
 
     return;
 }
@@ -295,7 +301,8 @@ void PC_wait()
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = LLIM_CLOSED;
     }
-    printf("end of PC wait\r\n");
+
+    printf("Bottom of PC wait\r\n");
 
     return;
 }
@@ -353,7 +360,8 @@ void check_HLIM()
         FSM_state = TELEM_ON;
     }
 
-    printf("end of check HLIM\r\n");
+    printf("Bottom of check HLIM\r\n");
+
     return;
 }
 
@@ -372,7 +380,8 @@ void TELEM_on()
         FSM_state = MEM_ON;
     }
 
-    printf("end of TELEM on\r\n");
+    printf("Bottom of TELEM on\r\n");
+
     return;
 }
 
@@ -391,7 +400,8 @@ void MEM_on()
         FSM_state = DASH_ON;
     }
 
-    printf("end of MEM on\r\n");
+    printf("Bottom of MEM on\r\n");
+
     return;
 }
 
@@ -411,7 +421,8 @@ void DASH_on()
         FSM_state = MCB_ON;
     }
 
-    printf("end of DASH on\r\n");
+    printf("Bottom of DASH on\r\n");
+
     return;
 }
 
@@ -431,7 +442,7 @@ void MCB_on()
         FSM_state = MDU_ON;
     }
 
-    printf("end of MCB on\r\n");
+    printf("Bottom of MCB on\r\n");
 
     return;
 }
@@ -457,7 +468,8 @@ void MDU_on()
         FSM_state = AMB_ON;
     }
 
-    printf("end of MDU on\r\n");
+    printf("Bottom of MDU on\r\n");
+    
     return;
 }
 
@@ -478,7 +490,8 @@ void AMB_on()
         FSM_state = MONITORING;
     }
 
-    printf("end of AMB on \r\n");
+    printf("Bottom of AMB on \r\n");
+
     return;
 }
 
@@ -491,8 +504,8 @@ void AMB_on()
  */
 void ECU_monitor()
 {
+    printf("Top of Monitoring\r\n");
 
-    printf("Monitoring Start\r\n");
     startup_complete = true; // Indicates all LV boards are up
 
     // Additional ESTOP check to catch case where ESTOP is pressed during startup (see note in fault state)
@@ -582,7 +595,8 @@ void ECU_monitor()
  */
 void fault()
 {
-    printf("Fault Start\r\n");
+    printf("Top of Fault\r\n");
+
     /*************************
     Put Pack in Safe State
     **************************/
