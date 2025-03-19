@@ -37,6 +37,7 @@ import os
 import time
 import threading
 from pprint import pprint
+import subprocess
 
 script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 DBC_FILE = os.path.join(script_dir, 'brightside.dbc')
@@ -57,6 +58,14 @@ try:
 except Exception as e:
     print(f"Failed to load DBC file: {e}")
     sys.exit(1)
+
+
+def run_command(command):
+    try:
+        subprocess.run(command, shell=True, check=True, text=True)
+        print(f"Command succeeded: {command}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error executing command: {command}\n{e}")
 
 class CANMessage:
     """Represents a CAN message with signals defined in the DBC."""
@@ -348,17 +357,17 @@ def script_send_pack_current_and_voltage(can_bus):
         can_bus.send_pack_voltage(voltage)
         current -= current_step
         voltage -= voltage_step
-        time.sleep(1)
+        time.sleep(0.5)
 
 def script_send_speed_kmh(can_bus):
     """Send speed kmh from 1 to 99 over 10 seconds."""
     for speed in range(1, 99):
         can_bus.send_speed_kmh(speed)
-        time.sleep(0.1)
+        time.sleep(0.05)
 
 def script_toggle_turn_signals(can_bus):
     """Toggle between left turn, right turn, and off every 2 seconds."""
-    while True:
+    for _ in range(3):
         can_bus.send_turn_signal(LEFT)
         time.sleep(4)
         can_bus.send_turn_signal(RIGHT)
@@ -366,9 +375,20 @@ def script_toggle_turn_signals(can_bus):
         can_bus.send_turn_signal(OFF)
         time.sleep(4)
 
+def script_toggle_drive_mode(can_bus):
+    """Toggle between eco mode and power mode every 2 seconds."""
+    for _ in range(5):
+        can_bus.send_drive_mode(ECO)
+        time.sleep(2)
+        can_bus.send_drive_mode(POWER)
+        time.sleep(2)
+
 
 # Example usage
 if __name__ == "__main__":
+    run_command("sudo ip link set can0 type can bitrate 500000")
+    run_command("sudo ip link set can0 up")
+
     # Initialize CAN bus (adjust bustype and channel as needed)
     can_bus = CANBus(bustype='socketcan', channel='can0')
 
@@ -381,13 +401,9 @@ if __name__ == "__main__":
     turn_signal_thread = threading.Thread(target=script_toggle_turn_signals, args=(can_bus,), daemon=True)
     turn_signal_thread.start()
 
-    # Step 2: Turn on Power mode for driving
-    can_bus.send_drive_mode(POWER)
-    time.sleep(1)
-
-    # Step 3: Start a thread to send SoC message
-    soc_thread = threading.Thread(target=script_send_soc, args=(can_bus,))
-    soc_thread.start()
+    # Step 1a: Start a thread to toggle turn signals
+    drive_mode_thread = threading.Thread(target=script_toggle_drive_mode, args=(can_bus,), daemon=True)
+    drive_mode_thread.start()
 
     # Step 6: Send drive state Drive (FORWARD)
     can_bus.send_drive_state(FORWARD)
@@ -406,21 +422,28 @@ if __name__ == "__main__":
     can_bus.send_clear_faults()
     time.sleep(1)
     can_bus.send_all_fault()
+    time.sleep(1)
+    can_bus.send_clear_faults()
 
-    # Step 4: Start a thread to send PackCurrent and PackVoltage signals
-    pack_thread = threading.Thread(target=script_send_pack_current_and_voltage, args=(can_bus,))
-    pack_thread.start()
+    # Step 11: Wait for MotorRotatingSpeed thread to finish, then decrease speed from 500 to 1
+    motor_speed_thread.join()
+
 
     # Step 10: Send drive state Reverse
     can_bus.send_drive_state(REVERSE)
     time.sleep(1)
 
-    # Step 11: Wait for MotorRotatingSpeed thread to finish, then decrease speed from 500 to 1
-    motor_speed_thread.join()
-
     for speed in range(99, -1, -1):
         can_bus.send_speed_kmh(speed)
-        time.sleep(0.05)
+        time.sleep(0.03)
+
+    # Step 4: Start a thread to send PackCurrent and PackVoltage signals
+    pack_thread = threading.Thread(target=script_send_pack_current_and_voltage, args=(can_bus,))
+    pack_thread.start()
+
+    # Step 3: Start a thread to send SoC message
+    soc_thread = threading.Thread(target=script_send_soc, args=(can_bus,))
+    soc_thread.start()
 
     # Step 12: Send drive state Park
     can_bus.send_drive_state(PARK)
@@ -433,6 +456,8 @@ if __name__ == "__main__":
     # Wait for all threads to finish
     soc_thread.join()
     pack_thread.join()
+    turn_signal_thread.join()
+    drive_mode_thread.join()
 
     can_bus.clear_all()
     print("DONE TEST")
