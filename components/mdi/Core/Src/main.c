@@ -117,7 +117,7 @@ int main(void)
   while (1)
   {
     // If MDI hasn't received a CAN message for MAX_TIMEOUT_VALUE, stop motor for safety
-    if((g_last_command_time + MAX_TIMEOUT_VALUE) > HAL_GetTick())
+    if(HAL_GetTick() > (g_last_command_time + MAX_TIMEOUT_VALUE))
     {
       MDI_stop_motor();
     }
