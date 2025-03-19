@@ -171,7 +171,7 @@ void StartDefaultTask(void *argument)
   for(;;)
   {
 	Motor_Controller_query_data();
-    osDelay(100);
+    osDelay(MC_FRAME_REQUEST_DELAY);
   }
   /* USER CODE END StartDefaultTask */
 }
