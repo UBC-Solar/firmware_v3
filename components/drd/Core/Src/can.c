@@ -19,15 +19,38 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
+
 /* USER CODE BEGIN 0 */
 #include "CAN_comms.h"
 #include "external_lights.h"
 #include "fault_lights.h"
+#include "drive_state.h"
 
 void CAN_filter_init(CAN_FilterTypeDef* can_filter);
 
 
 
+/**
+ * 	CAN message header for a drive command. This command header is to
+ * 	send an appropriate drive command to the motor controller.
+ */
+const CAN_TxHeaderTypeDef drive_command_header = {
+    .StdId = MOTOR_DRIVE_COMMAND_ADDRESS,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = DRIVE_COMMAND_SIZE
+
+};
+
+
+const CAN_TxHeaderTypeDef mdu_request_header = {
+		.StdId = 0,
+		.ExtId = MDU_REQUEST_COMMAND_ID,
+		.IDE = CAN_ID_EXT,
+		.RTR = CAN_RTR_DATA,
+		.DLC = CAN_DATA_SIZE
+};
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
@@ -184,35 +207,26 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 	 *	handle parsing rx messages
 	 */
 
-	if (CAN_comms_Rx_msg == NULL) {
-		    return;
+	if (CAN_comms_Rx_msg == NULL)
+	{
+			return;
 	}
 
-  uint32_t CAN_ID = 0;
+	uint32_t CAN_ID = 0;
 
-  if(CAN_comms_Rx_msg->header.IDE == CAN_ID_EXT){
-    CAN_ID = CAN_comms_Rx_msg->header.ExtId; // Get CAN ID
-  }
-
-  else{
-    CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
-  }
-
-	switch(CAN_ID){
-		case CAN_ID_PACK_CURRENT:
-		case CAN_ID_MTR_FAULTS:
-		case CAN_ID_BATT_FAULTS:
-		case CAN_ID_PACK_VOLTAGE:
-			Set_fault_lights(CAN_ID, CAN_comms_Rx_msg->data);
-			break;
-
-		case CAN_ID_TURN_SIGNALS:
-			External_Lights_set_turn_signals(CAN_comms_Rx_msg);
-			break;
-
-		default:
-			break;
+	if(CAN_comms_Rx_msg->header.IDE == CAN_ID_EXT)
+	{
+		CAN_ID = CAN_comms_Rx_msg->header.ExtId; // Get CAN ID
 	}
+
+	else
+	{
+	CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
+	}
+
+	Set_fault_lights(CAN_ID, CAN_comms_Rx_msg->data);
+	External_Lights_set_turn_signals(CAN_ID, CAN_comms_Rx_msg->data);
+	Drive_State_can_rx_handle(CAN_ID, CAN_comms_Rx_msg->data);
 }
 
 /* USER CODE END 1 */

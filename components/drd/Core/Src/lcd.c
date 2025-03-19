@@ -298,19 +298,19 @@ void LCD_display_speed(uint32_t speed, int units)
  * 
  * @param state The drive state (e.g., FORWARD_STATE, PARK_STATE, REVERSE_STATE).
  */
-void LCD_display_drive_state(int state)
+void LCD_display_drive_state(drive_state_t state)
 {
     char state_str[2] = {ERROR_SYMBOL, '\0'};  // Default to error symbol.
     lcd_clear_bounding_box(STATE_X, STATE_Y, old_bb_drive_state.x2, BOTTOM_RIGHT_Y);
     
     switch (state) {
-        case FORWARD_STATE:
+        case FORWARD:
             state_str[STATE_IDX] = FORWARD_SYMBOL;
             break;
-        case PARK_STATE:
+        case PARK:
             state_str[STATE_IDX] = PARK_SYMBOL; 
             break;
-        case REVERSE_STATE:
+        case REVERSE:
             state_str[STATE_IDX] = REVERSE_SYMBOL;
             break;
         default:
