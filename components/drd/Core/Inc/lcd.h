@@ -9,7 +9,7 @@
 #include <main.h>
 #include "stdint.h"
 #include "font_verdana.h"
-
+#include "drive_state.h"
 
 /** Display Parameters */
 #define BOTTOM_RIGHT_X      127
@@ -34,8 +34,8 @@
 #define REVERSE_SYMBOL      'R'    
 #define ERROR_SYMBOL        'X'    
 #define STATE_X             1
-#define STATE_Y             40
-#define STATE_FONT          (Verdana22)
+#define STATE_Y             47
+#define STATE_FONT          (Verdana16)
 #define STATE_SPACING       1
 
 #define SOC_FONT            (Verdana16)
@@ -53,6 +53,17 @@
 #define BAR_BOTTOM                      20
 #define BAR_RIGHT BOTTOM_RIGHT_X
 #define CENTER_X                        43
+
+#define ECO_MODE_X             3
+#define ECO_MODE_Y             25
+#define POWER_MODE_X           2
+#define POWER_MODE_Y           20
+#define POWER_MODE_FONT          (Webdings14)
+#define ECO_MODE_FONT          (Verdana12)
+#define ECO_SYMBOL              'E'    
+#define POWER_SYMBOL            '~'    
+#define DRIVE_MODE_ECO          0
+#define DRIVE_MODE_POWER        1
 
 #define SCREEN_HEIGHT                   64
 #define SCREEN_WIDTH                    128
@@ -118,7 +129,7 @@ void LCD_display_speed(uint32_t speed, int units);
  * 
  * @param state The drive state (e.g., FORWARD_STATE, PARK_STATE, REVERSE_STATE).
  */
-void LCD_display_drive_state(int state);
+void LCD_display_drive_state(drive_state_t state);
 
 /**
  * @brief Displays the state of charge (SOC) on the LCD.
@@ -134,6 +145,13 @@ void LCD_display_SOC(uint32_t soc);
  * @param pack_voltage The battery pack voltage.
  */
 void LCD_display_power_bar(float pack_current, float pack_voltage);
+
+/**
+ * @brief Displays an E for ECO mode and P for POWER mode
+ * 
+ * @param drive_mode The drive mode
+ */
+void LCD_display_drive_mode(uint8_t drive_mode);
 
 /**
  * @brief Initializes the LCD and SPI interface.

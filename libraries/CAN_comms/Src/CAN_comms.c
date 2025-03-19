@@ -135,11 +135,35 @@ void CAN_comms_Add_Tx_message(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
 		{
 			CAN_comms_diagnostic.hal_failure_tx++;
 		}
+		osDelay(3);
 		taskEXIT_CRITICAL();
 
 }
 
 
+/**
+ * @brief Adds a CAN Tx message to the CAN_comms_Tx_queue
+ * This function can be called be a user to add a CAN message to the CAN_comms_Tx_queue.
+ *
+ * @param CAN_comms_Tx_msg: Pointer to the CAN_comms_Tx_msg_t struct to be added to the queue
+ */
+void CAN_comms_Add_Tx_messageISR(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
+{
+		UBaseType_t uxSavedInterruptStatus;
+		uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
+		uint32_t canMailbox;
+		if (HAL_OK == HAL_CAN_AddTxMessage(CAN_comms_config.hcan, &CAN_comms_Tx_msg->header, CAN_comms_Tx_msg->data, &canMailbox))
+		{
+			CAN_comms_diagnostic.success_tx++;
+
+		}
+		else
+		{
+			CAN_comms_diagnostic.hal_failure_tx++;
+		}
+		taskEXIT_CRITICAL_FROM_ISR(uxSavedInterruptStatus);
+
+}
 
 
 /**
