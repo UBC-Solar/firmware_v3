@@ -35,6 +35,7 @@ static bounding_box_t old_bb_drive_mode    = {0, 0, 0, 0};
 static bounding_box_t old_bb_soc            = {0, 0, 0, 0};
 
 static uint8_t lcd_flipped = 0;
+lcd_data_t g_lcd_data = {0};
 
 #ifdef ST7565_DIRTY_PAGES
 static uint8_t lcd_dirty_pages;
@@ -95,7 +96,8 @@ static void lcd_clear_bounding_box(unsigned char x1, unsigned char y1, unsigned 
 /**
  * @brief Refreshes the LCD display by calling the ST7565 display update.
  */
-static void lcd_refresh() {
+static void lcd_refresh() 
+{
     for (int y = 0; y < 8; y++) {
 
     #ifdef ST7565_DIRTY_PAGES

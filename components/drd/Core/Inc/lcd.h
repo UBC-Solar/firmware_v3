@@ -102,6 +102,18 @@
  #define CMD_COLUMN_UPPER		0b00010000
  #define CMD_DISPLAY_START		0b01000000
 
+ #define LCD_UPDATE_DELAY 200
+ typedef struct {
+    volatile uint32_t speed;
+    volatile uint8_t speed_units;
+    volatile int16_t pack_current;
+    volatile uint16_t pack_voltage;
+    volatile uint8_t drive_state;
+    volatile uint8_t soc;
+    volatile uint8_t drive_mode;
+} lcd_data_t;
+
+extern lcd_data_t g_lcd_data;
 
 /** 
  * @brief Displays the speed on the LCD.

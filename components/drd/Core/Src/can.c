@@ -25,6 +25,7 @@
 #include "external_lights.h"
 #include "fault_lights.h"
 #include "drive_state.h"
+#include "lcd.h"
 
 void CAN_filter_init(CAN_FilterTypeDef* can_filter);
 
@@ -223,6 +224,23 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 	{
 	CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
 	}
+
+  if(CAN_comms_Rx_msg->header.StdId == CAN_ID_PACK_CURRENT)
+  {
+    g_lcd_data.pack_current = (CAN_comms_Rx_msg->data[1] << 8) | (CAN_comms_Rx_msg->data[0]);
+    g_lcd_data.pack_current /= 65.535;
+  }
+
+  if(CAN_comms_Rx_msg->header.StdId == CAN_ID_PACK_VOLTAGE)
+  {
+    g_lcd_data.pack_voltage = (CAN_comms_Rx_msg->data[1] << 8) | (CAN_comms_Rx_msg->data[0]);
+    g_lcd_data.pack_voltage /= PACK_VOLTAGE_DIVISOR;
+  }
+
+  if(CAN_comms_Rx_msg->header.StdId == CAN_ID_PACK_HEALTH)
+  {
+    g_lcd_data.soc = CAN_comms_Rx_msg->data[0];
+  }
 
 	Set_fault_lights(CAN_ID, CAN_comms_Rx_msg->data);
 	External_Lights_set_turn_signals(CAN_ID, CAN_comms_Rx_msg->data);
