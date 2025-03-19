@@ -211,12 +211,19 @@ void LCDUpdatetask(void *argument)
 
   LCD_init(&hspi1);
 
+  g_lcd_data.speed_units = KPH;
+  
   for(;;)
   {
-    LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
+    g_lcd_data.speed = velocity_kmh;
+    g_lcd_data.drive_state = drive_state;
+    g_lcd_data.drive_mode = eco_mode;
+
+    LCD_display_power_bar((float) g_lcd_data.pack_current, (float) g_lcd_data.pack_voltage);
     LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
     LCD_display_drive_state(g_lcd_data.drive_state);
     LCD_display_SOC(g_lcd_data.soc);
+    LCD_display_drive_mode(g_lcd_data.drive_mode);
 
     osDelay(LCD_UPDATE_DELAY);
   }

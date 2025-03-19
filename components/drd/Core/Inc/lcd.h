@@ -104,14 +104,13 @@
 
  #define LCD_UPDATE_DELAY 200
  typedef struct {
-    // Values will be set from drive_state.c
-    uint8_t speed;
-    uint8_t speed_units;
-    uint8_t pack_current;
-    uint8_t pack_voltage;
-    uint8_t drive_state;
-    uint8_t soc;
-    uint8_t drive_mode;
+    volatile uint32_t speed;
+    volatile uint8_t speed_units;
+    volatile int16_t pack_current;
+    volatile uint16_t pack_voltage;
+    volatile uint8_t drive_state;
+    volatile uint8_t soc;
+    volatile uint8_t drive_mode;
 } lcd_data_t;
 
 extern lcd_data_t g_lcd_data;
