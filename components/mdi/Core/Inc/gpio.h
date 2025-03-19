@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    can.h
+  * @file    gpio.h
   * @brief   This file contains all the function prototypes for
-  *          the can.c file
+  *          the gpio.c file
   ******************************************************************************
   * @attention
   *
@@ -18,8 +18,8 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __CAN_H__
-#define __CAN_H__
+#ifndef __GPIO_H__
+#define __GPIO_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,15 +32,11 @@ extern "C" {
 
 /* USER CODE END Includes */
 
-extern CAN_HandleTypeDef hcan;
-
 /* USER CODE BEGIN Private defines */
-
-#define DRD_MOTOR_COMMAND_CAN_ID (0x401)
 
 /* USER CODE END Private defines */
 
-void MX_CAN_Init(void);
+void MX_GPIO_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
@@ -49,6 +45,5 @@ void MX_CAN_Init(void);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __CAN_H__ */
+#endif /*__ GPIO_H__ */
 
