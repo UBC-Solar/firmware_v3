@@ -220,7 +220,7 @@ void LCDUpdatetask(void *argument)
 
     v2 += 0.4;
 
-    osDelay(200);
+    osDelay(1000);
   }
   /* USER CODE END LCDUpdatetask */
 }
