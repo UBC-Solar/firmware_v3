@@ -63,6 +63,8 @@ void Error_Handler(void);
 #define RTS_IN_GPIO_Port GPIOA
 #define DEBUG_LED_Pin GPIO_PIN_6
 #define DEBUG_LED_GPIO_Port GPIOA
+#define MODE_PW_Pin GPIO_PIN_9
+#define MODE_PW_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
 typedef enum {
