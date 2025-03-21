@@ -19,6 +19,7 @@
 #define DRIVE_STATE_MACHINE_DELAY 	25
 #define DRIVE_COMMAND_SIZE 			5
 #define MC_FRAME_REQUEST_DELAY 		100
+#define MC_FRAME_REQUEST_SIZE 	    1
 
 
 #define ADC_MAX 2880		  // Max possible value for ADC
