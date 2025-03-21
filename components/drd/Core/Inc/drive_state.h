@@ -16,7 +16,7 @@
 
 
 /*	Symbolic Constants	*/
-#define DRIVE_STATE_MACHINE_DELAY 	25
+#define DRIVE_STATE_MACHINE_DELAY 	50
 #define DRIVE_COMMAND_SIZE 			5
 #define MC_FRAME_REQUEST_DELAY 		100
 
