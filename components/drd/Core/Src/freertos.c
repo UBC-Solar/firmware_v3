@@ -190,7 +190,6 @@ void ExternalLights_task(void *argument)
   for(;;)
   {
 	  ExternalLights_state_machine();
-
 	  osDelay(LIGHTS_STATE_MACHINE_DELAY);
 
   }
@@ -215,9 +214,9 @@ void LCDUpdatetask(void *argument)
   
   for(;;)
   {
-    g_lcd_data.speed = velocity_kmh;
-    g_lcd_data.drive_state = drive_state;
-    g_lcd_data.drive_mode = eco_mode;
+    g_lcd_data.speed = g_velocity_kmh;
+    g_lcd_data.drive_state = g_drive_state;
+    g_lcd_data.drive_mode = g_eco_mode;
 
     LCD_display_power_bar((float) g_lcd_data.pack_current, (float) g_lcd_data.pack_voltage);
     LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
@@ -240,7 +239,7 @@ void LCDUpdatetask(void *argument)
 void DriveState_task(void *argument)
 {
   /* USER CODE BEGIN DriveState_task */
-	input_flags.velocity_under_threshold = true;
+	g_input_flags.velocity_under_threshold = true;
   /* Infinite loop */
   for(;;)
   {

@@ -72,14 +72,14 @@ typedef enum {
 
 /*	Global Variables	*/
 
-extern input_flags_t input_flags;
-extern volatile drive_state_t drive_state;
-extern volatile bool eco_mode;
-extern volatile uint32_t velocity_kmh;
+extern input_flags_t g_input_flags;
+extern volatile drive_state_t g_drive_state;
+extern volatile bool g_eco_mode;
+extern volatile uint32_t g_velocity_kmh;
 
 /*	Functions	*/
-void drive_state_interrupt_handler(uint16_t pin);
-void Drive_State_can_rx_handle(uint32_t msg_id, uint8_t* data);
+void Drive_State_interrupt_handler(uint16_t pin);
+void Drive_State_CAN_rx_handle(uint32_t msg_id, uint8_t* data);
 void Drive_State_Machine_handler();
 void Motor_Controller_query_data();
 
