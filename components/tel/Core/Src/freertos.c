@@ -229,24 +229,33 @@ void StartDefaultTask(void *argument)
 void IMU_task(void *argument)
 {
   /* USER CODE BEGIN IMU_task */
-  /* Infinite loop */
-    imu_task();
-  imu_task();
+    /* Infinite loop */
+    osDelay(IMU_TASK_OFFSET_DELAY);
+    for (;;)
+    {
+        imu_task();
+        osDelay(IMU_TASK_DELAY);
+    }
   /* USER CODE END IMU_task */
 }
 
 /* USER CODE BEGIN Header_GPS_task */
 /**
-* @brief Function implementing the GPS_Task thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the GPS_Task thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_GPS_task */
 void GPS_task(void *argument)
 {
   /* USER CODE BEGIN GPS_task */
-  /* Infinite loop */
-  gps_task();
+    /* Infinite loop */
+    osDelay(GPS_TASK_OFFSET_DELAY);
+  for(;;)
+  {
+    gps_task();
+    osDelay(GPS_TASK_DELAY);
+  }
   /* USER CODE END GPS_task */
 }
 
