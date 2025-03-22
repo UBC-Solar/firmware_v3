@@ -56,6 +56,8 @@ extern const CAN_TxHeaderTypeDef mdu_request_header;
 #define FRAME0 							0x08850225
 #define STR_CAN_MSG_ID					0x580
 #define MDU_REQUEST_FRAME_2_0 			0b101 //request frame 0 and 2 (0th and 2nd bit)
+#define  MDU_REQUEST_SIZE 1
+
 /* USER CODE END Private defines */
 
 void MX_CAN_Init(void);

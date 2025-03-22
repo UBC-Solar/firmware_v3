@@ -50,7 +50,7 @@ const CAN_TxHeaderTypeDef mdu_request_header = {
 		.ExtId = MDU_REQUEST_COMMAND_ID,
 		.IDE = CAN_ID_EXT,
 		.RTR = CAN_RTR_DATA,
-		.DLC = CAN_DATA_SIZE
+		.DLC = MDU_REQUEST_SIZE
 };
 /* USER CODE END 0 */
 
