@@ -257,7 +257,7 @@ void Motor_Controller_query_data()
 {
 	CAN_comms_Tx_msg_t msg;
 	msg.header = mdu_request_header;
-	msg.data[0] = MDU_REQUEST_FRAME_2_0; //request frame 2 and 0
+	msg.data[0] = MDU_REQUEST_FRAME; //request frame 0,1,2
 	CAN_comms_Add_Tx_message(&msg);
 }
 

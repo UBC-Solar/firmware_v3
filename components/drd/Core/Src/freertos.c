@@ -30,6 +30,7 @@
 #include "lcd.h"
 #include "spi.h"
 #include "drive_state.h"
+#include "iwdg.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -40,7 +41,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define DEFAULT_TASK_DELAY 95 //watchdog resets every 100ms so slightly faster than that
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -54,9 +55,14 @@ typedef StaticTask_t osStaticThreadDef_t;
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
+uint32_t defaultTaskBuffer[ 128 ];
+osStaticThreadDef_t defaultTaskControlBlock;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 128 * 4,
+  .cb_mem = &defaultTaskControlBlock,
+  .cb_size = sizeof(defaultTaskControlBlock),
+  .stack_mem = &defaultTaskBuffer[0],
+  .stack_size = sizeof(defaultTaskBuffer),
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for ExtLightsTask */
@@ -171,7 +177,9 @@ void StartDefaultTask(void *argument)
   for(;;)
   {
 	Motor_Controller_query_data();
-    osDelay(MC_FRAME_REQUEST_DELAY);
+	IWDG_Refresh(&hiwdg);
+	osDelay(1000);
+    osDelay(DEFAULT_TASK_DELAY);
   }
   /* USER CODE END StartDefaultTask */
 }
