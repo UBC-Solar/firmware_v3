@@ -47,7 +47,8 @@ void MDI_set_motor_command(MDI_motor_command_t* MDI_motor_command)
     MDI_set_DAC_voltage(ACCEL_DAC, MDI_motor_command->accel_DAC_value);
     MDI_set_DAC_voltage(REGEN_DAC, MDI_motor_command->regen_DAC_value);
 
-    HAL_GPIO_WritePin(DIR_GPIO_Port, DIR_Pin, MDI_motor_command->direction_value);
+    // GPIO set to Output Open Drain. Meaning you cannot just probe it on the MDI and get 3.3V.
+    HAL_GPIO_WritePin(DIR_GPIO_Port, DIR_Pin, MDI_motor_command->direction_value); 
     HAL_GPIO_WritePin(ECO_GPIO_Port, ECO_Pin, MDI_motor_command->eco_mode_value);
 }
 
