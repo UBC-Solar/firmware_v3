@@ -57,7 +57,8 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
     break;
   
   case LVS_CURRENT_SENSE__ADC1_IN9: // LVS current supplied to HVDCDC (mA)
-    ecu_data.adc_data.ADC_lvs_current = (uint16_t)((adc_voltage-ecu_data.adc_data.ADC_lvs_current_sense_offset)/25.25);
+    // -1mV is from characterization [LINK MONDAY UPDATE], /25 is sensitivity value from datasheet, *1000 is A to mA
+    ecu_data.adc_data.ADC_lvs_current = (uint16_t)((adc_voltage-ecu_data.adc_data.ADC_lvs_current_sense_offset-1)/25*1000); // See datasheet: https://www.melexis.com/-/media/files/documents/datasheets/mlx91221-datasheet-melexis.pdf
     break;
   
   case PACK_CURRENT_SENSE__ADC1_IN14: // Pack current sense (mA)
