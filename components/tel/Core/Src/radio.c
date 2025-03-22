@@ -45,36 +45,58 @@ Radio_diagnostics_t Radio_diagnostic = {
 
 uint8_t get_data_length(uint32_t DLC);
 
+// Filters CAN messages based on the whitelist
+// Todo: Add the Array ID and other required messages to the whitelist (18 total)
+static uint32_t whitelist[] = {0x404, 0x450, 0x623, 0x626, 0x627, 0x752, 0x753,
+							   0x754, 0x755, 0x756, 0x757, 0x758, 0x759, 0x760, 0x761,
+						       0x08850225, 0x08950225};
+
 
 /**
- * @brief Transmits a message over UART to the XBee Radio Module
+ * @brief Transmits a received message over UART to the XBee Radio Module
  * 
  * @param CAN_comms_Rx_msg Pointer to the CAN Rx message
  */
 RADIO_Msg_TypeDef radio_msg = {0};
 void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
-	// TODO: Implement filtering
-	// EX: if (check_CAN_ID_whitelist(CAN_comms_Rx_msg->header.StdId) == true) { ... }
+	int size = sizeof(whitelist) / sizeof(whitelist[0]);  // Calculate array size
+	uint32_t can_id = (CAN_comms_Rx_msg->header.IDE == CAN_ID_STD)? CAN_comms_Rx_msg->header.StdId : CAN_comms_Rx_msg->header.ExtId;
 
-	/* Create radio message struct */
-	set_radio_msg(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data, &radio_msg);
+	for(int i = 0; i < size; i++)
+	{
+		if (can_id == whitelist[i]){
+			/* Create radio message struct */
+			set_radio_msg(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data, &radio_msg);
 
-	/* Transmit Radio Message */
-	 UART_radio_transmit(&radio_msg);
+			/* Transmit Radio Message */
+			UART_radio_transmit(&radio_msg);
+			break;
+		}
+	}
 }
 
-
+/**
+ * @brief Transmits a TEL (GPS or IMU) message over UART to the XBee Radio Module
+ * 
+ * @param CAN_comms_Rx_msg Pointer to the CAN Rx message
+ */
 void RADIO_filter_and_queue_msg_tx(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
 {
-	// TODO: Implement filtering
-	// EX: if (check_CAN_ID_whitelist(CAN_comms_Rx_msg->header.StdId) == true) { ... }
+	int size = sizeof(whitelist) / sizeof(whitelist[0]);  // Calculate array size
+	uint32_t can_id = (CAN_comms_Tx_msg->header.IDE == CAN_ID_STD)? CAN_comms_Tx_msg->header.StdId : CAN_comms_Tx_msg->header.ExtId;
 
-	/* Create radio message struct */
-	set_radio_msg_tx(&(CAN_comms_Tx_msg->header), CAN_comms_Tx_msg->data, &radio_msg);
+	for(int i = 0; i < size; i++)
+	{
+		if (can_id == whitelist[i]){
+			/* Create radio message struct */
+			set_radio_msg_tx(&(CAN_comms_Tx_msg->header), CAN_comms_Tx_msg->data, &radio_msg);
 
-	/* Transmit Radio Message */
-	UART_radio_transmit(&radio_msg);
+			/* Transmit Radio Message */
+			UART_radio_transmit(&radio_msg);
+			break;
+		}
+	}
 }
 
 
