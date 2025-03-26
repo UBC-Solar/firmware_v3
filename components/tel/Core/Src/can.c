@@ -33,6 +33,7 @@
 #include "cpu_load.h"
 #include "bitops.h"
 #include "nmea_parse.h"
+#include "gps.h"
 
 #define CANLOAD_MSG_ID                      0x763
 #define CANLOAD_DATA_LENGTH                 1
@@ -60,14 +61,6 @@ CAN_TxHeaderTypeDef cpu_load_can_header = {
 
 #define GPS_CAN_MESSAGE_LENGTH                         8
 #define GPS_CAN_MESSAGE_INT_LENGTH                     4
-
-#define GPS_DATA_SAT_COUNT_VIEW_FIX_SNR_CAN_MESSAGE_ID 0x755
-#define GPS_DATA_LON_LAT_CAN_MESSAGE_ID                0x756
-#define GPS_DATA_HDOP_VDOP_CAN_MESSAGE_ID              0x757
-#define GPS_DATA_LON_SIDE_DATE_CAN_MESSAGE_ID          0x758
-#define GPS_DATA_PDOP_SPEEDKMH_CAN_MESSAGE_ID          0x759
-#define GPS_DATA_ALT_GEOD_CAN_MESSAGE_ID               0x760
-#define GPS_DATA_TRUE_MAG_HEADING_CAN_MESSAGE_ID       0x761
 
 /**
  * @brief CAN message header for GPS messages

@@ -7,7 +7,6 @@
  *  @author Aarjav Jain
  */
 
-
 #include "radio.h"
 
 
@@ -18,7 +17,16 @@
 #include "rtc.h"
 #include "tel_freertos.h"
 #include "can.h"
+#include "gps.h"
+#include "imu.h"
 
+
+/* IMPORTANT DEFINE */
+#ifdef DEBUG
+    #define DO_FILTER   true  // true means filter out some CAN messages for radio transmission.
+#else
+    #define DO_FILTER   false // false means do not filter any CAN messages.
+#endif
 
 /* PRIVATE DEFINES */
 #define NO_PRIORITY                                 0
@@ -45,11 +53,81 @@ Radio_diagnostics_t Radio_diagnostic = {
 
 uint8_t get_data_length(uint32_t DLC);
 
-// Filters CAN messages based on the whitelist
-// Todo: Add the Array ID and other required messages to the whitelist (18 total)
-static uint32_t whitelist[] = {0x404, 0x450, 0x623, 0x626, 0x627, 0x752, 0x753,
-							   0x754, 0x755, 0x756, 0x757, 0x758, 0x759, 0x760, 0x761,
-						       0x08850225, 0x08950225};
+typedef struct {
+    uint32_t id;
+    uint8_t  mod;     // transmit on radio only every 'mod' occurrences
+    uint32_t count;   // count of received messages
+} CanFilter_t;
+
+// Definitions for CAN IDs (add or adjust as needed)
+#define MC_MEASUREMENTS_ID                  0x08850225
+#define DRD_MOTOR_COMMAND_ID                0x401
+#define MPPT_INPUT_MEASUREMENTS_ID          0x6A0
+#define MPPT_OUTPUT_MEASUREMENTS_ID         0x6A1
+#define MPPT_TEMP_MEASUREMENTS_ID           0x6A2
+#define DRD_DIAGNOSTICS_FLAGS_ID            0x404
+#define MODULE_TEMPS_ID                     0x627
+#define PACK_CURRENT_ID                     0x450
+#define PACK_VOLTAGE_ID                     0x623
+#define MODULE_VOLTAGES_ID                  0x626
+
+// Mod values (1 means every message, other values rate-limit the Tx)
+#define MC_MEASUREMENTS_MOD                 1
+#define DRD_MOTOR_COMMAND_MOD               4
+#define MPPT_INPUT_MEASUREMENTS_MOD         1
+#define MPPT_OUTPUT_MEASUREMENTS_MOD        1
+#define MPPT_TEMP_MEASUREMENTS_MOD          1
+#define DRD_DIAGNOSTICS_FLAGS_MOD           1
+#define MODULE_TEMPS_MOD                    1
+#define PACK_CURRENT_MOD                    1
+#define PACK_VOLTAGE_MOD                    1
+#define MODULE_VOLTAGES_MOD                 1
+#define GPS_DATA_LON_LAT_CAN_MESSAGE_MOD    1
+
+// Our whitelist using a struct array
+static CanFilter_t filters[] = {
+    { DRD_DIAGNOSTICS_FLAGS_ID,          DRD_MOTOR_COMMAND_MOD, 0               },
+    { PACK_CURRENT_ID,                   PACK_CURRENT_MOD,      0               },
+    { PACK_VOLTAGE_ID,                   PACK_VOLTAGE_MOD,      0               },
+    { MODULE_VOLTAGES_ID,                MODULE_VOLTAGES_MOD,   0               },
+    { MODULE_TEMPS_ID,                   MODULE_TEMPS_MOD,      0               },
+    { MPPT_INPUT_MEASUREMENTS_ID,        MPPT_INPUT_MEASUREMENTS_MOD, 0         },
+    { MPPT_OUTPUT_MEASUREMENTS_ID,       MPPT_OUTPUT_MEASUREMENTS_MOD, 0        },
+    { MPPT_TEMP_MEASUREMENTS_ID,         MPPT_TEMP_MEASUREMENTS_MOD, 0          },
+    { GPS_DATA_LON_LAT_CAN_MESSAGE_ID,   GPS_DATA_LON_LAT_CAN_MESSAGE_MOD, 0    },
+    { MC_MEASUREMENTS_ID,                MC_MEASUREMENTS_MOD,   0               },
+    { DRD_MOTOR_COMMAND_ID,              DRD_MOTOR_COMMAND_MOD, 0               }
+};
+
+#define NUM_FILTERS (sizeof(filters) / sizeof(filters[0]))
+
+/**
+ * @brief Determines if a received CAN message should be transmitted.
+ *
+ * This function iterates over our whitelist and increments the counter
+ * for the matching CAN ID. A message is transmitted if its counter modulo
+ * the specified mod is zero.
+ *
+ * @param can_id The incoming CAN ID.
+ * @return true if the message should be transmitted, false otherwise.
+ */
+static bool filter(uint32_t can_id)
+{
+    if (DO_FILTER)
+    {
+        for (int i = 0; i < NUM_FILTERS; i++) {
+            if (filters[i].id == can_id) {
+                if ( ( (++filters[i].count) % filters[i].mod ) == 0) {
+                    return true;
+                }
+                break; // Found the matching ID; no need to keep looping.
+            }
+        }
+        return false;
+    }
+    else 
+        return true;
+}
 
 
 /**
@@ -60,20 +138,16 @@ static uint32_t whitelist[] = {0x404, 0x450, 0x623, 0x626, 0x627, 0x752, 0x753,
 RADIO_Msg_TypeDef radio_msg = {0};
 void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
-	int size = sizeof(whitelist) / sizeof(whitelist[0]);  // Calculate array size
-	uint32_t can_id = (CAN_comms_Rx_msg->header.IDE == CAN_ID_STD)? CAN_comms_Rx_msg->header.StdId : CAN_comms_Rx_msg->header.ExtId;
+	uint32_t can_id = get_can_id(CAN_comms_Rx_msg);
 
-	for(int i = 0; i < size; i++)
-	{
-		if (can_id == whitelist[i]){
-			/* Create radio message struct */
-			set_radio_msg(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data, &radio_msg);
-
-			/* Transmit Radio Message */
-			UART_radio_transmit(&radio_msg);
-			break;
-		}
-	}
+    if (filter(can_id))
+    {
+        /* Create radio message struct */
+        set_radio_msg(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data, &radio_msg);
+    
+        /* Transmit Radio Message */
+        UART_radio_transmit(&radio_msg);
+    }
 }
 
 /**
@@ -83,20 +157,16 @@ void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
  */
 void RADIO_filter_and_queue_msg_tx(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
 {
-	int size = sizeof(whitelist) / sizeof(whitelist[0]);  // Calculate array size
 	uint32_t can_id = (CAN_comms_Tx_msg->header.IDE == CAN_ID_STD)? CAN_comms_Tx_msg->header.StdId : CAN_comms_Tx_msg->header.ExtId;
 
-	for(int i = 0; i < size; i++)
-	{
-		if (can_id == whitelist[i]){
-			/* Create radio message struct */
-			set_radio_msg_tx(&(CAN_comms_Tx_msg->header), CAN_comms_Tx_msg->data, &radio_msg);
+    if (filter(can_id))
+    {
+        /* Create radio message struct */
+        set_radio_msg_tx(&(CAN_comms_Tx_msg->header), CAN_comms_Tx_msg->data, &radio_msg);
 
-			/* Transmit Radio Message */
-			UART_radio_transmit(&radio_msg);
-			break;
-		}
-	}
+        /* Transmit Radio Message */
+        UART_radio_transmit(&radio_msg);
+    }
 }
 
 

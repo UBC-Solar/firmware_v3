@@ -11,11 +11,6 @@
 /* Define the CAN message length for IMU messages */
 #define IMU_CAN_MESSAGE_LENGTH 8
 
-/* Define the CAN message IDs for each IMU axes */
-#define IMU_AG_X_CAN_MESSAGE_ID 0x752
-#define IMU_AG_Y_CAN_MESSAGE_ID 0x753
-#define IMU_AG_Z_CAN_MESSAGE_ID 0x754
-
 /* Define the multiplication factors as per the datasheet table 3: https://www.st.com/resource/en/datasheet/lsm6dsv16x.pdf" */
 #define ACCEL_FS_MULTIPLIER_8G 0.244
 #define GYRO_FS_MULTIPLIER_250D 8.75
