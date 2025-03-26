@@ -138,7 +138,7 @@ static bool filter(uint32_t can_id)
 RADIO_Msg_TypeDef radio_msg = {0};
 void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
-	uint32_t can_id = get_can_id(CAN_comms_Rx_msg->header);
+	uint32_t can_id = get_can_id(&(CAN_comms_Rx_msg->header));
 
     if (filter(can_id))
     {
