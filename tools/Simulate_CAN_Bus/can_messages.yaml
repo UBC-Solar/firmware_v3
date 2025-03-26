@@ -139,22 +139,72 @@
   board_delay: 100
 
 - ID: "0x752"
-  interval: 500
+  interval: 250
   data: "0000000000000000"
   dlc: 8
   num_msgs_sent_in_burst: 1  
   board_delay: 100
 
 - ID: "0x753"
-  interval: 500
+  interval: 250
   data: "0000000000000000"
   dlc: 8
   num_msgs_sent_in_burst: 1  
-  board_delay: 100
+  board_delay: 103
 
 - ID: "0x754"
-  interval: 500
+  interval: 250
   data: "0000000000000000"
   dlc: 8
   num_msgs_sent_in_burst: 1  
-  board_delay: 100
+  board_delay: 106
+
+- ID: "0x755"
+  interval: 250
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 104
+
+- ID: "0x756"
+  interval: 250
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 107
+
+- ID: "0x757"
+  interval: 250
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 110
+
+- ID: "0x758"
+  interval: 250
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 113
+
+- ID: "0x759"
+  interval: 250
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 116
+
+- ID: "0x760"
+  interval: 250
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 119
+
+- ID: "0x761"
+  interval: 250
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 121
+  
