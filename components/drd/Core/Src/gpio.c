@@ -22,7 +22,7 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN 0 */
-
+#include "drive_state.h"
 /* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/
@@ -56,7 +56,7 @@ void MX_GPIO_Init(void)
                           |MTR_OT_Pin|ESTOP_Pin|DEBUG_LED_1_Pin|DEBUG_LED_2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|BATT_OV_Pin|DISPLAY_A0_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, BATT_LO_Pin|BATT_OV_Pin|DISPLAY_A0_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, BMS_COMM_FLT_Pin|DISPLAY_RESET_Pin|DTR_OUT_Pin|RTS_OUT_Pin
@@ -79,8 +79,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA0 DISPLAY_A0_Pin */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|DISPLAY_A0_Pin;
+  /*Configure GPIO pins : BATT_LO_Pin DISPLAY_A0_Pin */
+  GPIO_InitStruct.Pin = BATT_LO_Pin|DISPLAY_A0_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -100,8 +100,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : REGEN_EN_Pin HAZARD_Pin BRK_IN_Pin */
-  GPIO_InitStruct.Pin = REGEN_EN_Pin|HAZARD_Pin|BRK_IN_Pin;
+  /*Configure GPIO pins : REGEN_EN_Pin HAZARD_Pin */
+  GPIO_InitStruct.Pin = REGEN_EN_Pin|HAZARD_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -113,14 +113,35 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(DISPLAY_RESET_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PARK_EN_Pin FWRD_EN_Pin RVRS_EN_Pin */
-  GPIO_InitStruct.Pin = PARK_EN_Pin|FWRD_EN_Pin|RVRS_EN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  /*Configure GPIO pin : BRK_IN_Pin */
+  GPIO_InitStruct.Pin = BRK_IN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(BRK_IN_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PARK_EN_Pin FORWARD_EN_Pin REVERSE_EN_Pin */
+  GPIO_InitStruct.Pin = PARK_EN_Pin|FORWARD_EN_Pin|REVERSE_EN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
 
 /* USER CODE BEGIN 2 */
 
+
+/**
+ * @brief GPIO Interrupt Handler
+ */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	drive_state_interrupt_handler(GPIO_Pin);
+}
 /* USER CODE END 2 */

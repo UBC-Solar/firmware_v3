@@ -44,7 +44,7 @@ void MX_ADC1_Init(void);
 void MX_ADC2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
+uint16_t Read_ADC(ADC_HandleTypeDef* hadc);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
