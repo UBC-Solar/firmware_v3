@@ -56,7 +56,7 @@ static CAN_TxHeaderTypeDef imu_ag_z = {
  * @param accel_x Acceleration value for the x-axis.
  * @param gyro_x  Gyroscope value for the x-axis.
  */
-static void CAN_tx_ag_x_msg(float accel_x, float gyro_x)
+void CAN_tx_ag_x_msg(float accel_x, float gyro_x)
 {
 	FloatToBytes float_bytes_x;
     float_bytes_x.f = accel_x;
@@ -84,7 +84,7 @@ static void CAN_tx_ag_x_msg(float accel_x, float gyro_x)
  * @param accel_y Acceleration value for the y-axis.
  * @param gyro_y  Gyroscope value for the y-axis.
  */
-static void CAN_tx_ag_y_msg(float accel_y, float gyro_y)
+void CAN_tx_ag_y_msg(float accel_y, float gyro_y)
 {
 	FloatToBytes float_bytes_y;
     float_bytes_y.f = accel_y;
@@ -113,7 +113,7 @@ static void CAN_tx_ag_y_msg(float accel_y, float gyro_y)
  * @param gyro_z  Gyroscope value for
  * the z-axis.
  */
-static void CAN_tx_ag_z_msg(float accel_z, float gyro_z)
+void CAN_tx_ag_z_msg(float accel_z, float gyro_z)
 {
 	FloatToBytes float_bytes_z;
     float_bytes_z.f = accel_z;

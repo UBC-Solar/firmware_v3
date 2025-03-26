@@ -45,9 +45,9 @@ extern "C" {
  */
 void imu_task(void);
 
-static void CAN_tx_ag_x_msg(float accel_x, float gyros_x);
-static void CAN_tx_ag_y_msg(float accel_y, float gyro_y);
-static void CAN_tx_ag_z_msg(float accel_z, float gyro_z);
+void CAN_tx_ag_x_msg(float accel_x, float gyros_x);
+void CAN_tx_ag_y_msg(float accel_y, float gyro_y);
+void CAN_tx_ag_z_msg(float accel_z, float gyro_z);
 
 #ifdef __cplusplus
 }
