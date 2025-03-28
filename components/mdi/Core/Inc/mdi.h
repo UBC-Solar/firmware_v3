@@ -15,6 +15,8 @@
 // Macros
 #define MAX_DAC_VALUE (0.90 * 0x3FF)
 #define MAX_TIMEOUT_VALUE (1000) // TODO: Is this time correct?
+#define MDI_DIAGNOSTICS_DELAY (1000)
+
 #define IS_BIT_SET(num, bit) (((num) & (1 << (bit))) != 0)
 
 
