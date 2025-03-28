@@ -101,7 +101,7 @@ void IWDG_perform_reset_sequence()
   if (IWDG_is_reset())
   {
     g_tel_diagnostic_flags.bits.tel_crash_iwdg = true;
-    
+
     // Reset the flag back
     __HAL_RCC_CLEAR_RESET_FLAGS();
 
@@ -112,6 +112,10 @@ void IWDG_perform_reset_sequence()
       HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
       HAL_Delay(RESET_SEQUENCE_DELAY_MS);
     }
+  }
+  else
+  {
+    g_tel_diagnostic_flags.bits.tel_crash_iwdg = false;
   }
 }
 

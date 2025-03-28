@@ -306,6 +306,11 @@ void Diagnostic_task(void *argument)
 {
   /* USER CODE BEGIN Diagnostic_task */
   /* Infinite loop */
+  
+  // Initilaize diagnostic flags as cleared at first
+  g_tel_diagnostic_flags.raw = 0;
+  g_time_since_bootup = 0;
+
   for(;;)
   {
     ++g_time_since_bootup;

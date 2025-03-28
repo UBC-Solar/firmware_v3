@@ -164,7 +164,7 @@ static uint16_t read_imu_register (uint16_t reg){
     {
         g_tel_diagnostic_flags.bits.imu_read_okay = true;
     }
-
+    
 	return (int16_t)(data[1] << 8 | data[0]);
 }
 
@@ -174,16 +174,27 @@ static uint16_t read_imu_register (uint16_t reg){
  */
 void imu_task()
 {
-	//Writing to CTRL_1 register, sets ODR to 30 Hz in normal mode and the range to +-8g in CTRL_8 register
+    
+    //Writing to CTRL_1 register, sets ODR to 30 Hz in normal mode and the range to +-8g in CTRL_8 register
     if(write_imu_register(CTRL_1, 0x74) != HAL_OK || write_imu_register(CTRL_8, 0x02) != HAL_OK){
+        g_tel_diagnostic_flags.bits.imu_write_okay = false;
     	return;
     }
-
+    else
+    {
+        g_tel_diagnostic_flags.bits.imu_write_okay = true;
+    }
+    
     //Writing to CTRL_2 register, sets ODR to 30 Hz in low power mode and the scale to +- 250 dps in CTRL_6 register
     if(write_imu_register(CTRL_2, 0x54) != HAL_OK || write_imu_register(CTRL_6, 0x01) != HAL_OK){
+        g_tel_diagnostic_flags.bits.imu_write_okay = false;
         return;
     }
-
+    else
+    {
+        g_tel_diagnostic_flags.bits.imu_write_okay = true;
+    }
+    
     for (;;)
     {
     	IMU imu_data;
