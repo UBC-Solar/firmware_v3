@@ -27,9 +27,6 @@
 #include "drive_state.h"
 #include "lcd.h"
 
-void CAN_filter_init(CAN_FilterTypeDef* can_filter);
-
-
 
 /**
  * 	CAN message header for a drive command. This command header is to
@@ -170,49 +167,87 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
   */
 void CAN_filter_init(CAN_FilterTypeDef* can_filter)
 {
-	// ---- Filter Bank 0: Standard IDs 0x401, 0x450, 0x622, 0x623 ----
-	can_filter->FilterIdHigh = (0x401 << 5); // Slot 0: 0x401
-    can_filter->FilterMaskIdHigh = (0x450 << 5); // Slot 1: 0x450
 
-    can_filter->FilterIdLow = (0x622 << 5); // Slot 2: 0x622
-    can_filter->FilterMaskIdLow = (0x623 << 5); // Slot 3: 0x623
+	CAN_FilterTypeDef can_filter1;
+	CAN_FilterTypeDef can_filter2;
+	CAN_FilterTypeDef can_filter3;
+	CAN_FilterTypeDef can_filter4;
+	CAN_FilterTypeDef can_filter5;
 
-    can_filter->FilterFIFOAssignment = CAN_FILTER_FIFO0;
-    can_filter->FilterBank = (uint32_t) 0;
-    can_filter->FilterMode = CAN_FILTERMODE_IDLIST;
-    can_filter->FilterScale = CAN_FILTERSCALE_16BIT;
-    can_filter->FilterActivation = CAN_FILTER_ENABLE;
-
-    // ---- Filter Bank 1: Standard IDs 0x624 and 0x580 ----
-    can_filter->FilterIdHigh = (0x624 << 5); // Slot 0: 0x624
-	can_filter->FilterMaskIdHigh = (0x580 << 5); // Slot 1: 0x580
-
-	can_filter->FilterIdLow = (0x0000 << 5); //Not used
-	can_filter->FilterMaskIdLow = (0x0000 << 5); //Not used
-
+	// ---- Filter Bank 0 ----
+	can_filter->FilterIdHigh = (CAN_ID_BATT_FAULTS << 5);
+	can_filter->FilterMaskIdHigh = (CAN_ID_BATT_FAULTS << 5);
+	can_filter->FilterIdLow = (CAN_ID_BATT_FAULTS << 5);
+	can_filter->FilterMaskIdLow = (CAN_ID_BATT_FAULTS << 5);
 	can_filter->FilterFIFOAssignment = CAN_FILTER_FIFO0;
-	can_filter->FilterBank = (uint32_t) 1;
+	can_filter->FilterBank = 0;
 	can_filter->FilterMode = CAN_FILTERMODE_IDLIST;
 	can_filter->FilterScale = CAN_FILTERSCALE_16BIT;
-	can_filter->FilterActivation = CAN_FILTER_ENABLE;
+	can_filter->FilterActivation = ENABLE;
+	HAL_CAN_ConfigFilter(&hcan, can_filter);
 
-	// ---- Filter Bank 2: Extended IDs 0x08A50225 and 0x08850225 ----
-	uint32_t extId1 = 0x08A50225;
-	can_filter->FilterIdHigh = (uint16_t)((extId1 << 3) >> 16);
-	can_filter->FilterIdLow = (uint16_t)((extId1 << 3) & 0xFFFF) | 0x0004; // We set the IDE bit
-	//0000 1000 1010 0101 0000 0010 0010 0101 << 3
-	//0 1000 1010 0101 0000 0010 0010 0101 & FFFF = 0000 0010 0010 0101
-	//0000 0010 0010 0101 |
+	// ---- Filter Bank 1 ----
+	can_filter1.FilterIdHigh = (CAN_ID_PACK_VOLTAGE << 5);
+	can_filter1.FilterMaskIdHigh = (CAN_ID_PACK_VOLTAGE << 5);
+	can_filter1.FilterIdLow = (CAN_ID_PACK_VOLTAGE << 5);
+	can_filter1.FilterMaskIdLow = (CAN_ID_PACK_VOLTAGE << 5);
+	can_filter1.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	can_filter1.FilterBank = 1;
+	can_filter1.FilterMode = CAN_FILTERMODE_IDLIST;
+	can_filter1.FilterScale = CAN_FILTERSCALE_16BIT;
+	can_filter1.FilterActivation = ENABLE;
+	HAL_CAN_ConfigFilter(&hcan, &can_filter1);
 
-	uint32_t extId2 = 0x08850225;
-	can_filter->FilterMaskIdHigh = (uint16_t)((extId2 << 3) >> 16);
-	can_filter->FilterMaskIdLow = (uint16_t)((extId2 << 3) & 0xFFFF) | 0x0004; // We set the IDE bit
+	// ---- Filter Bank 2 ----
+	can_filter2.FilterIdHigh = (CAN_ID_PACK_HEALTH << 5);
+	can_filter2.FilterMaskIdHigh = (CAN_ID_PACK_HEALTH << 5);
+	can_filter2.FilterIdLow = (CAN_ID_PACK_HEALTH << 5);
+	can_filter2.FilterMaskIdLow = (CAN_ID_PACK_HEALTH << 5);
+	can_filter2.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	can_filter2.FilterBank = 2;
+	can_filter2.FilterMode = CAN_FILTERMODE_IDLIST;
+	can_filter2.FilterScale = CAN_FILTERSCALE_16BIT;
+	can_filter2.FilterActivation = ENABLE;
+	HAL_CAN_ConfigFilter(&hcan, &can_filter2);
 
-	can_filter->FilterFIFOAssignment = CAN_FILTER_FIFO0;
-	can_filter->FilterBank = (uint32_t) 2;
-	can_filter->FilterMode = CAN_FILTERMODE_IDLIST;
-	can_filter->FilterScale = CAN_FILTERSCALE_32BIT;
-	can_filter->FilterActivation = CAN_FILTER_ENABLE;
+	// ---- Filter Bank 3 ----
+	can_filter3.FilterIdHigh = (CAN_ID_PACK_CURRENT << 5);
+	can_filter3.FilterMaskIdHigh = (CAN_ID_PACK_CURRENT << 5);
+	can_filter3.FilterIdLow = (CAN_ID_PACK_CURRENT << 5);
+	can_filter3.FilterMaskIdLow = (CAN_ID_PACK_CURRENT << 5);
+	can_filter3.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	can_filter3.FilterBank = 3;
+	can_filter3.FilterMode = CAN_FILTERMODE_IDLIST;
+	can_filter3.FilterScale = CAN_FILTERSCALE_16BIT;
+	can_filter3.FilterActivation = ENABLE;
+	HAL_CAN_ConfigFilter(&hcan, &can_filter3);
+
+	// ---- Filter Bank 4 ----
+	can_filter4.FilterIdHigh = (STR_CAN_MSG_ID << 5);
+	can_filter4.FilterMaskIdHigh = (STR_CAN_MSG_ID << 5);
+	can_filter4.FilterIdLow = (STR_CAN_MSG_ID << 5);
+	can_filter4.FilterMaskIdLow = (STR_CAN_MSG_ID << 5);
+	can_filter4.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	can_filter4.FilterBank = 4;
+	can_filter4.FilterMode = CAN_FILTERMODE_IDLIST;
+	can_filter4.FilterScale = CAN_FILTERSCALE_16BIT;
+	can_filter4.FilterActivation = ENABLE;
+	HAL_CAN_ConfigFilter(&hcan, &can_filter4);
+
+	// ---- Filter Bank 2 ----
+	uint32_t extId1 = CAN_ID_MTR_FAULTS;
+	uint32_t extId2 = FRAME0;
+	can_filter5.FilterIdHigh = (extId1 << 3) >> 16;
+	can_filter5.FilterIdLow  = ((extId1 << 3) & 0xFFFF) | 0x0004;
+	can_filter5.FilterMaskIdHigh = (extId2 << 3) >> 16;
+	can_filter5.FilterMaskIdLow  = ((extId2 << 3) & 0xFFFF) | 0x0004;
+	can_filter5.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	can_filter5.FilterBank = 5;
+	can_filter5.FilterMode = CAN_FILTERMODE_IDLIST;
+	can_filter5.FilterScale = CAN_FILTERSCALE_32BIT;
+	can_filter5.FilterActivation = ENABLE;
+	HAL_CAN_ConfigFilter(&hcan, &can_filter5);
+	
 }
 
 
@@ -225,12 +260,11 @@ void CAN_filter_init(CAN_FilterTypeDef* can_filter)
 void CAN_tasks_init()
 {
     CAN_comms_config_t CAN_comms_config_tel = {0};
-
-    CAN_FilterTypeDef CAN_filter = {0};
-    CAN_filter_init(&CAN_filter);
+    CAN_FilterTypeDef can_filter = {0};
+    CAN_filter_init(&can_filter);
 
     CAN_comms_config_tel.hcan = &hcan;
-    CAN_comms_config_tel.CAN_Filter = CAN_filter;
+    CAN_comms_config_tel.CAN_Filter = can_filter;
     CAN_comms_config_tel.CAN_comms_Rx_callback = CAN_comms_Rx_callback;
 
     CAN_comms_init(&CAN_comms_config_tel);
