@@ -151,4 +151,14 @@ void CAN_tx_turn_signal_mode_msg(turn_signal_status_t turn_signal, mode_status_t
 
   HAL_CAN_AddTxMessage(&hcan, &turn_signal_mode_can_header, turn_signal_mode_reading, &mailbox);
 }
+
+void CAN_diagnosis_msg() {
+
+  // uint8_t diagnosis_msg[1] = heartbeat;
+
+  uint32_t mailbox;
+
+  HAL_CAN_AddTxMessage(&hcan, &diagnosis_msg, diagnosis_reading, &mailbox);
+
+}
 /* USER CODE END 1 */

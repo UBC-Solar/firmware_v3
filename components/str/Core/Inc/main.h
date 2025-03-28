@@ -66,6 +66,8 @@ void Error_Handler(void);
 #define MODE_PW_Pin GPIO_PIN_9
 #define MODE_PW_GPIO_Port GPIOC
 
+#define TICK_DELAY 1000
+
 /* USER CODE BEGIN Private defines */
 typedef enum {
   TS_OFF = 0b00,
@@ -77,6 +79,8 @@ typedef enum {
   POWER_MODE = 0b00,
   ECO_MODE = 0b01,
 } mode_status_t;
+
+uint32_t last_time = 0;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

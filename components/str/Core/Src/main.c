@@ -20,6 +20,7 @@
 #include "main.h"
 #include "adc.h"
 #include "can.h"
+#include "iwdg.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -137,6 +138,7 @@ int main(void)
   MX_CAN_Init();
   MX_UART5_Init();
   MX_ADC1_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   turn_signal_status_t turn_status = get_turn_signal_status();
 
@@ -167,6 +169,12 @@ int main(void)
       CAN_tx_turn_signal_mode_msg(g_turn_signal_status, g_mode_status);
     }
 
+    if(HAL_GetTick() > last_time + TICK_DELAY)
+    {
+      // [Send diagnostic message]
+      last_time = HAL_GetTick();
+    }
+
     HAL_Delay(TURN_SIGNAL_MODE_DELAY);
   }
   /* USER CODE END 3 */
@@ -185,10 +193,11 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
