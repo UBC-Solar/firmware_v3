@@ -417,7 +417,10 @@ void nmea_parse(GPS *gps_data, uint8_t *buffer) {
     
     memset(data, 0, sizeof(data)); // Clear array
 
+
     char *token = strtok((char *)buffer, "$"); // Tokenize the buffer using '$' as a delimiter
+    token = strtok(NULL, "$");
+
     int cnt = 0;
 
     while(token !=NULL)

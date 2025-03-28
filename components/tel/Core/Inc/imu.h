@@ -35,6 +35,7 @@ extern "C" {
 #define IMU_TASK_DELAY      100
 #define IMU_TASK_OFFSET_DELAY       33
 
+
 /* Define the CAN message IDs for each IMU axes */
 #define IMU_AG_X_CAN_MESSAGE_ID 0x752
 #define IMU_AG_Y_CAN_MESSAGE_ID 0x753
