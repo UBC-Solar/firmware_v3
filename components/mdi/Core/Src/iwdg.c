@@ -22,6 +22,12 @@
 
 /* USER CODE BEGIN 0 */
 
+/* PRIVATE INCLUDES */
+#include "diagnostic.h"
+
+/* PRIVATE DEFINES */
+#define RESET_SEQUENCE_DELAY_MS      200           
+
 /* USER CODE END 0 */
 
 IWDG_HandleTypeDef hiwdg;
@@ -60,11 +66,51 @@ void MX_IWDG_Init(void)
  * @brief Refresh the IWDG.
  * @param hiwdg pointer to a IWDG_HandleTypeDef
  */
-void IWDG_Refresh(IWDG_HandleTypeDef* hiwdg)
+void IWDG_Refresh()
 {
   #ifndef DEBUG
-    HAL_IWDG_Refresh(hiwdg);
+    HAL_IWDG_Refresh(&hiwdg);
   #endif
 }
+
+/**
+ * @brief Check if the IWDG reset occurred
+ * 
+ * @return true if the IWDG reset occurred
+ */
+bool IWDG_is_reset()
+{
+  if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET)
+  {
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+
+/**
+ * @brief Perform a reset LED sequence if the IWDG reset occurred.
+ * 
+ * This function will toggle the USER_LED of the TEL board 5 times at 200ms intervals
+ */
+void IWDG_perform_reset_sequence()
+{
+  if (IWDG_is_reset())
+  {
+    // Send over CAN IWDG diagnostic
+    g_mdi_diagnostic_flags.bits.mdi_crash_iwdg = true;
+
+    for (int i = 0; i < 2; i++)
+    {
+      HAL_GPIO_TogglePin(BootLED_GPIO_Port, BootLED_Pin);
+      HAL_Delay(RESET_SEQUENCE_DELAY_MS);
+    }
+  }
+}
+
 
 /* USER CODE END 1 */

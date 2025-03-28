@@ -42,7 +42,8 @@ void MX_IWDG_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
-void IWDG_Refresh(IWDG_HandleTypeDef* hiwdg);
+void IWDG_Refresh();
+void IWDG_perform_reset_sequence();
 
 /* USER CODE END Prototypes */
 

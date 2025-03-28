@@ -22,16 +22,26 @@
 
 /* USER CODE BEGIN 0 */
 #include "main.h"
+#include "diagnostic.h"
 
 void CAN_Filter_Config();
 
-// CAN message header for MDI heartbeat.
-const CAN_TxHeaderTypeDef CAN_Tx_header_MDI_heartbeat = {
-  .StdId = MDI_HEARTBEAT_CAN_ID,
+// CAN message header for MDI time_since_bootup.
+const CAN_TxHeaderTypeDef CAN_Tx_header_MDI_time_since_bootup = {
+  .StdId = MDI_TIME_SINCE_BOOTUP_CAN_ID,
   .ExtId = 0x0000,
   .IDE = CAN_ID_STD,
   .RTR = CAN_RTR_DATA,
   .DLC = 4
+};
+
+// CAN message header for MDI diagnostic flags
+const CAN_TxHeaderTypeDef CAN_Tx_header_MDI_diagnostic_flags = {
+  .StdId = MDI_DIAGNOSTIC_FLAGS_CAN_ID,
+  .ExtId = 0x0000,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = 1
 };
 
 /* USER CODE END 0 */
@@ -179,26 +189,38 @@ void CAN_Filter_Config()
 }
 
 /**
- * @brief Sends the MDI heartbeat CAN message
+ * @brief Sends the MDI time_since_bootup CAN message
  */
-void MDI_heartbeat()
+void MDI_time_since_bootup()
 {
-  // Create a static variable to hold the heartbeat counter
-  static uint32_t heartbeat_counter = 0;
+  // Create a static variable to hold the time_since_bootup counter
+  static uint32_t time_since_bootup_counter = 0;
 
   // Create union for converting the uint32 to bytes
   union {
     uint8_t bytes[4];
     uint32_t data;
   } CAN_data;
-  CAN_data.data = heartbeat_counter;
+  CAN_data.data = time_since_bootup_counter;
 
   // Transmit message over CAN
   uint32_t mailbox;
-  HAL_CAN_AddTxMessage(&hcan, &CAN_Tx_header_MDI_heartbeat, CAN_data.bytes, &mailbox);
+  HAL_CAN_AddTxMessage(&hcan, &CAN_Tx_header_MDI_time_since_bootup, CAN_data.bytes, &mailbox);
 
   // Increment hearbeat counter
-  heartbeat_counter++;
+  time_since_bootup_counter++;
+}
+
+/**
+ * @brief Sends the MDI diagnostic flags like iwdg
+ */
+void MDI_diagnostic_flags()
+{
+  uint8_t data[1] = {g_mdi_diagnostic_flags.raw};
+
+  // Transmit message over CAN
+  uint32_t mailbox;
+  HAL_CAN_AddTxMessage(&hcan, &CAN_Tx_header_MDI_diagnostic_flags, data, &mailbox);
 }
 
 /* USER CODE END 1 */
