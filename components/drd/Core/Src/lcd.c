@@ -170,7 +170,7 @@ static void draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8
  */
 static bounding_box_t draw_text(char *string, unsigned char x, unsigned char y, const unsigned char *font, unsigned char spacing) {
 	bounding_box_t ret;
-	bounding_box_t tmp;
+	bounding_box_t tmp = {0};
 
 	ret.x1 = x;
 	ret.y1 = y;
