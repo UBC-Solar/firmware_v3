@@ -26,8 +26,8 @@ static void Set_ExternalLights(uint8_t dtr, uint8_t lts, uint8_t rts);
 
 
 /*	Global Variables	*/
-volatile uint8_t left_turn_signal = 0;
-volatile uint8_t right_turn_signal = 0;
+volatile uint8_t g_left_turn_signal = 0;
+volatile uint8_t g_right_turn_signal = 0;
 
 
 /*
@@ -67,7 +67,7 @@ void ExternalLights_state_machine()
 		dtr = 0;
 		prev_state = HAZARD_STATE;
 	}
-	else if (left_turn_signal)
+	else if (g_left_turn_signal)
 	{
 		if(prev_state != LTS_STATE)
 		{
@@ -86,7 +86,7 @@ void ExternalLights_state_machine()
 		dtr = 0;
 		prev_state = LTS_STATE;
 	}
-	else if (right_turn_signal)
+	else if (g_right_turn_signal)
 	{
 		if (prev_state != RTS_STATE)
 		{
@@ -140,7 +140,7 @@ void Set_ExternalLights(uint8_t dtr, uint8_t lts, uint8_t rts)
  * @param Lights_turn_signal_t signal indicating turn signal state
  */
 //call this from CAN rx callback
-void External_Lights_set_turn_signals(uint32_t can_id, uint8_t* data)
+void External_Lights_CAN_rx_handle(uint32_t can_id, uint8_t* data)
 {
 
 
@@ -151,18 +151,18 @@ void External_Lights_set_turn_signals(uint32_t can_id, uint8_t* data)
 
 		if (lts)
 		{
-			left_turn_signal = 1;
-			right_turn_signal = 0;
+			g_left_turn_signal = 1;
+			g_right_turn_signal = 0;
 		}
 		else if (rts)
 		{
-			right_turn_signal = 1;
-			left_turn_signal = 0;
+			g_right_turn_signal = 1;
+			g_left_turn_signal = 0;
 		}
 		else //neither the left or right turn signals are on.
 		{
-			left_turn_signal = 0;
-			right_turn_signal = 0;
+			g_left_turn_signal = 0;
+			g_right_turn_signal = 0;
 		}
 	}
 
