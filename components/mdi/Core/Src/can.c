@@ -25,6 +25,15 @@
 
 void CAN_Filter_Config();
 
+// CAN message header for MDI heartbeat.
+const CAN_TxHeaderTypeDef CAN_Tx_header_MDI_heartbeat = {
+  .StdId = MDI_HEARTBEAT_CAN_ID,
+  .ExtId = 0x0000,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = 4
+};
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
@@ -169,5 +178,27 @@ void CAN_Filter_Config()
   HAL_CAN_ConfigFilter(&hcan, &canFilterConfig);
 }
 
+/**
+ * @brief Sends the MDI heartbeat CAN message
+ */
+void MDI_heartbeat()
+{
+  // Create a static variable to hold the heartbeat counter
+  static uint32_t heartbeat_counter = 0;
+
+  // Create union for converting the uint32 to bytes
+  union {
+    uint8_t bytes[4];
+    uint32_t data;
+  } CAN_data;
+  CAN_data.data = heartbeat_counter;
+
+  // Transmit message over CAN
+  uint32_t mailbox;
+  HAL_CAN_AddTxMessage(&hcan, &CAN_Tx_header_MDI_heartbeat, CAN_data.bytes, &mailbox);
+
+  // Increment hearbeat counter
+  heartbeat_counter++;
+}
 
 /* USER CODE END 1 */

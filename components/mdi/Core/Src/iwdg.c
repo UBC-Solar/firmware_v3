@@ -32,6 +32,10 @@ void MX_IWDG_Init(void)
 
   /* USER CODE BEGIN IWDG_Init 0 */
 
+  // If we're in DEBUG configuration, do not start watchdog
+  #ifdef DEBUG
+  return;
+  #endif
   /* USER CODE END IWDG_Init 0 */
 
   /* USER CODE BEGIN IWDG_Init 1 */

@@ -37,13 +37,14 @@ extern CAN_HandleTypeDef hcan;
 /* USER CODE BEGIN Private defines */
 
 #define DRD_MOTOR_COMMAND_CAN_ID (0x401)
+#define MDI_HEARTBEAT_CAN_ID     (0x500)
 
 /* USER CODE END Private defines */
 
 void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
+void MDI_heartbeat();
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

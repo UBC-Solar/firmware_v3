@@ -53,6 +53,7 @@
 MDI_motor_command_t g_MDI_motor_command = {0};
 bool g_motor_command_received = false;
 uint32_t g_last_command_time = 0;
+uint32_t g_last_heartbeat_time = 0;
 
 /* USER CODE END PV */
 
@@ -118,8 +119,18 @@ int main(void)
 
   while (1)
   {
-	// Pet watchdog
-	HAL_IWDG_Refresh(&hiwdg);
+	  // Pet watchdog if we are NOT in the DEBUG configuration
+    #ifndef DEBUG
+	  HAL_IWDG_Refresh(&hiwdg);
+    #endif
+
+    // MDI heartbeat
+    if(HAL_GetTick() > (g_last_heartbeat_time + MDI_HEARTBEAT_DELAY))
+    {
+      MDI_heartbeat();
+      g_last_heartbeat_time = HAL_GetTick();
+    }
+
 
     // If MDI hasn't received a CAN message for MAX_TIMEOUT_VALUE, stop motor for safety
     if(HAL_GetTick() > (g_last_command_time + MAX_TIMEOUT_VALUE))
