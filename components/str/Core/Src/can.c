@@ -26,8 +26,8 @@
 #define TURN_SIGNAL_MODE_CAN_DATA_LENGTH 1
 #define DIAGNOSTIC_CAN_DATA_LENGTH 1
 
-#define TURN_SIGNAL_MODE_MSG_ID  0x580
-#define DIAGNOSTIC_MSG_ID 0x999 // Input actual CAN header message
+#define TURN_SIGNAL_MODE_MSG_ID         0x580
+#define STR_TIME_SINCE_BOOTUP_ID        0x581 
 
 /**
  * @brief CAN message headers for STR
@@ -43,7 +43,7 @@ CAN_TxHeaderTypeDef turn_signal_mode_can_header = {
  * @brief CAN message headers for STR diagnosis message
  */
 CAN_TxHeaderTypeDef diagnostic_can_header = {
-  .StdId = DIAGNOSTIC_MSG_ID,
+  .StdId = STR_TIME_SINCE_BOOTUP_ID,
   .ExtId = 0x0000,
   .IDE = CAN_ID_STD,
   .RTR = CAN_RTR_DATA,
