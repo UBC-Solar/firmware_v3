@@ -31,10 +31,12 @@ float volts2temp(uint16_t adc_voltage);
 
 void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
 {
-  uint16_t adc_voltage = adc_reading;
+  uint16_t adc_voltage = (uint16_t)adc_reading;
   if (adc_voltage < 0) adc_voltage = 0;
   else if (adc_voltage >= ADC_RESOLUTION) adc_voltage = ADC_RESOLUTION;
   adc_voltage = adc_voltage * ADC_VOLTAGE_SCALING * ADC_MAX_VOLT_READING/ADC_RESOLUTION;
+
+  int32_t curr_voltage_error = 0; // Define variable for more readable current reading calculation
 
   switch (adc_channel)
   {
@@ -55,11 +57,13 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
     break;
   
   case LVS_CURRENT_SENSE__ADC1_IN9: // LVS current supplied to HVDCDC (mA)
-    ecu_data.adc_data.ADC_lvs_current = (uint16_t)((adc_voltage-ecu_data.adc_data.ADC_lvs_current_sense_offset)/25.25);
+    // -1mV is from characterization (https://ubcsolar26.monday.com/boards/7524367629/pulses/8628510380), /25 is sensitivity value from datasheet, *1000 is A to mA
+    ecu_data.adc_data.ADC_lvs_current = (uint16_t)((adc_voltage-ecu_data.adc_data.ADC_lvs_current_sense_offset-1)/25*1000); // See datasheet: https://www.melexis.com/-/media/files/documents/datasheets/mlx91221-datasheet-melexis.pdf
     break;
   
   case PACK_CURRENT_SENSE__ADC1_IN14: // Pack current sense (mA)
-    ecu_data.adc_data.ADC_pack_current = (int32_t)(HASS100S_STD_DEV + HASS100S_INTERNAL_OFFSET + 100*(adc_voltage-ecu_data.adc_data.ADC_pack_current_offset)/0.625); //see HASS100-S datasheet     
+    curr_voltage_error = HASS100S_VOLTAGE_ERROR_TERM_CONSTANT + (HASS100S_VOLTAGE_ERROR_TERM_MULTIPLE * adc_voltage); // Error Polynomial, See https://ubcsolar26.monday.com/boards/7524367629/pulses/7524367868/posts/3902002110
+    ecu_data.adc_data.ADC_pack_current = (int32_t)(HASS100S_STD_DEV + HASS100S_INTERNAL_OFFSET + 100*(adc_voltage + curr_voltage_error - ecu_data.adc_data.ADC_pack_current_offset) / 0.625); //see HASS100-S datasheet
     break;
 
   case T_AMBIENT_SENSE__ADC1_IN15: // Ambient controlboard temperature (deg C)
@@ -110,7 +114,6 @@ void ADC1_processRawReadings(int half, volatile uint16_t adc1_buf[], float resul
   // Average the samples
   for(; sample_num < limit; sample_num++) //summing the readings in the averaging process
   {
-    
     for(int channel = 0; channel < ADC1_NUM_ANALOG_CHANNELS; channel++)
     {
       // adc1_buf is organized as [supp batt x 200 ... motor curr x 200 ... array curr x 200]
@@ -205,5 +208,4 @@ float volts2temp(uint16_t adc_voltage)
   temp_kelvin = (beta * room_temp) / (beta + (room_temp * logf(R_therm / R_room_temp)));
   
   return temp_kelvin - 273.15;
-
 }

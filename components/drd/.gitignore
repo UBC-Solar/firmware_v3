@@ -78,4 +78,4 @@ Debug/
 # Drivers/
 
 # Environment
-.settings/
+*.settings/

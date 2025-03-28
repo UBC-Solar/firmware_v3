@@ -23,13 +23,35 @@
 /* USER CODE BEGIN 0 */
 #include "CAN_comms.h"
 #include "external_lights.h"
-
-#define TURN_SIGNAL_MSG_ID      0x580
+#include "fault_lights.h"
+#include "drive_state.h"
+#include "lcd.h"
 
 void CAN_filter_init(CAN_FilterTypeDef* can_filter);
 
 
 
+/**
+ * 	CAN message header for a drive command. This command header is to
+ * 	send an appropriate drive command to the motor controller.
+ */
+const CAN_TxHeaderTypeDef drive_command_header = {
+    .StdId = MOTOR_DRIVE_COMMAND_ADDRESS,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = DRIVE_COMMAND_SIZE
+
+};
+
+
+const CAN_TxHeaderTypeDef mdu_request_header = {
+		.StdId = 0,
+		.ExtId = MDU_REQUEST_COMMAND_ID,
+		.IDE = CAN_ID_EXT,
+		.RTR = CAN_RTR_DATA,
+		.DLC = MDU_REQUEST_SIZE
+};
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
@@ -162,7 +184,7 @@ void CAN_filter_init(CAN_FilterTypeDef* can_filter)
 /**
  * @brief Initializes the CAN filter and CAN Rx callback function as CAN_comms_Rx_callback().
  *
- * Note: This uses the CAN_comms abstraction layer which will initialize two freeRTOS tasks. As a result it is recommend to
+ * Note: This uses the CAN_comms abstraction layer which will initialize two freeRTOS tasks. As a result it is recommended to
  * Call this function inside the MX_FREERTOS_Init() function in freertos.c
  */
 void CAN_tasks_init()
@@ -182,11 +204,47 @@ void CAN_tasks_init()
 
 void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
+	/*
+	 *	handle parsing rx messages
+	 */
 
-    if (CAN_comms_Rx_msg->header.StdId == TURN_SIGNAL_MSG_ID) 
-    {
-        External_Lights_set_turn_signals(CAN_comms_Rx_msg);
-    }
+	if (CAN_comms_Rx_msg == NULL)
+	{
+			return;
+	}
+
+	uint32_t CAN_ID = 0;
+
+	if(CAN_comms_Rx_msg->header.IDE == CAN_ID_EXT)
+	{
+		CAN_ID = CAN_comms_Rx_msg->header.ExtId; // Get CAN ID
+	}
+
+	else
+	{
+	CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
+	}
+
+  if(CAN_comms_Rx_msg->header.StdId == CAN_ID_PACK_CURRENT)
+  {
+    g_lcd_data.pack_current = (CAN_comms_Rx_msg->data[1] << 8) | (CAN_comms_Rx_msg->data[0]);
+    g_lcd_data.pack_current /= 65.535;
+  }
+
+  if(CAN_comms_Rx_msg->header.StdId == CAN_ID_PACK_VOLTAGE)
+  {
+    g_lcd_data.pack_voltage = (CAN_comms_Rx_msg->data[1] << 8) | (CAN_comms_Rx_msg->data[0]);
+    g_lcd_data.pack_voltage /= PACK_VOLTAGE_DIVISOR;
+  }
+
+  if(CAN_comms_Rx_msg->header.StdId == CAN_ID_PACK_HEALTH)
+  {
+    g_lcd_data.soc = CAN_comms_Rx_msg->data[0];
+  }
+
+	Set_fault_lights(CAN_ID, CAN_comms_Rx_msg->data);
+	External_Lights_set_turn_signals(CAN_ID, CAN_comms_Rx_msg->data);
+	Drive_State_can_rx_handle(CAN_ID, CAN_comms_Rx_msg->data);
 }
 
 /* USER CODE END 1 */
