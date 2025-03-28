@@ -169,9 +169,9 @@ int main(void)
       CAN_tx_turn_signal_mode_msg(g_turn_signal_status, g_mode_status);
     }
 
-    if(HAL_GetTick() > last_time + TICK_DELAY)
+    if(HAL_GetTick() - last_time > TICK_DELAY)
     {
-      // [Send diagnostic message]
+      CAN_diagnostic_msg(last_time);
       last_time = HAL_GetTick();
     }
 
