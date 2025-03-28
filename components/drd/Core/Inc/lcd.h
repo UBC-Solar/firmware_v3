@@ -103,6 +103,10 @@
  #define CMD_DISPLAY_START		0b01000000
 
  #define LCD_UPDATE_DELAY 200
+
+
+
+/*	Datatypes */
  typedef struct {
     volatile uint32_t speed;
     volatile uint8_t speed_units;
@@ -113,7 +117,19 @@
     volatile uint8_t drive_mode;
 } lcd_data_t;
 
+
+/*	User Variables	*/
 extern lcd_data_t g_lcd_data;
+
+
+
+/*
+ * @brief CAN rx function which parses message data needed by the LCD
+ *
+ * @param msg_id 	The id of the CAN message
+ * @param data  	The data of the CAN message
+ */
+void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data);
 
 /** 
  * @brief Displays the speed on the LCD.

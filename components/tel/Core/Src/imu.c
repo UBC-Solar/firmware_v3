@@ -7,14 +7,10 @@
 #include "cmsis_os.h"
 #include "bitops.h"
 #include "radio.h"
+#include "diagnostic.h"
 
 /* Define the CAN message length for IMU messages */
 #define IMU_CAN_MESSAGE_LENGTH 8
-
-/* Define the CAN message IDs for each IMU axes */
-#define IMU_AG_X_CAN_MESSAGE_ID 0x752
-#define IMU_AG_Y_CAN_MESSAGE_ID 0x753
-#define IMU_AG_Z_CAN_MESSAGE_ID 0x754
 
 /* Define the multiplication factors as per the datasheet table 3: https://www.st.com/resource/en/datasheet/lsm6dsv16x.pdf" */
 #define ACCEL_FS_MULTIPLIER_8G 0.244
@@ -61,7 +57,7 @@ static CAN_TxHeaderTypeDef imu_ag_z = {
  * @param accel_x Acceleration value for the x-axis.
  * @param gyro_x  Gyroscope value for the x-axis.
  */
-static void CAN_tx_ag_x_msg(float accel_x, float gyro_x)
+void CAN_tx_ag_x_msg(float accel_x, float gyro_x)
 {
 	FloatToBytes float_bytes_x;
     float_bytes_x.f = accel_x;
@@ -89,7 +85,7 @@ static void CAN_tx_ag_x_msg(float accel_x, float gyro_x)
  * @param accel_y Acceleration value for the y-axis.
  * @param gyro_y  Gyroscope value for the y-axis.
  */
-static void CAN_tx_ag_y_msg(float accel_y, float gyro_y)
+void CAN_tx_ag_y_msg(float accel_y, float gyro_y)
 {
 	FloatToBytes float_bytes_y;
     float_bytes_y.f = accel_y;
@@ -118,7 +114,7 @@ static void CAN_tx_ag_y_msg(float accel_y, float gyro_y)
  * @param gyro_z  Gyroscope value for
  * the z-axis.
  */
-static void CAN_tx_ag_z_msg(float accel_z, float gyro_z)
+void CAN_tx_ag_z_msg(float accel_z, float gyro_z)
 {
 	FloatToBytes float_bytes_z;
     float_bytes_z.f = accel_z;
@@ -161,9 +157,14 @@ static HAL_StatusTypeDef write_imu_register (uint16_t reg, uint8_t val){
 static uint16_t read_imu_register (uint16_t reg){
 	uint8_t data[2];
 	if(HAL_I2C_Mem_Read(&hi2c2, IMU_ADDRESS, reg, 1, data, 2, 10) != HAL_OK){
+        g_tel_diagnostic_flags.bits.imu_read_fail = true;
 		return 0;
 	}
-
+    else
+    {
+        g_tel_diagnostic_flags.bits.imu_read_fail = false;
+    }
+    
 	return (int16_t)(data[1] << 8 | data[0]);
 }
 
@@ -173,16 +174,27 @@ static uint16_t read_imu_register (uint16_t reg){
  */
 void imu_task()
 {
-	//Writing to CTRL_1 register, sets ODR to 30 Hz in normal mode and the range to +-8g in CTRL_8 register
+    
+    //Writing to CTRL_1 register, sets ODR to 30 Hz in normal mode and the range to +-8g in CTRL_8 register
     if(write_imu_register(CTRL_1, 0x74) != HAL_OK || write_imu_register(CTRL_8, 0x02) != HAL_OK){
+        g_tel_diagnostic_flags.bits.imu_write_fail = true;
     	return;
     }
-
+    else
+    {
+        g_tel_diagnostic_flags.bits.imu_write_fail = false;
+    }
+    
     //Writing to CTRL_2 register, sets ODR to 30 Hz in low power mode and the scale to +- 250 dps in CTRL_6 register
     if(write_imu_register(CTRL_2, 0x54) != HAL_OK || write_imu_register(CTRL_6, 0x01) != HAL_OK){
+        g_tel_diagnostic_flags.bits.imu_write_fail = true;
         return;
     }
-
+    else
+    {
+        g_tel_diagnostic_flags.bits.imu_write_fail = false;
+    }
+    
     for (;;)
     {
     	IMU imu_data;

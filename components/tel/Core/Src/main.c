@@ -111,6 +111,7 @@ int main(void)
   MX_UART5_Init();
   /* USER CODE BEGIN 2 */
   
+  DIAGNOSTIC_init();
   IWDG_perform_reset_sequence();      // Check for IWDG reset    
 
   /* USER CODE END 2 */
