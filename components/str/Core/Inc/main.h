@@ -80,7 +80,7 @@ typedef enum {
   ECO_MODE = 0b01,
 } mode_status_t;
 
-uint32_t last_time = 0;
+// uint32_t last_time = 0;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

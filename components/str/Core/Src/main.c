@@ -37,9 +37,12 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define TURN_SIGNAL_MODE_DELAY 200
+#define MS_TO_S_CONVERTER 1000
 
 volatile turn_signal_status_t g_turn_signal_status = 0;
 volatile mode_status_t g_mode_status = 0;
+
+uint32_t last_time = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -139,7 +142,10 @@ int main(void)
   MX_UART5_Init();
   MX_ADC1_Init();
   MX_IWDG_Init();
-  /* USER CODE BEGIN 2 */
+  /* USER CODE BEGIN 2 */   
+
+  IWDG_perform_reset_sequence();      // Check for IWDG reset 
+
   turn_signal_status_t turn_status = get_turn_signal_status();
 
   mode_status_t mode_status = get_mode_status();
@@ -155,6 +161,8 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+    IWDG_Refresh(&hiwdg);
+
     turn_signal_status_t turn_status = get_turn_signal_status();
 
     mode_status_t mode_status = get_mode_status();
@@ -169,9 +177,9 @@ int main(void)
       CAN_tx_turn_signal_mode_msg(g_turn_signal_status, g_mode_status);
     }
 
-    if(HAL_GetTick() - last_time > TICK_DELAY)
+    if(HAL_GetTick() > (last_time + TICK_DELAY))
     {
-      CAN_diagnostic_msg(last_time);
+      CAN_diagnostic_msg(last_time / MS_TO_S_CONVERTER);
       last_time = HAL_GetTick();
     }
 
