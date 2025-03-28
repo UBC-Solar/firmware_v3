@@ -16,6 +16,7 @@
 #include "CAN_comms.h"
 #include <string.h>
 #include <stdlib.h>
+#include "diagnostic.h"
 
 
 /*	Local Function Declarations	*/
@@ -48,7 +49,6 @@ volatile uint32_t g_velocity_kmh = 0;
 volatile bool g_eco_mode = true;
 volatile drive_state_t g_drive_state = PARK;
 
-DRD_diagnostic_t g_diagnostics;
 uint16_t g_throttle_DAC = 0;
 input_flags_t g_input_flags;
 
@@ -84,7 +84,6 @@ void Drive_State_Machine_handler()
 	}
 
 	motor_command_package_and_send(&motor_command, false);
-	DRD_diagnostics_transmit(&g_diagnostics, false);
 	handle_state_transition();
 }
 
@@ -490,30 +489,6 @@ void steering_CAN_msg_handle(uint8_t* data)
 {
 	g_input_flags.eco_mode_on = (data[0] >> 2); //third bit of steering CAN message
 	g_eco_mode = g_input_flags.eco_mode_on; //global variable for LCD
-}
-
-void DRD_diagnostics_transmit(DRD_diagnostic_t* diagnostics, bool from_ISR)
-{
-	CAN_comms_Tx_msg_t msg;
-	msg.header = drd_diagnostic_header;
-	uint8_t flags = diagnostics->flags.all_flags;
-
-	msg.data[0] = (diagnostics->raw_adc1 & 0xFF);
-	msg.data[1] = (diagnostics->raw_adc1 >> 8);
-	msg.data[2] = (diagnostics->raw_adc2 & 0xFF);
-	msg.data[3] = (diagnostics->raw_adc2 >> 8);
-	msg.data[4] = flags;
-
-	if (from_ISR)
-	{
-		CAN_comms_Add_Tx_messageISR(&msg);
-	}
-	else
-	{
-		CAN_comms_Add_Tx_message(&msg);
-	}
-
-	diagnostics->flags.all_flags = 0; 	//clear flags
 }
 
 

@@ -23,7 +23,7 @@
 /* USER CODE BEGIN 0 */
 #include <stdbool.h>
 #include "main.h"
-#include "drive_state.h"
+#include "diagnostic.h"
 #include "lcd.h"
 static bool IWDG_is_reset();
 /* USER CODE END 0 */

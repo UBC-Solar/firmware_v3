@@ -31,6 +31,7 @@
 #include "spi.h"
 #include "drive_state.h"
 #include "iwdg.h"
+#include "diagnostic.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -41,7 +42,8 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define DEFAULT_TASK_DELAY 95 //watchdog resets every 100ms so slightly faster than that
+#define DEFAULT_TASK_DELAY 			  100
+#define TIME_SINCE_STARTUP_TASK_DELAY 1000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -101,6 +103,18 @@ const osThreadAttr_t DriveStateTask_attributes = {
   .stack_size = sizeof(DriveStateTaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for TimeSinceStartu */
+osThreadId_t TimeSinceStartuHandle;
+uint32_t TimeSinceStartuBuffer[ 128 ];
+osStaticThreadDef_t TimeSinceStartuControlBlock;
+const osThreadAttr_t TimeSinceStartu_attributes = {
+  .name = "TimeSinceStartu",
+  .cb_mem = &TimeSinceStartuControlBlock,
+  .cb_size = sizeof(TimeSinceStartuControlBlock),
+  .stack_mem = &TimeSinceStartuBuffer[0],
+  .stack_size = sizeof(TimeSinceStartuBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -111,6 +125,7 @@ void StartDefaultTask(void *argument);
 void ExternalLights_task(void *argument);
 void LCDUpdatetask(void *argument);
 void DriveState_task(void *argument);
+void TimeSinceStartup_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -153,6 +168,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of DriveStateTask */
   DriveStateTaskHandle = osThreadNew(DriveState_task, NULL, &DriveStateTask_attributes);
 
+  /* creation of TimeSinceStartu */
+  TimeSinceStartuHandle = osThreadNew(TimeSinceStartup_task, NULL, &TimeSinceStartu_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -174,18 +192,12 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
-	int count = 0;
   for(;;)
   {
 	Motor_Controller_query_data();
 	IWDG_Refresh(&hiwdg);
     osDelay(DEFAULT_TASK_DELAY);
-    count++;
-
-    if (count >= 30)
-    {
-    	osDelay(1000);
-    }
+    DRD_diagnostics_transmit(&g_diagnostics, false); //transmit diagnostics every 100ms
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -262,6 +274,26 @@ void DriveState_task(void *argument)
     Drive_State_Machine_handler();
   }
   /* USER CODE END DriveState_task */
+}
+
+/* USER CODE BEGIN Header_TimeSinceStartup_task */
+/**
+* @brief Function implementing the TimeSinceStartu thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_TimeSinceStartup_task */
+void TimeSinceStartup_task(void *argument)
+{
+  /* USER CODE BEGIN TimeSinceStartup_task */
+  /* Infinite loop */
+  for(;;)
+  {
+	g_time_since_bootup++;
+	osDelay(TIME_SINCE_STARTUP_TASK_DELAY);
+	send_time_since_bootup_can_radio();
+  }
+  /* USER CODE END TimeSinceStartup_task */
 }
 
 /* Private application code --------------------------------------------------*/

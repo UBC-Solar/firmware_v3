@@ -25,6 +25,7 @@
 #include "external_lights.h"
 #include "fault_lights.h"
 #include "drive_state.h"
+#include "diagnostic.h"
 #include "lcd.h"
 
 void CAN_filter_init(CAN_FilterTypeDef* can_filter);
@@ -65,6 +66,15 @@ const CAN_TxHeaderTypeDef drd_diagnostic_header = {
 		.DLC = DRD_DIAGNOSTIC_SIZE
 
 };
+
+
+const CAN_TxHeaderTypeDef time_since_bootup_can_header = {
+   .StdId = TIME_SINCE_BOOTUP_CAN_ID,
+   .ExtId = 0x0000,
+   .IDE = CAN_ID_STD,
+   .RTR = CAN_RTR_DATA,
+   .DLC = TIME_SINCE_BOOTUP_CAN_DATA_LENGTH};
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
