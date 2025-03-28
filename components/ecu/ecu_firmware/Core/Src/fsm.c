@@ -393,7 +393,7 @@ void TELEM_on()
  * @brief Turns on MEMORATOR (SPAR on ECU, VDS on DIST).
  * Exit Condition: Timer surpasses LVS_INTERVAL.
  * Exit Action: Set SPAR_CTRL pin high.
- * Exit State: DASH_ON
+ * Exit State: DRD_ON
  */
 void MEM_on()
 {
@@ -401,7 +401,7 @@ void MEM_on()
     {
         HAL_GPIO_WritePin(SPAR1_CTRL_GPIO_Port, SPAR1_CTRL_Pin, HIGH);
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = DASH_ON;
+        FSM_state = DRD_ON;
     }
 
     printf("Bottom of MEM on\r\n");
@@ -410,43 +410,23 @@ void MEM_on()
 }
 
 /**
- * @brief Turns on DASH board.
+ * @brief Turns on DRD board.
  *
  * Exit Condition: Timer surpasses LVS_INTERVAL.
- * Exit Action: Set DASH pin high.
- * Exit State: MCB_ON
- */
-void DASH_on()
-{
-    if (timer_check(LVS_INTERVAL, &(ticks.last_generic_tick) ))
-    {
-        HAL_GPIO_WritePin(DID_CTRL_GPIO_Port, DID_CTRL_Pin, HIGH);
-        ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = MCB_ON;
-    }
-
-    printf("Bottom of DASH on\r\n");
-
-    return;
-}
-
-/**
- * @brief Turns on MCB board.
- *
- * Exit Condition: Timer surpasses LVS_INTERVAL.
- * Exit Action: Set MCB pin high.
+ * Exit Action: Set DRD pin high.
  * Exit State: MDU_ON
  */
-void MCB_on()
+void DRD_on()
 {
     if (timer_check(LVS_INTERVAL, &(ticks.last_generic_tick) ))
     {
+        // Between revision of the car MCB was combined into the DRD.
         HAL_GPIO_WritePin(MCB_CTRL_GPIO_Port, MCB_CTRL_Pin, HIGH);
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = MDU_ON;
     }
 
-    printf("Bottom of MCB on\r\n");
+    printf("Bottom of DRD on\r\n");
 
     return;
 }
@@ -455,13 +435,13 @@ void MCB_on()
  * @brief Turns on MDU board.
  * Exit Condition: Timer surpasses LVS_INTERVAL.
  * Exit Action: Set MDU pin high.
- * Exit State: AMB_ON
+ * Exit State: MONITORING
  */
 void MDU_on()
 {
     // Don't turn on MDU if ESTOP pressed
     if(ecu_data.status.bits.estop == true){
-        FSM_state = AMB_ON;
+        FSM_state = MONITORING;
         return;
     }
 
@@ -469,33 +449,12 @@ void MDU_on()
     {
         HAL_GPIO_WritePin(MDU_CTRL_GPIO_Port, MDU_CTRL_Pin, HIGH);
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = AMB_ON;
+        FSM_state = MONITORING;
+        LVS_ALREADY_ON = true; // The last LVS board has been powered
     }
 
     printf("Bottom of MDU on\r\n");
     
-    return;
-}
-
-/**
- * @brief Turns on AMB board and SPAR2 pin.
- * Exit Condition: Timer surpasses LVS_INTERVAL.
- * Exit Action: Set AMB/SPAR2 pin high.
- * Exit State: MONITORING
- */
-void AMB_on()
-{
-
-    if (timer_check(LVS_INTERVAL, &(ticks.last_generic_tick) ))
-    {
-        HAL_GPIO_WritePin(AMB_CTRL_GPIO_Port, AMB_CTRL_Pin, HIGH);
-        LVS_ALREADY_ON = true;
-        ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = MONITORING;
-    }
-
-    printf("Bottom of AMB on \r\n");
-
     return;
 }
 

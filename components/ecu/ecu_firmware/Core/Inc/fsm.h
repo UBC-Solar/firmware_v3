@@ -34,10 +34,8 @@ typedef enum
     CHECK_HLIM,
     TELEM_ON,
     MEM_ON,
-    DASH_ON,
-    MCB_ON,
+    DRD_ON,
     MDU_ON,
-    AMB_ON,
     MONITORING,
     FAULT
 } FSM_state_t;
@@ -87,10 +85,8 @@ void LLIM_closed();
 void check_HLIM();
 void TELEM_on();
 void MEM_on();
-void DASH_on();
-void MCB_on();
+void DRD_on();
 void MDU_on();
-void AMB_on();
 void ECU_monitor();
 void fault();
 
@@ -110,10 +106,8 @@ static void (*FSM_state_table[])(void) = {
     check_HLIM,
     TELEM_on,
     MEM_on,
-    DASH_on,
-    MCB_on,
+    DRD_on,
     MDU_on,
-    AMB_on,
     ECU_monitor,
     fault};
 
