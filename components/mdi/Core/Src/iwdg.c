@@ -56,4 +56,15 @@ void MX_IWDG_Init(void)
 
 /* USER CODE BEGIN 1 */
 
+/**
+ * @brief Refresh the IWDG.
+ * @param hiwdg pointer to a IWDG_HandleTypeDef
+ */
+void IWDG_Refresh(IWDG_HandleTypeDef* hiwdg)
+{
+  #ifndef DEBUG
+    HAL_IWDG_Refresh(hiwdg);
+  #endif
+}
+
 /* USER CODE END 1 */

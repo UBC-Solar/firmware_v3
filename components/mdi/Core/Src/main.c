@@ -102,9 +102,9 @@ int main(void)
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
-  // Start CAN and activate Rx interrupt
-  HAL_CAN_Start(&hcan);
+  // Activate Rx interrupt and start CAN.
   HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+  HAL_CAN_Start(&hcan);
 
   /* USER CODE END 2 */
 
@@ -119,12 +119,10 @@ int main(void)
 
   while (1)
   {
-	  // Pet watchdog if we are NOT in the DEBUG configuration
-    #ifndef DEBUG
-	  HAL_IWDG_Refresh(&hiwdg);
-    #endif
+    // Pet watchdog if we are NOT in the DEBUG configuration
+    IWDG_Refresh(&hiwdg);
 
-    // MDI heartbeat
+    // MDI heartbeat 1000ms
     if(HAL_GetTick() > (g_last_heartbeat_time + MDI_HEARTBEAT_DELAY))
     {
       MDI_heartbeat();
