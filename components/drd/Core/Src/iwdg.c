@@ -22,6 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 #include <stdbool.h>
+#include "main.h"
 #include "lcd.h"
 static bool IWDG_is_reset();
 /* USER CODE END 0 */
@@ -43,7 +44,7 @@ void MX_IWDG_Init(void)
   /* USER CODE END IWDG_Init 1 */
   hiwdg.Instance = IWDG;
   hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
-  hiwdg.Init.Reload = 799;
+  hiwdg.Init.Reload = 4095;
   if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
   {
     Error_Handler();
@@ -91,18 +92,23 @@ bool IWDG_is_reset()
  *
  * If the watchdog has triggered, and update the diagnostic message to indicate.
  */
-int count = 0;
 void IWDG_reset_handle()
 {
 	if (IWDG_is_reset())
 	{
-		for (int i = 0; i < 10; i++)
+
+		//Todo set watchdog flag in diagnostic instead of this
+		for (int i = 0; i < 100; i++)
 		{
-		//Todo: indicate watchdog trigger in diagnostic message
-			count++;
-			HAL_Delay(1000);
-			LCD_display_speed(count, 1);
+			HAL_GPIO_TogglePin(CH_OC_GPIO_Port, CH_OC_Pin);
+			HAL_Delay(15);
+			IWDG_Refresh(&hiwdg);
 		}
+
+
+
+
+
 	}
 }
 

@@ -178,7 +178,6 @@ void StartDefaultTask(void *argument)
   {
 	Motor_Controller_query_data();
 	IWDG_Refresh(&hiwdg);
-	osDelay(1000);
     osDelay(DEFAULT_TASK_DELAY);
   }
   /* USER CODE END StartDefaultTask */
