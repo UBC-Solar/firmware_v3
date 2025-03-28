@@ -7,7 +7,6 @@
 
 ## Effected Components
 <!-- Check which components are affected -->
-- [ ] AMB
 - [ ] BMS
 - [ ] DRD
 - [ ] ECU
