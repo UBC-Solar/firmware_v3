@@ -55,6 +55,16 @@ const CAN_TxHeaderTypeDef mdu_request_header = {
 		.RTR = CAN_RTR_DATA,
 		.DLC = MDU_REQUEST_SIZE
 };
+
+
+const CAN_TxHeaderTypeDef drd_diagnostic_header = {
+		.StdId = DRD_DIAGNOSTIC_MESSAGE,
+		.ExtId = 0x0000,
+		.IDE = CAN_ID_STD,
+		.RTR = CAN_RTR_DATA,
+		.DLC = DRD_DIAGNOSTIC_SIZE
+
+};
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;

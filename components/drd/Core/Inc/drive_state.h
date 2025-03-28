@@ -52,9 +52,26 @@ typedef struct{
 	volatile bool forward_state_request;
 	volatile bool reverse_state_request;
 	volatile bool park_state_request;
-	volatile bool throttle_ADC_out_of_range;
 	volatile bool eco_mode_on;
 } input_flags_t;
+
+typedef union {
+	struct {
+		volatile bool mech_brake_pressed 		: 1;
+		volatile bool regen_enabled 			: 1;
+		volatile bool throttle_ADC_out_of_range : 1;
+		volatile bool throttle_ADC_mismatch 	: 1;
+		volatile bool watchdog_reset 			: 1;
+		volatile bool motor_comm_fault 			: 1;
+	};
+	uint8_t all_flags;
+} DRD_flags_t;
+
+typedef struct {
+	volatile uint16_t raw_adc1;
+	volatile uint16_t raw_adc2;
+	DRD_flags_t flags;
+} DRD_diagnostic_t;
 
 typedef struct {
 	uint16_t accel_DAC_value;
@@ -73,15 +90,18 @@ typedef enum {
 /*	Global Variables	*/
 
 extern input_flags_t g_input_flags;
+extern DRD_diagnostic_t g_diagnostics;
 extern volatile drive_state_t g_drive_state;
 extern volatile bool g_eco_mode;
 extern volatile uint32_t g_velocity_kmh;
+
 
 /*	Functions	*/
 void Drive_State_interrupt_handler(uint16_t pin);
 void Drive_State_CAN_rx_handle(uint32_t msg_id, uint8_t* data);
 void Drive_State_Machine_handler();
 void Motor_Controller_query_data();
+void DRD_diagnostics_transmit(DRD_diagnostic_t* diagnostics, bool from_ISR);
 
 
 

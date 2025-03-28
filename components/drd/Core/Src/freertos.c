@@ -174,11 +174,18 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
+	int count = 0;
   for(;;)
   {
 	Motor_Controller_query_data();
 	IWDG_Refresh(&hiwdg);
     osDelay(DEFAULT_TASK_DELAY);
+    count++;
+
+    if (count >= 30)
+    {
+    	osDelay(1000);
+    }
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -247,6 +254,7 @@ void DriveState_task(void *argument)
 {
   /* USER CODE BEGIN DriveState_task */
 	g_input_flags.velocity_under_threshold = true;
+
   /* Infinite loop */
   for(;;)
   {

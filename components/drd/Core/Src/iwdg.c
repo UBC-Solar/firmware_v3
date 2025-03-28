@@ -23,6 +23,7 @@
 /* USER CODE BEGIN 0 */
 #include <stdbool.h>
 #include "main.h"
+#include "drive_state.h"
 #include "lcd.h"
 static bool IWDG_is_reset();
 /* USER CODE END 0 */
@@ -96,19 +97,14 @@ void IWDG_reset_handle()
 {
 	if (IWDG_is_reset())
 	{
+		g_diagnostics.flags.watchdog_reset = true;
 
-		//Todo set watchdog flag in diagnostic instead of this
-		for (int i = 0; i < 100; i++)
+		for (int i = 0; i < 10; i++)
 		{
-			HAL_GPIO_TogglePin(CH_OC_GPIO_Port, CH_OC_Pin);
-			HAL_Delay(15);
+			HAL_GPIO_TogglePin(DEBUG_LED_1_GPIO_Port, DEBUG_LED_1_Pin);
+			HAL_Delay(50);
 			IWDG_Refresh(&hiwdg);
 		}
-
-
-
-
-
 	}
 }
 

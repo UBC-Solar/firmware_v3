@@ -42,11 +42,13 @@ static void steering_CAN_msg_handle(uint8_t* data);
 void state_request_CAN_msg_handle(uint8_t* data);
 #endif
 
+
 /*	Global Variables	*/
 volatile uint32_t g_velocity_kmh = 0;
 volatile bool g_eco_mode = true;
 volatile drive_state_t g_drive_state = PARK;
 
+DRD_diagnostic_t g_diagnostics;
 uint16_t g_throttle_DAC = 0;
 input_flags_t g_input_flags;
 
@@ -82,6 +84,7 @@ void Drive_State_Machine_handler()
 	}
 
 	motor_command_package_and_send(&motor_command, false);
+	DRD_diagnostics_transmit(&g_diagnostics, false);
 	handle_state_transition();
 }
 
@@ -270,8 +273,14 @@ void Motor_Controller_query_data()
  */
 void update_input_flags()
 {
-	g_input_flags.mech_brake_pressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
-	g_input_flags.regen_enabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+	bool mech_brake_pressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
+	bool regen_enabled =  HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+
+	g_input_flags.mech_brake_pressed = mech_brake_pressed;
+	g_input_flags.regen_enabled = regen_enabled;
+
+	g_diagnostics.flags.mech_brake_pressed = mech_brake_pressed;
+	g_diagnostics.flags.regen_enabled  = regen_enabled;
 
 	get_accel_readings();
 }
@@ -319,14 +328,15 @@ void get_accel_readings()
 	uint16_t adc1 = Read_ADC(&hadc1);
 	uint16_t adc2 = Read_ADC(&hadc2);
 
+	g_diagnostics.raw_adc1 = adc1;
+	g_diagnostics.raw_adc2 = adc2;
+
 	if (!accel_check_validity(adc1, adc2))
 	{
-		g_input_flags.throttle_ADC_out_of_range = true;
 		g_throttle_DAC = 0;
 		return;
 	}
 
-	g_input_flags.throttle_ADC_out_of_range = false;
 	normalize_adc_values(adc1, adc2);
 
 }
@@ -372,16 +382,22 @@ bool accel_check_validity(uint16_t adc1, uint16_t adc2)
 {
 	if (adc1 < ADC_LOWER_DEADZONE || adc1 > ADC_UPPER_DEADZONE)
 	{
+		g_diagnostics.flags.throttle_ADC_out_of_range = true;
 		return false;
 	}
 	if (adc2 < ADC_LOWER_DEADZONE || adc2 > ADC_UPPER_DEADZONE)
 	{
+		g_diagnostics.flags.throttle_ADC_out_of_range = true;
 		return false;
 	}
 	if (abs(adc1 - adc2) > ADC_MAX_DIFFERENCE)
 	{
+		g_diagnostics.flags.throttle_ADC_mismatch = true;
 		return false;
 	}
+
+	g_diagnostics.flags.throttle_ADC_mismatch = false;
+	g_diagnostics.flags.throttle_ADC_out_of_range = false;
 
 	return true;
 }
@@ -396,8 +412,10 @@ bool accel_check_validity(uint16_t adc1, uint16_t adc2)
 void brake_press_handle()
 {
 	g_input_flags.mech_brake_pressed = true;
+	g_diagnostics.flags.mech_brake_pressed = true;
 	motor_command_t motor_command = get_motor_command(ACCEL_DAC_OFF, REGEN_DAC_OFF);
 	motor_command_package_and_send(&motor_command, true);
+	DRD_diagnostics_transmit(&g_diagnostics, true);
 }
 
 /*
@@ -474,6 +492,29 @@ void steering_CAN_msg_handle(uint8_t* data)
 	g_eco_mode = g_input_flags.eco_mode_on; //global variable for LCD
 }
 
+void DRD_diagnostics_transmit(DRD_diagnostic_t* diagnostics, bool from_ISR)
+{
+	CAN_comms_Tx_msg_t msg;
+	msg.header = drd_diagnostic_header;
+	uint8_t flags = diagnostics->flags.all_flags;
+
+	msg.data[0] = (diagnostics->raw_adc1 & 0xFF);
+	msg.data[1] = (diagnostics->raw_adc1 >> 8);
+	msg.data[2] = (diagnostics->raw_adc2 & 0xFF);
+	msg.data[3] = (diagnostics->raw_adc2 >> 8);
+	msg.data[4] = flags;
+
+	if (from_ISR)
+	{
+		CAN_comms_Add_Tx_messageISR(&msg);
+	}
+	else
+	{
+		CAN_comms_Add_Tx_message(&msg);
+	}
+
+	diagnostics->flags.all_flags = 0; 	//clear flags
+}
 
 
 #ifdef DEBUG
