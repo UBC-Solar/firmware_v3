@@ -142,28 +142,22 @@ void Set_ExternalLights(uint8_t dtr, uint8_t lts, uint8_t rts)
 //call this from CAN rx callback
 void External_Lights_set_turn_signals(uint32_t can_id, uint8_t* data)
 {
-
-
-	if (can_id == STR_CAN_MSG_ID)
+	if (can_id != STR_CAN_MSG_ID)
 	{
-		uint8_t rts = (data[0] & 1);
-		uint8_t lts = (data[0] & (1 << 1));
-
-		if (lts)
-		{
-			left_turn_signal = 1;
-			right_turn_signal = 0;
-		}
-		else if (rts)
-		{
-			right_turn_signal = 1;
-			left_turn_signal = 0;
-		}
-		else //neither the left or right turn signals are on.
-		{
-			left_turn_signal = 0;
-			right_turn_signal = 0;
-		}
+		return;
 	}
 
+	uint8_t rts = (data[0] & 1);
+	uint8_t lts = (data[0] & (1 << 1));
+
+	if (rts & lts)
+	{
+		//both signals are on, invalid state, set both to off
+		left_turn_signal = 0;
+		right_turn_signal = 0;
+		return;
+	}
+
+	right_turn_signal = rts;
+	left_turn_signal = lts;
 }
