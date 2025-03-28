@@ -10,9 +10,6 @@
 #include "CAN_comms.h"
 #include "can.h"
 
-
-
-
 /*	GLOBAL VARIABLES	*/
 volatile uint32_t g_time_since_bootup = 0;
 DRD_diagnostic_t g_diagnostics = {0};

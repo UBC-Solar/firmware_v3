@@ -40,7 +40,7 @@ static void velocity_CAN_msg_handle(uint8_t* data);
 static void steering_CAN_msg_handle(uint8_t* data);
 
 #ifdef DEBUG
-void state_request_CAN_msg_handle(uint8_t* data);
+    void state_request_CAN_msg_handle(uint8_t* data);
 #endif
 
 
@@ -51,7 +51,6 @@ volatile drive_state_t g_drive_state = PARK;
 
 uint16_t g_throttle_DAC = 0;
 input_flags_t g_input_flags;
-
 
 
 /*		DRIVE STATE MACHINE HANDLING	*/
