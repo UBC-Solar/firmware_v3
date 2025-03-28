@@ -34,39 +34,31 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 void read_i2c_gps_module(uint8_t* receive_buffer)
 {
 	g_gps_read_okay = false;
-    if(HAL_I2C_Master_Receive_IT(&hi2c1, GPS_DEVICE_ADDRESS, receive_buffer, GPS_MESSAGE_LEN) == HAL_OK)
+    HAL_StatusTypeDef status = HAL_I2C_Master_Receive_IT(&hi2c1, GPS_DEVICE_ADDRESS, receive_buffer, GPS_MESSAGE_LEN);
+    if(status == HAL_OK)
     {
         // Set status to true if i2c read was successful
         g_gps_read_okay = true;
     }
 }
-
 /**
  * @brief Reads the GPS data and confirms if it is read to be parsed into gps_data 
  */
 void gps_task()
 {
-    for(;;)
+    if (g_gps_read_okay)
     {
-        osDelay(500);
-
-        memset(g_gps_data, 0, GPS_MESSAGE_LEN);
-
-        read_i2c_gps_module(g_gps_data);
-
-        osDelay(500);
-
-        if(g_gps_read_okay)
-        {
-            GPS gps_data = {0};
-
-            nmea_parse(&gps_data, g_gps_data);
-
-            CAN_tx_gps_data_msg(&gps_data);
-
-            g_gps_read_okay = false;
-
-            HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-        }
+        GPS gps_data = {0};
+        
+        nmea_parse(&gps_data, g_gps_data);
+        
+        CAN_tx_gps_data_msg(&gps_data);
+        
+        g_gps_read_okay = false;
+        
+        HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
     }
+
+    memset(g_gps_data, 0, GPS_MESSAGE_LEN);
+    read_i2c_gps_module(g_gps_data);
 }
