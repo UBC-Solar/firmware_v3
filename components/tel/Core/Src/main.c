@@ -35,6 +35,7 @@
 #include "canload.h"
 #include "cpu_load.h"
 #include "gps.h"
+#include "diagnostic.h"
 
 /* USER CODE END Includes */
 
