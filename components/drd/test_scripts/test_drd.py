@@ -38,6 +38,11 @@ import time
 import threading
 from pprint import pprint
 
+
+""" CHANGE BASED ON YOUR COMPUTER """
+WINDOWS = False
+
+
 script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 DBC_FILE = os.path.join(script_dir, 'brightside.dbc')
 FAULT       = 1
@@ -370,8 +375,11 @@ def script_toggle_turn_signals(can_bus):
 # Example usage
 if __name__ == "__main__":
     # Initialize CAN bus (adjust bustype and channel as needed)
-    # can_bus = CANBus(bustype='socketcan', channel='can0')
-    can_bus = CANBus(bustype='pcan', channel='PCAN_USBBUS1')
+
+    if WINDOWS:
+        can_bus = CANBus(bustype='pcan', channel='PCAN_USBBUS1')
+    else:
+        can_bus = CANBus(bustype='socketcan', channel='can0')
 
     can_bus.start_receiver(on_message_received)
     
