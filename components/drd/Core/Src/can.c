@@ -159,25 +159,60 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 
 
 /**
- * @brief Allows all messages to be received
- */
-
+  * @brief  Initializes CAN filters to allow only the desired IDs.
+  *         Standard IDs allowed:
+  *         0x401, 0x450, 0x622, 0x623, 0x624, 0x580
+  *         Extended IDs allowed:
+  *           0x08A50225, 0x08850225
+  *
+  * For standard IDs we use 16-bit scale in ID list mode (each ID must be shifted left by 5).
+  * For extended IDs we use 32-bit scale in ID list mode; the 29-bit ID is shifted left by 3 and the IDE bit is set.
+  */
 void CAN_filter_init(CAN_FilterTypeDef* can_filter)
 {
-    /* TODO: Review Filter Implementation */
-    // Change Filter to only get STR messages (or any other messages to DRD)
+	// ---- Filter Bank 0: Standard IDs 0x401, 0x450, 0x622, 0x623 ----
+	can_filter->FilterIdHigh = (0x401 << 5); // Slot 0: 0x401
+    can_filter->FilterMaskIdHigh = (0x450 << 5); // Slot 1: 0x450
 
-    can_filter->FilterIdHigh = 0x0000;
-    can_filter->FilterMaskIdHigh = 0x0000;
-
-    can_filter->FilterIdLow = 0x0000;
-    can_filter->FilterMaskIdLow = 0x0000;
+    can_filter->FilterIdLow = (0x622 << 5); // Slot 2: 0x622
+    can_filter->FilterMaskIdLow = (0x623 << 5); // Slot 3: 0x623
 
     can_filter->FilterFIFOAssignment = CAN_FILTER_FIFO0;
     can_filter->FilterBank = (uint32_t) 0;
-    can_filter->FilterMode = CAN_FILTERMODE_IDMASK;
+    can_filter->FilterMode = CAN_FILTERMODE_IDLIST;
     can_filter->FilterScale = CAN_FILTERSCALE_16BIT;
     can_filter->FilterActivation = CAN_FILTER_ENABLE;
+
+    // ---- Filter Bank 1: Standard IDs 0x624 and 0x580 ----
+    can_filter->FilterIdHigh = (0x624 << 5); // Slot 0: 0x624
+	can_filter->FilterMaskIdHigh = (0x580 << 5); // Slot 1: 0x580
+
+	can_filter->FilterIdLow = (0x0000 << 5); //Not used
+	can_filter->FilterMaskIdLow = (0x0000 << 5); //Not used
+
+	can_filter->FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	can_filter->FilterBank = (uint32_t) 1;
+	can_filter->FilterMode = CAN_FILTERMODE_IDLIST;
+	can_filter->FilterScale = CAN_FILTERSCALE_16BIT;
+	can_filter->FilterActivation = CAN_FILTER_ENABLE;
+
+	// ---- Filter Bank 2: Extended IDs 0x08A50225 and 0x08850225 ----
+	uint32_t extId1 = 0x08A50225;
+	can_filter->FilterIdHigh = (uint16_t)((extId1 << 3) >> 16);
+	can_filter->FilterIdLow = (uint16_t)((extId1 << 3) & 0xFFFF) | 0x0004; // We set the IDE bit
+	//0000 1000 1010 0101 0000 0010 0010 0101 << 3
+	//0 1000 1010 0101 0000 0010 0010 0101 & FFFF = 0000 0010 0010 0101
+	//0000 0010 0010 0101 |
+
+	uint32_t extId2 = 0x08850225;
+	can_filter->FilterMaskIdHigh = (uint16_t)((extId2 << 3) >> 16);
+	can_filter->FilterMaskIdLow = (uint16_t)((extId2 << 3) & 0xFFFF) | 0x0004; // We set the IDE bit
+
+	can_filter->FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	can_filter->FilterBank = (uint32_t) 2;
+	can_filter->FilterMode = CAN_FILTERMODE_IDLIST;
+	can_filter->FilterScale = CAN_FILTERSCALE_32BIT;
+	can_filter->FilterActivation = CAN_FILTER_ENABLE;
 }
 
 
