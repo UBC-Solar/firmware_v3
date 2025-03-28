@@ -24,8 +24,10 @@
 
 /* PRIVATE INCLUDES */
 #define TURN_SIGNAL_MODE_CAN_DATA_LENGTH 1
+#define DIAGNOSTIC_CAN_DATA_LENGTH 1
 
 #define TURN_SIGNAL_MODE_MSG_ID  0x580
+#define DIAGNOSTIC_MSG_ID 0x999 // Input actual CAN header message
 
 /**
  * @brief CAN message headers for STR
@@ -36,6 +38,17 @@ CAN_TxHeaderTypeDef turn_signal_mode_can_header = {
     .IDE = CAN_ID_STD,
     .RTR = CAN_RTR_DATA,
     .DLC = TURN_SIGNAL_MODE_CAN_DATA_LENGTH};
+
+/**
+ * @brief CAN message headers for STR diagnosis message
+ */
+CAN_TxHeaderTypeDef diagnostic_can_header = {
+  .StdId = DIAGNOSTIC_MSG_ID,
+  .ExtId = 0x0000,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = DIAGNOSTIC_CAN_DATA_LENGTH};
+
 
 CAN_FilterTypeDef can_filter;
 
@@ -150,5 +163,15 @@ void CAN_tx_turn_signal_mode_msg(turn_signal_status_t turn_signal, mode_status_t
   uint32_t mailbox;
 
   HAL_CAN_AddTxMessage(&hcan, &turn_signal_mode_can_header, turn_signal_mode_reading, &mailbox);
+}
+
+void CAN_diagnostic_msg(uint32_t time) {
+
+  uint8_t diagnostic_reading[1]; 
+  diagnostic_reading[0] = time;
+
+  uint32_t mailbox;
+
+  HAL_CAN_AddTxMessage(&hcan, &diagnostic_can_header, diagnostic_reading, &mailbox);
 }
 /* USER CODE END 1 */

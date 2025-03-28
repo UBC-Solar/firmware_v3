@@ -62,10 +62,10 @@ extern const CAN_TxHeaderTypeDef time_since_bootup_can_header;
 #define DRD_DIAGNOSTIC_SIZE					5
 #define TIME_SINCE_BOOTUP_CAN_DATA_LENGTH 	4
 
-
 /* USER CODE END Private defines */
 
 void MX_CAN_Init(void);
+void CAN_filter_init(CAN_FilterTypeDef* can_filter);
 
 /* USER CODE BEGIN Prototypes */
 void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg);

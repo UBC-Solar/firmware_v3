@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -21,10 +21,6 @@
 #include "iwdg.h"
 
 /* USER CODE BEGIN 0 */
-#include "diagnostic.h"
-
-/* PRIVATE DEFINES */
-#define RESET_SEQUENCE_DELAY_MS      200     
 
 /* USER CODE END 0 */
 
@@ -35,10 +31,11 @@ void MX_IWDG_Init(void)
 {
 
   /* USER CODE BEGIN IWDG_Init 0 */
-    #ifdef DEBUG
-        // Do nothing if in debug mode. iwdg will reset the board if breakpoints are hit.
-        return;
-    #endif
+
+  #ifdef DEBUG
+    return;
+  #endif
+
   /* USER CODE END IWDG_Init 0 */
 
   /* USER CODE BEGIN IWDG_Init 1 */
@@ -70,7 +67,6 @@ void IWDG_Refresh(IWDG_HandleTypeDef* hiwdg)
   #endif
 }
 
-
 /**
  * @brief Check if the IWDG reset occurred
  * 
@@ -93,20 +89,18 @@ bool IWDG_is_reset()
  * @brief Perform a reset LED sequence if the IWDG reset occurred.
  * 
  * This function will toggle the USER_LED of the TEL board 5 times at 200ms intervals
-*/
+ */
 void IWDG_perform_reset_sequence()
 {
-	if (IWDG_is_reset())
-	{
-        g_tel_diagnostic_flags.bits.tel_crash_iwdg = true;
+  // TODO: Add diagnostic logic
 
-		for (int i = 0; i < 10; i++)
-		{
-			HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-			HAL_Delay(RESET_SEQUENCE_DELAY_MS);
-			IWDG_Refresh(&hiwdg);
-		}
-	}
+  if (IWDG_is_reset())
+  {
+    for (int i = 0; i < 2; i++)
+    {
+      HAL_GPIO_TogglePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin);
+      HAL_Delay(RESET_SEQUENCE_DELAY_MS);
+    }
+  }
 }
-
 /* USER CODE END 1 */

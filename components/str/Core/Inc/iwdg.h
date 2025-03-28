@@ -1,13 +1,13 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    usart.h
+  * @file    iwdg.h
   * @brief   This file contains all the function prototypes for
-  *          the usart.c file
+  *          the iwdg.c file
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -18,8 +18,8 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __USART_H__
-#define __USART_H__
+#ifndef __IWDG_H__
+#define __IWDG_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,34 +27,31 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <stdbool.h>
 
 /* USER CODE BEGIN Includes */
 
-#include <stdbool.h>
-#include "radio.h"
-
 /* USER CODE END Includes */
 
-extern UART_HandleTypeDef huart5;
-
-extern UART_HandleTypeDef huart1;
+extern IWDG_HandleTypeDef hiwdg;
 
 /* USER CODE BEGIN Private defines */
-
+#define RESET_SEQUENCE_DELAY_MS      200    
 /* USER CODE END Private defines */
 
-void MX_UART5_Init(void);
-void MX_USART1_UART_Init(void);
+void MX_IWDG_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+void IWDG_Refresh(IWDG_HandleTypeDef* hiwdg);
+bool IWDG_is_reset();
+void IWDG_perform_reset_sequence();
 
-void UART_radio_transmit(RADIO_Msg_TypeDef* can_radio_msg);
-
+// extern bool str_crash_iwdg = false;
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __USART_H__ */
+#endif /* __IWDG_H__ */
 

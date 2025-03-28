@@ -41,7 +41,8 @@ extern CAN_HandleTypeDef hcan;
 void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-void CAN_tx_turn_signal_msg(turn_signal_status_t turn_signal);
+void CAN_tx_turn_signal_mode_msg(turn_signal_status_t turn_signal, mode_status_t mode_status);
+void CAN_diagnostic_msg(uint32_t time);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

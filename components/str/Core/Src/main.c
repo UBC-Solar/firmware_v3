@@ -20,6 +20,7 @@
 #include "main.h"
 #include "adc.h"
 #include "can.h"
+#include "iwdg.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -36,9 +37,12 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define TURN_SIGNAL_MODE_DELAY 200
+#define MS_TO_S_CONVERTER 1000
 
 volatile turn_signal_status_t g_turn_signal_status = 0;
 volatile mode_status_t g_mode_status = 0;
+
+uint32_t last_time = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -137,7 +141,11 @@ int main(void)
   MX_CAN_Init();
   MX_UART5_Init();
   MX_ADC1_Init();
-  /* USER CODE BEGIN 2 */
+  MX_IWDG_Init();
+  /* USER CODE BEGIN 2 */   
+
+  IWDG_perform_reset_sequence();      // Check for IWDG reset 
+
   turn_signal_status_t turn_status = get_turn_signal_status();
 
   mode_status_t mode_status = get_mode_status();
@@ -153,9 +161,11 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    turn_signal_status_t turn_status = get_turn_signal_status();
+    IWDG_Refresh(&hiwdg);       // Prescaler = 4, CR
 
-    mode_status_t mode_status = get_mode_status();
+    turn_status = get_turn_signal_status();
+
+    mode_status = get_mode_status();
 
     // Checks if either the turn signal or mode status value changes
     if(g_turn_signal_status != turn_status || g_mode_status != mode_status)
@@ -165,6 +175,12 @@ int main(void)
       g_mode_status = mode_status;
 
       CAN_tx_turn_signal_mode_msg(g_turn_signal_status, g_mode_status);
+    }
+
+    if(HAL_GetTick() > (last_time + TICK_DELAY))        // Send diagnostic every second
+    {
+      CAN_diagnostic_msg(last_time / MS_TO_S_CONVERTER);    // Increment by doing ms / 1000.
+      last_time = HAL_GetTick();
     }
 
     HAL_Delay(TURN_SIGNAL_MODE_DELAY);
@@ -185,10 +201,11 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;

@@ -77,6 +77,9 @@ typedef enum {
   POWER_MODE = 0b00,
   ECO_MODE = 0b01,
 } mode_status_t;
+  
+#define TICK_DELAY 1000
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
