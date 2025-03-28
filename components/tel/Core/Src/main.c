@@ -34,6 +34,7 @@
 #include "radio.h"
 #include "canload.h"
 #include "cpu_load.h"
+#include "gps.h"
 
 /* USER CODE END Includes */
 
@@ -107,8 +108,10 @@ int main(void)
   MX_TIM2_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
+  MX_UART5_Init();
   /* USER CODE BEGIN 2 */
   
+  DIAGNOSTIC_init();
   IWDG_perform_reset_sequence();      // Check for IWDG reset    
 
   /* USER CODE END 2 */

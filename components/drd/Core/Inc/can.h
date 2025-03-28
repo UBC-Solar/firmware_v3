@@ -47,7 +47,7 @@ extern const CAN_TxHeaderTypeDef mdu_request_header;
 #define CAN_ID_PACK_CURRENT		    	0x450
 #define CAN_ID_BATT_FAULTS		 		0x622
 #define CAN_ID_PACK_VOLTAGE		    	0x623
-#define CAN_ID_PACK_HEALTH          0x624
+#define CAN_ID_PACK_HEALTH          	0x624
 #define CAN_ID_MTR_FAULTS         		0x08A50225
 #define CAN_ID_MTR_DATA_REQUEST     	0x08F89540 //DRD sends data request to the MCU
 #define CAN_ID_TURN_SIGNALS       		0x580
@@ -56,9 +56,12 @@ extern const CAN_TxHeaderTypeDef mdu_request_header;
 #define FRAME0 							0x08850225
 #define STR_CAN_MSG_ID					0x580
 #define MDU_REQUEST_FRAME_2_0 			0b101 //request frame 0 and 2 (0th and 2nd bit)
+#define  MDU_REQUEST_SIZE 1
+
 /* USER CODE END Private defines */
 
 void MX_CAN_Init(void);
+void CAN_filter_init(CAN_FilterTypeDef* can_filter);
 
 /* USER CODE BEGIN Prototypes */
 void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg);
