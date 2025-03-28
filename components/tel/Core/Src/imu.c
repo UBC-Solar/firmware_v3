@@ -7,6 +7,7 @@
 #include "cmsis_os.h"
 #include "bitops.h"
 #include "radio.h"
+#include "diagnostic.h"
 
 /* Define the CAN message length for IMU messages */
 #define IMU_CAN_MESSAGE_LENGTH 8
@@ -156,8 +157,13 @@ static HAL_StatusTypeDef write_imu_register (uint16_t reg, uint8_t val){
 static uint16_t read_imu_register (uint16_t reg){
 	uint8_t data[2];
 	if(HAL_I2C_Mem_Read(&hi2c2, IMU_ADDRESS, reg, 1, data, 2, 10) != HAL_OK){
+        g_tel_diagnostic_flags.bits.imu_read_okay = false;
 		return 0;
 	}
+    else
+    {
+        g_tel_diagnostic_flags.bits.imu_read_okay = true;
+    }
 
 	return (int16_t)(data[1] << 8 | data[0]);
 }

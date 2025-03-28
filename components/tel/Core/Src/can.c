@@ -43,7 +43,6 @@
 /**
  * @brief CAN message header for sending out bus load
  */
-
 CAN_TxHeaderTypeDef CANLOAD_busload = {
     .StdId = CANLOAD_MSG_ID,
     .ExtId = 0x0000,

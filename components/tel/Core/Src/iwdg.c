@@ -21,6 +21,7 @@
 #include "iwdg.h"
 
 /* USER CODE BEGIN 0 */
+#include "diagnostic.h"
 
 /* PRIVATE DEFINES */
 #define RESET_SEQUENCE_DELAY_MS      200           
@@ -88,8 +89,6 @@ bool IWDG_is_reset()
   }
 }
 
-
-
 /**
  * @brief Perform a reset LED sequence if the IWDG reset occurred.
  * 
@@ -101,6 +100,13 @@ void IWDG_perform_reset_sequence()
 
   if (IWDG_is_reset())
   {
+    g_tel_diagnostic_flags.bits.tel_crash_iwdg = true;
+    
+    // Reset the flag back
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+
+    // Set Diagnostic variable
+
     for (int i = 0; i < 5; i++)
     {
       HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
