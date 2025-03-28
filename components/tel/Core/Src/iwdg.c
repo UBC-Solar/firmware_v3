@@ -24,7 +24,7 @@
 #include "diagnostic.h"
 
 /* PRIVATE DEFINES */
-#define RESET_SEQUENCE_DELAY_MS      200           
+#define RESET_SEQUENCE_DELAY_MS      200     
 
 /* USER CODE END 0 */
 
@@ -93,30 +93,20 @@ bool IWDG_is_reset()
  * @brief Perform a reset LED sequence if the IWDG reset occurred.
  * 
  * This function will toggle the USER_LED of the TEL board 5 times at 200ms intervals
- */
+*/
 void IWDG_perform_reset_sequence()
 {
-  // TODO: Add diagnostic logic
+	if (IWDG_is_reset())
+	{
+        g_tel_diagnostic_flags.bits.tel_crash_iwdg = true;
 
-  if (IWDG_is_reset())
-  {
-    g_tel_diagnostic_flags.bits.tel_crash_iwdg = true;
-
-    // Reset the flag back
-    __HAL_RCC_CLEAR_RESET_FLAGS();
-
-    // Set Diagnostic variable
-
-    for (int i = 0; i < 5; i++)
-    {
-      HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-      HAL_Delay(RESET_SEQUENCE_DELAY_MS);
-    }
-  }
-  else
-  {
-    g_tel_diagnostic_flags.bits.tel_crash_iwdg = false;
-  }
+		for (int i = 0; i < 10; i++)
+		{
+			HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+			HAL_Delay(RESET_SEQUENCE_DELAY_MS);
+			IWDG_Refresh(&hiwdg);
+		}
+	}
 }
 
 /* USER CODE END 1 */

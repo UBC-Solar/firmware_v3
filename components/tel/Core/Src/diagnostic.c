@@ -70,3 +70,14 @@ void DIAGNOSTIC_send_can()
     send_time_since_bootup_can_radio();
     send_tel_flags_can();
 }
+
+/**
+  * @brief  Reset all flags and values
+  * @retval None
+  */
+void DIAGNOSTIC_init()
+{
+    // Initilaize diagnostic flags as cleared at first
+    g_tel_diagnostic_flags.raw = false;
+    g_time_since_bootup = 0;
+}

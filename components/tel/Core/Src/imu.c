@@ -157,12 +157,12 @@ static HAL_StatusTypeDef write_imu_register (uint16_t reg, uint8_t val){
 static uint16_t read_imu_register (uint16_t reg){
 	uint8_t data[2];
 	if(HAL_I2C_Mem_Read(&hi2c2, IMU_ADDRESS, reg, 1, data, 2, 10) != HAL_OK){
-        g_tel_diagnostic_flags.bits.imu_read_okay = false;
+        g_tel_diagnostic_flags.bits.imu_read_fail = true;
 		return 0;
 	}
     else
     {
-        g_tel_diagnostic_flags.bits.imu_read_okay = true;
+        g_tel_diagnostic_flags.bits.imu_read_fail = false;
     }
     
 	return (int16_t)(data[1] << 8 | data[0]);
@@ -177,22 +177,22 @@ void imu_task()
     
     //Writing to CTRL_1 register, sets ODR to 30 Hz in normal mode and the range to +-8g in CTRL_8 register
     if(write_imu_register(CTRL_1, 0x74) != HAL_OK || write_imu_register(CTRL_8, 0x02) != HAL_OK){
-        g_tel_diagnostic_flags.bits.imu_write_okay = false;
+        g_tel_diagnostic_flags.bits.imu_write_fail = true;
     	return;
     }
     else
     {
-        g_tel_diagnostic_flags.bits.imu_write_okay = true;
+        g_tel_diagnostic_flags.bits.imu_write_fail = false;
     }
     
     //Writing to CTRL_2 register, sets ODR to 30 Hz in low power mode and the scale to +- 250 dps in CTRL_6 register
     if(write_imu_register(CTRL_2, 0x54) != HAL_OK || write_imu_register(CTRL_6, 0x01) != HAL_OK){
-        g_tel_diagnostic_flags.bits.imu_write_okay = false;
+        g_tel_diagnostic_flags.bits.imu_write_fail = true;
         return;
     }
     else
     {
-        g_tel_diagnostic_flags.bits.imu_write_okay = true;
+        g_tel_diagnostic_flags.bits.imu_write_fail = false;
     }
     
     for (;;)

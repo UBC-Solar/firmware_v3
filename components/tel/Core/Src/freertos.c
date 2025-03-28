@@ -264,15 +264,17 @@ void IMU_task(void *argument)
 /* USER CODE END Header_GPS_task */
 void GPS_task(void *argument)
 {
-  /* USER CODE BEGIN GPS_task */
+    /* USER CODE BEGIN GPS_task */
     /* Infinite loop */
+
     osDelay(GPS_TASK_OFFSET_DELAY);
-  for(;;)
-  {
-    gps_task();
-    osDelay(GPS_TASK_DELAY);
-  }
-  /* USER CODE END GPS_task */
+    for(;;)
+    {
+        gps_task();
+        osDelay(GPS_TASK_DELAY);
+    }
+
+    /* USER CODE END GPS_task */
 }
 
 /* USER CODE BEGIN Header_CANLoad_task */
@@ -306,10 +308,6 @@ void Diagnostic_task(void *argument)
 {
   /* USER CODE BEGIN Diagnostic_task */
   /* Infinite loop */
-  
-  // Initilaize diagnostic flags as cleared at first
-  g_tel_diagnostic_flags.raw = 0;
-  g_time_since_bootup = 0;
 
   for(;;)
   {
