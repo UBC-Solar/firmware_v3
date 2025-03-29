@@ -189,7 +189,7 @@ void STR_time_since_bootup(uint32_t time) {
 
   uint32_t mailbox;
 
-  HAL_CAN_AddTxMessage(&hcan, &STR_time_since_bootup_can_header, CAN_data.data, &mailbox);
+  HAL_CAN_AddTxMessage(&hcan, &STR_time_since_bootup_can_header, CAN_data.bytes, &mailbox);
 }
 
 /**
