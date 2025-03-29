@@ -27,6 +27,7 @@
 #define STR_BOOTUP_CAN_DATA_LENGTH 1
 
 #define TURN_SIGNAL_MODE_MSG_ID  0x580
+#define STR_BOOTUP_MSG_ID 0x582
 
 /**
  * @brief CAN message headers for STR

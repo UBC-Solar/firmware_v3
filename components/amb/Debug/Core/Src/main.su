@@ -1,0 +1,6 @@
+../Core/Src/main.c:83:6:Convert_Values	24	static
+../Core/Src/main.c:147:7:volt2temp	72	static
+../Core/Src/main.c:173:5:main	104	static
+../Core/Src/main.c:374:6:SystemClock_Config	96	static
+../Core/Src/main.c:418:6:HAL_ADC_ConvCpltCallback	16	static
+../Core/Src/main.c:431:6:Error_Handler	4	static,ignoring_inline_asm

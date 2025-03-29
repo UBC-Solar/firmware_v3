@@ -1,0 +1,5 @@
+../Core/Src/can.c:93:6:CanFilterSetup	8	static
+../Core/Src/can.c:122:6:MX_CAN_Init	8	static
+../Core/Src/can.c:156:6:HAL_CAN_MspInit	32	static
+../Core/Src/can.c:194:6:HAL_CAN_MspDeInit	8	static
+../Core/Src/can.c:221:6:HAL_CAN_RxFifo0MsgPendingCallback	88	static,ignoring_inline_asm

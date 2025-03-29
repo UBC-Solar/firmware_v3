@@ -1,0 +1,4 @@
+../Core/Src/adc.c:37:6:MX_ADC1_Init	4
+../Core/Src/adc.c:83:6:HAL_ADC_MspInit	2
+../Core/Src/adc.c:131:6:HAL_ADC_MspDeInit	2
+../Core/Src/adc.c:179:6:ADC_Select	14
