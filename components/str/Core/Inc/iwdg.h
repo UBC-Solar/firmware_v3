@@ -46,8 +46,6 @@ void IWDG_Refresh(IWDG_HandleTypeDef* hiwdg);
 bool IWDG_is_reset(); 
 void IWDG_perform_reset_sequence();
 
-extern int iwdg_reset;
-
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

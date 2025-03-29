@@ -158,7 +158,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    IWDG_Refresh(&hiwdg);
+    // IWDG_Refresh(&hiwdg);
 
     turn_signal_status_t turn_status = get_turn_signal_status();
 

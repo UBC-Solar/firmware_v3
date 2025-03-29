@@ -21,7 +21,7 @@
 #include "iwdg.h"
 
 /* USER CODE BEGIN 0 */
-iwdg_reset = 0;
+
 /* USER CODE END 0 */
 
 IWDG_HandleTypeDef hiwdg;
@@ -92,18 +92,15 @@ bool IWDG_is_reset()
  */
 void IWDG_perform_reset_sequence()
 {
-
   if (IWDG_is_reset())
   {
-    iwdg_reset = 1;
+    g_str_diagnostic_flags.bits.mdi_crash_iwdg = true;
 
     for (int i = 0; i < 2; i++)
     {
       HAL_GPIO_TogglePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin);
       HAL_Delay(RESET_SEQUENCE_DELAY_MS);
     }
-  } else {
-    iwdg_reset = 0;
   }
 }
 /* USER CODE END 1 */

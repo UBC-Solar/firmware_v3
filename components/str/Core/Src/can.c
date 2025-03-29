@@ -24,10 +24,10 @@
 
 /* PRIVATE INCLUDES */
 #define TURN_SIGNAL_MODE_CAN_DATA_LENGTH 1
-#define DIAGNOSTIC_CAN_DATA_LENGTH 1
+#define STR_BOOTUP_CAN_DATA_LENGTH 1
 
 #define TURN_SIGNAL_MODE_MSG_ID  0x580
-#define DIAGNOSTIC_MSG_ID 0x999 // Input actual CAN header message
+#define STR_BOOTUP_MSG_ID 0x582
 
 /**
  * @brief CAN message headers for STR
@@ -42,13 +42,19 @@ CAN_TxHeaderTypeDef turn_signal_mode_can_header = {
 /**
  * @brief CAN message headers for STR diagnosis message
  */
-CAN_TxHeaderTypeDef diagnostic_can_header = {
-  .StdId = DIAGNOSTIC_MSG_ID,
+CAN_TxHeaderTypeDef STR_time_since_bootup_can_header = {
+  .StdId = STR_BOOTUP_MSG_ID,
   .ExtId = 0x0000,
   .IDE = CAN_ID_STD,
   .RTR = CAN_RTR_DATA,
-  .DLC = DIAGNOSTIC_CAN_DATA_LENGTH};
+  .DLC = STR_BOOTUP_CAN_DATA_LENGTH};
 
+CAN_TxHeaderTypeDef STR_diagnostic_flags_can_header = {
+  .StdId = STR_BOOTUP_MSG_ID,
+  .ExtId = 0x0000,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = STR_BOOTUP_CAN_DATA_LENGTH};
 
 CAN_FilterTypeDef can_filter;
 
@@ -165,14 +171,24 @@ void CAN_tx_turn_signal_mode_msg(turn_signal_status_t turn_signal, mode_status_t
   HAL_CAN_AddTxMessage(&hcan, &turn_signal_mode_can_header, turn_signal_mode_reading, &mailbox);
 }
 
-void CAN_diagnostic_msg(uint32_t time, bool iwdg_reset) {
+void STR_time_since_bootup(uint32_t time) {
 
-  uint8_t diagnostic_reading[2]; 
-  diagnostic_reading[0] = time;
-  diagnostic_reading[1] = iwdg_reset;
+  union {
+    uint8_t bytes[4];
+    uint32_t data;
+  } CAN_data;
+  CAN_data.data = time;
 
   uint32_t mailbox;
 
-  HAL_CAN_AddTxMessage(&hcan, &diagnostic_can_header, diagnostic_reading, &mailbox);
+  HAL_CAN_AddTxMessage(&hcan, &STR_time_since_bootup_can_header, CAN_data.data, &mailbox);
+}
+
+void STR_diagnostic_flags()
+{
+  uint8_t data[1] = {g_str_diagnostic_flags.raw};
+
+  uint32_t mailbox;
+  HAL_CAN_AddTxMessage(&hcan, &STR_diagnostic_flags_can_header, data, &mailbox);
 }
 /* USER CODE END 1 */
