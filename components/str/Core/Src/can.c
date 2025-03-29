@@ -42,7 +42,7 @@ CAN_TxHeaderTypeDef turn_signal_mode_can_header = {
     .DLC = TURN_SIGNAL_MODE_CAN_DATA_LENGTH};
 
 /**
- * @brief CAN message headers for STR diagnosis message
+ * @brief CAN message headers for STR bootup time
  */
 CAN_TxHeaderTypeDef STR_time_since_bootup_can_header = {
   .StdId = STR_BOOTUP_MSG_ID,
@@ -51,6 +51,9 @@ CAN_TxHeaderTypeDef STR_time_since_bootup_can_header = {
   .RTR = CAN_RTR_DATA,
   .DLC = STR_DIAGNOSTIC_FLAGS_CAN_DATA_LENGTH};
 
+/**
+ * @brief CAN message headers for STR diagnostic flags
+ */
 CAN_TxHeaderTypeDef STR_diagnostic_flags_can_header = {
   .StdId = STR_DIAGNOSTIC_FLAGS_MSG_ID,
   .ExtId = 0x0000,
@@ -173,6 +176,9 @@ void CAN_tx_turn_signal_mode_msg(turn_signal_status_t turn_signal, mode_status_t
   HAL_CAN_AddTxMessage(&hcan, &turn_signal_mode_can_header, turn_signal_mode_reading, &mailbox);
 }
 
+/**
+ * @brief CAN message for the STR bootup time, or board heartbeat
+ */
 void STR_time_since_bootup(uint32_t time) {
 
   union {
@@ -186,6 +192,9 @@ void STR_time_since_bootup(uint32_t time) {
   HAL_CAN_AddTxMessage(&hcan, &STR_time_since_bootup_can_header, CAN_data.data, &mailbox);
 }
 
+/**
+ * @brief CAN message for the iwdg and checking if the board has crashed or not
+ */
 void STR_diagnostic_flags()
 {
   uint8_t data[1] = {g_str_diagnostic_flags.raw};
