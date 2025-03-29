@@ -28,8 +28,8 @@
 #define STR_DIAGNOSTIC_FLAGS_CAN_DATA_LENGTH 1
 
 #define TURN_SIGNAL_MODE_MSG_ID  0x580
-#define STR_BOOTUP_MSG_ID 0x582
-#define STR_DIAGNOSTIC_FLAGS_MSG_ID 0x000 // Determine CAN message ID
+#define STR_BOOTUP_MSG_ID 0x581
+#define STR_DIAGNOSTIC_FLAGS_MSG_ID 0x582
 
 /**
  * @brief CAN message headers for STR
