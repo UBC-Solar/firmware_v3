@@ -27,6 +27,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "diagnostic.h"
 
 /* USER CODE BEGIN Includes */
 #include "stdbool.h"
