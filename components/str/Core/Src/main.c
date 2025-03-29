@@ -160,8 +160,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    // IWDG_Refresh(&hiwdg);
-
     IWDG_Refresh(&hiwdg);       // Prescaler = 4, CR
 
     turn_status = get_turn_signal_status();
