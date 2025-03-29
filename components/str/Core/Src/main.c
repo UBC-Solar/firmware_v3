@@ -36,9 +36,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TURN_SIGNAL_MODE_DELAY 200
-#define MS_TO_S_CONVERTER 1000
-
 volatile turn_signal_status_t g_turn_signal_status = 0;
 volatile mode_status_t g_mode_status = 0;
 
@@ -179,7 +176,7 @@ int main(void)
 
     if(HAL_GetTick() > (last_time + TICK_DELAY))
     {
-      CAN_diagnostic_msg(last_time / MS_TO_S_CONVERTER);
+      CAN_diagnostic_msg(last_time / MS_TO_S_CONVERTER, iwdg_reset);
       last_time = HAL_GetTick();
     }
 

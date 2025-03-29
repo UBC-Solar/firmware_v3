@@ -30,23 +30,24 @@ extern "C" {
 #include <stdbool.h>
 
 /* USER CODE BEGIN Includes */
-
 /* USER CODE END Includes */
 
 extern IWDG_HandleTypeDef hiwdg;
 
 /* USER CODE BEGIN Private defines */
-#define RESET_SEQUENCE_DELAY_MS      200    
+#define RESET_SEQUENCE_DELAY_MS      200
+
 /* USER CODE END Private defines */
 
 void MX_IWDG_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 void IWDG_Refresh(IWDG_HandleTypeDef* hiwdg);
-bool IWDG_is_reset();
+bool IWDG_is_reset(); 
 void IWDG_perform_reset_sequence();
 
-// extern bool str_crash_iwdg = false;
+extern int iwdg_reset;
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
