@@ -1,4 +1,0 @@
-../Core/Src/DID.c:38:6:parse_can_message	56	static
-../Core/Src/DID.c:194:6:update_DID_screen	56	static
-../Core/Src/DID.c:391:6:parse_warnings	40	static
-../Core/Src/DID.c:463:6:DID_timeout	8	static

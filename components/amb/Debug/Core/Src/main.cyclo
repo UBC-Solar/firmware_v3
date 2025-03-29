@@ -1,6 +1,0 @@
-../Core/Src/main.c:83:6:Convert_Values	13
-../Core/Src/main.c:147:7:volt2temp	1
-../Core/Src/main.c:173:5:main	2
-../Core/Src/main.c:374:6:SystemClock_Config	4
-../Core/Src/main.c:418:6:HAL_ADC_ConvCpltCallback	2
-../Core/Src/main.c:431:6:Error_Handler	1
