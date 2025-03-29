@@ -32,14 +32,23 @@ extern "C" {
 #define CTRL_6    0x15 // Control register for gyroscope full-scale range
 #define CTRL_8    0x17 // Control register for accelerometer full-scale range
 
+#define IMU_TASK_DELAY      100
+#define IMU_TASK_OFFSET_DELAY       33
+
+
+/* Define the CAN message IDs for each IMU axes */
+#define IMU_AG_X_CAN_MESSAGE_ID 0x752
+#define IMU_AG_Y_CAN_MESSAGE_ID 0x753
+#define IMU_AG_Z_CAN_MESSAGE_ID 0x754
+
 /**
  * @brief Task function for getting IMU data and transmitting over CAN.
  */
 void imu_task(void);
 
-static void CAN_tx_ag_x_msg(float accel_x, float gyros_x);
-static void CAN_tx_ag_y_msg(float accel_y, float gyro_y);
-static void CAN_tx_ag_z_msg(float accel_z, float gyro_z);
+void CAN_tx_ag_x_msg(float accel_x, float gyros_x);
+void CAN_tx_ag_y_msg(float accel_y, float gyro_y);
+void CAN_tx_ag_z_msg(float accel_z, float gyro_z);
 
 #ifdef __cplusplus
 }

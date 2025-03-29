@@ -36,6 +36,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define TURN_SIGNAL_MODE_DELAY 200
+
 volatile turn_signal_status_t g_turn_signal_status = 0;
 volatile mode_status_t g_mode_status = 0;
 
@@ -160,9 +162,11 @@ int main(void)
 
     // IWDG_Refresh(&hiwdg);
 
-    turn_signal_status_t turn_status = get_turn_signal_status();
+    IWDG_Refresh(&hiwdg);       // Prescaler = 4, CR
 
-    mode_status_t mode_status = get_mode_status();
+    turn_status = get_turn_signal_status();
+
+    mode_status = get_mode_status();
 
     // Checks if either the turn signal or mode status value changes
     if(g_turn_signal_status != turn_status || g_mode_status != mode_status)
@@ -172,12 +176,6 @@ int main(void)
       g_mode_status = mode_status;
 
       CAN_tx_turn_signal_mode_msg(g_turn_signal_status, g_mode_status);
-    }
-
-    if(HAL_GetTick() > (last_time + TICK_DELAY))
-    {
-      CAN_diagnostic_msg(last_time / MS_TO_S_CONVERTER, iwdg_reset);
-      last_time = HAL_GetTick();
     }
 
     HAL_Delay(TURN_SIGNAL_MODE_DELAY);
