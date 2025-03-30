@@ -150,7 +150,7 @@ void External_Lights_set_turn_signals(uint32_t can_id, uint8_t* data)
 	uint8_t rts = (data[0] & 1);
 	uint8_t lts = (data[0] & (1 << 1));
 
-	if (rts & lts)
+	if (rts && lts)
 	{
 		//both signals are on, invalid state, set both to off
 		left_turn_signal = 0;
