@@ -1,6 +1,9 @@
 variables {
-    // Base channel. CAN messages will be sent on channel ch
-    const int ch = 0;
+    // Base channel. CAN messages will be sent on channel ch 2
+    // This is because we can only power on channel 1 according to datasheet
+    // Make its easier to make a harness and also the current power harness goes to the distribution board
+    // And does NOT split off and go to a CAN splitter.
+    const int ch = 1;
 
     // The periodic timer is then used between each RTC CAN message
     Timer periodic;
