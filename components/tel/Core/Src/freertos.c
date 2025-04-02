@@ -309,6 +309,7 @@ void Diagnostic_task(void *argument)
   /* USER CODE BEGIN Diagnostic_task */
   /* Infinite loop */
 
+  DIAGNOSTIC_send_can();   
   for(;;)
   {
     ++g_time_since_bootup;
