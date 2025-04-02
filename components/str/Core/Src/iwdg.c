@@ -96,11 +96,8 @@ void IWDG_perform_reset_sequence()
   {
     g_str_diagnostic_flags.bits.str_crash_iwdg = true;
 
-    for (int i = 0; i < 2; i++)
-    {
-      HAL_GPIO_TogglePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin);
-      HAL_Delay(RESET_SEQUENCE_DELAY_MS);
-    }
+    HAL_GPIO_TogglePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin);
+    HAL_Delay(RESET_SEQUENCE_DELAY_MS);
   }
 }
 /* USER CODE END 1 */
