@@ -113,6 +113,7 @@ int main(void)
   g_mdi_diagnostic_flags.raw = CLEAR;       // Start with all flags cleared
   IWDG_perform_reset_sequence();            // Check if IWDG reset
 
+  MDI_diagnostic_flags();
   /* USER CODE END 2 */
 
   /* Infinite loop */

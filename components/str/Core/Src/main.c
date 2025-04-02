@@ -41,7 +41,7 @@
 volatile turn_signal_status_t g_turn_signal_status = 0;
 volatile mode_status_t g_mode_status = 0;
 
-uint32_t last_time = 0;
+uint32_t g_last_time = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -142,8 +142,10 @@ int main(void)
   MX_ADC1_Init();
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */   
-
-  IWDG_perform_reset_sequence();      // Check for IWDG reset 
+  g_str_diagnostic_flags.raw = 0; 
+  
+  IWDG_perform_reset_sequence();      // Check for IWDG reset
+  STR_diagnostic_flags();
 
   turn_signal_status_t turn_status = get_turn_signal_status();
 
@@ -159,8 +161,14 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
     IWDG_Refresh(&hiwdg);       // Prescaler = 4, CR
+
+    if(HAL_GetTick() > (g_last_time + TICK_DELAY))
+    {
+      STR_diagnostic_flags();
+      STR_time_since_bootup(g_last_time / MS_TO_S_CONVERTER);
+      g_last_time = HAL_GetTick();
+    }
 
     turn_status = get_turn_signal_status();
 
@@ -175,14 +183,6 @@ int main(void)
 
       CAN_tx_turn_signal_mode_msg(g_turn_signal_status, g_mode_status);
     }
-
-    if(HAL_GetTick() > (last_time + TICK_DELAY))
-    {
-      STR_time_since_bootup(last_time / MS_TO_S_CONVERTER);
-      last_time = HAL_GetTick();
-    }
-
-    STR_diagnostic_flags();
 
     HAL_Delay(TURN_SIGNAL_MODE_DELAY);
   }

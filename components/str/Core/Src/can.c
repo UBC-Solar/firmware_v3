@@ -49,7 +49,7 @@ CAN_TxHeaderTypeDef STR_time_since_bootup_can_header = {
   .ExtId = 0x0000,
   .IDE = CAN_ID_STD,
   .RTR = CAN_RTR_DATA,
-  .DLC = STR_DIAGNOSTIC_FLAGS_CAN_DATA_LENGTH};
+  .DLC = STR_BOOTUP_CAN_DATA_LENGTH};
 
 /**
  * @brief CAN message headers for STR diagnostic flags
@@ -59,7 +59,7 @@ CAN_TxHeaderTypeDef STR_diagnostic_flags_can_header = {
   .ExtId = 0x0000,
   .IDE = CAN_ID_STD,
   .RTR = CAN_RTR_DATA,
-  .DLC = STR_BOOTUP_CAN_DATA_LENGTH};
+  .DLC = STR_DIAGNOSTIC_FLAGS_CAN_DATA_LENGTH};
 
 CAN_FilterTypeDef can_filter;
 
