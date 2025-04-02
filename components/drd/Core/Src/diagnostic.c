@@ -18,7 +18,7 @@ DRD_diagnostic_t g_diagnostics = {0};
   * @brief  Sends the time since bootup via CAN
   * @retval None
 */
-void send_time_since_bootup_can_radio()
+void DRD_time_since_bootup()
 {
     CAN_comms_Tx_msg_t time_since_bootup_can_tx = {
         .data[0] = g_time_since_bootup & 0x000000FFU,

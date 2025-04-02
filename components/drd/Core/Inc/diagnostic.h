@@ -39,7 +39,7 @@ extern DRD_diagnostic_t g_diagnostics;
 
 
 /*	Function Prototypes	*/
-void send_time_since_bootup_can_radio();
+void DRD_time_since_bootup();
 void DRD_diagnostics_transmit(DRD_diagnostic_t* diagnostics, bool from_ISR);
 
 

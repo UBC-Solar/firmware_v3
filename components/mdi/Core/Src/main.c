@@ -59,6 +59,7 @@ bool g_motor_command_received = false;
 uint32_t g_last_command_time = 0;
 uint32_t g_last_diagnostic_time = 0;
 
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -112,12 +113,12 @@ int main(void)
   
   g_mdi_diagnostic_flags.raw = CLEAR;       // Start with all flags cleared
   IWDG_perform_reset_sequence();            // Check if IWDG reset
-
+  MDI_diagnostic_flags();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
+  
   // Stop motor by default for redundancy.
   MDI_stop_motor();
 
@@ -152,7 +153,6 @@ int main(void)
       // Reset timeout
       g_last_command_time = HAL_GetTick();
     }
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

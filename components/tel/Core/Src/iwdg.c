@@ -98,14 +98,9 @@ void IWDG_perform_reset_sequence()
 {
 	if (IWDG_is_reset())
 	{
-        g_tel_diagnostic_flags.bits.tel_crash_iwdg = true;
+      g_tel_diagnostic_flags.bits.tel_crash_iwdg = true;
 
-		for (int i = 0; i < 10; i++)
-		{
 			HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-			HAL_Delay(RESET_SEQUENCE_DELAY_MS);
-			IWDG_Refresh(&hiwdg);
-		}
 	}
 }
 

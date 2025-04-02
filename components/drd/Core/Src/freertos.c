@@ -191,11 +191,12 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+  DRD_diagnostics_transmit(&g_diagnostics, false);
   /* Infinite loop */
   for(;;)
   {
-	Motor_Controller_query_data();
-	IWDG_Refresh(&hiwdg);
+	  Motor_Controller_query_data();
+	  IWDG_Refresh(&hiwdg);
     osDelay(DEFAULT_TASK_DELAY);
     DRD_diagnostics_transmit(&g_diagnostics, false); //transmit diagnostics every 100ms
   }
@@ -289,9 +290,9 @@ void TimeSinceStartup_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	g_time_since_bootup++;
-	osDelay(TIME_SINCE_STARTUP_TASK_DELAY);
-	send_time_since_bootup_can_radio();
+    g_time_since_bootup++;
+    osDelay(TIME_SINCE_STARTUP_TASK_DELAY);
+    DRD_time_since_bootup();
   }
   /* USER CODE END TimeSinceStartup_task */
 }
