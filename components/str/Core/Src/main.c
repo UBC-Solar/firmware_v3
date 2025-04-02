@@ -176,6 +176,14 @@ int main(void)
       CAN_tx_turn_signal_mode_msg(g_turn_signal_status, g_mode_status);
     }
 
+    if(HAL_GetTick() > (last_time + TICK_DELAY))
+    {
+      STR_time_since_bootup(last_time / MS_TO_S_CONVERTER);
+      last_time = HAL_GetTick();
+    }
+
+    STR_diagnostic_flags();
+
     HAL_Delay(TURN_SIGNAL_MODE_DELAY);
   }
   /* USER CODE END 3 */
