@@ -88,7 +88,7 @@ bool IWDG_is_reset()
 /**
  * @brief Perform a reset LED sequence if the IWDG reset occurred.
  * 
- * This function will toggle the USER_LED of the TEL board 5 times at 200ms intervals
+ * This function will toggle the USER_LED of the STR board 5 times at 200ms intervals
  */
 void IWDG_perform_reset_sequence()
 {

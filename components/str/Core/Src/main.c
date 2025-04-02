@@ -158,9 +158,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
     IWDG_Refresh(&hiwdg);       // Prescaler = 4, CR
 
     if(HAL_GetTick() > (g_last_time + TICK_DELAY))
@@ -185,6 +182,9 @@ int main(void)
     }
 
     HAL_Delay(TURN_SIGNAL_MODE_DELAY);
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
