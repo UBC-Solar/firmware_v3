@@ -55,7 +55,5 @@ void DRD_diagnostics_transmit(DRD_diagnostic_t* diagnostics, bool from_ISR)
 	{
 		CAN_comms_Add_Tx_message(&msg);
 	}
-
-	diagnostics->flags.all_flags = 0; 	//clear flags
 }
 
