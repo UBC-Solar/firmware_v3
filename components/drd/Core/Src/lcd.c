@@ -1,6 +1,7 @@
 #include "lcd.h"
 #include "fault_lights.h"
 #include <stdio.h>
+#include "cyclic_data_handler.h"
 
 /*--------------------------------------------------------------------------
   Internal Types & Variables
@@ -492,16 +493,19 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
 	{
 		g_lcd_data.pack_current = (data[1] << 8) | (data[0]);
 		g_lcd_data.pack_current /= 65.535;
+        set_cyclic_pack_current(g_lcd_data.pack_current);
 	}
 
 	 if(msg_id == CAN_ID_PACK_VOLTAGE)
 	{
 		g_lcd_data.pack_voltage = (data[1] << 8) | (data[0]);
 		g_lcd_data.pack_voltage /= PACK_VOLTAGE_DIVISOR;
+        set_cyclic_pack_voltage(g_lcd_data.pack_voltage);
 	}
 
 	 if(msg_id == CAN_ID_PACK_HEALTH)
 	{
 		g_lcd_data.soc = data[0];
+        set_cyclic_soc(g_lcd_data.soc);
 	}
 }

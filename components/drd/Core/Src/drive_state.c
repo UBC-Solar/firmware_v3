@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "diagnostic.h"
+#include "cyclic_data.h"
 
 
 /*	Local Function Declarations	*/
@@ -349,8 +350,7 @@ void get_accel_readings()
 void normalize_adc_values(uint16_t adc1, uint16_t adc2)
 {
 	//Todo: confirm ADC orientation
-	// uint16_t average_adc = ((adc1 + adc2)/2);
-	uint16_t average_adc = (adc1);
+	uint16_t average_adc = ((adc1 + adc2)/2);
 
 	if (average_adc < ADC_NO_THROTTLE_MAX)
 	{

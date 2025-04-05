@@ -32,6 +32,7 @@
 #include "drive_state.h"
 #include "iwdg.h"
 #include "diagnostic.h"
+#include "cyclic_data_handler.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -241,14 +242,23 @@ void LCDUpdatetask(void *argument)
   
   for(;;)
   {
-    g_lcd_data.speed = g_velocity_kmh;
-    g_lcd_data.drive_state = g_drive_state;
-    g_lcd_data.drive_mode = g_eco_mode;
+    set_cyclic_speed((float) g_velocity_kmh);
+    g_lcd_data.speed = get_cyclic_speed();
 
-    LCD_display_power_bar((float) g_lcd_data.pack_current, (float) g_lcd_data.pack_voltage);
+    set_cyclic_drive_state(g_drive_state);
+    g_lcd_data.drive_state = get_cyclic_speed();
+    
+    set_cyclic_drive_mode(g_eco_mode);
+    g_lcd_data.drive_mode = get_cyclic_drive_mode();
+    
+    uint16_t cyclic_pack_current_data = get_cyclic_pack_current();
+    uint16_t cyclic_pack_voltage_data = get_cyclic_pack_current();
+    uint8_t cyclic_soc_data = get_cyclic_soc();
+
+    LCD_display_power_bar(cyclic_pack_current_data, cyclic_pack_voltage_data);
     LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
     LCD_display_drive_state(g_lcd_data.drive_state);
-    LCD_display_SOC(g_lcd_data.soc);
+    LCD_display_SOC(cyclic_soc_data);
     LCD_display_drive_mode(g_lcd_data.drive_mode);
 
     osDelay(LCD_UPDATE_DELAY);
