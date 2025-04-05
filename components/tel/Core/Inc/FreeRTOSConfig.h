@@ -146,7 +146,6 @@ standard names. */
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
 
 #define INCLUDE_xTaskGetIdleTaskHandle 1
-#include "cpu_load_trace.h"
 
 /* USER CODE END Defines */
 
