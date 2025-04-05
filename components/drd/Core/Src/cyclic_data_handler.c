@@ -60,7 +60,7 @@ uint16_t get_cyclic_pack_current(void){
 }
 
 uint16_t get_cyclic_pack_voltage(void){
-   int16_t* cyclic_pack_voltage_data = CYCLIC_DATA_GET(cyclic_pack_voltage);
+   uint16_t* cyclic_pack_voltage_data = CYCLIC_DATA_GET(cyclic_pack_voltage);
    return *cyclic_pack_voltage_data;
 }
 

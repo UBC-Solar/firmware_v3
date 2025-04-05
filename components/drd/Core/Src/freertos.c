@@ -246,13 +246,13 @@ void LCDUpdatetask(void *argument)
     g_lcd_data.speed = get_cyclic_speed();
 
     set_cyclic_drive_state(g_drive_state);
-    g_lcd_data.drive_state = get_cyclic_speed();
+    g_lcd_data.drive_state = get_cyclic_drive_state();
     
     set_cyclic_drive_mode(g_eco_mode);
     g_lcd_data.drive_mode = get_cyclic_drive_mode();
     
     uint16_t cyclic_pack_current_data = get_cyclic_pack_current();
-    uint16_t cyclic_pack_voltage_data = get_cyclic_pack_current();
+    uint16_t cyclic_pack_voltage_data = get_cyclic_pack_voltage();
     uint8_t cyclic_soc_data = get_cyclic_soc();
 
     LCD_display_power_bar(cyclic_pack_current_data, cyclic_pack_voltage_data);
