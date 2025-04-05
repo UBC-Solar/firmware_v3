@@ -20,25 +20,15 @@
 #define DRIVE_COMMAND_SIZE 			5
 #define MC_FRAME_REQUEST_DELAY 		100
 
-
-#define ADC_MAX 1000		  // Max possible value for ADC. 1.2V
-#define ADC_MIN 350             // Min possible value for ADC. 0.6V
-
-#define THROTTLE_ADC_MIN_VALUE 200
-#define THROTTLE_ADC_MAX_VALUE 3896
-#define ADC_MAX_DIFFERENCE 9999 // change when we have a better idea
-
-
-#define REGEN_DAC_ON 1023
+#define REGEN_DAC_ON  1023
 #define REGEN_DAC_OFF 0
 #define ACCEL_DAC_OFF 0
 
-#define ADC_NO_THROTTLE_MAX 450 //figure out
-#define ADC_FULL_THROTTLE_MIN 1000 //figure out
-#define ADC_THROTTLE_MAX	1023 //figure out
-#define ADC_LOWER_DEADZONE 900 //tbd
-#define ADC_UPPER_DEADZONE 4000 //tbd
-
+#define ADC_NO_THROTTLE_MAX 450         // Min possible value for ADC. 0.6V
+#define ADC_FULL_THROTTLE_MIN 1000      // Max possible value for ADC. 1.2V
+#define ADC_LOWER_DEADZONE 300 
+#define ADC_UPPER_DEADZONE 4000 
+#define ADC_MAX_DIFFERENCE 100          // change when we have a better idea
 
 #define WHEEL_RADIUS 0.283
 #define M_PI 3.14159
