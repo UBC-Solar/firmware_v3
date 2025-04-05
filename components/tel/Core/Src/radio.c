@@ -52,17 +52,25 @@ typedef struct {
 } CanFilter_t;
 
 // Definitions for CAN IDs (add or adjust as needed)
-#define MC_MEASUREMENTS_ID                  0x08850225
 #define DRD_MOTOR_COMMAND_ID                0x401
+#define DRD_DIAGNOSTICS_ID                  0x403
+#define DRD_TIME_SINCE_BOOTUP_ID            0x404
+#define ECU_STATUS_ID                       0x450
+#define MDI_TIME_SINCE_BOOTUP_ID            0x500
+#define MDI_DIAGNOSTICS_ID                  0x501
+#define STR_DIAGNOSTICS_ID                  0x581
+#define STR_TIME_SINCE_BOOTUP_ID            0x582
+#define BMS_VOLTAGE_SUMMARY_VOLTAGE_ID      0x623
+#define BMS_MODULE_VOLTAGES_ID              0x626
+#define BMS_MODULE_TEMPERATURES_ID          0x627
 #define MPPT_INPUT_MEASUREMENTS_ID          0x6A0
 #define MPPT_OUTPUT_MEASUREMENTS_ID         0x6A1
-#define MPPT_TEMP_MEASUREMENTS_ID           0x6A2
-#define DRD_DIAGNOSTICS_FLAGS_ID            0x404
-#define MODULE_TEMPS_ID                     0x627
-#define PACK_CURRENT_ID                     0x450
-#define PACK_VOLTAGE_ID                     0x623
-#define MODULE_VOLTAGES_ID                  0x626
-
+#define MPPT_TEMPERATURE_ID                 0x6A2
+#define MPPT_STATUS_ID                      0x6A5
+#define TEL_TIME_SINCE_BOOTUP_ID            0x750
+#define TEL_DIAGNOSTICS_ID                  0x751
+#define MDU_FRAME_0_ID                      0x08850225
+#define OBC_STATUS_ID                       0x18FF50E5
 
 // Mod values (1 means every message, other values rate-limit the Tx)
 // Our whitelist using a struct array
@@ -70,18 +78,26 @@ typedef struct {
 // See https://ubcsolar26.monday.com/boards/7524367653/pulses/8642929457/posts/3979486939 for Module voltages and temps 
 // explanation for 9.
 static CanFilter_t filter_whitelist[] = {
-//            CAN ID                    MOD    COUNT  
-    { DRD_DIAGNOSTICS_FLAGS_ID,          1,     0               },
-    { PACK_CURRENT_ID,                   1,     0               },
-    { PACK_VOLTAGE_ID,                   1,     0               },
-    { MODULE_VOLTAGES_ID,                9,     0               },
-    { MODULE_TEMPS_ID,                   9,     0               },
+    //         CAN ID                   MOD    COUNT
+    { DRD_MOTOR_COMMAND_ID,              4,     0               },
+    { DRD_DIAGNOSTICS_ID,                1,     0               },
+    { DRD_TIME_SINCE_BOOTUP_ID,          1,     0               },
+    { ECU_STATUS_ID,                     1,     0               },
+    { MDI_TIME_SINCE_BOOTUP_ID,          1,     0               },
+    { MDI_DIAGNOSTICS_ID,                1,     0               },
+    { STR_DIAGNOSTICS_ID,                1,     0               },
+    { STR_TIME_SINCE_BOOTUP_ID,          1,     0               },
+    { BMS_VOLTAGE_SUMMARY_VOLTAGE_ID,    1,     0               },
+    { BMS_MODULE_VOLTAGES_ID,            9,     0               },
+    { BMS_MODULE_TEMPERATURES_ID,        9,     0               },
     { MPPT_INPUT_MEASUREMENTS_ID,        1,     0               },
     { MPPT_OUTPUT_MEASUREMENTS_ID,       1,     0               },
-    { MPPT_TEMP_MEASUREMENTS_ID,         1,     0               },
-    { GPS_DATA_LON_LAT_CAN_MESSAGE_ID,   1,     0               },
-    { MC_MEASUREMENTS_ID,                1,     0               },
-    { DRD_MOTOR_COMMAND_ID,              4,     0               }
+    { MPPT_TEMPERATURE_ID,               1,     0               },
+    { MPPT_STATUS_ID,                    1,     0               },
+    { TEL_TIME_SINCE_BOOTUP_ID,          1,     0               },
+    { TEL_DIAGNOSTICS_ID,                1,     0               },
+    { MDU_FRAME_0_ID,                    1,     0               },
+    { OBC_STATUS_ID,                     1,     0               }
 };
 
 
@@ -102,6 +118,7 @@ static bool filter(uint32_t can_id)
     #ifdef DEBUG
         return true;
     #else
+        // TODO: Use hashmap for speed?
         for (int i = 0; i < NUM_FILTERS; i++) {
             if (filter_whitelist[i].id == can_id) {
                 if ( ( (++filter_whitelist[i].count) % filter_whitelist[i].mod ) == 0) {
