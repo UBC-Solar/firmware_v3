@@ -34,7 +34,7 @@ typedef union U16Bytes {
 /*
  *  Function prototypes
  */
-void Set_fault_lights(uint32_t CAN_ID, uint8_t* data);
+void Fault_Lights_CAN_rx_handle(uint32_t CAN_ID, uint8_t* data);
 void parse_batt_faults(uint8_t* can_rx_data);
 void estop(uint8_t* can_rx_data);
 void parse_mtr_faults(uint8_t* can_rx_data);

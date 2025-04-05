@@ -36,13 +36,18 @@ extern CAN_HandleTypeDef hcan;
 
 /* USER CODE BEGIN Private defines */
 
-#define DRD_MOTOR_COMMAND_CAN_ID (0x401)
+#define DRD_MOTOR_COMMAND_CAN_ID         (0x401)
+#define MDI_TIME_SINCE_BOOTUP_CAN_ID     (0x500)
+#define MDI_DIAGNOSTIC_FLAGS_CAN_ID      (0x501)
 
 /* USER CODE END Private defines */
 
 void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
+void MDI_time_since_bootup();
+void MDI_diagnostic_flags();
 
 /* USER CODE END Prototypes */
 

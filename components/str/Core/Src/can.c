@@ -24,8 +24,12 @@
 
 /* PRIVATE INCLUDES */
 #define TURN_SIGNAL_MODE_CAN_DATA_LENGTH 1
+#define STR_BOOTUP_CAN_DATA_LENGTH 4
+#define STR_DIAGNOSTIC_FLAGS_CAN_DATA_LENGTH 1
 
 #define TURN_SIGNAL_MODE_MSG_ID  0x580
+#define STR_BOOTUP_MSG_ID 0x581
+#define STR_DIAGNOSTIC_FLAGS_MSG_ID 0x582
 
 /**
  * @brief CAN message headers for STR
@@ -36,6 +40,26 @@ CAN_TxHeaderTypeDef turn_signal_mode_can_header = {
     .IDE = CAN_ID_STD,
     .RTR = CAN_RTR_DATA,
     .DLC = TURN_SIGNAL_MODE_CAN_DATA_LENGTH};
+
+/**
+ * @brief CAN message headers for STR bootup time
+ */
+CAN_TxHeaderTypeDef STR_time_since_bootup_can_header = {
+  .StdId = STR_BOOTUP_MSG_ID,
+  .ExtId = 0x0000,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = STR_BOOTUP_CAN_DATA_LENGTH};
+
+/**
+ * @brief CAN message headers for STR diagnostic flags
+ */
+CAN_TxHeaderTypeDef STR_diagnostic_flags_can_header = {
+  .StdId = STR_DIAGNOSTIC_FLAGS_MSG_ID,
+  .ExtId = 0x0000,
+  .IDE = CAN_ID_STD,
+  .RTR = CAN_RTR_DATA,
+  .DLC = STR_DIAGNOSTIC_FLAGS_CAN_DATA_LENGTH};
 
 CAN_FilterTypeDef can_filter;
 
@@ -150,5 +174,32 @@ void CAN_tx_turn_signal_mode_msg(turn_signal_status_t turn_signal, mode_status_t
   uint32_t mailbox;
 
   HAL_CAN_AddTxMessage(&hcan, &turn_signal_mode_can_header, turn_signal_mode_reading, &mailbox);
+}
+
+/**
+ * @brief CAN message for the STR bootup time, or board heartbeat
+ */
+void STR_time_since_bootup(uint32_t time) {
+
+  union {
+    uint8_t bytes[4];
+    uint32_t data;
+  } CAN_data;
+  CAN_data.data = time;
+
+  uint32_t mailbox;
+
+  HAL_CAN_AddTxMessage(&hcan, &STR_time_since_bootup_can_header, CAN_data.bytes, &mailbox);
+}
+
+/**
+ * @brief CAN message for the iwdg and checking if the board has crashed or not
+ */
+void STR_diagnostic_flags()
+{
+  uint8_t data[1] = {g_str_diagnostic_flags.raw};
+
+  uint32_t mailbox;
+  HAL_CAN_AddTxMessage(&hcan, &STR_diagnostic_flags_can_header, data, &mailbox);
 }
 /* USER CODE END 1 */
