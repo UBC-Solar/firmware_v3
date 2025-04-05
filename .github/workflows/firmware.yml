@@ -10,12 +10,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3.1.0
 
-      #----- TEL -----#
-      - name: Build TEL
-        uses: xanderhendriks/action-build-stm32cubeide@v15.0
-        with:
-          project-path: 'components/tel'
-          project-target: 'tel'
+      # #----- TEL -----#
+      # - name: Build TEL
+      #   uses: xanderhendriks/action-build-stm32cubeide@v15.0
+      #   with:
+      #     project-path: 'components/tel'
+      #     project-target: 'tel'
 
       #----- DRD -----#
       - name: Build DRD
