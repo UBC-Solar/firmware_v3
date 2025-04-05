@@ -15,7 +15,8 @@
 /* PRIVATE FUNCTION PROTOTYPES */
 
 bool timer_check(uint32_t interval, uint32_t *last_tick);
-void check_supp_voltage(void);
+void control_supp_low_led(void);
+bool check_lvs_boards_on(void);
 
 /*============================================================================*/
 /* PRIVATE TYPE DEFS */
@@ -48,6 +49,7 @@ void FSM_Init()
 {
     uint32_t reset_flags = RCC->CSR;
 
+    // If IWDG was triggered, go into a fault state then return
     if (reset_flags & RCC_CSR_IWDGRSTF) {
         // After we're done reading the RCC_CSR_IWDGRSTF flag, reset all flags. RCC_CSR reset bits keep their values until cleared.
         // See Monday Update: https://ubcsolar26.monday.com/boards/7524367629/pulses/8628510380/posts/3952602594
@@ -57,10 +59,11 @@ void FSM_Init()
         printf("watchdog-triggered software reset \r\n");
         ecu_data.status.bits.reset_from_watchdog = 1; //CAN_message now knows watchdog event has occured
         FSM_state = FAULT;
+
+        return;
     }
-    else {
-        FSM_state = FSM_RESET;
-    }
+
+    FSM_state = FSM_RESET;
 
     return;
 }
@@ -100,7 +103,7 @@ void FSM_reset()
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, LOW);
 
     // Read supplemental battery
-    check_supp_voltage();
+    control_supp_low_led();
 
     FSM_state = WAIT_FOR_BMS_POWERUP;
 
@@ -587,7 +590,7 @@ void ECU_monitor()
     /*************************
     Check SUPP Voltage
     **************************/
-    check_supp_voltage();
+    control_supp_low_led();
 
     return;
 }
@@ -619,11 +622,10 @@ void fault()
 
     HAL_GPIO_WritePin(MDU_CTRL_GPIO_Port, MDU_CTRL_Pin, LOW);
 
-
     /****************************
     Preform Perpetual Fault Tasks
     *****************************/
-    check_supp_voltage();
+   control_supp_low_led();
 
     // send CAN status message
 
@@ -692,7 +694,10 @@ bool timer_check(uint32_t interval, uint32_t *last_tick)
     return false;
 }
 
-void check_supp_voltage(void)
+/**
+ * @brief Depending on voltage value of the supplemental battery, toggle the supp_low LED
+ */
+void control_supp_low_led(void)
 {
     if (ecu_data.adc_data.ADC_supp_batt_volt < SUPP_LIMIT)
     {
@@ -702,4 +707,11 @@ void check_supp_voltage(void)
     {
         HAL_GPIO_WritePin(SUPP_LOW_GPIO_Port, SUPP_LOW_Pin, LOW);
     }
+}
+
+/**
+ * @brief return true if all lvs boards are powered
+ */
+bool check_lvs_boards_on(void) {
+    // do this after the refactor and everything is renamed
 }
