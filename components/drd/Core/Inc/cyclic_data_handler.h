@@ -1,6 +1,9 @@
 #ifndef CYCLIC_DATA_HANDLER_H
 #define CYCLIC_DATA_HANDLER_H
 
+// User Defines
+#define MAX_CYCLE_TIME 3000 // Maximum cycle time in milliseconds
+
 // Set functions for cyclic data
 void set_cyclic_speed(float speed);
 void set_cyclic_pack_current(uint16_t current);

@@ -16,12 +16,12 @@
 ** drive_mode
 */
 /*	Datatypes */
-CYCLIC_DATA(float, cyclic_speed, 3000);  
-CYCLIC_DATA(int16_t, cyclic_pack_current, 3000);
-CYCLIC_DATA(uint16_t, cyclic_pack_voltage, 3000);
-CYCLIC_DATA(uint8_t, cyclic_drive_state, 3000);  
-CYCLIC_DATA(uint8_t, cyclic_drive_mode, 3000);
-CYCLIC_DATA(uint8_t, cyclic_soc, 3000);
+CYCLIC_DATA(float, cyclic_speed, MAX_CYCLE_TIME);  
+CYCLIC_DATA(int16_t, cyclic_pack_current, MAX_CYCLE_TIME);
+CYCLIC_DATA(uint16_t, cyclic_pack_voltage, MAX_CYCLE_TIME);
+CYCLIC_DATA(uint8_t, cyclic_drive_state, MAX_CYCLE_TIME);  
+CYCLIC_DATA(uint8_t, cyclic_drive_mode, MAX_CYCLE_TIME);
+CYCLIC_DATA(uint8_t, cyclic_soc, MAX_CYCLE_TIME);
 
 // Create functions that update the cyclic data.
 void set_cyclic_speed(float speed){
