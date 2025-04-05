@@ -30,7 +30,6 @@
 #include "canload.h"
 #include "CAN_comms.h"
 #include "rtc.h"
-#include "cpu_load.h"
 #include "bitops.h"
 #include "nmea_parse.h"
 
@@ -311,21 +310,6 @@ void CAN_tx_canload_msg() {
 
   CANLOAD_calculate_message_bits(CAN_comms_Tx_msg.header.DLC, CAN_comms_Tx_msg.header.IDE);
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
-}
-
-void CAN_cpu_load_can_tx(){
-   CAN_comms_Tx_msg_t CPU_LOAD_can_tx = {0};
-   FloatToBytes CPU_LOAD;
-
-   CPU_LOAD.f = CPU_LOAD_average();
-
-   CPU_LOAD_can_tx.header = cpu_load_can_header;
-   CPU_LOAD_can_tx.data[0] = CPU_LOAD.bytes[0];
-   CPU_LOAD_can_tx.data[1] = CPU_LOAD.bytes[1];
-   CPU_LOAD_can_tx.data[2] = CPU_LOAD.bytes[2];
-   CPU_LOAD_can_tx.data[3] = CPU_LOAD.bytes[3];
-  
-  CAN_comms_Add_Tx_message(&CPU_LOAD_can_tx);
 }
 
 union {
