@@ -30,6 +30,9 @@
 #include "lcd.h"
 #include "spi.h"
 #include "drive_state.h"
+#include "iwdg.h"
+#include "diagnostic.h"
+#include "cyclic_data_handler.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -40,7 +43,8 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define DEFAULT_TASK_DELAY 			  100
+#define TIME_SINCE_STARTUP_TASK_DELAY 1000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -100,6 +104,18 @@ const osThreadAttr_t DriveStateTask_attributes = {
   .stack_size = sizeof(DriveStateTaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for TimeSinceStartu */
+osThreadId_t TimeSinceStartuHandle;
+uint32_t TimeSinceStartuBuffer[ 128 ];
+osStaticThreadDef_t TimeSinceStartuControlBlock;
+const osThreadAttr_t TimeSinceStartu_attributes = {
+  .name = "TimeSinceStartu",
+  .cb_mem = &TimeSinceStartuControlBlock,
+  .cb_size = sizeof(TimeSinceStartuControlBlock),
+  .stack_mem = &TimeSinceStartuBuffer[0],
+  .stack_size = sizeof(TimeSinceStartuBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -110,6 +126,7 @@ void StartDefaultTask(void *argument);
 void ExternalLights_task(void *argument);
 void LCDUpdatetask(void *argument);
 void DriveState_task(void *argument);
+void TimeSinceStartup_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -152,6 +169,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of DriveStateTask */
   DriveStateTaskHandle = osThreadNew(DriveState_task, NULL, &DriveStateTask_attributes);
 
+  /* creation of TimeSinceStartu */
+  TimeSinceStartuHandle = osThreadNew(TimeSinceStartup_task, NULL, &TimeSinceStartu_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -172,11 +192,14 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+  DRD_diagnostics_transmit(&g_diagnostics, false);
   /* Infinite loop */
   for(;;)
   {
-	Motor_Controller_query_data();
-    osDelay(MC_FRAME_REQUEST_DELAY);
+	  Motor_Controller_query_data();
+	  IWDG_Refresh(&hiwdg);
+    osDelay(DEFAULT_TASK_DELAY);
+    DRD_diagnostics_transmit(&g_diagnostics, false); //transmit diagnostics every 100ms
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -195,7 +218,6 @@ void ExternalLights_task(void *argument)
   for(;;)
   {
 	  ExternalLights_state_machine();
-
 	  osDelay(LIGHTS_STATE_MACHINE_DELAY);
 
   }
@@ -220,14 +242,23 @@ void LCDUpdatetask(void *argument)
   
   for(;;)
   {
-    g_lcd_data.speed = velocity_kmh;
-    g_lcd_data.drive_state = drive_state;
-    g_lcd_data.drive_mode = eco_mode;
+    set_cyclic_speed((float) g_velocity_kmh);
+    g_lcd_data.speed = get_cyclic_speed();
 
-    LCD_display_power_bar((float) g_lcd_data.pack_current, (float) g_lcd_data.pack_voltage);
+    set_cyclic_drive_state(g_drive_state);
+    g_lcd_data.drive_state = get_cyclic_speed();
+    
+    set_cyclic_drive_mode(g_eco_mode);
+    g_lcd_data.drive_mode = get_cyclic_drive_mode();
+    
+    uint16_t cyclic_pack_current_data = get_cyclic_pack_current();
+    uint16_t cyclic_pack_voltage_data = get_cyclic_pack_current();
+    uint8_t cyclic_soc_data = get_cyclic_soc();
+
+    LCD_display_power_bar(cyclic_pack_current_data, cyclic_pack_voltage_data);
     LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
     LCD_display_drive_state(g_lcd_data.drive_state);
-    LCD_display_SOC(g_lcd_data.soc);
+    LCD_display_SOC(cyclic_soc_data);
     LCD_display_drive_mode(g_lcd_data.drive_mode);
 
     osDelay(LCD_UPDATE_DELAY);
@@ -245,7 +276,8 @@ void LCDUpdatetask(void *argument)
 void DriveState_task(void *argument)
 {
   /* USER CODE BEGIN DriveState_task */
-	input_flags.velocity_under_threshold = true;
+	g_input_flags.velocity_under_threshold = true;
+
   /* Infinite loop */
   for(;;)
   {
@@ -253,6 +285,26 @@ void DriveState_task(void *argument)
     Drive_State_Machine_handler();
   }
   /* USER CODE END DriveState_task */
+}
+
+/* USER CODE BEGIN Header_TimeSinceStartup_task */
+/**
+* @brief Function implementing the TimeSinceStartu thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_TimeSinceStartup_task */
+void TimeSinceStartup_task(void *argument)
+{
+  /* USER CODE BEGIN TimeSinceStartup_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    g_time_since_bootup++;
+    osDelay(TIME_SINCE_STARTUP_TASK_DELAY);
+    DRD_time_since_bootup();
+  }
+  /* USER CODE END TimeSinceStartup_task */
 }
 
 /* Private application code --------------------------------------------------*/
