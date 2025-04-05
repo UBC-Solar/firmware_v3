@@ -38,6 +38,7 @@ static uint8_t get_command_flags();
 static void clear_request_flags();
 static void velocity_CAN_msg_handle(uint8_t* data);
 static void steering_CAN_msg_handle(uint8_t* data);
+static uint16_t convert_to_dac(uint16_t adc);
 
 #ifdef DEBUG
     void state_request_CAN_msg_handle(uint8_t* data);
@@ -51,6 +52,11 @@ volatile drive_state_t g_drive_state = PARK;
 
 uint16_t g_throttle_DAC = 0;
 input_flags_t g_input_flags;
+
+/* DEFINES */
+#define MC_DAC_MAX     1023        // Note: This gets capped by MDI to 920 anyways for safety
+#define MAX(a, b) ((a) < (b) ? (b) : (a))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 
 /*		DRIVE STATE MACHINE HANDLING	*/
@@ -316,7 +322,6 @@ void Drive_State_interrupt_handler(uint16_t pin)
 
 /*		Handle Acceleration Readings	*/
 
-
 /*
  * @brief sets throttle_DAC with DAC accel value, generated from
  * 		reading adc1 and adc2, and normalizing them.
@@ -336,36 +341,33 @@ void get_accel_readings()
 	}
 
 	normalize_adc_values(adc1, adc2);
-
 }
 
 
 /*
- * @brief Normalizes adc1 and adc2 into a single accel DAC value.
+ * @brief Sets the throttle DAC by normalizing the ADC values
  *
  * @param adc1 - 12 bit ADC reading of first accelerator potentiometer
  * @param adc2 - 12 bit ADC reading of second accelerator potentiometer
  */
 void normalize_adc_values(uint16_t adc1, uint16_t adc2)
 {
-	//Todo: confirm ADC orientation
-	// uint16_t average_adc = ((adc1 + adc2)/2);
-	uint16_t average_adc = (adc1);
+    uint16_t dac_from_adc1 = convert_to_dac(adc1);
+    uint16_t dac_from_adc2 = convert_to_dac(adc2);
 
-	if (average_adc < ADC_NO_THROTTLE_MAX)
-	{
-		g_throttle_DAC = 0;
-		return;
-	}
+    g_throttle_DAC = (dac_from_adc1 + dac_from_adc2) / 2;        // Take the average
+}
 
-	if (average_adc > ADC_FULL_THROTTLE_MIN)
-	{
-		g_throttle_DAC = ADC_THROTTLE_MAX;
-		return;
-	}
 
-	g_throttle_DAC = average_adc >> 2; //get rid of least 2 bits for 10 bit DAC on MC
-
+/**
+ * @brief Converts pedal 12 bit ADC to 10 bit DAC. 
+ *
+ * @param adc - ADC value that passed through check validity function.
+ */
+uint16_t convert_to_dac(uint16_t adc)
+{
+    adc = MIN(MAX(adc, ADC_NO_THROTTLE_MAX), ADC_FULL_THROTTLE_MIN);    // Keep adc val within throttle range
+    return ((adc - ADC_NO_THROTTLE_MAX) * MC_DAC_MAX) / (ADC_FULL_THROTTLE_MIN - ADC_NO_THROTTLE_MAX);
 }
 
 
@@ -379,12 +381,12 @@ void normalize_adc_values(uint16_t adc1, uint16_t adc2)
  */
 bool accel_check_validity(uint16_t adc1, uint16_t adc2)
 {
-	if (adc1 < ADC_LOWER_DEADZONE || adc1 > ADC_UPPER_DEADZONE)
+	if ((adc1 < ADC_LOWER_DEADZONE) || (adc1 > ADC_UPPER_DEADZONE))
 	{
 		g_diagnostics.flags.throttle_ADC_out_of_range = true;
 		return false;
 	}
-	if (adc2 < ADC_LOWER_DEADZONE || adc2 > ADC_UPPER_DEADZONE)
+	if ((adc2 < ADC_LOWER_DEADZONE) || (adc2 > ADC_UPPER_DEADZONE))
 	{
 		g_diagnostics.flags.throttle_ADC_out_of_range = true;
 		return false;
