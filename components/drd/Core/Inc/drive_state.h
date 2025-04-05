@@ -28,7 +28,7 @@
 #define ADC_FULL_THROTTLE_MIN 1000      // Max possible value for ADC. 1.2V
 #define ADC_LOWER_DEADZONE 300 
 #define ADC_UPPER_DEADZONE 4000 
-#define ADC_MAX_DIFFERENCE 100          // change when we have a better idea
+#define ADC_MAX_DIFFERENCE 99999          // change when we have a better idea
 
 #define WHEEL_RADIUS 0.283
 #define M_PI 3.14159
