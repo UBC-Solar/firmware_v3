@@ -22,6 +22,7 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
+#include "cyclic_data.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -240,7 +241,8 @@ void LCDUpdatetask(void *argument)
   
   for(;;)
   {
-    g_lcd_data.speed = g_velocity_kmh;
+    float* speed = CYCLIC_DATA_GET(g_velocity_kmh);
+    g_lcd_data.speed = *speed;
     g_lcd_data.drive_state = g_drive_state;
     g_lcd_data.drive_mode = g_eco_mode;
 

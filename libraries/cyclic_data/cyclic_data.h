@@ -30,7 +30,7 @@
  */
 #define CYCLIC_DATA(datatype, name, max_cycle_time)               \
     struct {                                                      \
-        datatype data;                                            \
+        volatile datatype data;                                   \
         uint32_t cycle_time;                                      \
         uint32_t last_set_time;                                   \
     } name = { .cycle_time = max_cycle_time, .last_set_time = 0 }

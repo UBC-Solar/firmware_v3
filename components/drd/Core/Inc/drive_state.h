@@ -74,8 +74,9 @@ typedef enum {
 
 extern input_flags_t g_input_flags;
 extern volatile drive_state_t g_drive_state;
+EXTERN_CYCLIC_DATA(float, g_velocity_kmh);
 extern volatile bool g_eco_mode;
-extern volatile uint32_t g_velocity_kmh;
+
 
 
 /*	Functions	*/

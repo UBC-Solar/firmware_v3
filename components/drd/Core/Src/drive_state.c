@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "diagnostic.h"
+#include "cyclic_data.h"
 
 
 /*	Local Function Declarations	*/
@@ -45,7 +46,7 @@ static void steering_CAN_msg_handle(uint8_t* data);
 
 
 /*	Global Variables	*/
-volatile uint32_t g_velocity_kmh = 0;
+CYCLIC_DATA(float, g_velocity_kmh, 3000);
 volatile bool g_eco_mode = true;
 volatile drive_state_t g_drive_state = PARK;
 
@@ -467,7 +468,7 @@ void velocity_CAN_msg_handle(uint8_t* data)
 {
 	uint32_t rpm = (data[4] >> 3) | ((data[5] & 0x7f) << 5); //35th to 46th bit
 	float velocity = (WHEEL_RADIUS * 2.0 * M_PI * rpm) / 60.0;
-	g_velocity_kmh = velocity * 3.6;
+	CYCLIC_DATA_SET(g_velocity_kmh, (float) (velocity * 3.6)); //convert to km/h
 
 	if (velocity < VELOCITY_THRESHOLD)
 	{
