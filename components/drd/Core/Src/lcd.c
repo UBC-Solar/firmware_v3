@@ -274,7 +274,11 @@ void LCD_display_speed(uint32_t speed, int units)
     lcd_clear_bounding_box(SPEED_X - SPEED_SPACING, SPEED_Y, old_bb_speed.x2 + SPEED_SPACING, BOTTOM_RIGHT_Y);
     lcd_clear_bounding_box(old_bb_speed.x2 - SPEED_SPACING, SPEED_Y, old_bb_speed_units.x2 + SPEED_UNITS_SPACING, SPEED_Y + 11);
     
-    if (speed < 10) { // Single digit speed
+    if (speed == 0xFFFFFFFF) {  // Sentinel for stale speed data
+        sprintf(speed_str, "--");
+        old_bb_speed = draw_text(speed_str, SPEED_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+    } 
+    else if (speed < 10) { // Single digit speed
         sprintf(speed_str, "%01lu", (unsigned long)speed);  
         old_bb_speed = draw_text(speed_str, SPEED_X + 14, SPEED_Y, SPEED_FONT, SPEED_SPACING);
     } else {
@@ -283,17 +287,22 @@ void LCD_display_speed(uint32_t speed, int units)
     }
     
     /* Draw the speed units */
-    switch (units) {
-        case KPH:
-            old_bb_speed_units = draw_text("kph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
-            break;
-            case MPH:
-            old_bb_speed_units = draw_text("mph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
-            break;
-        default:
-            old_bb_speed_units = draw_text("xxx", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
-            break;
-    }
+    if (speed == 0xFFFFFFFF) {
+        old_bb_speed_units = draw_text("", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+    } 
+    else {
+       switch (units) {
+           case KPH:
+               old_bb_speed_units = draw_text("kph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+               break;
+           case MPH:
+               old_bb_speed_units = draw_text("mph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+               break;
+           default:
+               old_bb_speed_units = draw_text("xxx", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+               break;
+       }
+   }
     lcd_refresh();
 }
 
@@ -306,19 +315,23 @@ void LCD_display_drive_state(drive_state_t state)
 {
     char state_str[2] = {ERROR_SYMBOL, '\0'};  // Default to error symbol.
     lcd_clear_bounding_box(STATE_X, STATE_Y, old_bb_drive_state.x2, BOTTOM_RIGHT_Y);
-    
-    switch (state) {
-        case FORWARD:
-            state_str[STATE_IDX] = FORWARD_SYMBOL;
-            break;
-        case PARK:
-            state_str[STATE_IDX] = PARK_SYMBOL; 
-            break;
-        case REVERSE:
-            state_str[STATE_IDX] = REVERSE_SYMBOL;
-            break;
-        default:
-            break;
+    if (state == 0xFF) {  // Stale data sentinel for drive state
+        sprintf(state_str, "-");
+    } else {
+        switch (state) {
+            case FORWARD:
+                state_str[0] = FORWARD_SYMBOL;
+                break;
+            case PARK:
+                state_str[0] = PARK_SYMBOL;
+                break;
+            case REVERSE:
+                state_str[0] = REVERSE_SYMBOL;
+                break;
+            default:
+                state_str[0] = ERROR_SYMBOL;
+                break;
+        }
     }
     old_bb_drive_state = draw_text(state_str, STATE_X, STATE_Y, STATE_FONT, STATE_SPACING);
     lcd_refresh();
@@ -335,7 +348,12 @@ void LCD_display_SOC(uint32_t soc)
     bounding_box_t bb;
     lcd_clear_bounding_box(SOC_X - SOC_SPACING, SOC_Y, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
     
-    if (soc < 10) {
+    // Check for stale data and display "--" if so.
+    if (soc == 0xFF) {
+        sprintf(soc_str, "--");
+        bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
+    } 
+    else if (soc < 10) {
         sprintf(soc_str, "%01lu", (unsigned long)soc);
         bb = draw_text(soc_str, SOC_X + 10, SOC_Y, SOC_FONT, SOC_SPACING);
     } else {
@@ -357,14 +375,35 @@ void LCD_display_SOC(uint32_t soc)
  */
 void LCD_display_power_bar(float pack_current, float pack_voltage)
 {
-    float power = pack_current * pack_voltage;
-    int fill_pixels = 0;
-
     /* Clear the drawing area (including extra space for the center line) */
     lcd_clear_bounding_box(BAR_LEFT, BAR_TOP, BAR_RIGHT, BAR_BOTTOM + 3);
 
     /* Draw the outline of the power bar */
     draw_rectangle(BAR_LEFT, BAR_TOP, BAR_RIGHT, BAR_BOTTOM, 1);
+
+    /* Check for stale data: if either of voltage or current equals our float for 0xFFFF = 65535.
+       I will draw a cross over the bar, we can change this later. */
+    if (pack_current == 65535.0f || pack_voltage == 65535.0f) {
+        int bar_width = BAR_RIGHT - BAR_LEFT; //I will use this to find the slope of the diagonal lines
+        int bar_height = BAR_BOTTOM - BAR_TOP;
+        /* Draw diagonal from top-left to bottom-right */
+        for (int i=0; i <= bar_height; i++) {
+            int x = BAR_LEFT + (i * bar_width) / bar_height; //each x pixel is given as a straight line function of y pixed (used: y = mx + b)
+            int y = BAR_TOP + i;
+            lcd_pixel(x, y, 1);
+        }
+        /* Draw diagonal from top-right to bottom-left */
+        for (i = 0; i <= bar_height; i++) {
+            int x = BAR_RIGHT - (i * bar_width) / bar_height;
+            int y = BAR_TOP + i;
+            lcd_pixel(x, y, 1);
+        }
+        lcd_refresh();
+        return;
+    }
+
+    float power = pack_current * pack_voltage;
+    int fill_pixels = 0;
 
     if (power > 0) {
         float ratio = power / MAX_POSITIVE_POWER;
