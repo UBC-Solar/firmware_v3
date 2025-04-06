@@ -393,7 +393,7 @@ void LCD_display_power_bar(float pack_current, float pack_voltage)
             lcd_pixel(x, y, 1);
         }
         /* Draw diagonal from top-right to bottom-left */
-        for (i = 0; i <= bar_height; i++) {
+        for (int i = 0; i <= bar_height; i++) {
             int x = BAR_RIGHT - (i * bar_width) / bar_height;
             int y = BAR_TOP + i;
             lcd_pixel(x, y, 1);
