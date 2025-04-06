@@ -24,9 +24,9 @@
 #define REGEN_DAC_OFF 0
 #define ACCEL_DAC_OFF 0
 
-#define ADC_NO_THROTTLE_MAX 450         // Min possible value for ADC. 0.6V
-#define ADC_FULL_THROTTLE_MIN 1000      // Max possible value for ADC. 1.2V
-#define ADC_LOWER_DEADZONE 300 
+#define ADC_LOWER_DEADZONE 550 
+#define ADC_NO_THROTTLE_MAX 725         
+#define ADC_FULL_THROTTLE_MIN 1350      
 #define ADC_UPPER_DEADZONE 4000 
 #define ADC_MAX_DIFFERENCE 99999          // change when we have a better idea
 

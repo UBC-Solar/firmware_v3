@@ -353,7 +353,7 @@ void get_accel_readings()
 void normalize_adc_values(uint16_t adc1, uint16_t adc2)
 {
     uint16_t dac_from_adc1 = convert_to_dac(adc1);
-    uint16_t dac_from_adc2 = convert_to_dac(adc1);
+    uint16_t dac_from_adc2 = convert_to_dac(adc1);      // CHANGE THIS TO adc2 LATER
     // uint16_t dac_from_adc1 = convert_to_dac(adc1);
     // uint16_t dac_from_adc2 = convert_to_dac(adc2);
 
@@ -369,7 +369,7 @@ void normalize_adc_values(uint16_t adc1, uint16_t adc2)
 uint16_t convert_to_dac(uint16_t adc)
 {
     adc = MIN(MAX(adc, ADC_NO_THROTTLE_MAX), ADC_FULL_THROTTLE_MIN);    // Keep adc val within throttle range
-    return ((adc - ADC_NO_THROTTLE_MAX) * MC_DAC_MAX) / (ADC_FULL_THROTTLE_MIN - ADC_NO_THROTTLE_MAX);
+    return ((adc - ADC_NO_THROTTLE_MAX) * MC_DAC_MAX) / (ADC_FULL_THROTTLE_MIN - ADC_NO_THROTTLE_MAX);      // Find ratio between 0 to 1 and then * 1023
 }
 
 

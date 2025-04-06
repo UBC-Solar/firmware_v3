@@ -52,24 +52,37 @@ typedef struct {
 } CanFilter_t;
 
 // Definitions for CAN IDs (add or adjust as needed)
-#define DRD_MOTOR_COMMAND_ID                0x401
 #define DRD_DIAGNOSTICS_ID                  0x403
-#define DRD_TIME_SINCE_BOOTUP_ID            0x404
-#define ECU_STATUS_ID                       0x450
-#define MDI_TIME_SINCE_BOOTUP_ID            0x500
 #define MDI_DIAGNOSTICS_ID                  0x501
 #define STR_DIAGNOSTICS_ID                  0x581
+#define TEL_DIAGNOSTICS_ID                  0x751
+
+#define DRD_TIME_SINCE_BOOTUP_ID            0x404
+#define MDI_TIME_SINCE_BOOTUP_ID            0x500
 #define STR_TIME_SINCE_BOOTUP_ID            0x582
+#define TEL_TIME_SINCE_BOOTUP_ID            0x750
+
+#define GPS_LONG_LAT_ID                     0x756
+
+#define DRD_MOTOR_COMMAND_ID                0x401
+
+#define ECU_STATUS_ID                       0x450
+#define BMS_FAULTS_ID                       0x622
 #define BMS_VOLTAGE_SUMMARY_VOLTAGE_ID      0x623
+#define BMS_PACK_HEALTH_ID                  0x624
+#define BMS_TEMP_SUMMARY_ID                 0x625
 #define BMS_MODULE_VOLTAGES_ID              0x626
 #define BMS_MODULE_TEMPERATURES_ID          0x627
+
 #define MPPT_INPUT_MEASUREMENTS_ID          0x6A0
 #define MPPT_OUTPUT_MEASUREMENTS_ID         0x6A1
 #define MPPT_TEMPERATURE_ID                 0x6A2
 #define MPPT_STATUS_ID                      0x6A5
-#define TEL_TIME_SINCE_BOOTUP_ID            0x750
-#define TEL_DIAGNOSTICS_ID                  0x751
+
 #define MDU_FRAME_0_ID                      0x08850225
+#define MDU_FRAME_1_ID                      0x08950225
+#define MDU_FRAME_2_ID                      0x08A50225
+
 #define OBC_STATUS_ID                       0x18FF50E5
 
 // Mod values (1 means every message, other values rate-limit the Tx)
@@ -80,7 +93,7 @@ typedef struct {
 static CanFilter_t filter_whitelist[] = {
     //         CAN ID                   MOD    COUNT
     { DRD_MOTOR_COMMAND_ID,              4,     0               },
-    { DRD_DIAGNOSTICS_ID,                1,     0               },
+    { DRD_DIAGNOSTICS_ID,                4,     0               },
     { DRD_TIME_SINCE_BOOTUP_ID,          1,     0               },
     { ECU_STATUS_ID,                     1,     0               },
     { MDI_TIME_SINCE_BOOTUP_ID,          1,     0               },
@@ -89,6 +102,9 @@ static CanFilter_t filter_whitelist[] = {
     { STR_TIME_SINCE_BOOTUP_ID,          1,     0               },
     { BMS_VOLTAGE_SUMMARY_VOLTAGE_ID,    1,     0               },
     { BMS_MODULE_VOLTAGES_ID,            9,     0               },
+    { BMS_FAULTS_ID,                     1,     0               },
+    { BMS_TEMP_SUMMARY_ID,               10,     0               },
+    { BMS_PACK_HEALTH_ID,                1,     0               },
     { BMS_MODULE_TEMPERATURES_ID,        9,     0               },
     { MPPT_INPUT_MEASUREMENTS_ID,        1,     0               },
     { MPPT_OUTPUT_MEASUREMENTS_ID,       1,     0               },
@@ -96,8 +112,11 @@ static CanFilter_t filter_whitelist[] = {
     { MPPT_STATUS_ID,                    1,     0               },
     { TEL_TIME_SINCE_BOOTUP_ID,          1,     0               },
     { TEL_DIAGNOSTICS_ID,                1,     0               },
-    { MDU_FRAME_0_ID,                    1,     0               },
-    { OBC_STATUS_ID,                     1,     0               }
+    { MDU_FRAME_0_ID,                    5,     0               },
+    { MDU_FRAME_1_ID,                    5,     0               },
+    { MDU_FRAME_2_ID,                    5,     0               },
+    { OBC_STATUS_ID,                     1,     0               },
+    { GPS_LONG_LAT_ID,                   1,     0               },
 };
 
 
