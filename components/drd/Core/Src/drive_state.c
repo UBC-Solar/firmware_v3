@@ -216,6 +216,7 @@ void motor_command_package_and_send(motor_command_t* motor_command, bool from_IS
 	data[1] = accel_second_byte;
 	data[2] = regen_first_byte;
 	data[3] = regen_second_byte;
+    motor_command->motor_command_flags |= (0x1 << 1);
 	data[4] = motor_command->motor_command_flags;
 
 	memcpy(msg.data, data, CAN_DATA_SIZE);
@@ -428,7 +429,7 @@ uint8_t get_command_flags()
 {
 	uint8_t flags = 0;
 	flags |= (g_drive_state == REVERSE  ? 0: 1); //direction value: 0 for reverse, 1 for forward or Park
-	flags |= (g_input_flags.eco_mode_on ? 1 << 1: 0);
+	flags |= (g_input_flags.eco_mode_on ? 1 << 1: 0);       // 1 is eco mode.
 	return flags;
 }
 

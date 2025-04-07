@@ -65,8 +65,9 @@ def send_message(bus, can_id, data, rate, dlc, board_delay, num_in_burst):
                     bus.send(message)
                     can_messages[can_id][MSG_COUNT_IDX] += 1
                     print(f"ID: {can_id}, Count: {can_messages[can_id][MSG_COUNT_IDX]}")
+                    time.sleep(0.001)
         except can.CanError as e:
-            print(f"Message NOT sent {e}")
+            print(f"Message NOT sent {e}") 
         time.sleep(rate * RATE_SCALER)
 
 def send_can_messages():
