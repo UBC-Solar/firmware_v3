@@ -100,7 +100,7 @@ static CanFilter_t filter_whitelist[] = {
     { MDI_DIAGNOSTICS_ID,                1,     0               },
     { STR_DIAGNOSTICS_ID,                1,     0               },
     { STR_TIME_SINCE_BOOTUP_ID,          1,     0               },
-    { BMS_VOLTAGE_SUMMARY_VOLTAGE_ID,    1,     0               },
+    { BMS_VOLTAGE_SUMMARY_VOLTAGE_ID,    10,     0               },
     { BMS_MODULE_VOLTAGES_ID,            9,     0               },
     { BMS_FAULTS_ID,                     1,     0               },
     { BMS_TEMP_SUMMARY_ID,               10,     0               },
@@ -112,7 +112,7 @@ static CanFilter_t filter_whitelist[] = {
     { MPPT_STATUS_ID,                    1,     0               },
     { TEL_TIME_SINCE_BOOTUP_ID,          1,     0               },
     { TEL_DIAGNOSTICS_ID,                1,     0               },
-    { MDU_FRAME_0_ID,                    5,     0               },
+    { MDU_FRAME_0_ID,                    1,     0               },
     { MDU_FRAME_1_ID,                    5,     0               },
     { MDU_FRAME_2_ID,                    5,     0               },
     { OBC_STATUS_ID,                     1,     0               },
@@ -163,9 +163,11 @@ void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 
     if (filter(can_id))
     {
+        osSemaphoreAcquire(usart1_tx_semaphore, osWaitForever);   // Dont Tx until previous Tx is done
+        
         /* Create radio message struct */
         set_radio_msg(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data, &radio_msg);
-    
+        
         /* Transmit Radio Message */
         UART_radio_transmit(&radio_msg);
     }
@@ -178,10 +180,12 @@ void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
  */
 void RADIO_filter_and_queue_msg_tx(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
 {
-	  uint32_t can_id = (CAN_comms_Tx_msg->header.IDE == CAN_ID_STD)? CAN_comms_Tx_msg->header.StdId : CAN_comms_Tx_msg->header.ExtId;
-
+    uint32_t can_id = (CAN_comms_Tx_msg->header.IDE == CAN_ID_STD)? CAN_comms_Tx_msg->header.StdId : CAN_comms_Tx_msg->header.ExtId;
+    
     if (filter(can_id))
     {
+        osSemaphoreAcquire(usart1_tx_semaphore, osWaitForever);   // Dont Tx until previous Tx is done
+        
         /* Create radio message struct */
         set_radio_msg_tx(&(CAN_comms_Tx_msg->header), CAN_comms_Tx_msg->data, &radio_msg);
 

@@ -50,7 +50,7 @@ void send_time_since_bootup_can_radio()
   * @brief  Sends tel flags via CAN
   * @retval None
   */
-void send_tel_flags_can()
+void send_tel_flags_can_radio()
 {
     CAN_comms_Tx_msg_t tel_flags_can_tx = {
         .data[0] = g_tel_diagnostic_flags.raw,
@@ -59,6 +59,7 @@ void send_tel_flags_can()
 
     CAN_comms_Add_Tx_message(&tel_flags_can_tx);
     osDelay(3);
+    RADIO_filter_and_queue_msg_tx(&tel_flags_can_tx);
 }
 
 /**
@@ -68,7 +69,7 @@ void send_tel_flags_can()
 void DIAGNOSTIC_send_can()
 {
     send_time_since_bootup_can_radio();
-    send_tel_flags_can();
+    send_tel_flags_can_radio();
 }
 
 /**
