@@ -421,7 +421,7 @@ void DRD_on()
     if (timer_check(LVS_INTERVAL, &(ticks.last_generic_tick) ))
     {
         // Between revision of the car MCB was combined into the DRD.
-        HAL_GPIO_WritePin(MCB_CTRL_GPIO_Port, MCB_CTRL_Pin, HIGH);
+        HAL_GPIO_WritePin(DRD_CTRL_GPIO_Port, DRD_CTRL_Pin, HIGH);
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = MDU_ON;
     }
