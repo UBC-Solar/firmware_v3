@@ -1,24 +1,3 @@
-- ID: "0x701"
-  interval: 250
-  data: "0000000000000000"
-  dlc: 8
-  num_msgs_sent_in_burst: 1         # Only affected by multiplexed messages which send quickly in a burst
-  board_delay: 600
-
-- ID: "0x702"
-  interval: 250
-  data: "0000000000000000"
-  dlc: 8
-  num_msgs_sent_in_burst: 1  
-  board_delay: 600
-
-- ID: "0x703"
-  interval: 250
-  data: "0000000000000000"
-  dlc: 8
-  num_msgs_sent_in_burst: 1  
-  board_delay: 600
-
 - ID: "0x622"
   interval: 100
   data: "00000000000000"
@@ -82,79 +61,192 @@
   num_msgs_sent_in_burst: 1  
   board_delay: 0
 
-- ID: "0x1806E5F4"
-  interval: 1000
-  data: "000000000000000000"
-  dlc: 8
-  num_msgs_sent_in_burst: 1  
-  board_delay: 0
+# - ID: "0x1806E5F4"
+#   interval: 1000
+#   data: "000000000000000000"
+#   dlc: 8
+#   num_msgs_sent_in_burst: 1  
+#   board_delay: 145
 
-- ID: "0x18FF50E5"
-  interval: 1000
-  data: "000000000000000000"
-  dlc: 8
-  num_msgs_sent_in_burst: 1  
-  board_delay: 0
+# - ID: "0x18FF50E5"
+#   interval: 1000
+#   data: "000000000000000000"
+#   dlc: 8
+#   num_msgs_sent_in_burst: 1  
+#   board_delay: 145
 
 - ID: "0x08F89540"
-  interval: 200
+  interval: 100
   data: "0000000000000000"
   dlc: 8
   num_msgs_sent_in_burst: 1  
-  board_delay: 0
+  board_delay: 127
 
 - ID: "0x08850225"
-  interval: 200
+  interval: 100
   data: "0000000000000000"
   dlc: 8
   num_msgs_sent_in_burst: 1  
-  board_delay: 0
+  board_delay: 254
+
+- ID: "0x08950225"
+  interval: 100
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 254
 
 - ID: "0x08A50225"
-  interval: 200
+  interval: 100
   data: "00000000"
   dlc: 8
   num_msgs_sent_in_burst: 1  
-  board_delay: 0
+  board_delay: 254
 
-- ID: "0x401"
-  interval: 50
+- ID: "0x403"
+  interval: 100
   data: "0000000000000000"
   dlc: 8
   num_msgs_sent_in_burst: 1  
-  board_delay: 400
+  board_delay: 381
+
+- ID: "0x404"
+  interval: 1000
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 381
+
+- ID: "0x401"
+  interval: 25
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 381
 
 - ID: "0x300"
   interval: 1000
   data: "0000000000000000"
   dlc: 8
   num_msgs_sent_in_burst: 1  
-  board_delay: 200
+  board_delay: 0
 
 - ID: "0x750"
   interval: 1000
   data: "0000000000000000"
   dlc: 8
   num_msgs_sent_in_burst: 1  
-  board_delay: 100
+  board_delay: 508
+
+- ID: "0x751"
+  interval: 1000
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 508
 
 - ID: "0x752"
-  interval: 500
+  interval: 100
   data: "0000000000000000"
   dlc: 8
   num_msgs_sent_in_burst: 1  
-  board_delay: 100
+  board_delay: 508
 
 - ID: "0x753"
-  interval: 500
+  interval: 100
   data: "0000000000000000"
   dlc: 8
   num_msgs_sent_in_burst: 1  
-  board_delay: 100
+  board_delay: 508
 
 - ID: "0x754"
-  interval: 500
+  interval: 100
   data: "0000000000000000"
   dlc: 8
   num_msgs_sent_in_burst: 1  
-  board_delay: 100
+  board_delay: 508
+
+- ID: "0x755"
+  interval: 250
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 508
+
+- ID: "0x756"
+  interval: 250
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 508
+
+- ID: "0x757"
+  interval: 250
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 508
+
+- ID: "0x758"
+  interval: 250
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 508
+
+- ID: "0x759"
+  interval: 250
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 508
+
+- ID: "0x760"
+  interval: 250
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 508
+
+- ID: "0x761"
+  interval: 250
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 508
+  
+- ID: "0x500"
+  interval: 1000
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 635
+
+- ID: "0x501"
+  interval: 1000
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 635
+  
+- ID: "0x580"
+  interval: 2000
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 635
+
+- ID: "0x581"
+  interval: 1000
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 635
+  
+- ID: "0x582"
+  interval: 1000
+  data: "0000000000000000"
+  dlc: 8
+  num_msgs_sent_in_burst: 1  
+  board_delay: 635
+  

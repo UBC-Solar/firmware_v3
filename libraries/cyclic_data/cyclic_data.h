@@ -28,14 +28,12 @@
  * @param name The name of the cyclic data instance (e.g., temperature_data, speed_data, etc.).
  * @param max_cycle_time The maximum cycle time in milliseconds.
  */
-#define CYCLIC_DATA(datatype, name, max_cycle_time) \
-    struct {                                        \
-        datatype data;                              \
-        uint32_t cycle_time;                        \
-        uint32_t last_set_time;                     \
-    } name;                                         \
-    name.max_cycle_time = max_cycle_time;           \
-    name.last_set_time = 0;
+#define CYCLIC_DATA(datatype, name, max_cycle_time)               \
+    struct {                                                      \
+        datatype data;                                            \
+        uint32_t cycle_time;                                      \
+        uint32_t last_set_time;                                   \
+    } name = { .cycle_time = max_cycle_time, .last_set_time = 0 }
 
 
 /**
@@ -47,9 +45,11 @@
  * @param name The name of the cyclic data instance (created using CYCLIC_DATA).
  * @param new_data The new value to be stored in the cyclic data instance.
  */
-#define CYCLIC_DATA_SET(name, new_data) \
-    name.data = new_data;               \
-    name.last_set_time = HAL_GetTick();
+#define CYCLIC_DATA_SET(name, new_data)     \
+    do {                                    \
+        name.data = new_data;               \
+        name.last_set_time = HAL_GetTick(); \
+    } while(0)
 
 
 /**
@@ -65,7 +65,7 @@
  * 
  * @return Pointer to the data if it's within the valid cycle time, otherwise NULL.
  */
-#define CYCLIC_DATA_GET(name) (HAL_GetTick() > (name.max_cycle_time + name.last_set_time) ? &(name.data) : NULL)
+#define CYCLIC_DATA_GET(name) (HAL_GetTick() > (name.cycle_time + name.last_set_time) ? NULL : &(name.data))
 
 
 #endif

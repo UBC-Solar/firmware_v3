@@ -17,10 +17,17 @@
 #define GETBIT(var, bit)	(((var) >> (bit)) & 1) // gives bit position
 
 // Global variable for pack_current_sign
-static uint8_t last_pack_current_sign = 0;
+static uint8_t g_last_pack_current_sign = 0;
 
 
-void Set_fault_lights(uint32_t CAN_ID, uint8_t* data){
+/*
+ *	@brief Function which handles recieved CAN messages containing fault light data.
+ *
+ *	@param CAN ID, the ID of the CAN message, which can either be standard or extended
+ *	@param data, byte array of CAN Data
+ *
+ */
+void Fault_Lights_CAN_rx_handle(uint32_t CAN_ID, uint8_t* data){
 
 	if (data == NULL) {
 	    return; // Handle error gracefully
@@ -29,7 +36,7 @@ void Set_fault_lights(uint32_t CAN_ID, uint8_t* data){
 	switch(CAN_ID){
 		case CAN_ID_PACK_CURRENT:
 			estop(data);
-			last_pack_current_sign = GETBIT(data[1],7); //reading the 2's compliment pack current's MSB to get the sign
+			g_last_pack_current_sign = GETBIT(data[1],7); //reading the 2's compliment pack current's MSB to get the sign
 			break;
 
 		case CAN_ID_MTR_FAULTS:
@@ -99,8 +106,8 @@ void parse_batt_faults(uint8_t* can_rx_data){
 	undervolt_fault = GETBIT(temp_byte, 3);
 	overvolt_fault = GETBIT(temp_byte, 4);
 	discharge_or_charge_overcurr_fault = GETBIT(temp_byte, 6);
-	charge_overcurrent_fault = (discharge_or_charge_overcurr_fault && last_pack_current_sign);  	 	// Charging overcurrent fault if pack current is negative(MSB = 1)
-	discharge_overcurrent_fault = (discharge_or_charge_overcurr_fault && (!last_pack_current_sign));  	// Discharging overcurrent fault if pack current is positive (MSB = 0)
+	charge_overcurrent_fault = (discharge_or_charge_overcurr_fault && g_last_pack_current_sign);  	 	// Charging overcurrent fault if pack current is negative(MSB = 1)
+	discharge_overcurrent_fault = (discharge_or_charge_overcurr_fault && (!g_last_pack_current_sign));  	// Discharging overcurrent fault if pack current is positive (MSB = 0)
 
 	HAL_GPIO_WritePin(BMS_COMM_FLT_GPIO_Port, BMS_COMM_FLT_Pin, slave_board_comm_fault); 	// BMS communications fault
 	HAL_GPIO_WritePin(BATT_OV_GPIO_Port, BATT_OV_Pin, overvolt_fault); 					 	// Battery over voltage fault

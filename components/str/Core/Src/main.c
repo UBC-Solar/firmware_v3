@@ -20,6 +20,7 @@
 #include "main.h"
 #include "adc.h"
 #include "can.h"
+#include "iwdg.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -39,6 +40,8 @@
 
 volatile turn_signal_status_t g_turn_signal_status = 0;
 volatile mode_status_t g_mode_status = 0;
+
+uint32_t g_last_time = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -137,7 +140,13 @@ int main(void)
   MX_CAN_Init();
   MX_UART5_Init();
   MX_ADC1_Init();
-  /* USER CODE BEGIN 2 */
+  MX_IWDG_Init();
+  /* USER CODE BEGIN 2 */   
+  g_str_diagnostic_flags.raw = 0; 
+  
+  IWDG_perform_reset_sequence();      // Check for IWDG reset
+  STR_diagnostic_flags();
+
   turn_signal_status_t turn_status = get_turn_signal_status();
 
   mode_status_t mode_status = get_mode_status();
@@ -149,13 +158,18 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
+    IWDG_Refresh(&hiwdg);       // Prescaler = 4, CR
 
-    /* USER CODE BEGIN 3 */
+    if(HAL_GetTick() > (g_last_time + TICK_DELAY))
+    {
+      STR_diagnostic_flags();
+      STR_time_since_bootup(g_last_time / MS_TO_S_CONVERTER);
+      g_last_time = HAL_GetTick();
+    }
 
-    turn_signal_status_t turn_status = get_turn_signal_status();
+    turn_status = get_turn_signal_status();
 
-    mode_status_t mode_status = get_mode_status();
+    mode_status = get_mode_status();
 
     // Checks if either the turn signal or mode status value changes
     if(g_turn_signal_status != turn_status || g_mode_status != mode_status)
@@ -168,6 +182,9 @@ int main(void)
     }
 
     HAL_Delay(TURN_SIGNAL_MODE_DELAY);
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -185,10 +202,11 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;

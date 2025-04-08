@@ -12,12 +12,16 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "CAN_comms.h"
+#include "diagnostic.h"
 
 /* SEMAPHORES */
 extern osSemaphoreId_t usart1_tx_semaphore;
 
 /* QUEUES */
 extern osMessageQueueId_t radio_tx_queue;
+
+/* PRIVATE DEFINES */
+#define DIAGNOSTIC_TASK_DELAY   1000    // 1 second
 
 
 #endif /* __RADIO_H__ */
