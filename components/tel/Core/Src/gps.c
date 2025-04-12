@@ -7,6 +7,7 @@
 #include "gps.h"
 #include "nmea_parse.h"
 #include "can.h"
+#include "diagnostic.h"
 
 #define GPS_DEVICE_ADDRESS ((0x42)<<1)
 
@@ -37,8 +38,11 @@ void read_i2c_gps_module(uint8_t* receive_buffer)
     HAL_StatusTypeDef status = HAL_I2C_Master_Receive_IT(&hi2c1, GPS_DEVICE_ADDRESS, receive_buffer, GPS_MESSAGE_LEN);
     if(status == HAL_OK)
     {
-        // Set status to true if i2c read was successful
-        g_gps_read_okay = true;
+        g_tel_diagnostic_flags.bits.gps_read_fail = false;
+    }
+    else
+    {
+        g_tel_diagnostic_flags.bits.gps_read_fail = true;
     }
 }
 /**
@@ -54,11 +58,9 @@ void gps_task()
         
         CAN_tx_gps_data_msg(&gps_data);
         
-        g_gps_read_okay = false;
-        
         HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
     }
-
+    
     memset(g_gps_data, 0, GPS_MESSAGE_LEN);
     read_i2c_gps_module(g_gps_data);
 }

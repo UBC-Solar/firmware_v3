@@ -214,17 +214,19 @@ void imu_task()
 		int16_t Gyro_Y_RAW = read_imu_register(OUTY_L_G);
 		int16_t Gyro_Z_RAW = read_imu_register(OUTZ_L_G);
 
+        if (g_tel_diagnostic_flags.bits.imu_read_fail)
+        {
+            break;
+        }
+
 		//Converting raw values to milli degrees per sec (mdps) according to datasheet.
 		imu_data.gyrox = (float)Gyro_X_RAW * GYRO_FS_MULTIPLIER_250D; // Convert to mdps
 		imu_data.gyroy = (float)Gyro_Y_RAW * GYRO_FS_MULTIPLIER_250D; // Convert to mdps
 		imu_data.gyroz = (float)Gyro_Z_RAW * GYRO_FS_MULTIPLIER_250D; // Convert to mdps
 
 		//Sending message over to the CAN bus
-		osDelay(3);
 		CAN_tx_ag_x_msg(imu_data.accelx, imu_data.gyrox);
-		osDelay(3);
 		CAN_tx_ag_y_msg(imu_data.accely, imu_data.gyroy);
-		osDelay(3);
 		CAN_tx_ag_z_msg(imu_data.accelz, imu_data.gyroz);
         osDelay(IMU_TASK_DELAY);
 	}

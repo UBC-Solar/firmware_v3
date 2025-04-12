@@ -251,8 +251,14 @@ void IMU_task(void *argument)
     {
         imu_task();
         osDelay(IMU_TASK_DELAY);
+        
+        // If you are out here something bad happened with I2C reading or writing. In that case try restarting I2C
+        HAL_I2C_DeInit(&hi2c2);
+        osDelay(IMU_TASK_DELAY);
+        HAL_I2C_Init(&hi2c2);
+        osDelay(IMU_TASK_DELAY);
     }
-  /* USER CODE END IMU_task */
+    /* USER CODE END IMU_task */
 }
 
 /* USER CODE BEGIN Header_GPS_task */
@@ -266,14 +272,22 @@ void GPS_task(void *argument)
 {
     /* USER CODE BEGIN GPS_task */
     /* Infinite loop */
-
+    
     osDelay(GPS_TASK_OFFSET_DELAY);
     for(;;)
     {
         gps_task();
         osDelay(GPS_TASK_DELAY);
+        
+        if (g_tel_diagnostic_flags.bits.gps_read_fail)
+        {
+            HAL_I2C_DeInit(&hi2c1);
+            osDelay(GPS_TASK_DELAY);
+            HAL_I2C_Init(&hi2c1);
+            osDelay(GPS_TASK_DELAY);
+        }
     }
-
+    
     /* USER CODE END GPS_task */
 }
 
