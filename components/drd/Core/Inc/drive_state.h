@@ -25,7 +25,7 @@
 #define ACCEL_DAC_OFF 0
 
 #define ADC_LOWER_DEADZONE 550 
-#define ADC_NO_THROTTLE_MAX 725         
+#define ADC_NO_THROTTLE_MAX 775                 // https://ubcsolar26.monday.com/boards/7524367653/pulses/8891936447/posts/4032506875
 #define ADC_FULL_THROTTLE_MIN 1350      
 #define ADC_UPPER_DEADZONE 4000 
 #define ADC_MAX_DIFFERENCE 99999          // change when we have a better idea
