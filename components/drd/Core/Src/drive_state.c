@@ -216,7 +216,6 @@ void motor_command_package_and_send(motor_command_t* motor_command, bool from_IS
 	data[1] = accel_second_byte;
 	data[2] = regen_first_byte;
 	data[3] = regen_second_byte;
-    motor_command->motor_command_flags |= (0x1 << 1);
 	data[4] = motor_command->motor_command_flags;
 
 	memcpy(msg.data, data, CAN_DATA_SIZE);

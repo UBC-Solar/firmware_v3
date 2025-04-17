@@ -62,8 +62,8 @@
 #define ECO_MODE_FONT          (Verdana12)
 #define ECO_SYMBOL              'E'    
 #define POWER_SYMBOL            '~'    
-#define DRIVE_MODE_ECO          0
-#define DRIVE_MODE_POWER        1
+#define DRIVE_MODE_ECO          1       // ECO Mode is GPIO high (logic 1) for MDI to MC.
+#define DRIVE_MODE_POWER        0
 
 #define SCREEN_HEIGHT                   64
 #define SCREEN_WIDTH                    128

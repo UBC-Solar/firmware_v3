@@ -31,11 +31,6 @@ typedef enum {
     REVERSE = 1
 } MDI_direction_t;
 
-typedef enum {
-    ECO_MODE   = 0,
-    POWER_MODE = 1
-} MDI_power_mode_t;
-
 typedef struct{
     uint16_t accel_DAC_value;
     uint16_t regen_DAC_value;
