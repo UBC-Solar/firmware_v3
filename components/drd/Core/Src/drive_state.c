@@ -47,7 +47,7 @@ static uint16_t convert_to_dac(uint16_t adc);
 
 /*	Global Variables	*/
 volatile uint32_t g_velocity_kmh = 0;
-volatile bool g_eco_mode = true;
+volatile bool g_lcd_eco_mode_on = true;
 volatile drive_state_t g_drive_state = PARK;
 
 uint16_t g_throttle_DAC = 0;
@@ -493,7 +493,7 @@ void velocity_CAN_msg_handle(uint8_t* data)
 void steering_CAN_msg_handle(uint8_t* data)
 {
 	g_input_flags.eco_mode_on = (data[0] >> 2); //third bit of steering CAN message
-	g_eco_mode = g_input_flags.eco_mode_on; //global variable for LCD
+	g_lcd_eco_mode_on = g_input_flags.eco_mode_on; //global variable for LCD
 }
 
 
