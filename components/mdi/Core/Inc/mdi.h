@@ -31,6 +31,11 @@ typedef enum {
     REVERSE = 1
 } MDI_direction_t;
 
+typedef enum {
+    POWER_MODE = 0,
+    ECO_MODE   = 1,     // GPIO high (logic 1) is eco mode based on Mitsuba motor data sheet.
+} MDI_power_mode_t;
+
 typedef struct{
     uint16_t accel_DAC_value;
     uint16_t regen_DAC_value;
