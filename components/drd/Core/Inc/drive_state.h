@@ -70,7 +70,7 @@ extern volatile uint32_t g_velocity_kmh;
 
 /*	Functions	*/
 void Drive_State_interrupt_handler(uint16_t pin);
-void Drive_State_CAN_rx_handle(uint32_t msg_id, uint8_t* data);
+void Vehicle_State_CAN_rx_handle(uint32_t msg_id, uint8_t* data);
 void Drive_State_Machine_handler();
 void Motor_Controller_query_data();
 

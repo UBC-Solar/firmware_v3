@@ -236,7 +236,7 @@ void motor_command_package_and_send(motor_command_t* motor_command, bool from_IS
 /*
  * @brief Handles Received CAN Messages relevant to drive state
  */
-void Drive_State_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
+void Vehicle_State_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
 {
 	switch(msg_id)
 	{

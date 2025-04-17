@@ -278,7 +278,7 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 	LCD_CAN_rx_handle(CAN_ID, CAN_comms_Rx_msg->data);
 	Fault_Lights_CAN_rx_handle(CAN_ID, CAN_comms_Rx_msg->data);
 	External_Lights_CAN_rx_handle(CAN_ID, CAN_comms_Rx_msg->data);
-	Drive_State_CAN_rx_handle(CAN_ID, CAN_comms_Rx_msg->data);
+	Vehicle_State_CAN_rx_handle(CAN_ID, CAN_comms_Rx_msg->data);
 }
 
 /* USER CODE END 1 */
