@@ -76,7 +76,7 @@ void MDI_parse_motor_command(uint8_t* buffer, MDI_motor_command_t* MDI_motor_com
 
     // Set direction and eco mode values
     MDI_motor_command->direction_value = IS_BIT_SET(buffer[4], 0);
-    MDI_motor_command->eco_mode_value = IS_BIT_SET(buffer[4], 1);
+    MDI_motor_command->eco_mode_value = IS_BIT_SET(buffer[4], 1);       // Eco mode on is GPIO high (logic 1)
 }
 
 

@@ -128,6 +128,18 @@ const osThreadAttr_t CANLoad_Task_attributes = {
   .stack_size = sizeof(CANLoad_TaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for Diagnostic_Task */
+osThreadId_t Diagnostic_TaskHandle;
+uint32_t DiagnosticTaskBuffer[ 128 ];
+osStaticThreadDef_t DiagnosticTaskControlBlock;
+const osThreadAttr_t Diagnostic_Task_attributes = {
+  .name = "Diagnostic_Task",
+  .cb_mem = &DiagnosticTaskControlBlock,
+  .cb_size = sizeof(DiagnosticTaskControlBlock),
+  .stack_mem = &DiagnosticTaskBuffer[0],
+  .stack_size = sizeof(DiagnosticTaskBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -138,6 +150,7 @@ void StartDefaultTask(void *argument);
 void IMU_task(void *argument);
 void GPS_task(void *argument);
 void CANLoad_task(void *argument);
+void Diagnostic_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -188,6 +201,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of CANLoad_Task */
   CANLoad_TaskHandle = osThreadNew(CANLoad_task, NULL, &CANLoad_Task_attributes);
 
+  /* creation of Diagnostic_Task */
+  Diagnostic_TaskHandle = osThreadNew(Diagnostic_task, NULL, &Diagnostic_Task_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -229,25 +245,50 @@ void StartDefaultTask(void *argument)
 void IMU_task(void *argument)
 {
   /* USER CODE BEGIN IMU_task */
-  /* Infinite loop */
-    imu_task();
-  imu_task();
-  /* USER CODE END IMU_task */
+    /* Infinite loop */
+    osDelay(IMU_TASK_OFFSET_DELAY);
+    for (;;)
+    {
+        imu_task();
+        osDelay(IMU_TASK_DELAY);
+        
+        // If you are out here something bad happened with I2C reading or writing. In that case try restarting I2C
+        HAL_I2C_DeInit(&hi2c2);
+        osDelay(IMU_TASK_DELAY);
+        HAL_I2C_Init(&hi2c2);
+        osDelay(IMU_TASK_DELAY);
+    }
+    /* USER CODE END IMU_task */
 }
 
 /* USER CODE BEGIN Header_GPS_task */
 /**
-* @brief Function implementing the GPS_Task thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the GPS_Task thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_GPS_task */
 void GPS_task(void *argument)
 {
-  /* USER CODE BEGIN GPS_task */
-  /* Infinite loop */
-  gps_task();
-  /* USER CODE END GPS_task */
+    /* USER CODE BEGIN GPS_task */
+    /* Infinite loop */
+    
+    osDelay(GPS_TASK_OFFSET_DELAY);
+    for(;;)
+    {
+        gps_task();
+        osDelay(GPS_TASK_DELAY);
+        
+        if (g_tel_diagnostic_flags.bits.gps_read_fail)
+        {
+            HAL_I2C_DeInit(&hi2c1);
+            osDelay(GPS_TASK_DELAY);
+            HAL_I2C_Init(&hi2c1);
+            osDelay(GPS_TASK_DELAY);
+        }
+    }
+    
+    /* USER CODE END GPS_task */
 }
 
 /* USER CODE BEGIN Header_CANLoad_task */
@@ -268,6 +309,28 @@ void CANLoad_task(void *argument)
    osDelay(CANLOAD_MSG_RATE);
   }
   /* USER CODE END CANLoad_task */
+}
+
+/* USER CODE BEGIN Header_Diagnostic_task */
+/**
+* @brief Function implementing the Diagnostic_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Diagnostic_task */
+void Diagnostic_task(void *argument)
+{
+  /* USER CODE BEGIN Diagnostic_task */
+  /* Infinite loop */
+
+  DIAGNOSTIC_send_can();   
+  for(;;)
+  {
+    ++g_time_since_bootup;
+    osDelay(DIAGNOSTIC_TASK_DELAY);     // Delay in middle so that variable value is set.
+    DIAGNOSTIC_send_can();
+  }
+  /* USER CODE END Diagnostic_task */
 }
 
 /* Private application code --------------------------------------------------*/

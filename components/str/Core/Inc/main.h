@@ -67,6 +67,10 @@ void Error_Handler(void);
 #define MODE_PW_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
+#define TURN_SIGNAL_MODE_DELAY 200
+#define MS_TO_S_CONVERTER 1000
+#define TICK_DELAY 1000
+
 typedef enum {
   TS_OFF = 0b00,
   TS_RIGHT = 0b01,

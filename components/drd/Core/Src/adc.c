@@ -199,6 +199,13 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 
 /* USER CODE BEGIN 1 */
 
+/*
+ * @brief Reads ADC values using HAL's ADC implementation
+ *
+ * @param hadc ADC handle type def for the specific ADC to be read
+ *
+ * @returns uint16_t ADC reading, which only contains 12 bits of right aligned data
+ */
 uint16_t Read_ADC(ADC_HandleTypeDef* hadc)
 {
 	HAL_ADC_Start(hadc);

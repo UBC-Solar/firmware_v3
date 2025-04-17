@@ -1,4 +1,5 @@
 #include "lcd.h"
+#include "fault_lights.h"
 #include <stdio.h>
 
 /*--------------------------------------------------------------------------
@@ -169,7 +170,7 @@ static void draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8
  */
 static bounding_box_t draw_text(char *string, unsigned char x, unsigned char y, const unsigned char *font, unsigned char spacing) {
 	bounding_box_t ret;
-	bounding_box_t tmp;
+	bounding_box_t tmp = {0};
 
 	ret.x1 = x;
 	ret.y1 = y;
@@ -475,4 +476,32 @@ void LCD_init(SPI_HandleTypeDef* hspi)
     LCD_write_command(CMD_DISPLAY_START);
     LCD_write_command(CMD_DISPLAY_ON);
     LCD_write_command(CMD_SET_ALLPTS_NORMAL);
+}
+
+
+
+/*
+ * @brief CAN rx function which parses message data needed by the LCD
+ *
+ * @param msg_id 	The id of the CAN message
+ * @param data  	The data of the CAN message
+ */
+void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
+{
+	if(msg_id == CAN_ID_PACK_CURRENT)
+	{
+		g_lcd_data.pack_current = (data[1] << 8) | (data[0]);
+		g_lcd_data.pack_current /= 65.535;
+	}
+
+	 if(msg_id == CAN_ID_PACK_VOLTAGE)
+	{
+		g_lcd_data.pack_voltage = (data[1] << 8) | (data[0]);
+		g_lcd_data.pack_voltage /= PACK_VOLTAGE_DIVISOR;
+	}
+
+	 if(msg_id == CAN_ID_PACK_HEALTH)
+	{
+		g_lcd_data.soc = data[0];
+	}
 }

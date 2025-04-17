@@ -417,7 +417,10 @@ void nmea_parse(GPS *gps_data, uint8_t *buffer) {
     
     memset(data, 0, sizeof(data)); // Clear array
 
+
     char *token = strtok((char *)buffer, "$"); // Tokenize the buffer using '$' as a delimiter
+    token = strtok(NULL, "$");
+
     int cnt = 0;
 
     while(token !=NULL)
@@ -432,9 +435,8 @@ void nmea_parse(GPS *gps_data, uint8_t *buffer) {
     {
         if(strstr(data[i], "\r\n") != NULL) // Check if the sentence is complete with a newline
         {
-        HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
             // Identify sentence type and call corresponding parsing function
-            if(strstr(data[i], "GPGLL")!=NULL)
+            if(strstr(data[i], "GPGLL")!=NULL || strstr(data[i], "GNGLL")!=NULL)
             {
                 nmea_GPGLL(gps_data, data[i]);
             }

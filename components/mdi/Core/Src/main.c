@@ -20,6 +20,7 @@
 #include "main.h"
 #include "can.h"
 #include "i2c.h"
+#include "iwdg.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -27,6 +28,7 @@
 
 #include <stdbool.h>
 #include "mdi.h"
+#include "diagnostic.h"
 
 /* USER CODE END Includes */
 
@@ -37,6 +39,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define CLEAR           0
+#define SET             1
 
 /* USER CODE END PD */
 
@@ -52,6 +57,8 @@
 MDI_motor_command_t g_MDI_motor_command = {0};
 bool g_motor_command_received = false;
 uint32_t g_last_command_time = 0;
+uint32_t g_last_diagnostic_time = 0;
+
 
 /* USER CODE END PV */
 
@@ -94,20 +101,24 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
+  MX_GPIO_Init();   
   MX_CAN_Init();
   MX_I2C2_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
-  // Start CAN and activate Rx interrupt
-  HAL_CAN_Start(&hcan);
+  // Activate Rx interrupt and start CAN.
   HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
-
+  HAL_CAN_Start(&hcan);
+  
+  g_mdi_diagnostic_flags.raw = CLEAR;       // Start with all flags cleared
+  IWDG_perform_reset_sequence();            // Check if IWDG reset
+  MDI_diagnostic_flags();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
+  
   // Stop motor by default for redundancy.
   MDI_stop_motor();
 
@@ -116,14 +127,25 @@ int main(void)
 
   while (1)
   {
+    // Pet watchdog if we are NOT in the DEBUG configuration
+    IWDG_Refresh();
+
+    // MDI diagnostic runs every 1000ms. time since bootup + flags like iwdg
+    if (HAL_GetTick() > (g_last_diagnostic_time + MDI_DIAGNOSTICS_DELAY))
+    {
+      MDI_time_since_bootup();
+      MDI_diagnostic_flags();
+      g_last_diagnostic_time = HAL_GetTick();
+    }
+
     // If MDI hasn't received a CAN message for MAX_TIMEOUT_VALUE, stop motor for safety
-    if(HAL_GetTick() > (g_last_command_time + MAX_TIMEOUT_VALUE))
+    if (HAL_GetTick() > (g_last_command_time + MAX_TIMEOUT_VALUE))
     {
       MDI_stop_motor();
     }
 
     // Wait until motor command is received over CAN
-    if(g_motor_command_received == true)
+    if (g_motor_command_received == true)
     {
       // Set motor command
       MDI_set_motor_command(&g_MDI_motor_command);
@@ -150,10 +172,11 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;

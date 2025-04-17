@@ -33,6 +33,7 @@
 #include "cpu_load.h"
 #include "bitops.h"
 #include "nmea_parse.h"
+#include "gps.h"
 
 #define CANLOAD_MSG_ID                      0x763
 #define CANLOAD_DATA_LENGTH                 1
@@ -42,7 +43,6 @@
 /**
  * @brief CAN message header for sending out bus load
  */
-
 CAN_TxHeaderTypeDef CANLOAD_busload = {
     .StdId = CANLOAD_MSG_ID,
     .ExtId = 0x0000,
@@ -60,14 +60,6 @@ CAN_TxHeaderTypeDef cpu_load_can_header = {
 
 #define GPS_CAN_MESSAGE_LENGTH                         8
 #define GPS_CAN_MESSAGE_INT_LENGTH                     4
-
-#define GPS_DATA_SAT_COUNT_VIEW_FIX_SNR_CAN_MESSAGE_ID 0x755
-#define GPS_DATA_LON_LAT_CAN_MESSAGE_ID                0x756
-#define GPS_DATA_HDOP_VDOP_CAN_MESSAGE_ID              0x757
-#define GPS_DATA_LON_SIDE_DATE_CAN_MESSAGE_ID          0x758
-#define GPS_DATA_PDOP_SPEEDKMH_CAN_MESSAGE_ID          0x759
-#define GPS_DATA_ALT_GEOD_CAN_MESSAGE_ID               0x760
-#define GPS_DATA_TRUE_MAG_HEADING_CAN_MESSAGE_ID       0x761
 
 /**
  * @brief CAN message header for GPS messages
@@ -558,19 +550,19 @@ void CAN_tx_lon_side_date_msg(char lonSide, char latSide, char date[7], char utc
  * @param gps_data Pointer to GPS struct of all fields
  */
 void CAN_tx_gps_data_msg(GPS* gps_data) {
-  CAN_tx_true_magnetic_heading_msg(gps_data->trueHeading, gps_data->magneticHeading);
-  osDelay(3);
-  CAN_tx_sat_count_view_fix_snr_msg(gps_data->satelliteCount, gps_data->satInView, gps_data->fix, gps_data->snr);
-  osDelay(3);
-  CAN_tx_lon_side_date_msg(gps_data->lonSide, gps_data->latSide, gps_data->date, gps_data->utcTime);
-  osDelay(3);
-  CAN_tx_lon_lat_msg(gps_data->longitude, gps_data->latitude);
-  osDelay(3);
-  CAN_tx_alt_geod_msg(gps_data->altitude, gps_data->geodHeight);
-  osDelay(3);
-  CAN_tx_hdop_vdop_msg(gps_data->hdop, gps_data->vdop);
-  osDelay(3);
-  CAN_tx_pdop_speedKmh_msg(gps_data->pdop, gps_data->speedKmh);
-  osDelay(3);
+    CAN_tx_sat_count_view_fix_snr_msg(gps_data->satelliteCount, gps_data->satInView, gps_data->fix, gps_data->snr);
+    osDelay(3);
+    CAN_tx_lon_lat_msg(gps_data->longitude, gps_data->latitude);
+    osDelay(3);
+    CAN_tx_hdop_vdop_msg(gps_data->hdop, gps_data->vdop);
+    osDelay(3);
+    CAN_tx_lon_side_date_msg(gps_data->lonSide, gps_data->latSide, gps_data->date, gps_data->utcTime);
+    osDelay(3);
+    CAN_tx_pdop_speedKmh_msg(gps_data->pdop, gps_data->speedKmh);
+    osDelay(3);
+    CAN_tx_alt_geod_msg(gps_data->altitude, gps_data->geodHeight);
+    osDelay(3);
+    CAN_tx_true_magnetic_heading_msg(gps_data->trueHeading, gps_data->magneticHeading);
+    osDelay(3);
 }
 /* USER CODE END 1 */

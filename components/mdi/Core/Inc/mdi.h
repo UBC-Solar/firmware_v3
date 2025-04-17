@@ -14,7 +14,9 @@
 
 // Macros
 #define MAX_DAC_VALUE (0.90 * 0x3FF)
-#define MAX_TIMEOUT_VALUE (1000) // TODO: Is this time correct?
+#define MAX_TIMEOUT_VALUE (100) // TODO: Is this time correct?
+#define MDI_DIAGNOSTICS_DELAY (1000)
+
 #define IS_BIT_SET(num, bit) (((num) & (1 << (bit))) != 0)
 
 
@@ -30,8 +32,8 @@ typedef enum {
 } MDI_direction_t;
 
 typedef enum {
-    ECO_MODE   = 0,
-    POWER_MODE = 1
+    POWER_MODE = 0,
+    ECO_MODE   = 1,     // GPIO high (logic 1) is eco mode based on Mitsuba motor data sheet.
 } MDI_power_mode_t;
 
 typedef struct{
