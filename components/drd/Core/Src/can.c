@@ -25,10 +25,8 @@
 #include "external_lights.h"
 #include "fault_lights.h"
 #include "drive_state.h"
+#include "diagnostic.h"
 #include "lcd.h"
-
-void CAN_filter_init(CAN_FilterTypeDef* can_filter);
-
 
 
 /**
@@ -44,7 +42,10 @@ const CAN_TxHeaderTypeDef drive_command_header = {
 
 };
 
-
+/*
+ * CAN message header for an MDU request. This message is sent to the Mitsuba motor controller to query
+ * 		needed data from it.
+ */
 const CAN_TxHeaderTypeDef mdu_request_header = {
 		.StdId = 0,
 		.ExtId = MDU_REQUEST_COMMAND_ID,
@@ -52,6 +53,25 @@ const CAN_TxHeaderTypeDef mdu_request_header = {
 		.RTR = CAN_RTR_DATA,
 		.DLC = MDU_REQUEST_SIZE
 };
+
+
+const CAN_TxHeaderTypeDef drd_diagnostic_header = {
+		.StdId = DRD_DIAGNOSTIC_MESSAGE,
+		.ExtId = 0x0000,
+		.IDE = CAN_ID_STD,
+		.RTR = CAN_RTR_DATA,
+		.DLC = DRD_DIAGNOSTIC_SIZE
+
+};
+
+
+const CAN_TxHeaderTypeDef time_since_bootup_can_header = {
+   .StdId = TIME_SINCE_BOOTUP_CAN_ID,
+   .ExtId = 0x0000,
+   .IDE = CAN_ID_STD,
+   .RTR = CAN_RTR_DATA,
+   .DLC = TIME_SINCE_BOOTUP_CAN_DATA_LENGTH};
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
@@ -159,26 +179,59 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 
 
 /**
- * @brief Allows all messages to be received
- */
-
-void CAN_filter_init(CAN_FilterTypeDef* can_filter)
-{
-    /* TODO: Review Filter Implementation */
-    // Change Filter to only get STR messages (or any other messages to DRD)
-
-    can_filter->FilterIdHigh = 0x0000;
-    can_filter->FilterMaskIdHigh = 0x0000;
-
-    can_filter->FilterIdLow = 0x0000;
-    can_filter->FilterMaskIdLow = 0x0000;
-
-    can_filter->FilterFIFOAssignment = CAN_FILTER_FIFO0;
-    can_filter->FilterBank = (uint32_t) 0;
-    can_filter->FilterMode = CAN_FILTERMODE_IDMASK;
-    can_filter->FilterScale = CAN_FILTERSCALE_16BIT;
-    can_filter->FilterActivation = CAN_FILTER_ENABLE;
-}
+  * @brief  Initializes CAN filters to allow only the desired IDs.
+  *         Standard IDs allowed:
+  *         0x401, 0x450, 0x622, 0x623, 0x624, 0x580
+  *         Extended IDs allowed:
+  *           0x08A50225, 0x08850225
+  *
+  * For standard IDs we use 16-bit scale in ID list mode (each ID must be shifted left by 5).
+  * For extended IDs we use 32-bit scale in ID list mode; the 29-bit ID is shifted left by 3 and the IDE bit is set.
+  */
+ void CAN_filter_init(CAN_FilterTypeDef* can_filter)
+ {
+   CAN_FilterTypeDef can_filter1;
+   CAN_FilterTypeDef can_filter2;
+ 
+ 
+   // ---- Filter Bank 0 ----
+   can_filter->FilterIdHigh = (CAN_ID_BATT_FAULTS << 5);
+   can_filter->FilterMaskIdHigh = (CAN_ID_PACK_VOLTAGE << 5);
+   can_filter->FilterIdLow = (CAN_ID_PACK_HEALTH << 5);
+   can_filter->FilterMaskIdLow = (CAN_ID_PACK_CURRENT << 5);
+   can_filter->FilterFIFOAssignment = CAN_FILTER_FIFO0;
+   can_filter->FilterBank = 0;
+   can_filter->FilterMode = CAN_FILTERMODE_IDLIST;
+   can_filter->FilterScale = CAN_FILTERSCALE_16BIT;
+   can_filter->FilterActivation = ENABLE;
+   HAL_CAN_ConfigFilter(&hcan, can_filter);
+ 
+   // ---- Filter Bank 4 ----
+   can_filter1.FilterIdHigh = (STR_CAN_MSG_ID << 5);
+   can_filter1.FilterMaskIdHigh = (STR_CAN_MSG_ID << 5);
+   can_filter1.FilterIdLow = (STR_CAN_MSG_ID << 5);
+   can_filter1.FilterMaskIdLow = (STR_CAN_MSG_ID << 5);
+   can_filter1.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+   can_filter1.FilterBank = 4;
+   can_filter1.FilterMode = CAN_FILTERMODE_IDLIST;
+   can_filter1.FilterScale = CAN_FILTERSCALE_16BIT;
+   can_filter1.FilterActivation = ENABLE;
+   HAL_CAN_ConfigFilter(&hcan, &can_filter1);
+ 
+   // ---- Filter Bank 2 ----
+   uint32_t extId1 = CAN_ID_MTR_FAULTS;
+   uint32_t extId2 = FRAME0;
+   can_filter2.FilterIdHigh = (extId1 << 3) >> 16;
+   can_filter2.FilterIdLow  = ((extId1 << 3) & 0xFFFF) | 0x0004;
+   can_filter2.FilterMaskIdHigh = (extId2 << 3) >> 16;
+   can_filter2.FilterMaskIdLow  = ((extId2 << 3) & 0xFFFF) | 0x0004;
+   can_filter2.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+   can_filter2.FilterBank = 5;
+   can_filter2.FilterMode = CAN_FILTERMODE_IDLIST;
+   can_filter2.FilterScale = CAN_FILTERSCALE_32BIT;
+   can_filter2.FilterActivation = ENABLE;
+   HAL_CAN_ConfigFilter(&hcan, &can_filter2);
+ }
 
 
 /**
@@ -190,12 +243,11 @@ void CAN_filter_init(CAN_FilterTypeDef* can_filter)
 void CAN_tasks_init()
 {
     CAN_comms_config_t CAN_comms_config_tel = {0};
-
-    CAN_FilterTypeDef CAN_filter = {0};
-    CAN_filter_init(&CAN_filter);
+    CAN_FilterTypeDef can_filter = {0};
+    CAN_filter_init(&can_filter);
 
     CAN_comms_config_tel.hcan = &hcan;
-    CAN_comms_config_tel.CAN_Filter = CAN_filter;
+    CAN_comms_config_tel.CAN_Filter = can_filter;
     CAN_comms_config_tel.CAN_comms_Rx_callback = CAN_comms_Rx_callback;
 
     CAN_comms_init(&CAN_comms_config_tel);
@@ -204,47 +256,29 @@ void CAN_tasks_init()
 
 void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
+	uint32_t CAN_ID = 0;
 	/*
 	 *	handle parsing rx messages
 	 */
-
 	if (CAN_comms_Rx_msg == NULL)
 	{
 			return;
 	}
 
-	uint32_t CAN_ID = 0;
-
 	if(CAN_comms_Rx_msg->header.IDE == CAN_ID_EXT)
 	{
 		CAN_ID = CAN_comms_Rx_msg->header.ExtId; // Get CAN ID
 	}
-
 	else
 	{
-	CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
+		CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
 	}
 
-  if(CAN_comms_Rx_msg->header.StdId == CAN_ID_PACK_CURRENT)
-  {
-    g_lcd_data.pack_current = (CAN_comms_Rx_msg->data[1] << 8) | (CAN_comms_Rx_msg->data[0]);
-    g_lcd_data.pack_current /= 65.535;
-  }
 
-  if(CAN_comms_Rx_msg->header.StdId == CAN_ID_PACK_VOLTAGE)
-  {
-    g_lcd_data.pack_voltage = (CAN_comms_Rx_msg->data[1] << 8) | (CAN_comms_Rx_msg->data[0]);
-    g_lcd_data.pack_voltage /= PACK_VOLTAGE_DIVISOR;
-  }
-
-  if(CAN_comms_Rx_msg->header.StdId == CAN_ID_PACK_HEALTH)
-  {
-    g_lcd_data.soc = CAN_comms_Rx_msg->data[0];
-  }
-
-	Set_fault_lights(CAN_ID, CAN_comms_Rx_msg->data);
-	External_Lights_set_turn_signals(CAN_ID, CAN_comms_Rx_msg->data);
-	Drive_State_can_rx_handle(CAN_ID, CAN_comms_Rx_msg->data);
+	LCD_CAN_rx_handle(CAN_ID, CAN_comms_Rx_msg->data);
+	Fault_Lights_CAN_rx_handle(CAN_ID, CAN_comms_Rx_msg->data);
+	External_Lights_CAN_rx_handle(CAN_ID, CAN_comms_Rx_msg->data);
+	Vehicle_State_CAN_rx_handle(CAN_ID, CAN_comms_Rx_msg->data);
 }
 
 /* USER CODE END 1 */

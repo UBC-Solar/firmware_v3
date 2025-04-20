@@ -7,7 +7,6 @@
  *  @author Aarjav Jain
  */
 
-
 #include "radio.h"
 
 
@@ -18,7 +17,8 @@
 #include "rtc.h"
 #include "tel_freertos.h"
 #include "can.h"
-
+#include "gps.h"
+#include "imu.h"
 
 /* PRIVATE DEFINES */
 #define NO_PRIORITY                                 0
@@ -45,35 +45,153 @@ Radio_diagnostics_t Radio_diagnostic = {
 
 uint8_t get_data_length(uint32_t DLC);
 
+typedef struct {
+    uint32_t id;
+    uint8_t  mod;     // transmit on radio only every 'mod' occurrences
+    uint32_t count;   // count of received messages
+} CanFilter_t;
+
+// Definitions for CAN IDs (add or adjust as needed)
+#define DRD_DIAGNOSTICS_ID                  0x403
+#define MDI_DIAGNOSTICS_ID                  0x501
+#define STR_DIAGNOSTICS_ID                  0x581
+#define TEL_DIAGNOSTICS_ID                  0x751
+
+#define DRD_TIME_SINCE_BOOTUP_ID            0x404
+#define MDI_TIME_SINCE_BOOTUP_ID            0x500
+#define STR_TIME_SINCE_BOOTUP_ID            0x582
+#define TEL_TIME_SINCE_BOOTUP_ID            0x750
+
+#define GPS_LONG_LAT_ID                     0x756
+
+#define DRD_MOTOR_COMMAND_ID                0x401
+
+#define ECU_STATUS_ID                       0x450
+#define BMS_FAULTS_ID                       0x622
+#define BMS_VOLTAGE_SUMMARY_VOLTAGE_ID      0x623
+#define BMS_PACK_HEALTH_ID                  0x624
+#define BMS_TEMP_SUMMARY_ID                 0x625
+#define BMS_MODULE_VOLTAGES_ID              0x626
+#define BMS_MODULE_TEMPERATURES_ID          0x627
+
+#define MPPT_INPUT_MEASUREMENTS_ID          0x6A0
+#define MPPT_OUTPUT_MEASUREMENTS_ID         0x6A1
+#define MPPT_TEMPERATURE_ID                 0x6A2
+#define MPPT_STATUS_ID                      0x6A5
+
+#define MDU_FRAME_0_ID                      0x08850225
+#define MDU_FRAME_1_ID                      0x08950225
+#define MDU_FRAME_2_ID                      0x08A50225
+
+#define OBC_STATUS_ID                       0x18FF50E5
+
+// Mod values (1 means every message, other values rate-limit the Tx)
+// Our whitelist using a struct array
+
+// See https://ubcsolar26.monday.com/boards/7524367653/pulses/8642929457/posts/3979486939 for Module voltages and temps 
+// explanation for 9.
+static CanFilter_t filter_whitelist[] = {
+    //         CAN ID                   MOD    COUNT
+    { DRD_MOTOR_COMMAND_ID,              4,     0               },
+    { DRD_DIAGNOSTICS_ID,                4,     0               },
+    { DRD_TIME_SINCE_BOOTUP_ID,          1,     0               },
+    { ECU_STATUS_ID,                     1,     0               },
+    { MDI_TIME_SINCE_BOOTUP_ID,          1,     0               },
+    { MDI_DIAGNOSTICS_ID,                1,     0               },
+    { STR_DIAGNOSTICS_ID,                1,     0               },
+    { STR_TIME_SINCE_BOOTUP_ID,          1,     0               },
+    { BMS_VOLTAGE_SUMMARY_VOLTAGE_ID,    10,     0               },
+    { BMS_MODULE_VOLTAGES_ID,            9,     0               },
+    { BMS_FAULTS_ID,                     1,     0               },
+    { BMS_TEMP_SUMMARY_ID,               10,     0               },
+    { BMS_PACK_HEALTH_ID,                1,     0               },
+    { BMS_MODULE_TEMPERATURES_ID,        9,     0               },
+    { MPPT_INPUT_MEASUREMENTS_ID,        1,     0               },
+    { MPPT_OUTPUT_MEASUREMENTS_ID,       1,     0               },
+    { MPPT_TEMPERATURE_ID,               1,     0               },
+    { MPPT_STATUS_ID,                    1,     0               },
+    { TEL_TIME_SINCE_BOOTUP_ID,          1,     0               },
+    { TEL_DIAGNOSTICS_ID,                1,     0               },
+    { MDU_FRAME_0_ID,                    1,     0               },
+    { MDU_FRAME_1_ID,                    5,     0               },
+    { MDU_FRAME_2_ID,                    5,     0               },
+    { OBC_STATUS_ID,                     1,     0               },
+    { GPS_LONG_LAT_ID,                   1,     0               },
+};
+
+
+#define NUM_FILTERS (sizeof(filter_whitelist) / sizeof(filter_whitelist[0]))
 
 /**
- * @brief Transmits a message over UART to the XBee Radio Module
+ * @brief Determines if a received CAN message should be transmitted.
+ *
+ * This function iterates over our whitelist and increments the counter
+ * for the matching CAN ID. A message is transmitted if its counter modulo
+ * the specified mod is zero.
+ *
+ * @param can_id The incoming CAN ID.
+ * @return true if the message should be transmitted, false otherwise.
+ */
+static bool filter(uint32_t can_id)
+{
+    #ifdef DEBUG
+        return true;
+    #else
+        // TODO: Use hashmap for speed?
+        for (int i = 0; i < NUM_FILTERS; i++) {
+            if (filter_whitelist[i].id == can_id) {
+                if ( ( (++filter_whitelist[i].count) % filter_whitelist[i].mod ) == 0) {
+                    return true;
+                }
+                break; // Found the matching ID; no need to keep looping.
+            }
+        }
+        return false;
+    #endif
+}
+
+
+/**
+ * @brief Transmits a received message over UART to the XBee Radio Module
  * 
  * @param CAN_comms_Rx_msg Pointer to the CAN Rx message
  */
 RADIO_Msg_TypeDef radio_msg = {0};
 void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
-	// TODO: Implement filtering
-	// EX: if (check_CAN_ID_whitelist(CAN_comms_Rx_msg->header.StdId) == true) { ... }
+	uint32_t can_id = (CAN_comms_Rx_msg->header.IDE == CAN_ID_STD)? CAN_comms_Rx_msg->header.StdId : CAN_comms_Rx_msg->header.ExtId;
 
-	/* Create radio message struct */
-	set_radio_msg(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data, &radio_msg);
-
-	/* Transmit Radio Message */
-	 UART_radio_transmit(&radio_msg);
+    if (filter(can_id))
+    {
+        osSemaphoreAcquire(usart1_tx_semaphore, osWaitForever);   // Dont Tx until previous Tx is done
+        
+        /* Create radio message struct */
+        set_radio_msg(&(CAN_comms_Rx_msg->header), CAN_comms_Rx_msg->data, &radio_msg);
+        
+        /* Transmit Radio Message */
+        UART_radio_transmit(&radio_msg);
+    }
 }
 
+/**
+ * @brief Transmits a TEL (GPS or IMU) message over UART to the XBee Radio Module
+ * 
+ * @param CAN_comms_Rx_msg Pointer to the CAN Rx message
+ */
 void RADIO_filter_and_queue_msg_tx(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
 {
-	// TODO: Implement filtering
-	// EX: if (check_CAN_ID_whitelist(CAN_comms_Rx_msg->header.StdId) == true) { ... }
+    uint32_t can_id = (CAN_comms_Tx_msg->header.IDE == CAN_ID_STD)? CAN_comms_Tx_msg->header.StdId : CAN_comms_Tx_msg->header.ExtId;
+    
+    if (filter(can_id))
+    {
+        osSemaphoreAcquire(usart1_tx_semaphore, osWaitForever);   // Dont Tx until previous Tx is done
+        
+        /* Create radio message struct */
+        set_radio_msg_tx(&(CAN_comms_Tx_msg->header), CAN_comms_Tx_msg->data, &radio_msg);
 
-	/* Create radio message struct */
-	set_radio_msg_tx(&(CAN_comms_Tx_msg->header), CAN_comms_Tx_msg->data, &radio_msg);
-
-	/* Transmit Radio Message */
-	 UART_radio_transmit(&radio_msg);
+        /* Transmit Radio Message */
+        UART_radio_transmit(&radio_msg);
+    }
 }
 
 
@@ -98,7 +216,15 @@ void set_radio_msg(CAN_RxHeaderTypeDef* header, uint8_t* data, RADIO_Msg_TypeDef
 
 /**
  * @brief Sets all the fields in the radio message struct
- * 
+ * (int i = 0; i < NUM_FILTERS; i++) {
+            if (filter_whitelist[i].id == can_id) {
+                if ( ( (++filter_whitelist[i].count) % filter_whitelist[i].mod ) == 0) {
+                    return true;
+                }
+                break; // Found the matching ID; no need to keep looping.
+            }
+        }
+        return false;
  * @param header The CAN header struct
  * @param data The CAN data
  */

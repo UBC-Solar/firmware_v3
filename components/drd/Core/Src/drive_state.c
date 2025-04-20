@@ -16,8 +16,7 @@
 #include "CAN_comms.h"
 #include <string.h>
 #include <stdlib.h>
-
-/*	Symbolic Constants	*/
+#include "diagnostic.h"
 
 
 /*	Local Function Declarations	*/
@@ -37,15 +36,27 @@ static void update_input_flags();
 static void get_accel_readings();
 static uint8_t get_command_flags();
 static void clear_request_flags();
+static void velocity_CAN_msg_handle(uint8_t* data);
+static void steering_CAN_msg_handle(uint8_t* data);
+static uint16_t convert_to_dac(uint16_t adc);
+
+#ifdef DEBUG
+    void state_request_CAN_msg_handle(uint8_t* data);
+#endif
 
 
 /*	Global Variables	*/
-volatile uint32_t velocity_kmh = 0;
-volatile bool eco_mode = true;
-input_flags_t input_flags;
-volatile drive_state_t drive_state = PARK;
-uint16_t throttle_DAC = 0;
+volatile uint32_t g_velocity_kmh = 0;
+volatile bool g_lcd_eco_mode_on = true;
+volatile drive_state_t g_drive_state = PARK;
 
+uint16_t g_throttle_DAC = 0;
+input_flags_t g_input_flags;
+
+/* DEFINES */
+#define MC_DAC_MAX     1023        // Note: This gets capped by MDI to 920 anyways for safety
+#define MAX(a, b) ((a) < (b) ? (b) : (a))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 
 /*		DRIVE STATE MACHINE HANDLING	*/
@@ -59,7 +70,7 @@ void Drive_State_Machine_handler()
 	motor_command_t motor_command;
 	update_input_flags();
 
-	switch (drive_state)
+	switch (g_drive_state)
 	{
 		case FORWARD:
 			motor_command = forward_state_handle();
@@ -86,18 +97,18 @@ void Drive_State_Machine_handler()
  */
 motor_command_t forward_state_handle()
 {
-	if (input_flags.mech_brake_pressed)
+	if (g_input_flags.mech_brake_pressed)
 	{
 		return get_motor_command(ACCEL_DAC_OFF, REGEN_DAC_OFF);
 	}
 
-	if (input_flags.regen_enabled)
+	if (g_input_flags.regen_enabled)
 	{
-		return get_motor_command(throttle_DAC, REGEN_DAC_ON);
+		return get_motor_command(g_throttle_DAC, REGEN_DAC_ON);
 	}
 	else
 	{
-		return get_motor_command(throttle_DAC, REGEN_DAC_OFF);
+		return get_motor_command(g_throttle_DAC, REGEN_DAC_OFF);
 	}
 }
 
@@ -106,13 +117,13 @@ motor_command_t forward_state_handle()
  */
 motor_command_t reverse_state_handle()
 {
-	if (input_flags.mech_brake_pressed)
+	if (g_input_flags.mech_brake_pressed)
 	{
 		return get_motor_command(ACCEL_DAC_OFF, REGEN_DAC_OFF);
 	}
 
 	//disable regen in reverse
-	return get_motor_command(throttle_DAC, REGEN_DAC_OFF);
+	return get_motor_command(g_throttle_DAC, REGEN_DAC_OFF);
 }
 
 /*
@@ -128,9 +139,9 @@ motor_command_t park_state_handle()
  */
 void handle_state_transition()
 {
-	bool park_request = input_flags.park_state_request;
-	bool forward_request = input_flags.forward_state_request;
-	bool reverse_request = input_flags.reverse_state_request;
+	bool park_request = g_input_flags.park_state_request;
+	bool forward_request = g_input_flags.forward_state_request;
+	bool reverse_request = g_input_flags.reverse_state_request;
 
 	//too many requests have been triggered
 	if ((park_request + forward_request + reverse_request) > 1)
@@ -139,43 +150,44 @@ void handle_state_transition()
 		return;
 	}
 
-	switch (drive_state)
+	switch (g_drive_state)
 		{
+
 			case FORWARD:
-				if(reverse_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+				if(reverse_request && g_input_flags.velocity_under_threshold && g_input_flags.mech_brake_pressed)
 				{
-					drive_state = REVERSE;
+					g_drive_state = REVERSE;
 				}
-				else if(park_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+				else if(park_request && g_input_flags.velocity_under_threshold && g_input_flags.mech_brake_pressed)
 				{
-					drive_state = PARK;
+					g_drive_state = PARK;
 				}
 			break;
 
 			case REVERSE:
-				if(forward_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+				if(forward_request && g_input_flags.velocity_under_threshold && g_input_flags.mech_brake_pressed)
 				{
-					drive_state = FORWARD;
+					g_drive_state = FORWARD;
 				}
-				else if(park_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+				else if(park_request && g_input_flags.velocity_under_threshold && g_input_flags.mech_brake_pressed)
 				{
-					drive_state = PARK;
+					g_drive_state = PARK;
 				}
 			break;
 
 			case PARK:
-				if (forward_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+				if (forward_request && g_input_flags.velocity_under_threshold && g_input_flags.mech_brake_pressed)
 				{
-					drive_state = FORWARD;
+					g_drive_state = FORWARD;
 				}
-				else if(reverse_request && input_flags.velocity_under_threshold && input_flags.mech_brake_pressed)
+				else if(reverse_request && g_input_flags.velocity_under_threshold && g_input_flags.mech_brake_pressed)
 				{
-					drive_state = REVERSE;
+					g_drive_state = REVERSE;
 				}
 			break;
 
 			default:
-				drive_state = PARK;
+				g_drive_state = PARK;
 		}
 	//reset state transition requests
 	clear_request_flags();
@@ -221,49 +233,25 @@ void motor_command_package_and_send(motor_command_t* motor_command, bool from_IS
 
 
 /*
- * @brief Handles Received CAN Messages relevant
+ * @brief Handles Received CAN Messages relevant to drive state
  */
-void Drive_State_can_rx_handle(uint32_t msg_id, uint8_t* data)
+void Vehicle_State_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
 {
 	switch(msg_id)
 	{
 		case(FRAME0):
-
-			uint32_t rpm = (data[4] >> 3) | ((data[5] & 0x7f) << 5); //35th to 46th bit
-			float velocity = (WHEEL_RADIUS * 2.0 * M_PI * rpm) / 60.0;
-			velocity_kmh = velocity * 3.6;
-
-			if (velocity < VELOCITY_THRESHOLD)
-			{
-				input_flags.velocity_under_threshold = true;
-			}
-			else
-			{
-				input_flags.velocity_under_threshold = false;
-			}
-
+			velocity_CAN_msg_handle(data);
 		break;
 
 		case(STR_CAN_MSG_ID):
-			input_flags.eco_mode_on = (data[0] >> 2); //third bit of steering CAN message
-			eco_mode = input_flags.eco_mode_on; //global variable for LCD
+			steering_CAN_msg_handle(data);
 		break;
 
+		#ifdef DEBUG
 		case(0x500):
-			int value = data[0];
-			if (value == 0)
-			{
-				input_flags.park_state_request = true;
-			}
-			else if (value == 1)
-			{
-				input_flags.reverse_state_request = true;
-			}
-			else if (value == 2)
-			{
-				input_flags.forward_state_request = true;
-			}
+			state_request_CAN_msg_handle(data);
 		break;
+		#endif
 	}
 
 }
@@ -276,7 +264,7 @@ void Motor_Controller_query_data()
 {
 	CAN_comms_Tx_msg_t msg;
 	msg.header = mdu_request_header;
-	msg.data[0] = MDU_REQUEST_FRAME_2_0; //request frame 2 and 0
+	msg.data[0] = MDU_REQUEST_FRAME; //request frame 0,1,2
 	CAN_comms_Add_Tx_message(&msg);
 }
 
@@ -289,8 +277,14 @@ void Motor_Controller_query_data()
  */
 void update_input_flags()
 {
-	input_flags.mech_brake_pressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
-	input_flags.regen_enabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+	bool mech_brake_pressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
+	bool regen_enabled =  HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+
+	g_input_flags.mech_brake_pressed = mech_brake_pressed;
+	g_input_flags.regen_enabled = regen_enabled;
+
+	g_diagnostics.flags.mech_brake_pressed = mech_brake_pressed;
+	g_diagnostics.flags.regen_enabled  = regen_enabled;
 
 	get_accel_readings();
 }
@@ -300,7 +294,7 @@ void update_input_flags()
  * @brief Interrupt handler for any drive state interrupts. This includes mech brake press,
  * 		and drive, reverse, and park state requests.
  */
-void drive_state_interrupt_handler(uint16_t pin)
+void Drive_State_interrupt_handler(uint16_t pin)
 {
 	HAL_GPIO_TogglePin(DEBUG_LED_1_GPIO_Port, DEBUG_LED_1_Pin);
 	if (pin == BRK_IN_Pin)
@@ -309,17 +303,17 @@ void drive_state_interrupt_handler(uint16_t pin)
 	}
 	if (pin == FORWARD_EN_Pin)
 	{
-		input_flags.forward_state_request = true;
+		g_input_flags.forward_state_request = true;
 		return;
 	}
 	if (pin == PARK_EN_Pin)
 	{
-		input_flags.park_state_request = true;
+		g_input_flags.park_state_request = true;
 		return;
 	}
 	if (pin == REVERSE_EN_Pin)
 	{
-		input_flags.reverse_state_request = true;
+		g_input_flags.reverse_state_request = true;
 		return;
 	}
 
@@ -327,7 +321,6 @@ void drive_state_interrupt_handler(uint16_t pin)
 
 
 /*		Handle Acceleration Readings	*/
-
 
 /*
  * @brief sets throttle_DAC with DAC accel value, generated from
@@ -338,44 +331,45 @@ void get_accel_readings()
 	uint16_t adc1 = Read_ADC(&hadc1);
 	uint16_t adc2 = Read_ADC(&hadc2);
 
+	g_diagnostics.raw_adc1 = adc1;
+	g_diagnostics.raw_adc2 = adc2;
+
 	if (!accel_check_validity(adc1, adc2))
 	{
-		input_flags.throttle_ADC_out_of_range = true;
-		throttle_DAC = 0;
+		g_throttle_DAC = 0;
 		return;
 	}
 
-	input_flags.throttle_ADC_out_of_range = false;
 	normalize_adc_values(adc1, adc2);
-
 }
 
 
 /*
- * @brief Normalizes adc1 and adc2 into a single accel DAC value.
+ * @brief Sets the throttle DAC by normalizing the ADC values
  *
  * @param adc1 - 12 bit ADC reading of first accelerator potentiometer
  * @param adc2 - 12 bit ADC reading of second accelerator potentiometer
  */
 void normalize_adc_values(uint16_t adc1, uint16_t adc2)
 {
-	//Todo: confirm ADC orientation
-	uint16_t average_adc = ((adc1 + adc2)/2);
+    uint16_t dac_from_adc1 = convert_to_dac(adc1);
+    uint16_t dac_from_adc2 = convert_to_dac(adc1);      // CHANGE THIS TO adc2 LATER
+    // uint16_t dac_from_adc1 = convert_to_dac(adc1);
+    // uint16_t dac_from_adc2 = convert_to_dac(adc2);
 
-	if (average_adc < ADC_NO_THROTTLE_MAX)
-	{
-		throttle_DAC = 0;
-		return;
-	}
+    g_throttle_DAC = (dac_from_adc1 + dac_from_adc2) / 2;        // Take the average
+}
 
-	if (average_adc > ADC_FULL_THROTTLE_MIN)
-	{
-		throttle_DAC = ADC_THROTTLE_MAX;
-		return;
-	}
 
-	throttle_DAC = average_adc >> 2; //get rid of least 2 bits for 10 bit DAC on MC
-
+/**
+ * @brief Converts pedal 12 bit ADC to 10 bit DAC. 
+ *
+ * @param adc - ADC value that passed through check validity function.
+ */
+uint16_t convert_to_dac(uint16_t adc)
+{
+    adc = MIN(MAX(adc, ADC_NO_THROTTLE_MAX), ADC_FULL_THROTTLE_MIN);    // Keep adc val within throttle range
+    return ((adc - ADC_NO_THROTTLE_MAX) * MC_DAC_MAX) / (ADC_FULL_THROTTLE_MIN - ADC_NO_THROTTLE_MAX);      // Find ratio between 0 to 1 and then * 1023
 }
 
 
@@ -389,18 +383,24 @@ void normalize_adc_values(uint16_t adc1, uint16_t adc2)
  */
 bool accel_check_validity(uint16_t adc1, uint16_t adc2)
 {
-	if (adc1 < ADC_LOWER_DEADZONE || adc1 > ADC_UPPER_DEADZONE)
+	if ((adc1 < ADC_LOWER_DEADZONE) || (adc1 > ADC_UPPER_DEADZONE))
 	{
+		g_diagnostics.flags.throttle_ADC_out_of_range = true;
 		return false;
 	}
-	if (adc2 < ADC_LOWER_DEADZONE || adc2 > ADC_UPPER_DEADZONE)
+	if ((adc2 < ADC_LOWER_DEADZONE) || (adc2 > ADC_UPPER_DEADZONE))
 	{
+		g_diagnostics.flags.throttle_ADC_out_of_range = true;
 		return false;
 	}
 	if (abs(adc1 - adc2) > ADC_MAX_DIFFERENCE)
 	{
+		g_diagnostics.flags.throttle_ADC_mismatch = true;
 		return false;
 	}
+
+	g_diagnostics.flags.throttle_ADC_mismatch = false;
+	g_diagnostics.flags.throttle_ADC_out_of_range = false;
 
 	return true;
 }
@@ -414,9 +414,11 @@ bool accel_check_validity(uint16_t adc1, uint16_t adc2)
  */
 void brake_press_handle()
 {
-	input_flags.mech_brake_pressed = true;
+	g_input_flags.mech_brake_pressed = true;
+	g_diagnostics.flags.mech_brake_pressed = true;
 	motor_command_t motor_command = get_motor_command(ACCEL_DAC_OFF, REGEN_DAC_OFF);
 	motor_command_package_and_send(&motor_command, true);
+	DRD_diagnostics_transmit(&g_diagnostics, true);
 }
 
 /*
@@ -425,8 +427,8 @@ void brake_press_handle()
 uint8_t get_command_flags()
 {
 	uint8_t flags = 0;
-	flags |= (drive_state == REVERSE  ? 0: 1); //direction value: 0 for reverse, 1 for forward or Park
-	flags |= (input_flags.eco_mode_on ? 1 << 1: 0);
+	flags |= (g_drive_state == REVERSE  ? 0: 1); //direction value: 0 for reverse, 1 for forward or Park
+	flags |= (g_input_flags.eco_mode_on ? 1 << 1: 0);       // 1 is eco mode.
 	return flags;
 }
 
@@ -448,10 +450,76 @@ motor_command_t get_motor_command(uint16_t accel_DAC, uint16_t regen_DAC)
 	return motor_command;
 }
 
+/*
+ * @brief Helper function which clears drive state transition request flags
+ *
+ */
 void clear_request_flags()
 {
-	input_flags.park_state_request = false;
-	input_flags.forward_state_request = false;
-	input_flags.reverse_state_request = false;
+	g_input_flags.park_state_request = false;
+	g_input_flags.forward_state_request = false;
+	g_input_flags.reverse_state_request = false;
 }
+
+
+/*
+ * @brief helper function which handles RPM to velocity conversions when FRAME 0 is received
+ * 			from the motor controller
+ *
+ * 	@param Data	Data from recieved CAN message
+ */
+void velocity_CAN_msg_handle(uint8_t* data)
+{
+	uint32_t rpm = (data[4] >> 3) | ((data[5] & 0x7f) << 5); //35th to 46th bit
+	float velocity = (WHEEL_RADIUS * 2.0 * M_PI * rpm) / 60.0;
+	g_velocity_kmh = velocity * 3.6;
+
+	if (velocity < VELOCITY_THRESHOLD)
+	{
+		g_input_flags.velocity_under_threshold = true;
+	}
+
+	else
+	{
+		g_input_flags.velocity_under_threshold = false;
+	}
+}
+
+/*
+ * @brief helper function which sets eco mode flags based on data receievd from
+ * 		the steering wheel CAN message.
+ */
+void steering_CAN_msg_handle(uint8_t* data)
+{
+	g_input_flags.eco_mode_on = (data[0] >> 2); //third bit of steering CAN message
+	g_lcd_eco_mode_on = g_input_flags.eco_mode_on; //global variable for LCD
+}
+
+
+#ifdef DEBUG
+
+/*
+ * @brief handler function for state transition CAN messages
+ *
+ * These CAN messages are only used to automate state transitions without button presses and don't
+ * 		exist in the firmware in production. Used only for testing in debug.
+ *
+ */
+void state_request_CAN_msg_handle(uint8_t* data)
+{
+	int value = data[0];
+	if (value == 0)
+	{
+		g_input_flags.park_state_request = true;
+	}
+	else if (value == 1)
+	{
+		g_input_flags.reverse_state_request = true;
+	}
+	else if (value == 2)
+	{
+		g_input_flags.forward_state_request = true;
+	}
+}
+#endif
 

@@ -38,6 +38,11 @@ import time
 import threading
 from pprint import pprint
 
+
+""" CHANGE BASED ON YOUR COMPUTER """
+WINDOWS = False
+
+
 script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 DBC_FILE = os.path.join(script_dir, 'brightside.dbc')
 FAULT       = 1
@@ -93,7 +98,7 @@ class CANBus:
     def _connect(self):
         """Establish connection to the CAN bus."""
         try:
-            self.bus = can.interface.Bus(bustype=self.bustype, channel=self.channel)
+            self.bus = can.interface.Bus(bustype=self.bustype, channel=self.channel, bitrate=500000)
         except Exception as e:
             print(f"CAN init error: {e}")
             sys.exit(1)
@@ -370,7 +375,11 @@ def script_toggle_turn_signals(can_bus):
 # Example usage
 if __name__ == "__main__":
     # Initialize CAN bus (adjust bustype and channel as needed)
-    can_bus = CANBus(bustype='socketcan', channel='can0')
+
+    if WINDOWS:
+        can_bus = CANBus(bustype='pcan', channel='PCAN_USBBUS1')
+    else:
+        can_bus = CANBus(bustype='socketcan', channel='can0')
 
     can_bus.start_receiver(on_message_received)
     
