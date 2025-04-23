@@ -207,10 +207,10 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* creation of IMU_Task */
-//   IMU_TaskHandle = osThreadNew(IMU_task, NULL, &IMU_Task_attributes);
+  IMU_TaskHandle = osThreadNew(IMU_task, NULL, &IMU_Task_attributes);
 
   /* creation of GPS_Task */
-//   GPS_TaskHandle = osThreadNew(GPS_task, NULL, &GPS_Task_attributes);
+  GPS_TaskHandle = osThreadNew(GPS_task, NULL, &GPS_Task_attributes);
 
   /* creation of CANLoad_Task */
   CANLoad_TaskHandle = osThreadNew(CANLoad_task, NULL, &CANLoad_Task_attributes);
