@@ -94,6 +94,10 @@ typedef struct {
 #define MPPT_B_POWER_CONNECTOR_ID             0x6B6
 #define MPPT_C_POWER_CONNECTOR_ID             0x6C6
 
+#define MPPT_A_LIMITS_ID                      0x6A4
+#define MPPT_B_LIMITS_ID                      0x6B4
+#define MPPT_C_LIMITS_ID                      0x6C4
+
 #define MDU_FRAME_0_ID                      0x08850225
 #define MDU_FRAME_1_ID                      0x08950225
 #define MDU_FRAME_2_ID                      0x08A50225
@@ -140,6 +144,10 @@ static CanFilter_t filter_whitelist[] = {
     { MPPT_A_POWER_CONNECTOR_ID,            4,     0               },
     { MPPT_B_POWER_CONNECTOR_ID,            4,     0               },
     { MPPT_C_POWER_CONNECTOR_ID,            4,     0               },
+
+    { MPPT_A_LIMITS_ID,                     10,     0               },
+    { MPPT_B_LIMITS_ID,                     10,     0               },
+    { MPPT_C_LIMITS_ID,                     10,     0               },
 
     { TEL_TIME_SINCE_BOOTUP_ID,             1,     0               },
     { TEL_DIAGNOSTICS_ID,                   1,     0               },

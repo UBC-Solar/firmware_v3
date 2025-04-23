@@ -34,6 +34,7 @@
 #include "gps.h"
 #include "nmea_parse.h"
 #include "imu.h"
+#include "mppt.h"
 
 /* USER CODE END Includes */
 
@@ -140,6 +141,18 @@ const osThreadAttr_t Diagnostic_Task_attributes = {
   .stack_size = sizeof(DiagnosticTaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for MPPT_Task */
+osThreadId_t MPPT_TaskHandle;
+uint32_t MPPT_TaskBuffer[ 128 ];
+osStaticThreadDef_t MPPT_TaskControlBlock;
+const osThreadAttr_t MPPT_Task_attributes = {
+  .name = "MPPT_Task",
+  .cb_mem = &MPPT_TaskControlBlock,
+  .cb_size = sizeof(MPPT_TaskControlBlock),
+  .stack_mem = &MPPT_TaskBuffer[0],
+  .stack_size = sizeof(MPPT_TaskBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -151,6 +164,7 @@ void IMU_task(void *argument);
 void GPS_task(void *argument);
 void CANLoad_task(void *argument);
 void Diagnostic_task(void *argument);
+void MPPT_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -193,16 +207,19 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* creation of IMU_Task */
-  IMU_TaskHandle = osThreadNew(IMU_task, NULL, &IMU_Task_attributes);
+//   IMU_TaskHandle = osThreadNew(IMU_task, NULL, &IMU_Task_attributes);
 
   /* creation of GPS_Task */
-  GPS_TaskHandle = osThreadNew(GPS_task, NULL, &GPS_Task_attributes);
+//   GPS_TaskHandle = osThreadNew(GPS_task, NULL, &GPS_Task_attributes);
 
   /* creation of CANLoad_Task */
   CANLoad_TaskHandle = osThreadNew(CANLoad_task, NULL, &CANLoad_Task_attributes);
 
   /* creation of Diagnostic_Task */
   Diagnostic_TaskHandle = osThreadNew(Diagnostic_task, NULL, &Diagnostic_Task_attributes);
+
+  /* creation of MPPT_Task */
+  MPPT_TaskHandle = osThreadNew(MPPT_task, NULL, &MPPT_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
@@ -258,7 +275,7 @@ void IMU_task(void *argument)
         HAL_I2C_Init(&hi2c2);
         osDelay(IMU_TASK_DELAY);
     }
-    /* USER CODE END IMU_task */
+  /* USER CODE END IMU_task */
 }
 
 /* USER CODE BEGIN Header_GPS_task */
@@ -270,7 +287,7 @@ void IMU_task(void *argument)
 /* USER CODE END Header_GPS_task */
 void GPS_task(void *argument)
 {
-    /* USER CODE BEGIN GPS_task */
+  /* USER CODE BEGIN GPS_task */
     /* Infinite loop */
     
     osDelay(GPS_TASK_OFFSET_DELAY);
@@ -288,7 +305,7 @@ void GPS_task(void *argument)
         }
     }
     
-    /* USER CODE END GPS_task */
+  /* USER CODE END GPS_task */
 }
 
 /* USER CODE BEGIN Header_CANLoad_task */
@@ -332,6 +349,29 @@ void Diagnostic_task(void *argument)
   }
   /* USER CODE END Diagnostic_task */
 }
+
+/* USER CODE BEGIN Header_MPPT_task */
+/**
+* @brief Need this since MPPT resets to defaults after power cycle. Function implementing the MPPT_Task thread. 
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_MPPT_task */
+void MPPT_task(void *argument)
+{
+  /* USER CODE BEGIN MPPT_task */
+
+  osDelay(MPPT_COMMAND_TASK_OFFSET);
+
+  /* Infinite loop */
+  for(;;)
+  {
+      MPPT_output_voltage_max_command(MPPT_OUTPUT_VOLTAGE_MAX);
+      MPPT_input_current_max_command(MPPT_INPUT_CURRENT_MAX);
+      osDelay(MPPT_COMMAND_DELAY);
+  }
+  /* USER CODE END MPPT_task */
+}    
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
