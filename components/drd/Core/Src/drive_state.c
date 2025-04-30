@@ -49,7 +49,7 @@ static uint16_t convert_to_dac(uint16_t adc);
 volatile uint32_t g_velocity_kmh = 0;
 volatile bool g_lcd_eco_mode_on = true;
 volatile drive_state_t g_drive_state = PARK;
-volatile DRD_diagnostic_t g_diagnostics.drive_state_diagnostic = 4;
+volatile DRD_diagnostic_t g_diagnostics.drive_state_diagnostic = 3;
 
 uint16_t g_throttle_DAC = 0;
 input_flags_t g_input_flags;
@@ -80,12 +80,12 @@ void Drive_State_Machine_handler()
 
 		case REVERSE:
 			motor_command = reverse_state_handle();
-			g_diagnostics.drive_state_diagnostic = 3;
+			g_diagnostics.drive_state_diagnostic = 4;
 		break;
 
 		case PARK:
 			motor_command = park_state_handle();
-			g_diagnostics.drive_state_diagnostic = 4;
+			g_diagnostics.drive_state_diagnostic = 3;
 		break;
 
 		default:
