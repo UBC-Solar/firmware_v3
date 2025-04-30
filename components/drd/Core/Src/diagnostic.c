@@ -38,7 +38,7 @@ void DRD_time_since_bootup()
  */
 void DRD_diagnostics_transmit(DRD_diagnostic_t* diagnostics, bool from_ISR)
 {
-	DRD_diagnostic_t g_diagnostics.drive_state_diagnostic = g_drive_state;
+	g_diagnostics.drive_state_diagnostic = g_drive_state;
 
 	CAN_comms_Tx_msg_t msg;
 	msg.header = drd_diagnostic_header;
