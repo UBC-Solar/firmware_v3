@@ -11,6 +11,7 @@
 #include "stdbool.h"
 #include "i2c.h"
 #include "main.h"
+#include "nmea_parse.h"
 
 #define GPS_MESSAGE_LEN 500
 #define GPS_TASK_DELAY      250
@@ -29,5 +30,17 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c);
 void gps_task();
 
 void read_i2c_gps_module(uint8_t* receive_buffer);
+
+/** CAN SENDING FUNCTION DECLARATIONS */
+void CAN_tx_lon_lat_msg(float latitude, float longitude);
+void CAN_tx_alt_geod_msg(float altitude, float geodHeight);
+void CAN_tx_hdop_vdop_msg(float hdop, float vdop);
+void CAN_tx_pdop_speedKmh_msg(float pdop, float speedKmh);
+void CAN_tx_true_magnetic_heading_msg(float trueHeading, float magneticHeading);
+void CAN_tx_sat_count_view_fix_snr_msg(int satelliteCount, int satInView, int fix, int snr);
+void CAN_tx_lon_side_date_msg(char lonSide, char latSide, char date[7], char utcTime[7]);
+
+void CAN_tx_gps_data_msg(GPS* gps_data);
+
 
 #endif /* __GPS__H__ */

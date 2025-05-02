@@ -34,6 +34,7 @@
 #include "gps.h"
 #include "nmea_parse.h"
 #include "imu.h"
+#include "canload.h"
 
 /* USER CODE END Includes */
 
@@ -305,7 +306,7 @@ void CANLoad_task(void *argument)
   for(;;)
   {
    CANLOAD_update_sliding_window();
-  //  CAN_tx_canload_msg();
+//    CAN_tx_canload_msg();
    osDelay(CANLOAD_MSG_RATE);
   }
   /* USER CODE END CANLoad_task */
