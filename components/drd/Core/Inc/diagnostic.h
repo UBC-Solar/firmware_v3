@@ -29,7 +29,6 @@ typedef struct {
 	volatile uint16_t raw_adc1;
 	volatile uint16_t raw_adc2;
 	DRD_flags_t flags;
-	volatile uint8_t drive_state_diagnostic;
 } DRD_diagnostic_t;
 
 
