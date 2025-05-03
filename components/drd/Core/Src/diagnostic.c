@@ -7,6 +7,7 @@
 
 /*	INCLUDES	*/
 #include "diagnostic.h"
+#include "drive_state.h"
 #include "CAN_comms.h"
 #include "can.h"
 
@@ -38,8 +39,6 @@ void DRD_time_since_bootup()
  */
 void DRD_diagnostics_transmit(DRD_diagnostic_t* diagnostics, bool from_ISR)
 {
-	g_diagnostics.drive_state_diagnostic = g_drive_state;
-
 	CAN_comms_Tx_msg_t msg;
 	msg.header = drd_diagnostic_header;
 
@@ -48,7 +47,7 @@ void DRD_diagnostics_transmit(DRD_diagnostic_t* diagnostics, bool from_ISR)
 	msg.data[2] = (diagnostics->raw_adc2 & 0xFF);
 	msg.data[3] = (diagnostics->raw_adc2 >> 8);
 	msg.data[4] =  diagnostics->flags.all_flags;
-	msg.data[5] = diagnostics->drive_state_diagnostic;
+	msg.data[5] = g_drive_state;
 
 	if (from_ISR)
 	{

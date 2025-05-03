@@ -59,7 +59,7 @@ extern const CAN_TxHeaderTypeDef time_since_bootup_can_header;
 
 #define MDU_REQUEST_FRAME					0b111 //request frames 0, 1 and 2 (0th, 1st and 2nd bit)
 #define MDU_REQUEST_SIZE 					1
-#define DRD_DIAGNOSTIC_SIZE					5
+#define DRD_DIAGNOSTIC_SIZE					6
 #define TIME_SINCE_BOOTUP_CAN_DATA_LENGTH 	4
 
 /* USER CODE END Private defines */
