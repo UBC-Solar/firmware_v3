@@ -189,6 +189,7 @@ void handle_state_transition()
 			default:
 				g_drive_state = PARK;
 		}
+
 	//reset state transition requests
 	clear_request_flags();
 }

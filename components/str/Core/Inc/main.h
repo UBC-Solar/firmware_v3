@@ -85,8 +85,8 @@ typedef enum {
 } mode_status_t;
 
 typedef enum {
-  HORN_ON = 0b00,
-  HORN_OFF = 0b01,
+  HORN_OFF = 0b00,
+  HORN_ON = 0b01,
 } horn_status_t;
 
 /* USER CODE END Private defines */

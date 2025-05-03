@@ -489,7 +489,7 @@ static void MX_TIM3_Init(void)
   /* USER CODE END TIM3_Init 0 */
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0}; 
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
 
   /* USER CODE BEGIN TIM3_Init 1 */
 
@@ -596,8 +596,8 @@ static void MX_GPIO_Init(void)
                           |NEG_CTRL_Pin|SWAP_CTRL_Pin|ESTOP_LED_Pin|POS_CTRL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, SPAR1_CTRL_Pin|TEL_CTRL_Pin|DID_CTRL_Pin|AMB_CTRL_Pin
-                          |MCB_CTRL_Pin|MDU_CTRL_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, SPAR1_CTRL_Pin|TEL_CTRL_Pin|Unused1_CTRL_Pin|Unused2_CTRL_Pin
+                          |DRD_CTRL_Pin|MDU_CTRL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : GPIO_BMS_Pin */
   GPIO_InitStruct.Pin = GPIO_BMS_Pin;
@@ -637,10 +637,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SPAR1_CTRL_Pin TEL_CTRL_Pin DID_CTRL_Pin AMB_CTRL_Pin
-                           MCB_CTRL_Pin MDU_CTRL_Pin */
-  GPIO_InitStruct.Pin = SPAR1_CTRL_Pin|TEL_CTRL_Pin|DID_CTRL_Pin|AMB_CTRL_Pin
-                          |MCB_CTRL_Pin|MDU_CTRL_Pin;
+  /*Configure GPIO pins : SPAR1_CTRL_Pin TEL_CTRL_Pin Unused1_CTRL_Pin Unused2_CTRL_Pin
+                           DRD_CTRL_Pin MDU_CTRL_Pin */
+  GPIO_InitStruct.Pin = SPAR1_CTRL_Pin|TEL_CTRL_Pin|Unused1_CTRL_Pin|Unused2_CTRL_Pin
+                          |DRD_CTRL_Pin|MDU_CTRL_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
