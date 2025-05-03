@@ -278,7 +278,7 @@ void GPS_task(void *argument)
     for(;;)
     {
         gps_task();
-        osDelay(GPS_TASK_DELAY);
+        osDelay(GPS_TASK_DELAY_SINGLE);     // 5 of these makes 250 ms. 
         
         if (g_tel_diagnostic_flags.bits.gps_read_fail)
         {

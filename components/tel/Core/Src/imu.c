@@ -225,9 +225,12 @@ void imu_task()
 		imu_data.gyroz = (float)Gyro_Z_RAW * GYRO_FS_MULTIPLIER_250D; // Convert to mdps
 
 		//Sending message over to the CAN bus
+        osDelay(IMU_TASK_DELAY_SINGLE);
 		CAN_tx_ag_x_msg(imu_data.accelx, imu_data.gyrox);
+        osDelay(IMU_TASK_DELAY_SINGLE);
 		CAN_tx_ag_y_msg(imu_data.accely, imu_data.gyroy);
+        osDelay(IMU_TASK_DELAY_SINGLE);
 		CAN_tx_ag_z_msg(imu_data.accelz, imu_data.gyroz);
-        osDelay(IMU_TASK_DELAY);
+        osDelay(IMU_TASK_DELAY_SINGLE);
 	}
 }

@@ -359,13 +359,16 @@ void CAN_tx_lon_side_date_msg(char lonSide, char latSide, char date[7], char utc
  * @param gps_data Pointer to GPS struct of all fields
  */
 void CAN_tx_gps_data_msg(GPS* gps_data) {
-    // CAN_tx_sat_count_view_fix_snr_msg(gps_data->satelliteCount, gps_data->satInView, gps_data->fix, gps_data->snr);
-    // osDelay(20);
+    osDelay(GPS_TASK_DELAY_SINGLE);
+    CAN_tx_sat_count_view_fix_snr_msg(gps_data->satelliteCount, gps_data->satInView, gps_data->fix, gps_data->snr);
+    osDelay(GPS_TASK_DELAY_SINGLE);
     CAN_tx_lon_lat_msg(gps_data->longitude, gps_data->latitude);
-    osDelay(3);
+    osDelay(GPS_TASK_DELAY_SINGLE);
+    CAN_tx_lon_side_date_msg(gps_data->lonSide, gps_data->latSide, gps_data->date, gps_data->utcTime);
+    osDelay(GPS_TASK_DELAY_SINGLE);
+
+    /** TO BE USED WHEN NECESSARY */
     // CAN_tx_hdop_vdop_msg(gps_data->hdop, gps_data->vdop);
-    // osDelay(3);
-    // CAN_tx_lon_side_date_msg(gps_data->lonSide, gps_data->latSide, gps_data->date, gps_data->utcTime);
     // osDelay(3);
     // CAN_tx_pdop_speedKmh_msg(gps_data->pdop, gps_data->speedKmh);
     // osDelay(3);
