@@ -34,6 +34,7 @@
 #include "gps.h"
 #include "nmea_parse.h"
 #include "imu.h"
+#include "canload.h"
 
 /* USER CODE END Includes */
 
@@ -277,7 +278,7 @@ void GPS_task(void *argument)
     for(;;)
     {
         gps_task();
-        osDelay(GPS_TASK_DELAY);
+        osDelay(GPS_TASK_DELAY_SINGLE);     // 5 of these makes 250 ms. 
         
         if (g_tel_diagnostic_flags.bits.gps_read_fail)
         {
@@ -305,7 +306,7 @@ void CANLoad_task(void *argument)
   for(;;)
   {
    CANLOAD_update_sliding_window();
-  //  CAN_tx_canload_msg();
+//    CAN_tx_canload_msg();
    osDelay(CANLOAD_MSG_RATE);
   }
   /* USER CODE END CANLoad_task */

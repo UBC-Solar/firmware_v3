@@ -33,6 +33,7 @@ extern "C" {
 #define CTRL_8    0x17 // Control register for accelerometer full-scale range
 
 #define IMU_TASK_DELAY      100
+#define IMU_TASK_DELAY_SINGLE      25
 #define IMU_TASK_OFFSET_DELAY       33
 
 

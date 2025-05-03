@@ -26,10 +26,22 @@ https://ubcsolar26.monday.com/boards/7524367653/pulses/7524368220/posts/34939170
 #define ACK_DELIMITER_BITS 1
 #define EOF_BITS 7
 #define IFS_BITS 3
+#define CANLOAD_MSG_ID                      0x763
+#define CANLOAD_DATA_LENGTH                 1
 
 static uint32_t can_total_bits = 0;
 uint64_t currentIdx = 0; // Always increments and needs large enough data type to avoid overflow
 uint32_t circularBuffer[WINDOW_SIZE] = {0};
+
+
+/** CAN HEADER DEFINITION */
+CAN_TxHeaderTypeDef CANLOAD_busload = {
+    .StdId = CANLOAD_MSG_ID,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = CANLOAD_DATA_LENGTH};
+
 
 /**
  * @brief Calculates the number of bits in a CAN message.
@@ -149,4 +161,14 @@ float calculate_bus_load()
 float CANLOAD_get_bus_load()
 {
     return calculate_bus_load();
+}
+
+void CAN_tx_canload_msg() {
+    CAN_comms_Tx_msg_t CAN_comms_Tx_msg = {
+        .data[0] = (uint8_t) CANLOAD_get_bus_load(),
+        .header = CANLOAD_busload
+    };  
+
+  CANLOAD_calculate_message_bits(CAN_comms_Tx_msg.header.DLC, CAN_comms_Tx_msg.header.IDE);
+  CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
 }

@@ -7,5 +7,6 @@
 float CANLOAD_get_bus_load();
 void CANLOAD_update_sliding_window();
 void CANLOAD_calculate_message_bits(uint32_t DLC, uint32_t IDE);
+void CAN_tx_canload_msg();
 
 #endif /* INC_CANBUSLOAD_H_ */
