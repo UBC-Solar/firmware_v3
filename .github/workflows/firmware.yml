@@ -34,7 +34,7 @@ jobs:
         run: ls -l components/${{ matrix.component }}/Release/*.elf
 
       - name: Upload ELF artifact
-        uses: actions/upload-artifact@v3.1.0
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.component }}-elf
           path: components/${{ matrix.component }}/Release/*.elf
