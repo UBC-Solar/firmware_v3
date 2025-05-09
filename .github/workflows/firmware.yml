@@ -31,6 +31,12 @@ jobs:
           project-path: components/${{ matrix.component }}
           project-target: ${{ matrix.component }}
 
+      - name: List build outputs
+        run: ls -R components/${{ matrix.component }}/Release
+        
+      - name: Debug Build Directory
+        run: ls -R components/${{ matrix.component }}/Release
+
       - name: Upload ELF artifact
         uses: actions/upload-artifact@v3
         with:
