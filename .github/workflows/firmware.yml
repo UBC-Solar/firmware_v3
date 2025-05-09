@@ -32,6 +32,23 @@ jobs:
 
       - name: Verify ELF Files Before Upload
         run: ls -l components/${{ matrix.component }}/Release/*.elf
+        
+      - name: Upload ELF artifact to S3
+        uses: jakejarvis/s3-sync-action@v0.5.1
+        with:
+          args: --acl public-read --follow-symlinks --exact-timestamps
+        env:
+          AWS_S3_BUCKET: your-bucket-name
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          SOURCE_DIR: components/${{ matrix.component }}/Release/
+          DEST_DIR: ${{ matrix.component }}/
+        
+      - name: List build outputs
+        run: ls -R components/${{ matrix.component }}/Release
+          
+      - name: Verify ELF Files Before Upload
+        run: ls -l components/${{ matrix.component }}/Release/*.elf
 
       - name: Upload ELF artifact
         uses: actions/upload-artifact@v3
