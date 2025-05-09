@@ -32,6 +32,7 @@
 #include "drive_state.h"
 #include "iwdg.h"
 #include "diagnostic.h"
+#include "cyclic_data_handler.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -241,9 +242,14 @@ void LCDUpdatetask(void *argument)
   
   for(;;)
   {
-    g_lcd_data.speed = g_velocity_kmh;
-    g_lcd_data.drive_state = g_drive_state;
-    g_lcd_data.drive_mode = g_lcd_eco_mode_on;
+    set_cyclic_speed(g_velocity_kmh);
+    g_lcd_data.speed = get_cyclic_speed();
+
+    set_cyclic_drive_state(g_drive_state);
+    g_lcd_data.drive_state = get_cyclic_drive_state();
+
+    set_cyclic_drive_mode(g_lcd_eco_mode_on);
+    g_lcd_data.drive_mode = get_cyclic_drive_mode();
 
     LCD_display_power_bar((float) g_lcd_data.pack_current, (float) g_lcd_data.pack_voltage);
     LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);

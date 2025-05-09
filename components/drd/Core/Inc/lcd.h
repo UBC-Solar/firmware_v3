@@ -108,13 +108,13 @@
 
 /*	Datatypes */
  typedef struct {
-    volatile uint32_t speed;
+    volatile uint32_t* speed;
     volatile uint8_t speed_units;
     volatile int16_t pack_current;
     volatile uint16_t pack_voltage;
-    volatile uint8_t drive_state;
+    volatile uint8_t* drive_state;
     volatile uint8_t soc;
-    volatile uint8_t drive_mode;
+    volatile uint8_t* drive_mode;
 } lcd_data_t;
 
 
@@ -137,21 +137,21 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data);
  * @param speed The speed value to display.
  * @param units The speed units (LCD_SPEED_UNITS_MPH or LCD_SPEED_UNITS_KPH).
  */
-void LCD_display_speed(uint32_t speed, int units);
+void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units);
 
 /**
  * @brief Displays the drive state on the LCD.
  * 
  * @param state The drive state (e.g., FORWARD_STATE, PARK_STATE, REVERSE_STATE).
  */
-void LCD_display_drive_state(drive_state_t state);
+void LCD_display_drive_state(volatile drive_state_t* state);
 
 /**
  * @brief Displays the state of charge (SOC) on the LCD.
  * 
  * @param soc The state of charge (in percent).
  */
-void LCD_display_SOC(uint32_t soc);
+void LCD_display_SOC(volatile uint32_t soc);
 
 /**
  * @brief Displays a battery power bar based on pack current and voltage.
@@ -159,14 +159,14 @@ void LCD_display_SOC(uint32_t soc);
  * @param pack_current The battery pack current.
  * @param pack_voltage The battery pack voltage.
  */
-void LCD_display_power_bar(float pack_current, float pack_voltage);
+void LCD_display_power_bar(volatile float pack_current, volatile float pack_voltage);
 
 /**
  * @brief Displays an E for ECO mode and P for POWER mode
  * 
  * @param drive_mode The drive mode
  */
-void LCD_display_drive_mode(uint8_t drive_mode);
+void LCD_display_drive_mode(volatile uint8_t* drive_mode);
 
 /**
  * @brief Initializes the LCD and SPI interface.

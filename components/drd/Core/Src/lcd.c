@@ -266,27 +266,32 @@ static bounding_box_t draw_char(unsigned char c, unsigned char x, unsigned char 
  * @param speed The speed value to display.
  * @param units The speed units (LCD_SPEED_UNITS_MPH or LCD_SPEED_UNITS_KPH).
  */
-void LCD_display_speed(uint32_t speed, int units)
+void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units)
 {
     char speed_str[12];
     /* Clear the previous speed and unit areas */
     lcd_clear_bounding_box(SPEED_X - SPEED_SPACING, SPEED_Y, old_bb_speed.x2 + SPEED_SPACING, BOTTOM_RIGHT_Y);
     lcd_clear_bounding_box(old_bb_speed.x2 - SPEED_SPACING, SPEED_Y, old_bb_speed_units.x2 + SPEED_UNITS_SPACING, SPEED_Y + 11);
     
-    if (speed < 10) { // Single digit speed
-        sprintf(speed_str, "%01lu", (unsigned long)speed);  
+    if (speed == NULL) {  // Stale speed data
+        sprintf(speed_str, "--"); 
+        old_bb_speed = draw_text(speed_str, SPEED_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+    } 
+    else if (*speed < 10) { // Single digit speed
+        sprintf(speed_str, "%01lu", (unsigned long)*speed);  
         old_bb_speed = draw_text(speed_str, SPEED_X + 14, SPEED_Y, SPEED_FONT, SPEED_SPACING);
     } else {
-        sprintf(speed_str, "%02lu", (unsigned long)speed);  
+        sprintf(speed_str, "%02lu", (unsigned long)*speed);  
         old_bb_speed = draw_text(speed_str, SPEED_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
     }
     
     /* Draw the speed units */
+    
     switch (units) {
         case KPH:
             old_bb_speed_units = draw_text("kph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
             break;
-            case MPH:
+        case MPH:
             old_bb_speed_units = draw_text("mph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
             break;
         default:
@@ -301,23 +306,28 @@ void LCD_display_speed(uint32_t speed, int units)
  * 
  * @param state The drive state (e.g., FORWARD_STATE, PARK_STATE, REVERSE_STATE).
  */
-void LCD_display_drive_state(drive_state_t state)
+void LCD_display_drive_state(volatile drive_state_t* state)
 {
     char state_str[2] = {ERROR_SYMBOL, '\0'};  // Default to error symbol.
     lcd_clear_bounding_box(STATE_X, STATE_Y, old_bb_drive_state.x2, BOTTOM_RIGHT_Y);
-    
-    switch (state) {
-        case FORWARD:
-            state_str[STATE_IDX] = FORWARD_SYMBOL;
-            break;
-        case PARK:
-            state_str[STATE_IDX] = PARK_SYMBOL; 
-            break;
-        case REVERSE:
-            state_str[STATE_IDX] = REVERSE_SYMBOL;
-            break;
-        default:
-            break;
+    if (state == NULL) {  // Stale data for drive state
+        sprintf(state_str, "-");
+    } 
+    else {
+        switch (*state) {
+            case FORWARD:
+                state_str[0] = FORWARD_SYMBOL;
+                break;
+            case PARK:
+                state_str[0] = PARK_SYMBOL;
+                break;
+            case REVERSE:
+                state_str[0] = REVERSE_SYMBOL;
+                break;
+            default:
+                state_str[0] = ERROR_SYMBOL;
+                break;
+        }
     }
     old_bb_drive_state = draw_text(state_str, STATE_X, STATE_Y, STATE_FONT, STATE_SPACING);
     lcd_refresh();
@@ -328,7 +338,7 @@ void LCD_display_drive_state(drive_state_t state)
  * 
  * @param soc The state of charge (in percent).
  */
-void LCD_display_SOC(uint32_t soc)
+void LCD_display_SOC(volatile uint32_t soc)
 {
     char soc_str[12];
     bounding_box_t bb;
@@ -354,7 +364,7 @@ void LCD_display_SOC(uint32_t soc)
  * @param pack_current The battery pack current.
  * @param pack_voltage The battery pack voltage.
  */
-void LCD_display_power_bar(float pack_current, float pack_voltage)
+void LCD_display_power_bar(volatile float pack_current, volatile float pack_voltage)
 {
     float power = pack_current * pack_voltage;
     int fill_pixels = 0;
@@ -402,24 +412,34 @@ void LCD_display_power_bar(float pack_current, float pack_voltage)
  * 
  * @param drive_mode The drive mode
  */
-void LCD_display_drive_mode(uint8_t drive_mode)
+void LCD_display_drive_mode(volatile uint8_t* drive_mode)
 {
     char drive_mode_c = ERROR_SYMBOL;   // Default to error symbol.
     lcd_clear_bounding_box(0, old_bb_drive_mode.y1 + 7, old_bb_drive_mode.x2, old_bb_drive_mode.y2);
     
-    switch (drive_mode) {
-        case DRIVE_MODE_ECO:
-            drive_mode_c = ECO_SYMBOL;
-            old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
-            break;
-        case DRIVE_MODE_POWER:
-            drive_mode_c = POWER_SYMBOL; 
-            old_bb_drive_mode = draw_char(drive_mode_c, POWER_MODE_X, POWER_MODE_Y, POWER_MODE_FONT);
-            break;
-        default:
-            break;
+    // Check if drive_mode is stale.
+    if (drive_mode == NULL) {
+        drive_mode_c = '-';  // Display a dash for stale data.
+        old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
     }
-
+    else {
+        // Drive mode is valid, display the corresponding symbol.
+        switch (*drive_mode) {
+            case DRIVE_MODE_ECO:
+                drive_mode_c = ECO_SYMBOL;
+                old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
+                break;
+            case DRIVE_MODE_POWER:
+                drive_mode_c = POWER_SYMBOL; 
+                old_bb_drive_mode = draw_char(drive_mode_c, POWER_MODE_X, POWER_MODE_Y, POWER_MODE_FONT);
+                break;
+            default:
+                drive_mode_c = ERROR_SYMBOL;  // Display error symbol for invalid mode.
+                old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
+                break;
+        }
+    }
+    
     // With LCD Refresh the topbar gets cut into. This is because lighting bolt has unecesary white space :(.
 }
 
