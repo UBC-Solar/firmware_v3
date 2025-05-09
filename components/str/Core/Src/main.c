@@ -174,7 +174,7 @@ int main(void)
     // Checks if either the turn signal or mode status value changes
     if(g_turn_signal_status != turn_status || g_mode_status != mode_status)
     {
-      g_turn_signal_status = turn_status
+      g_turn_signal_status = turn_status;
 
       g_mode_status = mode_status;
 
