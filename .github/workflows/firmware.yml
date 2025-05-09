@@ -25,7 +25,8 @@ jobs:
           java-version: '8'
 
       - name: Build ${{ matrix.component }}
-        uses: xanderhendriks/action-build-stm32cubeide@v13
+        uses: xanderhendriks/action-build-stm32cubeide@v15.0
+
         with:
           project-path: components/${{ matrix.component }}
           project-target: ${{ matrix.component }}
