@@ -32,7 +32,7 @@ jobs:
           project-target: ${{ matrix.component }}
 
       - name: Upload ELF artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.2
         with:
           name: ${{ matrix.component }}-elf
           path: components/${{ matrix.component }}/Release/*.elf
