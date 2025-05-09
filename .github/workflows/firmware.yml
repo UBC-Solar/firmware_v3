@@ -31,14 +31,11 @@ jobs:
           project-path: components/${{ matrix.component }}
           project-target: ${{ matrix.component }}
 
-      - name: List build outputs
-        run: ls -R components/${{ matrix.component }}/Release
-        
-      - name: Debug Build Directory
-        run: ls -R components/${{ matrix.component }}/Release
+      - name: Verify ELF Files Before Upload
+        run: ls -l components/${{ matrix.component }}/Release/*.elf
 
       - name: Upload ELF artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.0
         with:
           name: ${{ matrix.component }}-elf
           path: components/${{ matrix.component }}/Release/*.elf
