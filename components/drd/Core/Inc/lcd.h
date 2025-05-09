@@ -114,7 +114,7 @@
     volatile uint16_t pack_voltage;
     volatile uint8_t* drive_state;
     volatile uint8_t soc;
-    volatile uint8_t* drive_mode;
+    volatile uint8_t drive_mode;
 } lcd_data_t;
 
 
@@ -166,7 +166,7 @@ void LCD_display_power_bar(volatile float pack_current, volatile float pack_volt
  * 
  * @param drive_mode The drive mode
  */
-void LCD_display_drive_mode(volatile uint8_t* drive_mode);
+void LCD_display_drive_mode(volatile uint8_t drive_mode);
 
 /**
  * @brief Initializes the LCD and SPI interface.

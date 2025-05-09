@@ -412,32 +412,25 @@ void LCD_display_power_bar(volatile float pack_current, volatile float pack_volt
  * 
  * @param drive_mode The drive mode
  */
-void LCD_display_drive_mode(volatile uint8_t* drive_mode)
+void LCD_display_drive_mode(volatile uint8_t drive_mode)
 {
     char drive_mode_c = ERROR_SYMBOL;   // Default to error symbol.
     lcd_clear_bounding_box(0, old_bb_drive_mode.y1 + 7, old_bb_drive_mode.x2, old_bb_drive_mode.y2);
     
-    // Check if drive_mode is stale.
-    if (drive_mode == NULL) {
-        drive_mode_c = '-';  // Display a dash for stale data.
-        old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
-    }
-    else {
-        // Drive mode is valid, display the corresponding symbol.
-        switch (*drive_mode) {
-            case DRIVE_MODE_ECO:
-                drive_mode_c = ECO_SYMBOL;
-                old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
-                break;
-            case DRIVE_MODE_POWER:
-                drive_mode_c = POWER_SYMBOL; 
-                old_bb_drive_mode = draw_char(drive_mode_c, POWER_MODE_X, POWER_MODE_Y, POWER_MODE_FONT);
-                break;
-            default:
-                drive_mode_c = ERROR_SYMBOL;  // Display error symbol for invalid mode.
-                old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
-                break;
-        }
+    // Drive mode is valid, display the corresponding symbol.
+    switch (drive_mode) {
+        case DRIVE_MODE_ECO:
+            drive_mode_c = ECO_SYMBOL;
+            old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
+            break;
+        case DRIVE_MODE_POWER:
+            drive_mode_c = POWER_SYMBOL; 
+            old_bb_drive_mode = draw_char(drive_mode_c, POWER_MODE_X, POWER_MODE_Y, POWER_MODE_FONT);
+            break;
+        default:
+            drive_mode_c = ERROR_SYMBOL;  // Display error symbol for invalid mode.
+            old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
+            break;
     }
     
     // With LCD Refresh the topbar gets cut into. This is because lighting bolt has unecesary white space :(.
