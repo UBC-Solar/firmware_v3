@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        component: [tel, drd, str, mdi]
+        component: [tel]
 
     steps:
       - name: Checkout code
