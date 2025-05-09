@@ -1,17 +1,40 @@
 name: Build Components
 
-on: [pull_request]
+on:
+  pull_request:
+    paths:
+      - 'components/**'
+      - '.github/workflows/**'
 
 jobs:
-  build_components:
+  build:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        component: [tel, drd, str, mdi]
+
     steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v3.1.0
-      - name: Build TEL
-        uses: xanderhendriks/action-build-stm32cubeide@v13.0
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
         with:
-          project-path: 'components/tel'
-          project-target: 'tel'
-      - name: Debug Path
-        run: ls -la components/tel
+          distribution: temurin
+          java-version: '8'
+
+      - name: Build ${{ matrix.component }}
+        uses: xanderhendriks/action-build-stm32cubeide@v13
+        with:
+          project-path: components/${{ matrix.component }}
+          project-target: ${{ matrix.component }}
+
+      - name: Upload ELF artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.component }}-elf
+          path: components/${{ matrix.component }}/Release/*.elf
+
+      - name: List build outputs
+        run: ls -R components/${{ matrix.component }}/Release
