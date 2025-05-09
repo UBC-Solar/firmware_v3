@@ -17,7 +17,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "diagnostic.h"
-
+#include "cyclic_data_handler.h"
 
 /*	Local Function Declarations	*/
 static void motor_command_package_and_send(motor_command_t* motor_command, bool from_ISR);
@@ -87,6 +87,7 @@ void Drive_State_Machine_handler()
 		default:
 			motor_command = get_motor_command(ACCEL_DAC_OFF, REGEN_DAC_OFF);
 	}
+	set_cyclic_drive_state(g_drive_state);
 
 	motor_command_package_and_send(&motor_command, false);
 	handle_state_transition();
@@ -149,6 +150,7 @@ void handle_state_transition()
 		clear_request_flags();
 		return;
 	}
+	
 
 	switch (g_drive_state)
 		{
@@ -474,6 +476,7 @@ void velocity_CAN_msg_handle(uint8_t* data)
 	uint32_t rpm = (data[4] >> 3) | ((data[5] & 0x7f) << 5); //35th to 46th bit
 	float velocity = (WHEEL_RADIUS * 2.0 * M_PI * rpm) / 60.0;
 	g_velocity_kmh = velocity * 3.6;
+	set_cyclic_speed(g_velocity_kmh);
 
 	if (velocity < VELOCITY_THRESHOLD)
 	{
