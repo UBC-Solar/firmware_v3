@@ -27,9 +27,9 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "diagnostic.h"
 
 /* USER CODE BEGIN Includes */
+#include "diagnostic.h"
 /* USER CODE END Includes */
 
 extern IWDG_HandleTypeDef hiwdg;
