@@ -27,10 +27,10 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "diagnostic.h"
 
 /* USER CODE BEGIN Includes */
 #include "stdbool.h"
+#include "diagnostic.h"
 /* USER CODE END Includes */
 
 extern CAN_HandleTypeDef hcan;
