@@ -370,16 +370,34 @@ void LCD_display_SOC(volatile uint32_t* soc)
  * @param pack_current The battery pack current.
  * @param pack_voltage The battery pack voltage.
  */
-void LCD_display_power_bar(volatile float pack_current, volatile float pack_voltage)
+void LCD_display_power_bar(volatile float* pack_current, volatile float* pack_voltage)
 {
-    float power = pack_current * pack_voltage;
-    int fill_pixels = 0;
-
     /* Clear the drawing area (including extra space for the center line) */
     lcd_clear_bounding_box(BAR_LEFT, BAR_TOP, BAR_RIGHT, BAR_BOTTOM + 3);
 
     /* Draw the outline of the power bar */
     draw_rectangle(BAR_LEFT, BAR_TOP, BAR_RIGHT, BAR_BOTTOM, 1);
+
+    /* If either of voltage or current equals NULL, we display a cross over the bar*/
+    if (pack_current == NULL || pack_voltage == NULL) {
+        int bar_width = BAR_RIGHT - BAR_LEFT;
+        int bar_height = BAR_BOTTOM - BAR_TOP;
+        for (int i=0; i <= bar_height; i++) {
+            int x = BAR_LEFT + (i * bar_width) / bar_height; 
+            int y = BAR_TOP + i;
+            lcd_pixel(x, y, 1);
+        }
+        for (int i = 0; i <= bar_height; i++) {
+            int x = BAR_RIGHT - (i * bar_width) / bar_height;
+            int y = BAR_TOP + i;
+            lcd_pixel(x, y, 1);
+        }
+        lcd_refresh();
+        return;
+    }
+
+    float power = (*pack_current) * (*pack_voltage);
+    int fill_pixels = 0;
 
     if (power > 0) {
         float ratio = power / MAX_POSITIVE_POWER;
@@ -509,14 +527,18 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
 {
 	if(msg_id == CAN_ID_PACK_CURRENT)
 	{
-		g_lcd_data.pack_current = (data[1] << 8) | (data[0]);
-		g_lcd_data.pack_current /= 65.535;
+        int16_t tmp_pack_current = (data[1] << 8) | (data[0]);
+        tmp_pack_current /= 65.535;
+        set_cyclic_pack_current(tmp_pack_current);
+		g_lcd_data.pack_current = get_cyclic_pack_current();
 	}
 
 	 if(msg_id == CAN_ID_PACK_VOLTAGE)
 	{
-		g_lcd_data.pack_voltage = (data[1] << 8) | (data[0]);
-		g_lcd_data.pack_voltage /= PACK_VOLTAGE_DIVISOR;
+        uint16_t tmp_pack_voltage = (data[1] << 8) | (data[0]);
+        tmp_pack_voltage /= PACK_VOLTAGE_DIVISOR;
+		set_cyclic_pack_voltage(tmp_pack_voltage);
+        g_lcd_data.pack_voltage = get_cyclic_pack_voltage();
 	}
 
 	 if(msg_id == CAN_ID_PACK_HEALTH)

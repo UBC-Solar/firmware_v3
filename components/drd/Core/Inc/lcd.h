@@ -110,8 +110,8 @@
  typedef struct {
     volatile uint32_t* speed;
     volatile uint8_t speed_units;
-    volatile int16_t pack_current;
-    volatile uint16_t pack_voltage;
+    volatile int16_t* pack_current;
+    volatile uint16_t* pack_voltage;
     volatile uint8_t* drive_state;
     volatile uint8_t* soc;
     volatile uint8_t drive_mode;
@@ -159,7 +159,7 @@ void LCD_display_SOC(volatile uint32_t* soc);
  * @param pack_current The battery pack current.
  * @param pack_voltage The battery pack voltage.
  */
-void LCD_display_power_bar(volatile float pack_current, volatile float pack_voltage);
+void LCD_display_power_bar(volatile float* pack_current, volatile float* pack_voltage);
 
 /**
  * @brief Displays an E for ECO mode and P for POWER mode
