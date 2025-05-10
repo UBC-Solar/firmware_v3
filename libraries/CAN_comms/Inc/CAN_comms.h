@@ -11,7 +11,7 @@
 
 
 #include <stdint.h>
-#include "cmsis_os.h"
+// #include "cmsis_os.h"
 #include "FreeRTOS.h"
 #include "stm32f1xx_hal.h"
 #include "task.h"
