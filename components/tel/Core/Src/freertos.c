@@ -259,7 +259,7 @@ void IMU_task(void *argument)
         HAL_I2C_Init(&hi2c2);
         osDelay(IMU_TASK_DELAY);
     }
-    /* USER CODE END IMU_task */
+  /* USER CODE END IMU_task */
 }
 
 /* USER CODE BEGIN Header_GPS_task */
@@ -271,7 +271,7 @@ void IMU_task(void *argument)
 /* USER CODE END Header_GPS_task */
 void GPS_task(void *argument)
 {
-    /* USER CODE BEGIN GPS_task */
+  /* USER CODE BEGIN GPS_task */
     /* Infinite loop */
     
     osDelay(GPS_TASK_OFFSET_DELAY);
@@ -289,7 +289,7 @@ void GPS_task(void *argument)
         }
     }
     
-    /* USER CODE END GPS_task */
+  /* USER CODE END GPS_task */
 }
 
 /* USER CODE BEGIN Header_CANLoad_task */
