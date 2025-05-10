@@ -382,14 +382,14 @@ void LCD_display_power_bar(volatile float* pack_current, volatile float* pack_vo
     if (pack_current == NULL || pack_voltage == NULL) {
         int bar_width = BAR_RIGHT - BAR_LEFT;
         int bar_height = BAR_BOTTOM - BAR_TOP;
-        for (int i=0; i <= bar_height; i++) {
-            int x = BAR_LEFT + (i * bar_width) / bar_height; 
-            int y = BAR_TOP + i;
+        for (int i=0; i <= bar_width; i++) {
+            int x = BAR_LEFT + i;
+            int y = BAR_TOP + (i * bar_height) / bar_width;
             lcd_pixel(x, y, 1);
         }
-        for (int i = 0; i <= bar_height; i++) {
-            int x = BAR_RIGHT - (i * bar_width) / bar_height;
-            int y = BAR_TOP + i;
+        for (int i = 0; i <= bar_width; i++) {
+            int x = BAR_RIGHT - i;
+            int y = BAR_TOP + (i * bar_height) / bar_width;
             lcd_pixel(x, y, 1);
         }
         lcd_refresh();
