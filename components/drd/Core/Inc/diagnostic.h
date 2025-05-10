@@ -25,10 +25,22 @@ typedef union {
 	uint8_t all_flags;
 } DRD_flags_t;
 
+typedef union {
+	struct {
+		volatile bool speed_timeout 		: 1;
+		volatile bool drive_state_timeout 	: 1;
+		volatile bool soc_timeout 			: 1;
+		volatile bool voltage_timeout 		: 1;
+		volatile bool current_timeout 		: 1;
+	};
+	uint8_t cyclic_data_all_flags;
+} cyclic_data_flags_t;
+
 typedef struct {
 	volatile uint16_t raw_adc1;
 	volatile uint16_t raw_adc2;
 	DRD_flags_t flags;
+	cyclic_data_flags_t cyclic_flags;
 } DRD_diagnostic_t;
 
 
