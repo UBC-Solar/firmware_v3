@@ -249,7 +249,7 @@ void LCDUpdatetask(void *argument)
     LCD_display_power_bar((float) g_lcd_data.pack_current, (float) g_lcd_data.pack_voltage);
     LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
     LCD_display_drive_state(g_lcd_data.drive_state);
-    LCD_display_SOC(g_lcd_data.soc);
+    LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
     LCD_display_drive_mode(g_lcd_data.drive_mode);
 
     osDelay(LCD_UPDATE_DELAY);

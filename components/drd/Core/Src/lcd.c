@@ -1,6 +1,7 @@
 #include "lcd.h"
 #include "fault_lights.h"
 #include <stdio.h>
+#include "cyclic_data_handler.h"
 
 /*--------------------------------------------------------------------------
   Internal Types & Variables
@@ -338,21 +339,26 @@ void LCD_display_drive_state(volatile drive_state_t* state)
  * 
  * @param soc The state of charge (in percent).
  */
-void LCD_display_SOC(volatile uint32_t soc)
+void LCD_display_SOC(volatile uint32_t* soc)
 {
     char soc_str[12];
     bounding_box_t bb;
     lcd_clear_bounding_box(SOC_X - SOC_SPACING, SOC_Y, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
     
-    if (soc < 10) {
-        sprintf(soc_str, "%01lu", (unsigned long)soc);
+    // Check for stale data and display "--" if so.
+    if (soc == NULL) {
+        sprintf(soc_str, "--");
+        bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
+    } 
+    else if (*soc < 10) {
+        sprintf(soc_str, "%01lu", (unsigned long)* soc);
         bb = draw_text(soc_str, SOC_X + 10, SOC_Y, SOC_FONT, SOC_SPACING);
     } else {
-        sprintf(soc_str, "%02lu", (unsigned long)soc);
+        sprintf(soc_str, "%02lu", (unsigned long)* soc);
         bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
     }
 
-    UNUSED(bb);     // remove warnigin
+    UNUSED(bb);     // remove warning
 
     old_bb_soc = draw_char(SOC_UNITS, SOC_X + 2 * WIDEST_NUM_LEN_VERDANA16 + 2, SOC_Y, SOC_UNITS_FONT);
     lcd_refresh();
@@ -515,6 +521,7 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
 
 	 if(msg_id == CAN_ID_PACK_HEALTH)
 	{
-		g_lcd_data.soc = data[0];
+        set_cyclic_soc(data[0]);
+        g_lcd_data.soc = get_cyclic_soc();
 	}
 }
