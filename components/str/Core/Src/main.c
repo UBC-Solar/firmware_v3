@@ -205,7 +205,7 @@ int main(void)
 
       g_horn_status = horn_status;
 
-      CAN_tx_turn_signal_mode_msg(g_turn_signal_status, g_mode_status);
+      CAN_tx_turn_signal_mode_horn_msg(g_turn_signal_status, g_mode_status, g_horn_status);
     }
 
     HAL_Delay(TURN_SIGNAL_MODE_DELAY);
