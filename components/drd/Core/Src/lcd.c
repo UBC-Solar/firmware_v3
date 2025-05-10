@@ -1,6 +1,7 @@
 #include "lcd.h"
 #include "fault_lights.h"
 #include <stdio.h>
+#include "cyclic_data_handler.h"
 
 /*--------------------------------------------------------------------------
   Internal Types & Variables
@@ -338,21 +339,26 @@ void LCD_display_drive_state(volatile drive_state_t* state)
  * 
  * @param soc The state of charge (in percent).
  */
-void LCD_display_SOC(volatile uint32_t soc)
+void LCD_display_SOC(volatile uint32_t* soc)
 {
     char soc_str[12];
     bounding_box_t bb;
     lcd_clear_bounding_box(SOC_X - SOC_SPACING, SOC_Y, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
     
-    if (soc < 10) {
-        sprintf(soc_str, "%01lu", (unsigned long)soc);
+    // Check for stale data and display "--" if so.
+    if (soc == NULL) {
+        sprintf(soc_str, "--");
+        bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
+    } 
+    else if (*soc < 10) {
+        sprintf(soc_str, "%01lu", (unsigned long)* soc);
         bb = draw_text(soc_str, SOC_X + 10, SOC_Y, SOC_FONT, SOC_SPACING);
     } else {
-        sprintf(soc_str, "%02lu", (unsigned long)soc);
+        sprintf(soc_str, "%02lu", (unsigned long)* soc);
         bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
     }
 
-    UNUSED(bb);     // remove warnigin
+    UNUSED(bb);     // remove warning
 
     old_bb_soc = draw_char(SOC_UNITS, SOC_X + 2 * WIDEST_NUM_LEN_VERDANA16 + 2, SOC_Y, SOC_UNITS_FONT);
     lcd_refresh();
@@ -364,46 +370,67 @@ void LCD_display_SOC(volatile uint32_t soc)
  * @param pack_current The battery pack current.
  * @param pack_voltage The battery pack voltage.
  */
-void LCD_display_power_bar(volatile float pack_current, volatile float pack_voltage)
+void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* pack_voltage)
 {
-    float power = pack_current * pack_voltage;
-    int fill_pixels = 0;
-
     /* Clear the drawing area (including extra space for the center line) */
     lcd_clear_bounding_box(BAR_LEFT, BAR_TOP, BAR_RIGHT, BAR_BOTTOM + 3);
 
     /* Draw the outline of the power bar */
     draw_rectangle(BAR_LEFT, BAR_TOP, BAR_RIGHT, BAR_BOTTOM, 1);
 
-    if (power > 0) {
-        float ratio = power / MAX_POSITIVE_POWER;
-        if (ratio > 1.0f)
-            ratio = 1.0f;
-        int total_pixels_right = BAR_RIGHT - CENTER_X;
-        fill_pixels = (int)(ratio * total_pixels_right);
-        for (int y = BAR_TOP + 1; y < BAR_BOTTOM; y++) {
-            for (int x = CENTER_X + 1; x <= CENTER_X + fill_pixels; x++) {
-                lcd_pixel(x, y, 1);
-            }
+    
+    /* If either of voltage or current equals NULL, we display a cross over the bar*/
+    if (pack_current == NULL || pack_voltage == NULL) {
+        int bar_width = BAR_RIGHT - BAR_LEFT;
+        int bar_height = BAR_BOTTOM - BAR_TOP;
+        for (int i=0; i <= bar_width; i++) {
+            int x = BAR_LEFT + i;
+            int y = BAR_TOP + (i * bar_height) / bar_width;
+            lcd_pixel(x, y, 1);
         }
-    } else if (power < 0) {
-        float ratio = (-power) / MAX_NEGATIVE_POWER;
-        if (ratio > 1.0f)
-            ratio = 1.0f;
-        int total_pixels_left = CENTER_X - BAR_LEFT;
-        fill_pixels = (int)(ratio * total_pixels_left);
-        for (int y = BAR_TOP + 1; y < BAR_BOTTOM; y++) {
-            for (int x = CENTER_X - 1; x >= CENTER_X - fill_pixels; x--) {
-                lcd_pixel(x, y, 1);
-            }
+        for (int i = 0; i <= bar_width; i++) {
+            int x = BAR_RIGHT - i;
+            int y = BAR_TOP + (i * bar_height) / bar_width;
+            lcd_pixel(x, y, 1);
         }
+        lcd_refresh();
+        return;
     }
+    else{
+        float power = (float)*pack_current * (float)*pack_voltage;
+        int fill_pixels = 0;
 
-    /* Redraw the center line extending 3 pixels below the bar */
-    for (int y = BAR_TOP; y <= BAR_BOTTOM + 3; y++) {
-        lcd_pixel(CENTER_X, y, 1);
+        if (power > 0) {
+            float ratio = power / MAX_POSITIVE_POWER;
+            if (ratio > 1.0f)
+                ratio = 1.0f;
+            int total_pixels_right = BAR_RIGHT - CENTER_X;
+            fill_pixels = (int)(ratio * total_pixels_right);
+            for (int y = BAR_TOP + 1; y < BAR_BOTTOM; y++) {
+                for (int x = CENTER_X + 1; x <= CENTER_X + fill_pixels; x++) {
+                    lcd_pixel(x, y, 1);
+                }
+            }
+        } 
+        else if (power < 0) {
+            float ratio = (-power) / MAX_NEGATIVE_POWER;
+            if (ratio > 1.0f)
+                ratio = 1.0f;
+            int total_pixels_left = CENTER_X - BAR_LEFT;
+            fill_pixels = (int)(ratio * total_pixels_left);
+            for (int y = BAR_TOP + 1; y < BAR_BOTTOM; y++) {
+                for (int x = CENTER_X - 1; x >= CENTER_X - fill_pixels; x--) {
+                    lcd_pixel(x, y, 1);
+                }
+            }
+        }
+
+        /* Redraw the center line extending 3 pixels below the bar */
+        for (int y = BAR_TOP; y <= BAR_BOTTOM + 3; y++) {
+            lcd_pixel(CENTER_X, y, 1);
+        }
+        lcd_refresh();
     }
-    lcd_refresh();
 }
 
 
@@ -503,18 +530,20 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
 {
 	if(msg_id == CAN_ID_PACK_CURRENT)
 	{
-		g_lcd_data.pack_current = (data[1] << 8) | (data[0]);
-		g_lcd_data.pack_current /= 65.535;
+        int16_t tmp_pack_current = (data[1] << 8) | (data[0]);
+        tmp_pack_current /= 65.535;
+        set_cyclic_pack_current(tmp_pack_current);
 	}
 
 	 if(msg_id == CAN_ID_PACK_VOLTAGE)
 	{
-		g_lcd_data.pack_voltage = (data[1] << 8) | (data[0]);
-		g_lcd_data.pack_voltage /= PACK_VOLTAGE_DIVISOR;
+        uint16_t tmp_pack_voltage = (data[1] << 8) | (data[0]);
+        tmp_pack_voltage /= PACK_VOLTAGE_DIVISOR;
+		set_cyclic_pack_voltage(tmp_pack_voltage);
 	}
 
 	 if(msg_id == CAN_ID_PACK_HEALTH)
 	{
-		g_lcd_data.soc = data[0];
+        set_cyclic_soc(data[0]);
 	}
 }
