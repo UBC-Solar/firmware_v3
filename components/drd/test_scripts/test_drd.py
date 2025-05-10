@@ -362,8 +362,8 @@ def script_send_speed_kmh(can_bus):
         time.sleep(0.1)
 
 def script_toggle_turn_signals(can_bus):
-    """Toggle between left turn, right turn, and off every 2 seconds."""
-    while True:
+    """Toggle between left turn, right turn, and off every 4 seconds."""
+    for speed in range(1, 2):
         can_bus.send_turn_signal(LEFT)
         time.sleep(4)
         can_bus.send_turn_signal(RIGHT)
