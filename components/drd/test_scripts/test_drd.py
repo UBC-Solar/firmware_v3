@@ -345,15 +345,15 @@ def script_send_pack_current_and_voltage(can_bus):
     """Send PackCurrent and PackVoltage signals over 30 seconds."""
     current = 34
     voltage = 139
-    current_step = (34 - (-20)) / 30
-    voltage_step = (139 - 60) / 30
+    current_step = (34 - (-20)) /120
+    voltage_step = (139 - 60) / 120
 
-    for _ in range(30):
+    for _ in range(120):
         can_bus.send_pack_current(current)
         can_bus.send_pack_voltage(voltage)
         current -= current_step
         voltage -= voltage_step
-        time.sleep(1)
+        time.sleep(0.250)
 
 def script_send_speed_kmh(can_bus):
     """Send speed kmh from 1 to 99 over 10 seconds."""
@@ -363,7 +363,7 @@ def script_send_speed_kmh(can_bus):
 
 def script_toggle_turn_signals(can_bus):
     """Toggle between left turn, right turn, and off every 2 seconds."""
-    for speed in range(1, 99):
+    while True:
         can_bus.send_turn_signal(LEFT)
         time.sleep(4)
         can_bus.send_turn_signal(RIGHT)
