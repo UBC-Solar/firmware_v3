@@ -53,8 +53,8 @@ OFF = 0
 PARK = 0
 REVERSE = 1
 FORWARD = 2
-POWER = 1
-ECO = 0
+POWER = 0
+ECO = 1
 
 # Load DBC file (replace 'your_dbc.dbc' with your actual DBC file path)
 try:
@@ -363,7 +363,7 @@ def script_send_speed_kmh(can_bus):
 
 def script_toggle_turn_signals(can_bus):
     """Toggle between left turn, right turn, and off every 2 seconds."""
-    while True:
+    for speed in range(1, 99):
         can_bus.send_turn_signal(LEFT)
         time.sleep(4)
         can_bus.send_turn_signal(RIGHT)
