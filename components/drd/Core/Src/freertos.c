@@ -244,10 +244,11 @@ void LCDUpdatetask(void *argument)
   for(;;)
   {
     SOC_predict_then_update(g_total_pack_voltage_soc, g_pack_current_soc, SOC_TIME_STEP);
-
+    
     g_lcd_data.speed = get_cyclic_speed();
     g_lcd_data.drive_state = get_cyclic_drive_state();
     g_lcd_data.drive_mode = (volatile uint8_t) g_input_flags.eco_mode_on;
+    g_lcd_data.soc = SOC_get_soc();
 
     LCD_display_power_bar((float) g_lcd_data.pack_current, (float) g_lcd_data.pack_voltage);
     LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);

@@ -9,9 +9,6 @@ float g_pack_current_soc;
 #define SOC     0
 #define UC      1     
 
-#include "battery_ekf.h"
-#include <math.h>
-
 //-----------------------------
 //--- Model & EKF Parameters --
 //-----------------------------
@@ -140,24 +137,24 @@ static void update_filter(float measured_V) {
     float dR = central_diff(get_R0,  fmin(1.0f, state[SOC]));
     float H0 = dU - dR * filtered_I;
     float H1 = -1.0f;
-
-    // predicted measurement h = Uoc - Uc - R0·I
-    float Uoc = get_Uoc(state[SOC]);
-    float R0  = get_R0(state[SOC]);
-    float h   = Uoc - state[UC] - R0 * filtered_I;
-    last_predicted_V = h;
-
+    
     // S = H·P·Hᵀ + R
-    float PHt0 = P[0][0]*H0 + P[0][1]*H1;
+    float PHt0 = P[0][0]*H0 + P[0][1]*H1;      
     float PHt1 = P[1][0]*H0 + P[1][1]*H1;
     float S    = H0*PHt0 + H1*PHt1 + R_meas;
-
+    
     // K = P·Hᵀ / S
     float K0 = PHt0 / S;
     float K1 = PHt1 / S;
+    
+    // Measurement Function hx = Uoc - Uc - R0·I
+    float Uoc = get_Uoc(state[SOC]);
+    float R0  = get_R0(state[SOC]);
+    float hx   = Uoc - state[UC] - R0 * filtered_I;
+    last_predicted_V = hx;
 
-    // state += K·(z - h)
-    float y = measured_V - h;
+    // Update State
+    float y = measured_V - hx;
     state[SOC] += K0 * y;
     state[UC] += K1 * y;
 
@@ -166,10 +163,14 @@ static void update_filter(float measured_V) {
         {1.0f - K0*H0,   -K0*H1},
         {  -K1*H0,    1.0f - K1*H1}
     };
+    float IKHT[2][2] = {
+        {IKH[0][0],   IKH[1][0]},
+        {IKH[0][1],   IKH[1][1]}
+    };
     float tmp1[2][2];
     mat2_mul(IKH, P, tmp1);
-    mat2_mul(tmp1, IKH, P);
-    // add K*R*Kᵀ
+    mat2_mul(tmp1, IKHT, P);        // TODO: Check this line to see if IKHT is needed or just regular IKH
+    // add K*R*Kᵀ. KRKT is a 2x2 because K = 2 x 1.
     P[0][0] += K0*K0*R_meas;
     P[0][1] += K0*K1*R_meas;
     P[1][0] += K1*K0*R_meas;
@@ -188,4 +189,9 @@ void SOC_predict_then_update(float g_total_pack_voltage_soc, float g_pack_curren
 {
     predict_state(g_pack_current_soc, time_step);
     update_filter(g_total_pack_voltage_soc);
+}
+
+uint8_t SOC_get_soc()
+{
+    return (uint8_t)(state[SOC] * 100);
 }
