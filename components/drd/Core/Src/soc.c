@@ -7,7 +7,7 @@ float g_pack_current_soc;
 
 /* DEFINES */
 #define SOC     0
-#define UC      1     
+#define UC      1   
 
 //-----------------------------
 //--- Model & EKF Parameters --
