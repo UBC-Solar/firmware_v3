@@ -36,10 +36,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TURN_SIGNAL_MODE_DELAY 200
 
 volatile turn_signal_status_t g_turn_signal_status = 0;
 volatile mode_status_t g_mode_status = 0;
+volatile horn_status_t g_horn_status = 0;
 
 uint32_t g_last_time = 0;
 /* USER CODE END PD */
@@ -74,12 +74,12 @@ turn_signal_status_t get_turn_signal_status() {
 
   status = TS_OFF;
 
-  if(!(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin)) && (HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin))) 
+  if((HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin)) && !(HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin))) 
   {
     status = TS_LEFT;
   }
 
-  else if(!(HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin)) && (HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin))) 
+  else if((HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin)) && !(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin))) 
   {
     status = TS_RIGHT;
   }
@@ -102,6 +102,26 @@ mode_status_t get_mode_status() {
     status = POWER_MODE;
   } else {
     status = ECO_MODE;
+  }
+
+  return status;
+}
+
+/**
+ * @brief Checks the status on the HORN_EN Pin and reads if it is activated or not
+ * @return Returns the status of the horn being 0 or 1
+ */
+horn_status_t get_horn_status() {
+
+  horn_status_t status;
+
+  status = HORN_OFF;
+
+  if(!(HAL_GPIO_ReadPin(HORN_EN_GPIO_Port, HORN_EN_Pin)))
+  {
+    status = HORN_ON;
+  } else {
+    status = HORN_OFF;
   }
 
   return status;
@@ -141,7 +161,7 @@ int main(void)
   MX_UART5_Init();
   MX_ADC1_Init();
   MX_IWDG_Init();
-  /* USER CODE BEGIN 2 */   
+  /* USER CODE BEGIN 2 */
   g_str_diagnostic_flags.raw = 0; 
   
   IWDG_perform_reset_sequence();      // Check for IWDG reset
@@ -151,7 +171,9 @@ int main(void)
 
   mode_status_t mode_status = get_mode_status();
 
-  CAN_tx_turn_signal_mode_msg(g_turn_signal_status, g_mode_status);
+  horn_status_t horn_status = get_horn_status();
+
+  CAN_tx_turn_signal_mode_horn_msg(g_turn_signal_status, g_mode_status, g_horn_status);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -171,14 +193,18 @@ int main(void)
 
     mode_status = get_mode_status();
 
+    horn_status = get_horn_status();
+
     // Checks if either the turn signal or mode status value changes
-    if(g_turn_signal_status != turn_status || g_mode_status != mode_status)
+    if(g_turn_signal_status != turn_status || g_mode_status != mode_status || g_horn_status != horn_status)
     {
       g_turn_signal_status = turn_status;
 
       g_mode_status = mode_status;
 
-      CAN_tx_turn_signal_mode_msg(g_turn_signal_status, g_mode_status);
+      g_horn_status = horn_status;
+
+      CAN_tx_turn_signal_mode_horn_msg(g_turn_signal_status, g_mode_status, g_horn_status);
     }
 
     HAL_Delay(TURN_SIGNAL_MODE_DELAY);

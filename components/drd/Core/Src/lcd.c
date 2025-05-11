@@ -2,6 +2,7 @@
 #include "fault_lights.h"
 #include <stdio.h>
 #include "cyclic_data_handler.h"
+#include "diagnostic.h"
 
 /*--------------------------------------------------------------------------
   Internal Types & Variables
@@ -277,13 +278,16 @@ void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units)
     if (speed == NULL) {  // Stale speed data
         sprintf(speed_str, "--"); 
         old_bb_speed = draw_text(speed_str, SPEED_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+        g_diagnostics.cyclic_flags.speed_timeout = true; 
     } 
     else if (*speed < 10) { // Single digit speed
         sprintf(speed_str, "%01lu", (unsigned long)*speed);  
         old_bb_speed = draw_text(speed_str, SPEED_X + 14, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+        g_diagnostics.cyclic_flags.speed_timeout = false; 
     } else {
         sprintf(speed_str, "%02lu", (unsigned long)*speed);  
         old_bb_speed = draw_text(speed_str, SPEED_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+        g_diagnostics.cyclic_flags.speed_timeout = false; 
     }
     
     /* Draw the speed units */
@@ -313,6 +317,7 @@ void LCD_display_drive_state(volatile drive_state_t* state)
     lcd_clear_bounding_box(STATE_X, STATE_Y, old_bb_drive_state.x2, BOTTOM_RIGHT_Y);
     if (state == NULL) {  // Stale data for drive state
         sprintf(state_str, "-");
+        g_diagnostics.cyclic_flags.drive_state_timeout = true;
     } 
     else {
         switch (*state) {
@@ -329,6 +334,7 @@ void LCD_display_drive_state(volatile drive_state_t* state)
                 state_str[0] = ERROR_SYMBOL;
                 break;
         }
+        g_diagnostics.cyclic_flags.drive_state_timeout = false; 
     }
     old_bb_drive_state = draw_text(state_str, STATE_X, STATE_Y, STATE_FONT, STATE_SPACING);
     lcd_refresh();
@@ -349,13 +355,16 @@ void LCD_display_SOC(volatile uint32_t* soc)
     if (soc == NULL) {
         sprintf(soc_str, "--");
         bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
+        g_diagnostics.cyclic_flags.soc_timeout = true; 
     } 
     else if (*soc < 10) {
         sprintf(soc_str, "%01lu", (unsigned long)* soc);
         bb = draw_text(soc_str, SOC_X + 10, SOC_Y, SOC_FONT, SOC_SPACING);
+        g_diagnostics.cyclic_flags.soc_timeout = false;
     } else {
         sprintf(soc_str, "%02lu", (unsigned long)* soc);
         bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
+        g_diagnostics.cyclic_flags.soc_timeout = false;
     }
 
     UNUSED(bb);     // remove warning
@@ -378,7 +387,9 @@ void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* p
     /* Draw the outline of the power bar */
     draw_rectangle(BAR_LEFT, BAR_TOP, BAR_RIGHT, BAR_BOTTOM, 1);
 
-    
+    g_diagnostics.cyclic_flags.current_timeout = (pack_current == NULL) ? true : false;
+    g_diagnostics.cyclic_flags.voltage_timeout = (pack_voltage == NULL) ? true : false;
+
     /* If either of voltage or current equals NULL, we display a cross over the bar*/
     if (pack_current == NULL || pack_voltage == NULL) {
         int bar_width = BAR_RIGHT - BAR_LEFT;
