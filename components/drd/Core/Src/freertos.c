@@ -33,6 +33,7 @@
 #include "iwdg.h"
 #include "diagnostic.h"
 #include "cyclic_data_handler.h"
+#include "soc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -242,6 +243,8 @@ void LCDUpdatetask(void *argument)
   
   for(;;)
   {
+    SOC_predict_then_update(g_total_pack_voltage_soc, g_pack_current_soc, SOC_TIME_STEP);
+
     g_lcd_data.speed = get_cyclic_speed();
     g_lcd_data.drive_state = get_cyclic_drive_state();
     g_lcd_data.drive_mode = (volatile uint8_t) g_input_flags.eco_mode_on;
