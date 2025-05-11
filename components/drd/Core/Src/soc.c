@@ -11,29 +11,29 @@ float g_pack_current_soc;
 #define UC      1   
 
 //-----------------------------
-//--- Model & EKF Parameters --
+//--- Model & EKF Parameters -- From kalman_filter_example.py in STG's physics repo.
 //-----------------------------
 
 // Battery capacity (Coulombs)
-static const float Q_total   = 3600.0f;  // e.g., 1 Ah
+static const float Q_total   = 151000.0;  
 
 // Low-pass factor for current
 static const float alpha     = 0.9f;
 
 // Process noise covariance Q (2×2)
 static const float Q_proc[2][2] = {
-    {1e-7f,    0.0f},
-    {   0.0f, 1e-5f}
+    {1e-10f * 0.1,    0.0f},
+    {   0.0f, 1e-6f * 0.1}
 };
 
 // State covariance P (2×2), initialized at compile-time
 static float P[2][2] = {
-    {1e-3f,    0.0f},
-    {   0.0f, 1e-3f}
+    {1e-2f * 0.5,    0.0f},
+    {   0.0f, 1e-1f}
 };
 
 // Measurement noise (scalar)
-static const float R_meas = 1e-2f;
+static const float R_meas = 1e0f * 0.5;
 
 //-----------------------------
 //--- Static EKF State -------
@@ -41,7 +41,7 @@ static const float R_meas = 1e-2f;
 
 // State vector state = [SOC; Uc]
 static float state[2] = {
-    1.0f,   // initial SOC = 100%
+    1.04f,   // initial SOC = 104%
     0.0f    // initial Uc = 0 V
 };
 
@@ -54,13 +54,62 @@ static float last_predicted_V = 0.0f;
 //-----------------------------
 //--- Battery Model Curves ----
 //-----------------------------
-// Replace with your real data if needed
-static float get_Uoc(float soc) {
-    return 3.0f + 1.2f * soc;  // 3.0 V at 0%, 4.2 V at 100%
+// Coefficients based on fitting in STG's Physics repo battery_config.py
+// U_oc_coeffs = [  2964.52101072, -11872.64866062,  19108.52190655, -15842.17383716,
+//                   7225.57921631,  -1800.93540695,    254.87035949,     94.15508582 ]
+static float get_Uoc(float x) {
+    return
+        2964.52101072f
+      + (-11872.64866062f) * x
+      + ( 19108.52190655f) * x * x
+      + (-15842.17383716f) * x * x * x
+      + (  7225.57921631f) * x * x * x * x
+      + (-1800.93540695f) * x * x * x * x * x
+      + (   254.87035949f) * x * x * x * x * x * x
+      + (    94.15508582f) * x * x * x * x * x * x * x;
 }
-static float get_R0(float soc) { return 0.05f - 0.02f * soc; }
-static float get_Rp(float soc) { (void)soc; return 0.1f; }
-static float get_Cp(float soc) { (void)soc; return 2000.0f; }
+
+// R_0_coeffs = [-1.54613590e+02,  5.52593795e+02, -7.94776446e+02,  5.92975205e+02,
+//               -2.47297657e+02,  5.80013511e+01, -7.19686618e+00,  4.92268729e-01]
+static float get_R0(float x) {
+    return
+        -154.613590f
+      +   552.593795f  * x
+      +  -794.776446f  * x * x
+      +   592.975205f  * x * x * x
+      +  -247.297657f  * x * x * x * x
+      +    58.001351f  * x * x * x * x * x
+      +    -7.196866f  * x * x * x * x * x * x
+      +     0.4922687f * x * x * x * x * x * x * x;
+}
+
+// R_P_coeffs = [ 1.08817913e+02, -3.95312179e+02,  5.53636103e+02, -3.69486684e+02,
+//                1.13440342e+02, -9.44922096e+00, -1.96859647e+00,  3.64860692e-01]
+static float get_Rp(float x) {
+    return
+         108.817913f
+      +  (-395.312179f)  * x
+      +   553.636103f   * x * x
+      +  (-369.486684f)  * x * x * x
+      +   113.440342f   * x * x * x * x
+      +    -9.44922096f * x * x * x * x * x
+      +    -1.96859647f * x * x * x * x * x * x
+      +     0.364860692f* x * x * x * x * x * x * x;
+}
+
+// C_P_coeffs = [ 2.59786749e+06, -7.85135009e+06,  9.21597530e+06, -5.19570513e+06,
+//                1.38789832e+06, -1.46483144e+05,  6.37034956e+03,  2.60645952e+02]
+static float get_Cp(float x) {
+    return
+        2597867.49f
+      + (-7851350.09f)   * x
+      +  9215975.30f     * x * x
+      + (-5195705.13f)   * x * x * x
+      +  1387898.32f     * x * x * x * x
+      +  (-146483.144f)  * x * x * x * x * x
+      +    6370.34956f   * x * x * x * x * x * x
+      +     260.645952f  * x * x * x * x * x * x * x;
+}
 
 //-----------------------------
 //--- Static Helpers ---------
@@ -105,8 +154,9 @@ static float central_diff(float (*f)(float), float v) {
 static void predict_state(float current, float dt) {
     // B matrix
     float B0  = -dt / Q_total;
-    float tau = get_Rp(state[SOC]) * get_Cp(state[SOC]);
-    float B1  = get_Rp(state[SOC]) * (1.0f - expf(-dt / tau));
+    float Rp = get_Rp(state[SOC]);
+    float tau = Rp * get_Cp(state[SOC]);
+    float B1  = Rp * (1.0f - expf(-dt / tau));
 
     // F = [[1,0];[0, exp(-dt/tau)]]
     float F[2][2] = {
