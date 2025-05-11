@@ -75,12 +75,12 @@ turn_signal_status_t get_turn_signal_status() {
 
   status = TS_OFF;
 
-  if(!(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin)) && (HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin))) 
+  if((HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin)) && !(HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin))) 
   {
     status = TS_LEFT;
   }
 
-  else if(!(HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin)) && (HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin))) 
+  else if((HAL_GPIO_ReadPin(RTS_IN_GPIO_Port, RTS_IN_Pin)) && !(HAL_GPIO_ReadPin(LTS_IN_GPIO_Port, LTS_IN_Pin))) 
   {
     status = TS_RIGHT;
   }
