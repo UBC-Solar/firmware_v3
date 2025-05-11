@@ -1,6 +1,7 @@
 #include "soc.h"
 #include <math.h>
 #include <assert.h>
+#include "main.h"
 
 float g_total_pack_voltage_soc;
 float g_pack_current_soc;
@@ -187,8 +188,17 @@ static void update_filter(float measured_V) {
 
 void SOC_predict_then_update(float g_total_pack_voltage_soc, float g_pack_current_soc, float time_step)
 {
+    // When debugging we can check the duration of this function to measure performance.
+    #ifdef DEBUG
+        uint32_t soc_time_start = HAL_GetTick();
+    #endif // DEBUG
+
     predict_state(g_pack_current_soc, time_step);
     update_filter(g_total_pack_voltage_soc);
+
+    #ifdef DEBUG
+        uint32_t soc_time_diff = HAL_GetTick() - soc_time_start;
+    #endif // DEBUG
 }
 
 uint8_t SOC_get_soc()

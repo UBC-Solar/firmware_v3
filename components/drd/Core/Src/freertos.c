@@ -243,25 +243,34 @@ void LCDUpdatetask(void *argument)
   
   for(;;)
   {
+    // When debugging we can check the duration of this function to measure performance.
+    #ifdef DEBUG
+        uint32_t lcd_time_start = HAL_GetTick();
+    #endif // DEBUG
+    
     g_total_pack_voltage_soc = (float)g_lcd_data.pack_voltage;
     g_pack_current_soc = (float)g_lcd_data.pack_current;
+    
     SOC_predict_then_update(g_total_pack_voltage_soc, g_pack_current_soc, SOC_TIME_STEP);
-      
+    
     g_lcd_data.speed = get_cyclic_speed();
     g_lcd_data.drive_state = get_cyclic_drive_state();
     g_lcd_data.drive_mode = (volatile uint8_t) g_input_flags.eco_mode_on;
     g_lcd_data.soc = SOC_get_soc();
-      
-
+    
     LCD_display_power_bar((float) g_lcd_data.pack_current, (float) g_lcd_data.pack_voltage);
     LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
     LCD_display_drive_state(g_lcd_data.drive_state);
     LCD_display_SOC(g_lcd_data.soc);
     LCD_display_drive_mode(g_lcd_data.drive_mode);
+    
+    #ifdef DEBUG
+        uint32_t lcd_time_diff = HAL_GetTick() - lcd_time_start;
+    #endif // DEBUG
 
     osDelay(LCD_UPDATE_DELAY);
-  }
-  /* USER CODE END LCDUpdatetask */
+}
+/* USER CODE END LCDUpdatetask */
 }
 
 /* USER CODE BEGIN Header_DriveState_task */
