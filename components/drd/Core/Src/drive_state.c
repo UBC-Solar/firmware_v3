@@ -496,7 +496,7 @@ void velocity_CAN_msg_handle(uint8_t* data)
 void steering_CAN_msg_handle(uint8_t* data)
 {
     // If DRIVE MODE bit 3 is 1 then toggle eco_mode_on. Else do nothing
-	g_input_flags.eco_mode_on = (data[0] >> 2) ? !eco_mode_on : eco_mode_on; //third bit of steering CAN message
+	g_input_flags.eco_mode_on = (data[0] >> 2) ? !g_input_flags.eco_mode_on : g_input_flags.eco_mode_on; //third bit of steering CAN message
     
 	g_lcd_eco_mode_on = g_input_flags.eco_mode_on; //global variable for LCD
 }
