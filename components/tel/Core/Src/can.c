@@ -30,7 +30,7 @@
 #include "canload.h"
 #include "CAN_comms.h"
 #include "rtc.h"
-#include "cpu_load.h"
+// #include "cpu_load.h"
 
 #define CPU_LOAD_CAN_MESSAGE_ID             0x764
 #define CPU_LOAD_CAN_DATA_LENGTH            4
@@ -224,7 +224,8 @@ void CAN_cpu_load_can_tx(){
    CAN_comms_Tx_msg_t CPU_LOAD_can_tx = {0};
    FloatToBytes CPU_LOAD;
 
-   CPU_LOAD.f = CPU_LOAD_average();
+//    CPU_LOAD.f = CPU_LOAD_average();
+   CPU_LOAD.f = 1.0; // TODO 
 
    CPU_LOAD_can_tx.header = cpu_load_can_header;
    CPU_LOAD_can_tx.data[0] = CPU_LOAD.bytes[0];

@@ -1,17 +1,41 @@
 name: Build Components
 
-on: [pull_request]
+on:
+  pull_request:
+    paths:
+      - 'components/**'
+      - '.github/workflows/**'
 
 jobs:
-  build_components:
+  build:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        component: [drd, mdi, str]
+
     steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v3.1.0
-      - name: Build TEL
-        uses: xanderhendriks/action-build-stm32cubeide@v13.0
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Java (for STM32CubeIDE headless build)
+        uses: actions/setup-java@v3
         with:
-          project-path: 'components/tel'
-          project-target: 'tel'
-      - name: Debug Path
-        run: ls -la components/tel
+          distribution: temurin
+          java-version: '8'
+
+      - name: Build ${{ matrix.component }}
+        uses: xanderhendriks/action-build-stm32cubeide@v15.0
+        with:
+          project-path: components/${{ matrix.component }}
+          project-target: ${{ matrix.component }}
+
+      - name: Upload ELF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.component }}-elf
+          path: components/${{ matrix.component }}/Release/*.elf
+          if-no-files-found: error
+
+      - name: List build outputs
+        run: ls -R components/${{ matrix.component }}/Release
