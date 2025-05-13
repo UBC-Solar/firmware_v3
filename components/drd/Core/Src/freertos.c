@@ -271,6 +271,7 @@ void DriveState_task(void *argument)
 {
   /* USER CODE BEGIN DriveState_task */
 	g_input_flags.velocity_under_threshold = true;
+	g_input_flags.eco_mode_on = true;
 
   /* Infinite loop */
   for(;;)
