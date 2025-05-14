@@ -109,6 +109,7 @@
  
  // See https://ubcsolar26.monday.com/boards/7524367653/pulses/8642929457/posts/3979486939 for Module voltages and temps 
  // explanation for 9.
+ __attribute__((unused))
  static CanFilter_t filter_whitelist[] = {
      //         CAN ID                   MOD    COUNT
      { DRD_MOTOR_COMMAND_ID,                 4,     0               },
@@ -157,7 +158,6 @@
      { OBC_STATUS_ID,                        1,     0               },
      { GPS_LONG_LAT_ID,                      1,     0               },
  };
- 
  
  #define NUM_FILTERS (sizeof(filter_whitelist) / sizeof(filter_whitelist[0]))
  
