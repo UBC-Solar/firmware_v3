@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include "cyclic_data_handler.h"
 #include "diagnostic.h"
+#include "soc.h"
+#include "drd_freertos.h"
 
 /*--------------------------------------------------------------------------
   Internal Types & Variables
@@ -544,17 +546,17 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
         int16_t tmp_pack_current = (data[1] << 8) | (data[0]);
         tmp_pack_current /= 65.535;
         set_cyclic_pack_current(tmp_pack_current);
-	}
 
-	 if(msg_id == CAN_ID_PACK_VOLTAGE)
+        g_pack_current_soc = tmp_pack_current;
+        osEventFlagsSet(calculate_soc_flagHandle, SOC_CALCULATE_ON);
+	}
+    
+    if(msg_id == CAN_ID_PACK_VOLTAGE)
 	{
         uint16_t tmp_pack_voltage = (data[1] << 8) | (data[0]);
         tmp_pack_voltage /= PACK_VOLTAGE_DIVISOR;
 		set_cyclic_pack_voltage(tmp_pack_voltage);
-	}
 
-	 if(msg_id == CAN_ID_PACK_HEALTH)
-	{
-        set_cyclic_soc(data[0]);
+        g_total_pack_voltage_soc = tmp_pack_voltage;
 	}
 }

@@ -109,7 +109,7 @@
  
  // See https://ubcsolar26.monday.com/boards/7524367653/pulses/8642929457/posts/3979486939 for Module voltages and temps 
  // explanation for 9.
- static CanFilter_t filter_whitelist[] = {
+ static CanFilter_t filter_whitelist[]  __attribute__((unused)) = {
      //         CAN ID                   MOD    COUNT
      { DRD_MOTOR_COMMAND_ID,                 4,     0               },
      { DRD_DIAGNOSTICS_ID,                   4,     0               },

@@ -65,11 +65,11 @@ extern const CAN_TxHeaderTypeDef time_since_bootup_can_header;
 /* USER CODE END Private defines */
 
 void MX_CAN_Init(void);
-void CAN_filter_init(CAN_FilterTypeDef* can_filter);
 
 /* USER CODE BEGIN Prototypes */
 void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg);
 void CAN_tasks_init();
+void CAN_filter_init(CAN_FilterTypeDef* can_filter);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

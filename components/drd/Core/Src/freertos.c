@@ -33,10 +33,13 @@
 #include "iwdg.h"
 #include "diagnostic.h"
 #include "cyclic_data_handler.h"
+#include "soc.h"
+#include "drd_freertos.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 typedef StaticTask_t osStaticThreadDef_t;
+typedef StaticEventGroup_t osStaticEventGroupDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -54,7 +57,6 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -116,6 +118,26 @@ const osThreadAttr_t TimeSinceStartu_attributes = {
   .stack_size = sizeof(TimeSinceStartuBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for CalculateSoCTas */
+osThreadId_t CalculateSoCTasHandle;
+uint32_t CalculateSoCtaskBuffer[ 512 ];
+osStaticThreadDef_t CalculateSoCtaskControlBlock;
+const osThreadAttr_t CalculateSoCTas_attributes = {
+  .name = "CalculateSoCTas",
+  .cb_mem = &CalculateSoCtaskControlBlock,
+  .cb_size = sizeof(CalculateSoCtaskControlBlock),
+  .stack_mem = &CalculateSoCtaskBuffer[0],
+  .stack_size = sizeof(CalculateSoCtaskBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for calculate_soc_flag */
+osEventFlagsId_t calculate_soc_flagHandle;
+osStaticEventGroupDef_t calculate_soc_flagControlBlock;
+const osEventFlagsAttr_t calculate_soc_flag_attributes = {
+  .name = "calculate_soc_flag",
+  .cb_mem = &calculate_soc_flagControlBlock,
+  .cb_size = sizeof(calculate_soc_flagControlBlock),
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -127,6 +149,7 @@ void ExternalLights_task(void *argument);
 void LCDUpdatetask(void *argument);
 void DriveState_task(void *argument);
 void TimeSinceStartup_task(void *argument);
+void CalculateSoCtask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -172,9 +195,16 @@ void MX_FREERTOS_Init(void) {
   /* creation of TimeSinceStartu */
   TimeSinceStartuHandle = osThreadNew(TimeSinceStartup_task, NULL, &TimeSinceStartu_attributes);
 
+  /* creation of CalculateSoCTas */
+  CalculateSoCTasHandle = osThreadNew(CalculateSoCtask, NULL, &CalculateSoCTas_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
+
+  /* Create the event(s) */
+  /* creation of calculate_soc_flag */
+  calculate_soc_flagHandle = osEventFlagsNew(&calculate_soc_flag_attributes);
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
@@ -230,6 +260,13 @@ void ExternalLights_task(void *argument)
 * @param argument: Not used
 * @retval None
 */
+
+// When debugging we can check the duration of this function to measure performance.
+#ifdef DEBUG
+    static uint32_t lcd_time_start;
+    static uint32_t lcd_time_diff;
+#endif // DEBUG
+
 /* USER CODE END Header_LCDUpdatetask */
 void LCDUpdatetask(void *argument)
 {
@@ -242,21 +279,30 @@ void LCDUpdatetask(void *argument)
   
   for(;;)
   {
-    g_lcd_data.speed = get_cyclic_speed();
-    g_lcd_data.drive_state = get_cyclic_drive_state();
-    g_lcd_data.drive_mode = (volatile uint8_t) g_input_flags.eco_mode_on;
-    g_lcd_data.pack_current = get_cyclic_pack_current();
-    g_lcd_data.pack_voltage = get_cyclic_pack_voltage();
-    g_lcd_data.soc = get_cyclic_soc();
+    // When debugging we can check the duration of this function to measure performance.
+    #ifdef DEBUG
+        lcd_time_start = HAL_GetTick();
+    #endif // DEBUG
+        
+    g_lcd_data.speed            = get_cyclic_speed();
+    g_lcd_data.drive_state      = get_cyclic_drive_state();
+    g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;    
+    g_lcd_data.pack_current     = get_cyclic_pack_current();
+    g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
+    g_lcd_data.soc              = get_cyclic_soc();
 
     LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
     LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
     LCD_display_drive_state(g_lcd_data.drive_state);
     LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
     LCD_display_drive_mode(g_lcd_data.drive_mode);
+    
+    #ifdef DEBUG
+        lcd_time_diff = HAL_GetTick() - lcd_time_start;
+    #endif // DEBUG
 
     osDelay(LCD_UPDATE_DELAY);
-  }
+}
   /* USER CODE END LCDUpdatetask */
 }
 
@@ -300,6 +346,40 @@ void TimeSinceStartup_task(void *argument)
     DRD_time_since_bootup();
   }
   /* USER CODE END TimeSinceStartup_task */
+}
+
+/* USER CODE BEGIN Header_CalculateSoCtask */
+/**
+* @brief Function implementing the CalculateSoCTas thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_CalculateSoCtask */
+void CalculateSoCtask(void *argument)
+{
+  /* USER CODE BEGIN CalculateSoCtask */
+  /* Infinite loop */
+  for(;;)
+  {
+    /* SHOULD EXECUTE WHENVER PACK CURRENT IS RECEIVED */
+
+    // Wait until calculate SOC flag is set
+    osEventFlagsWait(
+        calculate_soc_flagHandle,
+        SOC_CALCULATE_ON,
+        osFlagsWaitAny | osFlagsNoClear,
+        osWaitForever
+    );
+
+    SOC_predict_then_update(g_total_pack_voltage_soc, g_pack_current_soc, SOC_TIME_STEP);
+    uint8_t soc = (uint8_t)(SOC_get_soc() * 100);
+    set_cyclic_soc(soc);
+
+    osEventFlagsClear(calculate_soc_flagHandle, SOC_CALCULATE_ON);
+
+    osDelay(CALCULATE_SOC_DELAY);
+  }
+  /* USER CODE END CalculateSoCtask */
 }
 
 /* Private application code --------------------------------------------------*/

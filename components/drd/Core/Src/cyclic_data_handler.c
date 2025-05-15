@@ -56,5 +56,10 @@ uint8_t* get_cyclic_drive_state(void) {
 }
 
 uint8_t* get_cyclic_soc(void) {
-   return CYCLIC_DATA_GET(cyclic_soc);
+    if((get_cyclic_pack_voltage() == NULL) || (get_cyclic_pack_current() == NULL)){
+        return NULL; 
+    }
+    else{
+        return CYCLIC_DATA_GET(cyclic_soc);
+    }
 }

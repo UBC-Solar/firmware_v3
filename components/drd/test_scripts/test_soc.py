@@ -386,62 +386,8 @@ if __name__ == "__main__":
     can_bus.clear_all()
     time.sleep(1)
 
-    # Step 1: Start a thread to toggle turn signals
-    turn_signal_thread = threading.Thread(target=script_toggle_turn_signals, args=(can_bus,), daemon=True)
-    turn_signal_thread.start()
-
-    # Step 2: Turn on Power mode for driving
-    can_bus.send_drive_mode(POWER)
-    time.sleep(1)
-
-    # # Step 3: Start a thread to send SoC message. SOC is based on pck current and voltage now.
-    # soc_thread = threading.Thread(target=script_send_soc, args=(can_bus,))
-    # soc_thread.start()
-
-    # Step 6: Send drive state Drive (FORWARD)
-    can_bus.send_drive_state(FORWARD)
-    time.sleep(1)
-
-    # Step 7: Start a thread to send MotorRotatingSpeed from 1 to 500
-    motor_speed_thread = threading.Thread(target=script_send_speed_kmh, args=(can_bus,))
-    motor_speed_thread.start()
-
-    time.sleep(1)
-    can_bus.send_drive_state(PARK)         # should do nothing
-    can_bus.send_drive_state(FORWARD)      # should do nothing
-    can_bus.send_drive_state(REVERSE)      # should do nothing
-
-    # Step 9: Send fault lights in a pattern
-    can_bus.send_clear_faults()
-    time.sleep(1)
-    can_bus.send_all_fault()
-
-    # Step 4: Start a thread to send PackCurrent and PackVoltage signals
     pack_thread = threading.Thread(target=script_send_pack_current_and_voltage, args=(can_bus,))
     pack_thread.start()
-
-    # Step 10: Send drive state Reverse
-    can_bus.send_drive_state(REVERSE)
-    time.sleep(1)
-
-    # Step 11: Wait for MotorRotatingSpeed thread to finish, then decrease speed from 500 to 1
-    motor_speed_thread.join()
-
-    for speed in range(99, -1, -1):
-        can_bus.send_speed_kmh(speed)
-        time.sleep(0.05)
-
-    # Step 12: Send drive state Park
-    can_bus.send_drive_state(PARK)
-    time.sleep(1)
-
-    # Step 13: Send drive state Reverse
-    can_bus.send_drive_state(REVERSE)
-    time.sleep(1)
-
-    # Wait for all threads to finish
-    soc_thread.join()
-    pack_thread.join()
 
     can_bus.clear_all()
     print("DONE TEST")
