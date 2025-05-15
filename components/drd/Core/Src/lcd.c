@@ -4,6 +4,7 @@
 #include "cyclic_data_handler.h"
 #include "diagnostic.h"
 #include "soc.h"
+#include "drd_freertos.h"
 
 /*--------------------------------------------------------------------------
   Internal Types & Variables
@@ -547,6 +548,7 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
         set_cyclic_pack_current(tmp_pack_current);
 
         g_pack_current_soc = tmp_pack_current;
+        osEventFlagsSet(calculate_soc_flagHandle, SOC_CALCULATE_ON);
 	}
     
     if(msg_id == CAN_ID_PACK_VOLTAGE)

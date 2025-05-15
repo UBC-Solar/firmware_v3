@@ -34,6 +34,7 @@
 #include "diagnostic.h"
 #include "cyclic_data_handler.h"
 #include "soc.h"
+#include "drd_freertos.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -275,9 +276,7 @@ void LCDUpdatetask(void *argument)
     #ifdef DEBUG
         uint32_t lcd_time_start = HAL_GetTick();
     #endif // DEBUG
-    
-    SOC_predict_then_update(g_total_pack_voltage_soc, g_pack_current_soc, SOC_TIME_STEP);
-    
+        
     g_lcd_data.speed            = get_cyclic_speed();
     g_lcd_data.drive_state      = get_cyclic_drive_state();
     g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;    
@@ -355,7 +354,23 @@ void CalculateSoCtask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    /* SHOULD EXECUTE WHENVER PACK CURRENT IS RECEIVED */
+
+    // Wait until calculate SOC flag is set
+    osEventFlagsWait(
+        calculate_soc_flagHandle,
+        SOC_CALCULATE_ON,
+        osFlagsWaitAny | osFlagsNoClear,
+        osWaitForever
+    );
+
+    SOC_predict_then_update(g_total_pack_voltage_soc, g_pack_current_soc, SOC_TIME_STEP);
+    uint8_t soc = (uint8_t)(SOC_get_soc() * 100);
+    set_cyclic_soc(soc);
+
+    osEventFlagsClear(calculate_soc_flagHandle, SOC_CALCULATE_ON);
+
+    osDelay(CALCULATE_SOC_DELAY);
   }
   /* USER CODE END CalculateSoCtask */
 }
