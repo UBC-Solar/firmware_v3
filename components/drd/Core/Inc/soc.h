@@ -14,6 +14,8 @@ extern float g_pack_current_soc;
 
 /* FUNCTION DECLARATIONS */
 void SOC_predict_then_update(float g_total_pack_voltage_soc, float g_pack_current_soc, float time_step);
-uint8_t SOC_get_soc();
+float SOC_get_soc();        // 0 - 1
+float SOC_get_voltage();
+float SOC_get_Uc();
 
 #endif // SOC_H

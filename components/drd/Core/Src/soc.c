@@ -1,7 +1,6 @@
 #include "soc.h"
 #include <math.h>
 #include <assert.h>
-#include "main.h"
 
 float g_total_pack_voltage_soc;
 float g_pack_current_soc;
@@ -15,7 +14,7 @@ float g_pack_current_soc;
 //-----------------------------
 
 // Battery capacity (Coulombs)
-static const float Q_total   = 151000.0;  
+static const float Q_total   = 145000.0;  
 
 // Low-pass factor for current
 static const float alpha     = 0.9f;
@@ -55,60 +54,60 @@ static float last_predicted_V = 0.0f;
 //--- Battery Model Curves ----
 //-----------------------------
 // Coefficients based on fitting in STG's Physics repo battery_config.py
-// U_oc_coeffs = [  2964.52101072, -11872.64866062,  19108.52190655, -15842.17383716,
-//                   7225.57921631,  -1800.93540695,    254.87035949,     94.15508582 ]
+// U_oc_coeffs = [  2964.5351135  -11872.69601585  19108.58449175 -15842.2151069
+// 7225.59336211  -1800.93776157    254.87051039     94.15508448]
 static float get_Uoc(float x) {
     return
-        2964.52101072f
-      + (-11872.64866062f) * x
-      + ( 19108.52190655f) * x * x
-      + (-15842.17383716f) * x * x * x
-      + (  7225.57921631f) * x * x * x * x
-      + (-1800.93540695f) * x * x * x * x * x
-      + (   254.87035949f) * x * x * x * x * x * x
-      + (    94.15508582f) * x * x * x * x * x * x * x;
+            94.15508448
+        + 254.87051039   * x
+        + (-1800.93776157)* x * x
+        + 7225.59336211   * x * x * x
+        + (-15842.2151069)* x * x * x * x
+        + 19108.58449175  * x * x * x * x * x
+        + (-11872.69601585)* x * x * x * x * x * x
+        + 2964.5351135    * x * x * x * x * x * x * x;
 }
 
 // R_0_coeffs = [-1.54613590e+02,  5.52593795e+02, -7.94776446e+02,  5.92975205e+02,
 //               -2.47297657e+02,  5.80013511e+01, -7.19686618e+00,  4.92268729e-01]
 static float get_R0(float x) {
     return
-        -154.613590f
-      +   552.593795f  * x
-      +  -794.776446f  * x * x
-      +   592.975205f  * x * x * x
-      +  -247.297657f  * x * x * x * x
-      +    58.001351f  * x * x * x * x * x
-      +    -7.196866f  * x * x * x * x * x * x
-      +     0.4922687f * x * x * x * x * x * x * x;
+         0.492268729
+      + (-7.19686618)   * x
+      + 58.0013511      * x * x
+      + (-247.297657)   * x * x * x
+      + 592.975205      * x * x * x * x
+      + (-794.776446)   * x * x * x * x * x
+      + 552.593795      * x * x * x * x * x * x
+      + (-154.61359)    * x * x * x * x * x * x * x;
 }
 
-// R_P_coeffs = [ 1.08817913e+02, -3.95312179e+02,  5.53636103e+02, -3.69486684e+02,
-//                1.13440342e+02, -9.44922096e+00, -1.96859647e+00,  3.64860692e-01]
+// R_P_coeffs = [ 1.08804893e+02, -3.95266369e+02,  5.53572478e+02, -3.69442515e+02,
+//                1.13424395e+02, -9.44642125e+00, -1.96878597e+00,  3.64862429e-01]
 static float get_Rp(float x) {
     return
-         108.817913f
-      +  (-395.312179f)  * x
-      +   553.636103f   * x * x
-      +  (-369.486684f)  * x * x * x
-      +   113.440342f   * x * x * x * x
-      +    -9.44922096f * x * x * x * x * x
-      +    -1.96859647f * x * x * x * x * x * x
-      +     0.364860692f* x * x * x * x * x * x * x;
+         0.364862429
+      + (-1.96878597)   * x
+      + (-9.44642125)   * x * x
+      + 113.424395      * x * x * x
+      + (-369.442515)   * x * x * x * x
+      + 553.572478      * x * x * x * x * x
+      + (-395.266369)   * x * x * x * x * x * x
+      + 108.804893      * x * x * x * x * x * x * x;
 }
 
-// C_P_coeffs = [ 2.59786749e+06, -7.85135009e+06,  9.21597530e+06, -5.19570513e+06,
-//                1.38789832e+06, -1.46483144e+05,  6.37034956e+03,  2.60645952e+02]
+// C_P_coeffs = [ 2.59785258e+06, -7.85129803e+06,  9.21590368e+06, -5.19565604e+06,
+//                1.38788088e+06, -1.46480151e+05,  6.37015318e+03,  2.60647678e+02]
 static float get_Cp(float x) {
     return
-        2597867.49f
-      + (-7851350.09f)   * x
-      +  9215975.30f     * x * x
-      + (-5195705.13f)   * x * x * x
-      +  1387898.32f     * x * x * x * x
-      +  (-146483.144f)  * x * x * x * x * x
-      +    6370.34956f   * x * x * x * x * x * x
-      +     260.645952f  * x * x * x * x * x * x * x;
+         260.647678
+      + 6370.15318      * x
+      + (-146480.151)   * x * x
+      + 1387880.88      * x * x * x
+      + (-5195656.04)   * x * x * x * x
+      + 9215903.68      * x * x * x * x * x
+      + (-7851298.03)   * x * x * x * x * x * x
+      + 2597852.58      * x * x * x * x * x * x * x;
 }
 
 //-----------------------------
@@ -159,16 +158,17 @@ static void predict_state(float current, float dt) {
     float B1  = Rp * (1.0f - expf(-dt / tau));
 
     // F = [[1,0];[0, exp(-dt/tau)]]
-    float F[2][2] = {
+    float F[2][2] = {  
         {1.0f,                 0.0f},
         {0.0f, expf(-dt / tau)}
     };
+
 
     // state = F·x + B·u
     float x0 = F[0][0]*state[SOC] + F[0][1]*state[UC] + B0*current;
     float x1 = F[1][0]*state[SOC] + F[1][1]*state[UC] + B1*current;
     state[SOC] = x0;  state[UC] = x1;
-
+    
     // P = F·P·Fᵀ + Q_proc
     float Ft[2][2] = { {F[0][0], F[1][0]},
                        {F[0][1], F[1][1]} };
@@ -179,9 +179,9 @@ static void predict_state(float current, float dt) {
 }
 
 // Update only (refines state[] and P[][])
-static void update_filter(float measured_V) {
+static void update_filter(float measured_V, float current) {
     // low-pass filter current
-    filtered_I = alpha * filtered_I + (1.0f - alpha) * filtered_I;
+    filtered_I = alpha * filtered_I + (1.0f - alpha) * current;
 
     // H = [dUoc/dSOC - dR0/dSOC·I,  -1]
     float dU = central_diff(get_Uoc, fmin(1.0f, state[SOC]));
@@ -194,16 +194,18 @@ static void update_filter(float measured_V) {
     float PHt1 = P[1][0]*H0 + P[1][1]*H1;
     float S    = H0*PHt0 + H1*PHt1 + R_meas;
     
+    
     // K = P·Hᵀ / S
     float K0 = PHt0 / S;
     float K1 = PHt1 / S;
+    
     
     // Measurement Function hx = Uoc - Uc - R0·I
     float Uoc = get_Uoc(state[SOC]);
     float R0  = get_R0(state[SOC]);
     float hx   = Uoc - state[UC] - R0 * filtered_I;
     last_predicted_V = hx;
-
+    
     // Update State
     float y = measured_V - hx;
     state[SOC] += K0 * y;
@@ -244,14 +246,24 @@ void SOC_predict_then_update(float g_total_pack_voltage_soc, float g_pack_curren
     #endif // DEBUG
 
     predict_state(g_pack_current_soc, time_step);
-    update_filter(g_total_pack_voltage_soc);
+    update_filter(g_total_pack_voltage_soc, g_pack_current_soc);
 
     #ifdef DEBUG
         uint32_t soc_time_diff = HAL_GetTick() - soc_time_start;
     #endif // DEBUG
 }
 
-uint8_t SOC_get_soc()
+float SOC_get_soc()
 {
-    return (uint8_t)(state[SOC] * 100);
+    return (state[SOC]);
+}
+
+float SOC_get_voltage()
+{
+    return last_predicted_V;
+}
+
+float SOC_get_Uc()
+{
+    return (state[UC]);
 }
