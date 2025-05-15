@@ -33,7 +33,7 @@
 
 #include "radio.h"
 #include "canload.h"
-#include "cpu_load.h"
+// #include "cpu_load.h"
 #include "gps.h"
 #include "diagnostic.h"
 
@@ -208,7 +208,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   }
   /* USER CODE BEGIN Callback 1 */
   
-  CPU_LOAD_timer_overflow_handler(htim);
+//   CPU_LOAD_timer_overflow_handler(htim);
 
   /* USER CODE END Callback 1 */
 }

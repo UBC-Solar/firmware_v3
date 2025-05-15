@@ -57,17 +57,19 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define LTS_IN_Pin GPIO_PIN_0
-#define LTS_IN_GPIO_Port GPIOA
-#define RTS_IN_Pin GPIO_PIN_1
+#define RTS_IN_Pin GPIO_PIN_0
 #define RTS_IN_GPIO_Port GPIOA
+#define LTS_IN_Pin GPIO_PIN_1
+#define LTS_IN_GPIO_Port GPIOA
 #define DEBUG_LED_Pin GPIO_PIN_6
 #define DEBUG_LED_GPIO_Port GPIOA
-#define MODE_PW_Pin GPIO_PIN_9
-#define MODE_PW_GPIO_Port GPIOC
+#define MODE_PW_Pin GPIO_PIN_12
+#define MODE_PW_GPIO_Port GPIOB
+#define HORN_EN_Pin GPIO_PIN_9
+#define HORN_EN_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
-#define TURN_SIGNAL_MODE_DELAY 200
+#define TURN_SIGNAL_MODE_DELAY 30
 #define MS_TO_S_CONVERTER 1000
 #define TICK_DELAY 1000
 
@@ -81,6 +83,12 @@ typedef enum {
   POWER_MODE = 0b00,
   ECO_MODE = 0b01,
 } mode_status_t;
+
+typedef enum {
+  HORN_OFF = 0b00,
+  HORN_ON = 0b01,
+} horn_status_t;
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

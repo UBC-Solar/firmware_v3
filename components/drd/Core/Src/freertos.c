@@ -258,10 +258,14 @@ void LCDUpdatetask(void *argument)
     g_lcd_data.drive_mode = (volatile uint8_t) g_input_flags.eco_mode_on;
     g_lcd_data.soc = SOC_get_soc();
     
-    LCD_display_power_bar((float) g_lcd_data.pack_current, (float) g_lcd_data.pack_voltage);
+    g_lcd_data.pack_current = get_cyclic_pack_current();
+    g_lcd_data.pack_voltage = get_cyclic_pack_voltage();
+    g_lcd_data.soc = get_cyclic_soc();
+
+    LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
     LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
     LCD_display_drive_state(g_lcd_data.drive_state);
-    LCD_display_SOC(g_lcd_data.soc);
+    LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
     LCD_display_drive_mode(g_lcd_data.drive_mode);
     
     #ifdef DEBUG
@@ -284,6 +288,7 @@ void DriveState_task(void *argument)
 {
   /* USER CODE BEGIN DriveState_task */
 	g_input_flags.velocity_under_threshold = true;
+	g_input_flags.eco_mode_on = true;
 
   /* Infinite loop */
   for(;;)
