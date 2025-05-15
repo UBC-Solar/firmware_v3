@@ -309,7 +309,7 @@ class CANBus:
 
         # Reset pack current and voltage to 0
         self.send_pack_current(0)
-        self.send_pack_voltage(100)
+        self.send_pack_voltage(134.4)
 
         # Reset drive state to PARK (0)
         self.send_drive_state(PARK)
@@ -343,10 +343,10 @@ def script_send_soc(can_bus):
 
 def script_send_pack_current_and_voltage(can_bus):
     """Send PackCurrent and PackVoltage signals over 30 seconds."""
-    current = 34
-    voltage = 139
-    current_step = (34 - (-20)) /120
-    voltage_step = (139 - 60) / 120
+    current = 40
+    voltage = 134
+    current_step = (current - (-20)) /120
+    voltage_step = (voltage - 89) / 120
 
     for _ in range(120):
         can_bus.send_pack_current(current)
@@ -394,9 +394,9 @@ if __name__ == "__main__":
     can_bus.send_drive_mode(POWER)
     time.sleep(1)
 
-    # Step 3: Start a thread to send SoC message
-    soc_thread = threading.Thread(target=script_send_soc, args=(can_bus,))
-    soc_thread.start()
+    # # Step 3: Start a thread to send SoC message. SOC is based on pck current and voltage now.
+    # soc_thread = threading.Thread(target=script_send_soc, args=(can_bus,))
+    # soc_thread.start()
 
     # Step 6: Send drive state Drive (FORWARD)
     can_bus.send_drive_state(FORWARD)
