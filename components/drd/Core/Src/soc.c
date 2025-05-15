@@ -2,8 +2,8 @@
 #include <math.h>
 #include <assert.h>
 
-float g_total_pack_voltage_soc;
-float g_pack_current_soc;
+volatile float g_total_pack_voltage_soc;
+volatile float g_pack_current_soc;
 
 /* DEFINES */
 #define SOC     0

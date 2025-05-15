@@ -117,6 +117,18 @@ const osThreadAttr_t TimeSinceStartu_attributes = {
   .stack_size = sizeof(TimeSinceStartuBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for CalculateSoCTas */
+osThreadId_t CalculateSoCTasHandle;
+uint32_t CalculateSoCtaskBuffer[ 512 ];
+osStaticThreadDef_t CalculateSoCtaskControlBlock;
+const osThreadAttr_t CalculateSoCTas_attributes = {
+  .name = "CalculateSoCTas",
+  .cb_mem = &CalculateSoCtaskControlBlock,
+  .cb_size = sizeof(CalculateSoCtaskControlBlock),
+  .stack_mem = &CalculateSoCtaskBuffer[0],
+  .stack_size = sizeof(CalculateSoCtaskBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -128,6 +140,7 @@ void ExternalLights_task(void *argument);
 void LCDUpdatetask(void *argument);
 void DriveState_task(void *argument);
 void TimeSinceStartup_task(void *argument);
+void CalculateSoCtask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -172,6 +185,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of TimeSinceStartu */
   TimeSinceStartuHandle = osThreadNew(TimeSinceStartup_task, NULL, &TimeSinceStartu_attributes);
+
+  /* creation of CalculateSoCTas */
+  CalculateSoCTasHandle = osThreadNew(CalculateSoCtask, NULL, &CalculateSoCTas_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -256,6 +272,7 @@ void LCDUpdatetask(void *argument)
     g_lcd_data.speed = get_cyclic_speed();
     g_lcd_data.drive_state = get_cyclic_drive_state();
     g_lcd_data.drive_mode = (volatile uint8_t) g_input_flags.eco_mode_on;
+    
     g_lcd_data.soc = SOC_get_soc();
     
     g_lcd_data.pack_current = get_cyclic_pack_current();
@@ -274,7 +291,7 @@ void LCDUpdatetask(void *argument)
 
     osDelay(LCD_UPDATE_DELAY);
 }
-/* USER CODE END LCDUpdatetask */
+  /* USER CODE END LCDUpdatetask */
 }
 
 /* USER CODE BEGIN Header_DriveState_task */
@@ -317,6 +334,24 @@ void TimeSinceStartup_task(void *argument)
     DRD_time_since_bootup();
   }
   /* USER CODE END TimeSinceStartup_task */
+}
+
+/* USER CODE BEGIN Header_CalculateSoCtask */
+/**
+* @brief Function implementing the CalculateSoCTas thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_CalculateSoCtask */
+void CalculateSoCtask(void *argument)
+{
+  /* USER CODE BEGIN CalculateSoCtask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END CalculateSoCtask */
 }
 
 /* Private application code --------------------------------------------------*/

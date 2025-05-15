@@ -9,8 +9,8 @@
 #define SOC_TIME_STEP       (TIME_STEP / 1000.0f)   // ms
 
 /* GLOBALS */
-extern float g_total_pack_voltage_soc;
-extern float g_pack_current_soc;
+extern volatile float g_total_pack_voltage_soc;
+extern volatile float g_pack_current_soc;
 
 /* FUNCTION DECLARATIONS */
 void SOC_predict_then_update(float g_total_pack_voltage_soc, float g_pack_current_soc, float time_step);
