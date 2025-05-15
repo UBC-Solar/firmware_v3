@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "cyclic_data_handler.h"
 #include "diagnostic.h"
+#include "soc.h"
 
 /*--------------------------------------------------------------------------
   Internal Types & Variables

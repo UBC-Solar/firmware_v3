@@ -38,6 +38,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 typedef StaticTask_t osStaticThreadDef_t;
+typedef StaticEventGroup_t osStaticEventGroupDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -55,7 +56,6 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -129,6 +129,14 @@ const osThreadAttr_t CalculateSoCTas_attributes = {
   .stack_size = sizeof(CalculateSoCtaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for calculate_soc_flag */
+osEventFlagsId_t calculate_soc_flagHandle;
+osStaticEventGroupDef_t calculate_soc_flagControlBlock;
+const osEventFlagsAttr_t calculate_soc_flag_attributes = {
+  .name = "calculate_soc_flag",
+  .cb_mem = &calculate_soc_flagControlBlock,
+  .cb_size = sizeof(calculate_soc_flagControlBlock),
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -192,6 +200,10 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
+
+  /* Create the event(s) */
+  /* creation of calculate_soc_flag */
+  calculate_soc_flagHandle = osEventFlagsNew(&calculate_soc_flag_attributes);
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
@@ -264,20 +276,14 @@ void LCDUpdatetask(void *argument)
         uint32_t lcd_time_start = HAL_GetTick();
     #endif // DEBUG
     
-    g_total_pack_voltage_soc = (float)g_lcd_data.pack_voltage;
-    g_pack_current_soc = (float)g_lcd_data.pack_current;
-    
     SOC_predict_then_update(g_total_pack_voltage_soc, g_pack_current_soc, SOC_TIME_STEP);
     
-    g_lcd_data.speed = get_cyclic_speed();
-    g_lcd_data.drive_state = get_cyclic_drive_state();
-    g_lcd_data.drive_mode = (volatile uint8_t) g_input_flags.eco_mode_on;
-    
-    g_lcd_data.soc = SOC_get_soc();
-    
-    g_lcd_data.pack_current = get_cyclic_pack_current();
-    g_lcd_data.pack_voltage = get_cyclic_pack_voltage();
-    g_lcd_data.soc = get_cyclic_soc();
+    g_lcd_data.speed            = get_cyclic_speed();
+    g_lcd_data.drive_state      = get_cyclic_drive_state();
+    g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;    
+    g_lcd_data.pack_current     = get_cyclic_pack_current();
+    g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
+    g_lcd_data.soc              = get_cyclic_soc();
 
     LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
     LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
