@@ -260,6 +260,13 @@ void ExternalLights_task(void *argument)
 * @param argument: Not used
 * @retval None
 */
+
+// When debugging we can check the duration of this function to measure performance.
+#ifdef DEBUG
+    static uint32_t lcd_time_start;
+    static uint32_t lcd_time_diff;
+#endif // DEBUG
+
 /* USER CODE END Header_LCDUpdatetask */
 void LCDUpdatetask(void *argument)
 {
@@ -274,7 +281,7 @@ void LCDUpdatetask(void *argument)
   {
     // When debugging we can check the duration of this function to measure performance.
     #ifdef DEBUG
-        uint32_t lcd_time_start = HAL_GetTick();
+        lcd_time_start = HAL_GetTick();
     #endif // DEBUG
         
     g_lcd_data.speed            = get_cyclic_speed();
@@ -291,7 +298,7 @@ void LCDUpdatetask(void *argument)
     LCD_display_drive_mode(g_lcd_data.drive_mode);
     
     #ifdef DEBUG
-        uint32_t lcd_time_diff = HAL_GetTick() - lcd_time_start;
+        lcd_time_diff = HAL_GetTick() - lcd_time_start;
     #endif // DEBUG
 
     osDelay(LCD_UPDATE_DELAY);
