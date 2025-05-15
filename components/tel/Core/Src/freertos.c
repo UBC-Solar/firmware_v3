@@ -200,7 +200,7 @@ void MX_FREERTOS_Init(void) {
   GPS_TaskHandle = osThreadNew(GPS_task, NULL, &GPS_Task_attributes);
 
   /* creation of CANLoad_Task */
-  CANLoad_TaskHandle = osThreadNew(CANLoad_task, NULL, &CANLoad_Task_attributes);
+//   CANLoad_TaskHandle = osThreadNew(CANLoad_task, NULL, &CANLoad_Task_attributes);
 
   /* creation of Diagnostic_Task */
   Diagnostic_TaskHandle = osThreadNew(Diagnostic_task, NULL, &Diagnostic_Task_attributes);

@@ -154,7 +154,7 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 {
     HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);	    // Visual Confirmation of CAN working
 
-    CANLOAD_calculate_message_bits(CAN_comms_Rx_msg->header.DLC, CAN_comms_Rx_msg->header.IDE); // Calculate CAN bus load
+    // CANLOAD_calculate_message_bits(CAN_comms_Rx_msg->header.DLC, CAN_comms_Rx_msg->header.IDE); // Calculate CAN bus load
 
     RTC_check_and_sync_rtc(CAN_comms_Rx_msg->header.StdId, CAN_comms_Rx_msg->data);     // Sync timestamps
 
