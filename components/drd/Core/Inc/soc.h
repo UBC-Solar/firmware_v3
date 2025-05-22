@@ -17,6 +17,6 @@ void SOC_predict_then_update(float g_total_pack_voltage_soc, float g_pack_curren
 float SOC_get_soc();        // 0 - 1
 float SOC_get_voltage();
 float SOC_get_Uc();
-void SOC_init_soc();
+void SOC_init_soc(int voltage);
 
 #endif // SOC_H
