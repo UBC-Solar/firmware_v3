@@ -273,3 +273,8 @@ float SOC_get_Uc()
 {
     return (state[UC]);
 }
+
+void SOC_init_soc()
+{
+    
+}

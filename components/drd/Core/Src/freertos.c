@@ -358,6 +358,17 @@ void TimeSinceStartup_task(void *argument)
 void CalculateSoCtask(void *argument)
 {
   /* USER CODE BEGIN CalculateSoCtask */
+
+    // Wait for first pack voltage message to init SoC
+    osEventFlagsWait(
+        calculate_soc_flagHandle,
+        SOC_CALCULATE_ON,
+        osFlagsWaitAny | osFlagsNoClear,
+        osWaitForever
+    );
+
+    SOC_init_soc();
+
   /* Infinite loop */
   for(;;)
   {
