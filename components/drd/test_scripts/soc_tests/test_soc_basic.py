@@ -44,7 +44,7 @@ WINDOWS = False
 
 
 script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-DBC_FILE = os.path.join(script_dir, 'brightside.dbc')
+DBC_FILE = os.path.join(script_dir, '../brightside.dbc')
 FAULT       = 1
 CLEAR       = 0
 RIGHT   = 2
