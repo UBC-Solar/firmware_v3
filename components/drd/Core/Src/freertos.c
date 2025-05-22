@@ -370,6 +370,9 @@ void CalculateSoCtask(void *argument)
     // voltage is rounded to nearest integer. Done by adding 0.5
     SOC_init_soc(g_total_pack_voltage_soc + 0.5f);     // TODO: Might be unsafe if load instruction was not done before calling this function
 
+    // Clear flag for next wait
+    osEventFlagsClear(calculate_soc_flagHandle, SOC_CALCULATE_ON);
+
   /* Infinite loop */
   for(;;)
   {
