@@ -355,7 +355,7 @@ static CAN_TxHeaderTypeDef soc_can_header = {
 #include "CAN_comms.h"
 void SOC_can_tx()
 {
-    uint8_t soc = (uint8_t)SOC_get_Uc();
+    uint8_t soc = (uint8_t)SOC_get_soc();
 
     CAN_comms_Tx_msg_t time_since_bootup_can_tx = {
         .data[0] = (soc & 0xFF) >> 0,
