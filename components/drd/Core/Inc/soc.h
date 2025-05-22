@@ -19,4 +19,8 @@ float SOC_get_voltage();
 float SOC_get_Uc();
 void SOC_init_soc(int voltage);
 
+// TODO: REMOVE THIS
+void SOC_can_tx();
+
+
 #endif // SOC_H

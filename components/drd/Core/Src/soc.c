@@ -344,3 +344,23 @@ void SOC_init_soc(int voltage)
 {
     state[SOC] = get_soc_from_voltage(voltage);
 }
+
+static CAN_TxHeaderTypeDef soc_can_header = {
+    .StdId = 0x555,
+    .ExtId = 0x0000,
+    .IDE = CAN_ID_STD,
+    .RTR = CAN_RTR_DATA,
+    .DLC = 1};
+
+#include "CAN_comms.h"
+void SOC_can_tx()
+{
+    uint8_t soc = (uint8_t)SOC_get_Uc();
+
+    CAN_comms_Tx_msg_t time_since_bootup_can_tx = {
+        .data[0] = (soc & 0xFF) >> 0,
+        .header = soc_can_header,
+    };
+
+    CAN_comms_Add_Tx_message(&time_since_bootup_can_tx);
+}

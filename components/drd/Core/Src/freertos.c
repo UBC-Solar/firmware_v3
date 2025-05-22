@@ -291,6 +291,10 @@ void LCDUpdatetask(void *argument)
     g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
     g_lcd_data.soc              = get_cyclic_soc();
 
+    // TODO REMOVE THIS:
+    // Send SoC over CAN. use the diag
+    SOC_can_tx();
+
     LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
     LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
     LCD_display_drive_state(g_lcd_data.drive_state);
