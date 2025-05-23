@@ -9,6 +9,56 @@ volatile float g_pack_current_soc;
 #define SOC     0
 #define UC      1   
 
+#define VOLTAGE_MAP_MIN 94
+#define VOLTAGE_MAP_SIZE 40
+#define SOC_MAX     (1.04f)
+#define SOC_MIN     (0.00f)
+
+// Maps integer voltage from 94V to 133V (inclusive) to float percentage
+// See this thread https://ubcsolar26.monday.com/boards/7524367653/pulses/9144506936
+static const float voltage_to_percent_map[VOLTAGE_MAP_SIZE] = {
+    0.0000,   // 94 V
+    0.0030,   // 95 V
+    0.0070,   // 96 V
+    0.0120,   // 97 V
+    0.0160,   // 98 V
+    0.0220,   // 99 V
+    0.0270,   // 100 V
+    0.0330,   // 101 V
+    0.0400,   // 102 V
+    0.0480,   // 103 V
+    0.0560,   // 104 V
+    0.0660,   // 105 V
+    0.0780,   // 106 V
+    0.0920,   // 107 V
+    0.1100,   // 108 V
+    0.1330,   // 109 V
+    0.1640,   // 110 V
+    0.2020,   // 111 V
+    0.2400,   // 112 V
+    0.2750,   // 113 V
+    0.3080,   // 114 V
+    0.3410,   // 115 V
+    0.3740,   // 116 V
+    0.4090,   // 117 V
+    0.4470,   // 118 V
+    0.4900,   // 119 V
+    0.5380,   // 120 V
+    0.5870,   // 121 V
+    0.6340,   // 122 V
+    0.6750,   // 123 V
+    0.7110,   // 124 V
+    0.7430,   // 125 V
+    0.7740,   // 126 V
+    0.8040,   // 127 V
+    0.8350,   // 128 V
+    0.8670,   // 129 V
+    0.9040,   // 130 V
+    0.9510,   // 131 V
+    1.0050,   // 132 V
+    1.0430    // 133 V
+};
+
 //-----------------------------
 //--- Model & EKF Parameters -- From kalman_filter_example.py in STG's physics repo.
 //-----------------------------
@@ -40,7 +90,7 @@ static const float R_meas = 1e0f * 0.5;
 
 // State vector state = [SOC; Uc]
 static float state[2] = {
-    1.04f,   // initial SOC = 104%
+    SOC_MAX,   // initial SOC = 104%
     0.0f    // initial Uc = 0 V
 };
 
@@ -234,6 +284,22 @@ static void update_filter(float measured_V, float current) {
     if (state[SOC] > 1.1f)  state[SOC] = 1.1f;
 }
 
+static float get_soc_from_voltage(int voltage) {
+    if (voltage < VOLTAGE_MAP_MIN)
+    {
+        return SOC_MIN;
+    } 
+    else if (voltage >= (VOLTAGE_MAP_MIN + VOLTAGE_MAP_SIZE)) 
+    {
+        return SOC_MAX;
+    }
+    else
+    {
+        return voltage_to_percent_map[voltage - VOLTAGE_MAP_MIN];
+    }
+}
+
+
 //-----------------------------
 //--- Public API -------------
 //-----------------------------
@@ -272,4 +338,9 @@ float SOC_get_voltage()
 float SOC_get_Uc()
 {
     return (state[UC]);
+}
+
+void SOC_init_soc(int voltage)
+{
+    state[SOC] = get_soc_from_voltage(voltage);
 }
