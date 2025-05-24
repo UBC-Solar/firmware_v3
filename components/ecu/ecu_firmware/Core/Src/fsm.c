@@ -41,6 +41,11 @@ static volatile uint8_t count_awdg_faults = 0;
 /*============================================================================*/
 /* PRIVATE FUNCTION IMPLEMENTATIONS */
 
+void FSM_Enter_State(FSM_state_t state){
+    FSM_state = state;
+    printf("Entering state: %s\r\n", FSM_state_name_table[state]);
+}
+
 /**
  * @brief Initialization of FSM.
  */
@@ -56,10 +61,10 @@ void FSM_Init()
         //IWDG triggered
         printf("watchdog-triggered software reset \r\n");
         ecu_data.status.bits.reset_from_watchdog = 1; //CAN_message now knows watchdog event has occured
-        FSM_state = FAULT;
+        FSM_Enter_State(FAULT);
     }
     else {
-        FSM_state = FSM_RESET;
+        FSM_Enter_State(FSM_RESET);
     }
 
     return;
@@ -102,7 +107,7 @@ void FSM_reset()
     // Read supplemental battery
     check_supp_voltage();
 
-    FSM_state = WAIT_FOR_BMS_POWERUP;
+    FSM_Enter_State(WAIT_FOR_BMS_POWERUP);
 
     ticks.last_generic_tick = HAL_GetTick();
 
@@ -128,12 +133,12 @@ void BMS_powerup()
 
     if (timer_check(BMS_STARTUP_INTERVAL, & (ticks.last_generic_tick) ))
     {
-        FSM_state = FAULT;
+        FSM_Enter_State(FAULT);
     }
     else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH)
     {
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = WAIT_FOR_BMS_READY;
+        FSM_Enter_State(WAIT_FOR_BMS_READY);
     }
 
     return;
@@ -156,12 +161,12 @@ void BMS_ready()
 
     if (timer_check(BMS_STARTUP_INTERVAL, &(ticks.last_generic_tick) ))
     {
-        FSM_state = FAULT;
+        FSM_Enter_State(FAULT);
     }
     else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == LOW)
     {
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = HV_CONNECT;
+        FSM_Enter_State(HV_CONNECT);
     }
     
     printf("Bottom of BMS ready\r\n");
@@ -209,7 +214,7 @@ void HV_Connect()
             if( timer_check(SHORT_INTERVAL, &(ticks.pos_tick))) 
             {
                 ticks.last_generic_tick = HAL_GetTick();
-                FSM_state = SWAP_DCDC;
+                FSM_Enter_State(SWAP_DCDC);
             }
         }
     }
@@ -233,7 +238,7 @@ void swap_DCDC()
     HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, HIGH);
 
     ticks.last_generic_tick = HAL_GetTick();
-    FSM_state = DISABLE_MDU_DCH;
+    FSM_Enter_State(DISABLE_MDU_DCH);
 
     return;
 }
@@ -251,7 +256,7 @@ void disable_MDU_DCH()
     {
         HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, LOW);
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = CHECK_LLIM;
+        FSM_Enter_State(CHECK_LLIM);
     }
 
     printf("Bottom of MDU dch\r\n");
@@ -275,13 +280,13 @@ void check_LLIM()
     if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_OPEN)
     {
         last_LLIM_status = CONTACTOR_OPEN;
-        FSM_state = CHECK_HLIM;
+        FSM_Enter_State(CHECK_HLIM);
     }
     else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE)
     {
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = WAIT_FOR_PC;
+        FSM_Enter_State(WAIT_FOR_PC);
     }
 
     printf("Bottom of check LLIM\r\n");
@@ -303,7 +308,7 @@ void PC_wait()
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
         last_LLIM_status = CONTACTOR_CLOSED;
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = LLIM_CLOSED;
+        FSM_Enter_State(LLIM_CLOSED);
     }
 
     printf("Bottom of PC wait\r\n");
@@ -324,7 +329,7 @@ void LLIM_closed()
     {
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = CHECK_HLIM;
+        FSM_Enter_State(CHECK_HLIM);
     }
 
     return;
@@ -356,12 +361,12 @@ void check_HLIM()
     if (LVS_ALREADY_ON == true)
     {
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = MONITORING;
+        FSM_Enter_State(MONITORING);
     }
     else
     {
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = TELEM_ON;
+        FSM_Enter_State(TELEM_ON);
     }
 
     printf("Bottom of check HLIM\r\n");
@@ -381,7 +386,7 @@ void TELEM_on()
     {
         HAL_GPIO_WritePin(TEL_CTRL_GPIO_Port, TEL_CTRL_Pin, HIGH);
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = MEM_ON;
+        FSM_Enter_State(MEM_ON);
     }
 
     printf("Bottom of TELEM on\r\n");
@@ -401,7 +406,7 @@ void MEM_on()
     {
         HAL_GPIO_WritePin(SPAR1_CTRL_GPIO_Port, SPAR1_CTRL_Pin, HIGH);
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = DRD_ON;
+        FSM_Enter_State(DRD_ON);
     }
 
     printf("Bottom of MEM on\r\n");
@@ -422,7 +427,7 @@ void DRD_on()
     {
         HAL_GPIO_WritePin(DRD_CTRL_GPIO_Port, DRD_CTRL_Pin, HIGH);
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = MDU_ON;
+        FSM_Enter_State(MDU_ON);
     }
 
     printf("Bottom of DRD on\r\n");
@@ -440,7 +445,7 @@ void MDU_on()
 {
     // Don't turn on MDU if ESTOP pressed
     if(ecu_data.status.bits.estop == true){
-        FSM_state = MONITORING;
+        FSM_Enter_State(MONITORING);
         return;
     }
 
@@ -448,7 +453,7 @@ void MDU_on()
     {
         HAL_GPIO_WritePin(MDU_CTRL_GPIO_Port, MDU_CTRL_Pin, HIGH);
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = MONITORING;
+        FSM_Enter_State(MONITORING);
         LVS_ALREADY_ON = true; // The last LVS board has been powered
     }
 
@@ -472,7 +477,7 @@ void ECU_monitor()
 
     // Additional ESTOP check to catch case where ESTOP is pressed during startup (see note in fault state)
     if(ecu_data.status.bits.estop == true){
-        FSM_state = FAULT;
+        FSM_Enter_State(FAULT);
         return;
     }
     
@@ -495,7 +500,7 @@ void ECU_monitor()
     **************************/
     if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH && HAL_GPIO_ReadPin(BAL_BMS_GPIO_Port, BAL_BMS_Pin) == LOW)
     {
-        FSM_state = FAULT;
+        FSM_Enter_State(FAULT);
         return;
     }
 
@@ -516,7 +521,7 @@ void ECU_monitor()
     {
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = WAIT_FOR_PC;
+        FSM_Enter_State(WAIT_FOR_PC);
         return;
     }
     else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_LLIM_status == CONTACTOR_CLOSED)
@@ -571,7 +576,7 @@ void fault()
 
     // If ESTOP pressed during startup, start all LV boards
     if(!startup_complete){
-        FSM_state = TELEM_ON;
+        FSM_Enter_State(TELEM_ON);
         return;
     }
 
@@ -611,7 +616,7 @@ void FSM_ADC_WindowedAWDGCallback(){
 
         HAL_GPIO_WritePin(DOC_COC_LED_GPIO_Port, DOC_COC_LED_Pin, HIGH);
 
-        FSM_state = FAULT;
+        FSM_Enter_State(FAULT);
         FSM_run(); // Immediately transition to fault state
     }
 
@@ -629,7 +634,7 @@ void FSM_ESTOPActivedCallback()
     ecu_data.status.bits.estop = true;
     HAL_GPIO_WritePin(ESTOP_LED_GPIO_Port, ESTOP_LED_Pin, HIGH);
     
-    FSM_state = FAULT;
+    FSM_Enter_State(FAULT);
     FSM_run(); // Immediately transition to fault state
 }
 
