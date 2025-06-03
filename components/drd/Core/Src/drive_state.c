@@ -356,11 +356,14 @@ void get_accel_readings()
 void normalize_adc_values(uint16_t adc1, uint16_t adc2)
 {
     uint16_t dac_from_adc1 = convert_to_dac(adc1);
-    uint16_t dac_from_adc2 = convert_to_dac(adc1);      // CHANGE THIS TO adc2 LATER
+    // uint16_t dac_from_adc2 = dac_from_adc1;
     // uint16_t dac_from_adc1 = convert_to_dac(adc1);
     // uint16_t dac_from_adc2 = convert_to_dac(adc2);
+	
+	// Want quadratic curve. Min of dac_from_adc1 is 0. Max of dac_from_adc1 is 1023. Quadratic min, max = 0, 1023^2. 
+	// Normalize by / 1023^2 is slow. Do / 1024^2. That is just bit shifting right by 20. that means our max is actually 99.8% instead of 100.
 
-    g_throttle_DAC = (dac_from_adc1 + dac_from_adc2) / 2;        // Take the average
+    g_throttle_DAC = dac_from_adc1;
 }
 
 
