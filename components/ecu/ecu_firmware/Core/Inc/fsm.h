@@ -84,6 +84,7 @@ void disable_MDU_DCH();
 void check_LLIM();
 void PC_wait();
 void LLIM_closed();
+void MPPT_PC_wait();
 void check_HLIM();
 void TELEM_on();
 void MEM_on();
@@ -105,6 +106,7 @@ static void (*FSM_state_table[])(void) = {
     check_LLIM,
     PC_wait,
     LLIM_closed,
+    MPPT_PC_wait,
     check_HLIM,
     TELEM_on,
     MEM_on,
