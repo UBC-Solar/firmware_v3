@@ -336,13 +336,13 @@ void LLIM_closed()
 /**
  * @brief Waits for MPPT precharge to complete
  *
- * Exit Condition: Timer surpasses 10ms + additional time for audible queue.
+ * Exit Condition: Timer surpasses 1000ms
  * Exit Action: Reset timer, open MPPT pre charge contactor
  * Exit State: CHECK_HLIM
  */
 void MPPT_PC_wait()
 {
-    if (timer_check(MPPT_PC_INTERVAL + SHORT_INTERVAL, &(ticks.last_generic_tick) ))
+    if (timer_check(MPPT_PC_INTERVAL, &(ticks.last_generic_tick) ))
     {
         HAL_GPIO_WritePin(MPPT_PC_CTRL_GPIO_Port, MPPT_PC_CTRL_Pin, CONTACTOR_OPEN);
         ticks.last_generic_tick = HAL_GetTick();
