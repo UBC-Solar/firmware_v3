@@ -1,11 +1,9 @@
 #include "soc.h"
 #include "main.h"
 #include <math.h>
-#include "CAN_comms.h"
 
 volatile float g_total_pack_voltage_soc;
 volatile float g_pack_current_soc;
-
 
 /* DEFINES */
 #define SOC     0
