@@ -31,6 +31,7 @@ typedef enum
     CHECK_LLIM,
     WAIT_FOR_PC,
     LLIM_CLOSED,
+    WAIT_FOR_MPPT_PC,
     CHECK_HLIM,
     TELEM_ON,
     MEM_ON,
@@ -48,6 +49,7 @@ typedef enum
 #define MESSAGE_INTERVAL_0X450 200
 #define MDU_DCH_INTERVAL 500
 #define SHORT_INTERVAL 200
+#define MPPT_PC_INTERVAL 10
 #define MDU_PC_INTERVAL 1500
 #define FLT_BLINK_INTERVAL 200
 #define LVS_INTERVAL 100
