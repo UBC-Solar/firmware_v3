@@ -136,7 +136,7 @@ void BMS_powerup()
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_BMS_READY;
     }
-
+ //comment for branch 
     return;
 }
 
