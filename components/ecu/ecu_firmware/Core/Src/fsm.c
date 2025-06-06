@@ -210,7 +210,7 @@ void HV_Connect()
             if( timer_check(SHORT_INTERVAL, &(ticks.pos_tick))) 
             {
                 ticks.last_generic_tick = HAL_GetTick();
-                FSM_state = SWAP_DCDC;
+                FSM_state = DISABLE_MDU_DCH;
             }
         }
     }
@@ -442,15 +442,18 @@ void MEM_on()
  */
 void DRD_on()
 {
-    if (timer_check(LVS_INTERVAL, &(ticks.last_generic_tick) ))
+    //Don't turn on DRD if ESTOP pressed
+    if(ecu_data.status.bits.estop == true){
+        FSM_state = MONITORING;
+        return;
+    } else if (timer_check(LVS_INTERVAL, &(ticks.last_generic_tick) ))
     {
         HAL_GPIO_WritePin(DRD_CTRL_GPIO_Port, DRD_CTRL_Pin, HIGH);
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = MDU_ON;
-    }
+    };
 
     printf("Bottom of DRD on\r\n");
-
     return;
 }
 
@@ -517,37 +520,37 @@ void ECU_monitor()
     /*************************
     BMS Fault Checking
     **************************/
-    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH && HAL_GPIO_ReadPin(BAL_BMS_GPIO_Port, BAL_BMS_Pin) == LOW)
-    {
-        FSM_state = FAULT;
-        return;
-    }
+    // if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH && HAL_GPIO_ReadPin(BAL_BMS_GPIO_Port, BAL_BMS_Pin) == LOW)
+    // {
+    //     FSM_state = FAULT;
+    //     return;
+    // }
 
     /*************************
     Check Battery Capacity
     **************************/
-    if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_HLIM_status == CONTACTOR_CLOSED)
-    {
-        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
-        last_HLIM_status = CONTACTOR_OPEN;
-    }
-    else if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_HLIM_status == CONTACTOR_OPEN)
-    {
-        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_CLOSED);
-        last_HLIM_status = CONTACTOR_CLOSED;
-    }
-    else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_LLIM_status == CONTACTOR_OPEN)
-    {
-        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
-        ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = WAIT_FOR_PC;
-        return;
-    }
-    else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_LLIM_status == CONTACTOR_CLOSED)
-    {
-        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_OPEN);
-        last_LLIM_status = CONTACTOR_OPEN;
-    }
+    // if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_HLIM_status == CONTACTOR_CLOSED)
+    // {
+    //     HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
+    //     last_HLIM_status = CONTACTOR_OPEN;
+    // }
+    // else if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_HLIM_status == CONTACTOR_OPEN)
+    // {
+    //     HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_CLOSED);
+    //     last_HLIM_status = CONTACTOR_CLOSED;
+    // }
+    // else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_LLIM_status == CONTACTOR_OPEN)
+    // {
+    //     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
+    //     ticks.last_generic_tick = HAL_GetTick();
+    //     FSM_state = WAIT_FOR_PC;
+    //     return;
+    // }
+    // else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_LLIM_status == CONTACTOR_CLOSED)
+    // {
+    //     HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_OPEN);
+    //     last_LLIM_status = CONTACTOR_OPEN;
+    // }
 
     /*************************
     Send CAN Messages

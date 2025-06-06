@@ -153,7 +153,7 @@ int main(void)
   // Check if car started with ESTOP started pressed (won't trigger interrupt if so)
   if(HAL_GPIO_ReadPin(ESTOP_STATUS_GPIO_Port, ESTOP_STATUS_Pin) == ESTOP_ACTIVE_FAULT)
   {
-      FSM_ESTOPActivedCallback();
+    FSM_ESTOPActivedCallback();
   }
 
   CAN_Init(&hcan);
