@@ -46,7 +46,7 @@ uint16_t RegenClamp_get_regen_dac(uint16_t  throttle_dac,
 
     /* 2.  We find the instantaneous regen component (positive magnitude). */
     // TODO: Add in LVS current.
-    float regen_A = -(pack_current - array_current);   // Because pack current is always higher
+    float regen_A = -(pack_current + array_current);   // Because pack current is always higher
     if (regen_A < PACK_CURRENT_NEGATIVE_UNCERTAINTY) regen_A = 0.0f;                           // For safety
 
     /* 3.  State-machine */
@@ -61,7 +61,7 @@ uint16_t RegenClamp_get_regen_dac(uint16_t  throttle_dac,
 
         /* Stay at hard-cap until regen drops once (spike ended) */
         case RC_HARD_CAP:
-            if (regen_A <= s_prev_regen_A)            // first downward datapoint. Justified because regen spikes up wildly
+            if (regen_A <= s_prev_regen_A && (regen_A != 0.0f))            // first downward datapoint. Justified because regen spikes up wildly
             {
                 /* Find uncapped peak regen current. */
                 float uncapped_peak_regen_A = regen_A / REGEN_HARD_CAP_FACTOR; 

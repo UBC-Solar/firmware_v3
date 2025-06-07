@@ -59,6 +59,7 @@ extern const CAN_TxHeaderTypeDef time_since_bootup_can_header;
 #define MPPT_A_CURRENTS                     0x6A1
 #define MPPT_B_CURRENTS                     0x6B1
 #define MPPT_C_CURRENTS                     0x6C1
+#define FAKE_CAN_ID                         0x699
 
 #define MDU_REQUEST_FRAME					0b111 //request frames 0, 1 and 2 (0th, 1st and 2nd bit)
 #define MDU_REQUEST_SIZE 					1

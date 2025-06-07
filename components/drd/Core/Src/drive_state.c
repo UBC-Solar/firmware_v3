@@ -110,6 +110,7 @@ motor_command_t forward_state_handle()
                          g_pack_current_A, g_array_current_A);
 
         return get_motor_command(g_throttle_DAC, regen_dac);
+        // return get_motor_command(g_throttle_DAC, REGEN_DAC_ON);
     }
 
 	else
