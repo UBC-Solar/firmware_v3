@@ -284,7 +284,7 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
         int16_t raw =  (CAN_comms_Rx_msg->data[1] << 8) |
                     (CAN_comms_Rx_msg->data[0]);
 
-        /* 1.  Smart-regen wants the real value (A) */
+        /* 1.  Smart-regen consumes the pack current for its analysis (A) */
         g_pack_current_A = (float)raw / 65.535f;
 
         /* 2.  Everybody else still uses int16_t amps  */

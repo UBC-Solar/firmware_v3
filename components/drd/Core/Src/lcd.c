@@ -540,16 +540,7 @@ void LCD_init(SPI_HandleTypeDef* hspi)
  * @param data  	The data of the CAN message
  */
 void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
-{
-	// if(msg_id == CAN_ID_PACK_CURRENT)
-	// {
-    //     int16_t tmp_pack_current = (data[1] << 8) | (data[0]);
-    //     tmp_pack_current /= 65.535;
-    //     set_cyclic_pack_current(tmp_pack_current);
-
-    //     g_pack_current_soc = tmp_pack_current;
-	// }
-    
+{    
     if(msg_id == CAN_ID_PACK_VOLTAGE)
 	{
         uint16_t tmp_pack_voltage = (data[1] << 8) | (data[0]);
