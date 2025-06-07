@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include "diagnostic.h"
 #include "cyclic_data_handler.h"
+#include "regen_clamp.h"
 
 /*	Local Function Declarations	*/
 static void motor_command_package_and_send(motor_command_t* motor_command, bool from_ISR);
@@ -104,9 +105,13 @@ motor_command_t forward_state_handle()
 	}
 
 	if (g_input_flags.regen_enabled)
-	{
-		return get_motor_command(g_throttle_DAC, REGEN_DAC_ON);
-	}
+    {
+        uint16_t regen_dac = RegenClamp_get_regen_dac(g_throttle_DAC, g_input_flags.regen_enabled,
+                         g_pack_current_A, g_array_current_A);
+
+        return get_motor_command(g_throttle_DAC, regen_dac);
+    }
+
 	else
 	{
 		return get_motor_command(g_throttle_DAC, REGEN_DAC_OFF);
