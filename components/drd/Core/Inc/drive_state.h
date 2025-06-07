@@ -34,6 +34,9 @@
 #define M_PI 3.14159
 #define VELOCITY_THRESHOLD 0.5     	  // Max velocity allowed during a drive state change (m/s)
 
+#define LOW_PACK_VOLTAGE_ACCEL_CAP			(0.5f)
+#define LOW_PACK_VOLTAGE_THRESHOLD			(99.0f)
+
 /*	Data Types	*/
 typedef struct{
 	volatile bool mech_brake_pressed;
