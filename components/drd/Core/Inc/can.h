@@ -56,7 +56,7 @@ extern const CAN_TxHeaderTypeDef time_since_bootup_can_header;
 #define MDU_REQUEST_COMMAND_ID 				0x08F89540
 #define FRAME0 								0x08850225
 #define TIME_SINCE_BOOTUP_CAN_ID			0x404
-#define MPPT_A_CURRENTS     `````           0x6A1
+#define MPPT_A_CURRENTS                     0x6A1
 #define MPPT_B_CURRENTS                     0x6B1
 #define MPPT_C_CURRENTS                     0x6C1
 
