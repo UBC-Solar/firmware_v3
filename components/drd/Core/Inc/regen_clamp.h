@@ -21,7 +21,6 @@
  * @return 10-bit DAC value to send to Mitsuba (0–1023).
  */
 uint16_t RegenClamp_get_regen_dac(uint16_t  throttle_dac,
-                                  bool      regen_switch,
                                   float     pack_current,
                                   float     array_current);
 

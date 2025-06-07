@@ -106,7 +106,7 @@ motor_command_t forward_state_handle()
 
 	if (g_input_flags.regen_enabled)
     {
-        uint16_t regen_dac = RegenClamp_get_regen_dac(g_throttle_DAC, g_input_flags.regen_enabled,
+        uint16_t regen_dac = RegenClamp_get_regen_dac(g_throttle_DAC,
                          g_pack_current_A, g_array_current_A);
 
         return get_motor_command(g_throttle_DAC, regen_dac);

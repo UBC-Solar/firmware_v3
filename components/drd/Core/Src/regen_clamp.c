@@ -32,11 +32,11 @@ static inline float clampf(float v, float lo, float hi)
 { return fminf(hi, fmaxf(lo, v)); }
 
 /* Setting regen clamp */
-uint16_t RegenClamp_get_regen_dac(uint16_t  throttle_dac, bool regen_switch, 
+uint16_t RegenClamp_get_regen_dac(uint16_t  throttle_dac
                                 float pack_current, float array_current)
 {
     /* 1.  If driver doesn’t want regen or pedal is > regen zone then reset. */
-    if (!regen_switch || throttle_dac > THROTTLE_REGEN_ZONE_DAC)
+    if (throttle_dac > THROTTLE_REGEN_ZONE_DAC)
     {
         RegenClamp_reset(); 
         return 0;
