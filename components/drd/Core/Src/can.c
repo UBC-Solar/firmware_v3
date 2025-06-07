@@ -27,6 +27,7 @@
 #include "drive_state.h"
 #include "diagnostic.h"
 #include "lcd.h"
+#include "soc.h"
 
 //GLOBAL VARIABLES
 volatile float g_pack_current_A  = 0.0f;   // signed,  A 
