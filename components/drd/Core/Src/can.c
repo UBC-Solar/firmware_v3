@@ -26,6 +26,7 @@
 #include "fault_lights.h"
 #include "drive_state.h"
 #include "diagnostic.h"
+#include "cyclic_data_handler.h"
 #include "lcd.h"
 #include "soc.h"
 
