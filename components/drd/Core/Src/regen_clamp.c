@@ -20,6 +20,8 @@
 #include "regen_clamp.h"
 #include <math.h>
 
+#define PACK_CURRENT_NEGATIVE_UNCERTAINTY       (0.2f)
+
 /* STATE */
 typedef enum { RC_IDLE, RC_HARD_CAP, RC_DYNAMIC } rc_state_t;
 
@@ -44,8 +46,8 @@ uint16_t RegenClamp_get_regen_dac(uint16_t  throttle_dac,
 
     /* 2.  We find the instantaneous regen component (positive magnitude). */
     // TODO: Add in LVS current.
-    float regen_A = fabsf(pack_current) - fabsf(array_current);   // Because pack current is always higher
-    if (regen_A < 0.0f) regen_A = 0.0f;                           // For safety
+    float regen_A = -(pack_current - array_current);   // Because pack current is always higher
+    if (regen_A < PACK_CURRENT_NEGATIVE_UNCERTAINTY) regen_A = 0.0f;                           // For safety
 
     /* 3.  State-machine */
     switch (s_state)
