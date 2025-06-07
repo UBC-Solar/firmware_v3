@@ -79,6 +79,9 @@ uint16_t RegenClamp_get_regen_dac(uint16_t  throttle_dac,
         case RC_DYNAMIC:
             // TODO make factor 100% at one point
             // TODO go back to IDLE state at some point
+            if (regen_A <= PACK_CURRENT_NEGATIVE_UNCERTAINTY){
+                s_state = RC_IDLE;
+            }
             break;
         default:
             /* Nothing to do; factor frozen until regen ends/reset() */
