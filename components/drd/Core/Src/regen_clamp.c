@@ -21,7 +21,7 @@
 #include <math.h>
 
 /* STATE */
-typedef enum { RC_IDLE, RC_HARD, RC_DYNAMIC } rc_state_t;
+typedef enum { RC_IDLE, RC_HARD_CAP, RC_DYNAMIC } rc_state_t;
 
 static rc_state_t s_state = RC_IDLE;
 static float s_prev_regen_A = 0.0f;
@@ -43,6 +43,7 @@ uint16_t RegenClamp_get_regen_dac(uint16_t  throttle_dac,
     }
 
     /* 2.  We find the instantaneous regen component (positive magnitude). */
+    // TODO: Add in LVS current.
     float regen_A = fabsf(pack_current) - fabsf(array_current);   // Because pack current is always higher
     if (regen_A < 0.0f) regen_A = 0.0f;                           // For safety
 
@@ -51,20 +52,20 @@ uint16_t RegenClamp_get_regen_dac(uint16_t  throttle_dac,
     {
         /* First frame after entry: hard-cap*/
         case RC_IDLE:
-            s_state        = RC_HARD;
+            s_state        = RC_HARD_CAP;
             s_cap_factor   = REGEN_HARD_CAP_FACTOR;
             s_prev_regen_A = regen_A;
             break;
 
         /* Stay at hard-cap until regen drops once (spike ended) */
-        case RC_HARD:
-            if (regen_A < s_prev_regen_A)            // first downward datapoint
+        case RC_HARD_CAP:
+            if (regen_A <= s_prev_regen_A)            // first downward datapoint. Justified because regen spikes up wildly
             {
-                /* Project the uncapped peak current. */
-                float proj_max_A = regen_A / REGEN_HARD_CAP_FACTOR; 
+                /* Find uncapped peak regen current. */
+                float uncapped_peak_regen_A = regen_A / REGEN_HARD_CAP_FACTOR; 
 
-                /* Solve:  TARGET = proj_max * x  + array_current   →   x = …  */
-                float x = (REGEN_TARGET_MAX_AMP - fabsf(array_current)) / proj_max_A;
+                /* Solve:  TARGET = uncapped_peak_regen * x  + array_current   →   x = …  */
+                float x = (MAX_PACK_CURRENT - fabsf(array_current)) / uncapped_peak_regen_A;
                 s_cap_factor = clampf(x, 0.0f, 1.0f);
 
                 s_state = RC_DYNAMIC;
@@ -74,6 +75,9 @@ uint16_t RegenClamp_get_regen_dac(uint16_t  throttle_dac,
 
         /* -- Dynamic phase: just hold the computed factor ---------------- */
         case RC_DYNAMIC:
+            // TODO make factor 100% at one point
+            // TODO go back to IDLE state at some point
+            break;
         default:
             /* Nothing to do; factor frozen until regen ends/reset() */
             break;

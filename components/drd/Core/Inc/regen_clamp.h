@@ -6,8 +6,8 @@
 
 /* DEFINES */
 #define REGEN_HARD_CAP_FACTOR     0.30f      // 30 % = hard-cap on entry
-#define REGEN_TARGET_MAX_AMP      18.0f      // never exceed 18 A into pack
-#define THROTTLE_REGEN_ZONE_DAC   270        // ≤ 300 == “pedal released”
+#define MAX_PACK_CURRENT          18.0f      // never exceed 18 A into pack
+#define THROTTLE_REGEN_ZONE_DAC   300        // ≤ 300 == “pedal released”
 #define SPIKE_SETTLE_PERIOD_MS    25         // one CAN cycle 
 
 /**
