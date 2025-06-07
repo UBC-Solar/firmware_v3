@@ -294,7 +294,7 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
     }
 
     /* MPPT ARRAY CURRENTS */ 
-    if (CAN_ID == 0x6A1 || CAN_ID == 0x6B1 || CAN_ID == 0x6C1)
+    if ((CAN_ID == MPPT_A_CURRENTS) || (CAN_ID == MPPT_B_CURRENTS) || (CAN_ID == MPPT_C_CURRENTS))
     {
         /* bytes 4-7 hold a little-endian IEEE-754 float */
         union { uint8_t b[4]; float f; } u;
@@ -303,12 +303,12 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
         u.b[2] = CAN_comms_Rx_msg->data[6];
         u.b[3] = CAN_comms_Rx_msg->data[7];
 
-        static float mppt_A[3] = {0};          /* A,B,C  */
-        uint8_t idx = (CAN_ID == 0x6A1) ? 0 :
-                        (CAN_ID == 0x6B1) ? 1 : 2;
-        mppt_A[idx] = u.f;
+        static float mppt_currents_array[3] = {0};          /* A,B,C  */
+        uint8_t idx = (CAN_ID == MPPT_A_CURRENTS) ? 0 :
+                        (CAN_ID == MPPT_B_CURRENTS) ? 1 : 2;
+        mppt_currents_array[idx] = u.f;
 
-        g_array_current_A = mppt_A[0] + mppt_A[1] + mppt_A[2];
+        g_array_current_A = mppt_currents_array[0] + mppt_currents_array[1] + mppt_currents_array[2];
     }
 
 
