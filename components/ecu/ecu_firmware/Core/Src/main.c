@@ -596,7 +596,7 @@ static void MX_GPIO_Init(void)
                           |NEG_CTRL_Pin|SWAP_CTRL_Pin|ESTOP_LED_Pin|POS_CTRL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, SPAR1_CTRL_Pin|TEL_CTRL_Pin|Unused1_CTRL_Pin|Unused2_CTRL_Pin
+  HAL_GPIO_WritePin(GPIOB, SPAR1_CTRL_Pin|TEL_CTRL_Pin|Unused1_CTRL_Pin|MPPT_PC_CTRL_Pin
                           |DRD_CTRL_Pin|MDU_CTRL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : GPIO_BMS_Pin */
@@ -639,7 +639,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : SPAR1_CTRL_Pin TEL_CTRL_Pin Unused1_CTRL_Pin Unused2_CTRL_Pin
                            DRD_CTRL_Pin MDU_CTRL_Pin */
-  GPIO_InitStruct.Pin = SPAR1_CTRL_Pin|TEL_CTRL_Pin|Unused1_CTRL_Pin|Unused2_CTRL_Pin
+  GPIO_InitStruct.Pin = SPAR1_CTRL_Pin|TEL_CTRL_Pin|Unused1_CTRL_Pin|MPPT_PC_CTRL_Pin
                           |DRD_CTRL_Pin|MDU_CTRL_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
