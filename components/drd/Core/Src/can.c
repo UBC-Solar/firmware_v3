@@ -277,38 +277,38 @@ void CAN_comms_Rx_callback(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
 		CAN_ID = CAN_comms_Rx_msg->header.StdId; // Get CAN ID
 	}
 
-  /* PACK CURRENT */
-  if (CAN_ID == CAN_ID_PACK_CURRENT)
-{
-    int16_t raw =  (CAN_comms_Rx_msg->data[1] << 8) |
-                   (CAN_comms_Rx_msg->data[0]);
+    /* PACK CURRENT */
+    if (CAN_ID == CAN_ID_PACK_CURRENT)
+    {
+        int16_t raw =  (CAN_comms_Rx_msg->data[1] << 8) |
+                    (CAN_comms_Rx_msg->data[0]);
 
-    /* 1.  Smart-regen wants the real value (A) */
-    g_pack_current_A = (float)raw / 65.535f;
+        /* 1.  Smart-regen wants the real value (A) */
+        g_pack_current_A = (float)raw / 65.535f;
 
-    /* 2.  Everybody else still uses int16_t amps  */
-    int16_t pack_A = (int16_t)(g_pack_current_A + 0.5f);
-    set_cyclic_pack_current(pack_A);
-    g_pack_current_soc = pack_A;
-}
+        /* 2.  Everybody else still uses int16_t amps  */
+        int16_t pack_A = (int16_t)(g_pack_current_A + 0.5f);
+        set_cyclic_pack_current(pack_A);
+        g_pack_current_soc = pack_A;
+    }
 
-  /* MPPT ARRAY CURRENTS */ 
-  if (CAN_ID == 0x6A1 || CAN_ID == 0x6B1 || CAN_ID == 0x6C1)
-  {
-      /* bytes 4-7 hold a little-endian IEEE-754 float */
-      union { uint8_t b[4]; float f; } u;
-      u.b[0] = CAN_comms_Rx_msg->data[4];
-      u.b[1] = CAN_comms_Rx_msg->data[5];
-      u.b[2] = CAN_comms_Rx_msg->data[6];
-      u.b[3] = CAN_comms_Rx_msg->data[7];
+    /* MPPT ARRAY CURRENTS */ 
+    if (CAN_ID == 0x6A1 || CAN_ID == 0x6B1 || CAN_ID == 0x6C1)
+    {
+        /* bytes 4-7 hold a little-endian IEEE-754 float */
+        union { uint8_t b[4]; float f; } u;
+        u.b[0] = CAN_comms_Rx_msg->data[4];
+        u.b[1] = CAN_comms_Rx_msg->data[5];
+        u.b[2] = CAN_comms_Rx_msg->data[6];
+        u.b[3] = CAN_comms_Rx_msg->data[7];
 
-      static float mppt_A[3] = {0};          /* A,B,C  */
-      uint8_t idx = (CAN_ID == 0x6A1) ? 0 :
-                    (CAN_ID == 0x6B1) ? 1 : 2;
-      mppt_A[idx] = u.f;
+        static float mppt_A[3] = {0};          /* A,B,C  */
+        uint8_t idx = (CAN_ID == 0x6A1) ? 0 :
+                        (CAN_ID == 0x6B1) ? 1 : 2;
+        mppt_A[idx] = u.f;
 
-      g_array_current_A = mppt_A[0] + mppt_A[1] + mppt_A[2];
-  }
+        g_array_current_A = mppt_A[0] + mppt_A[1] + mppt_A[2];
+    }
 
 
 	LCD_CAN_rx_handle(CAN_ID, CAN_comms_Rx_msg->data);
