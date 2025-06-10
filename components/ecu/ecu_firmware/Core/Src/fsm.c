@@ -65,6 +65,7 @@ void FSM_Init()
     return;
 }
 
+
 /**
  * @brief Main loop of the FSM. Will be called in main.c.
  */
@@ -324,8 +325,31 @@ void LLIM_closed()
     {
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = CHECK_HLIM;
+        HAL_GPIO_WritePin(MPPT_PC_CTRL_GPIO_Port, MPPT_PC_CTRL_Pin, CONTACTOR_CLOSED);
+        FSM_state = WAIT_FOR_MPPT_PC;
+
     }
+
+    return;
+}
+
+/**
+ * @brief Waits for MPPT precharge to complete
+ *
+ * Exit Condition: Timer surpasses 1000ms
+ * Exit Action: Reset timer, open MPPT pre charge contactor
+ * Exit State: CHECK_HLIM
+ */
+void MPPT_PC_wait()
+{
+    if (timer_check(MPPT_PC_INTERVAL, &(ticks.last_generic_tick) ))
+    {
+        HAL_GPIO_WritePin(MPPT_PC_CTRL_GPIO_Port, MPPT_PC_CTRL_Pin, CONTACTOR_OPEN);
+        ticks.last_generic_tick = HAL_GetTick();
+        FSM_state = TELEM_ON;
+    }
+
+    printf("Bottom of MPPT PC wait\r\n");
 
     return;
 }
@@ -343,6 +367,7 @@ void LLIM_closed()
  */
 void check_HLIM()
 {
+  
     if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN)
     {
         last_HLIM_status = CONTACTOR_OPEN;
@@ -504,13 +529,13 @@ void ECU_monitor()
     **************************/
     if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_HLIM_status == CONTACTOR_CLOSED)
     {
-        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
-        last_HLIM_status = CONTACTOR_OPEN;
+        // HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
+        // last_HLIM_status = CONTACTOR_OPEN;
     }
     else if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_HLIM_status == CONTACTOR_OPEN)
     {
-        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_CLOSED);
-        last_HLIM_status = CONTACTOR_CLOSED;
+        //HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_CLOSED);
+        //last_HLIM_status = CONTACTOR_CLOSED;
     }
     else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_LLIM_status == CONTACTOR_OPEN)
     {
@@ -568,6 +593,7 @@ void fault()
     HAL_GPIO_WritePin(POS_CTRL_GPIO_Port, POS_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
+    HAL_GPIO_WritePin(MPPT_PC_CTRL_GPIO_Port, MPPT_PC_CTRL_Pin, CONTACTOR_OPEN);
 
     // If ESTOP pressed during startup, start all LV boards
     if(!startup_complete){
