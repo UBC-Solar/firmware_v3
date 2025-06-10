@@ -326,7 +326,7 @@ void LLIM_closed()
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
         ticks.last_generic_tick = HAL_GetTick();
         HAL_GPIO_WritePin(MPPT_PC_CTRL_GPIO_Port, MPPT_PC_CTRL_Pin, CONTACTOR_CLOSED);
-        FSM_state = CHECK_HLIM;
+        FSM_state = WAIT_FOR_MPPT_PC;
 
     }
 
@@ -342,7 +342,7 @@ void LLIM_closed()
  */
 void MPPT_PC_wait()
 {
-    if (timer_check(MPPT_PC_INTERVAL, &(ticks.last_generic_tick) ))
+    if (timer_check(2000, &(ticks.last_generic_tick) ))
     {
         HAL_GPIO_WritePin(MPPT_PC_CTRL_GPIO_Port, MPPT_PC_CTRL_Pin, CONTACTOR_OPEN);
         ticks.last_generic_tick = HAL_GetTick();
@@ -367,28 +367,31 @@ void MPPT_PC_wait()
  */
 void check_HLIM()
 {
-    if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN)
-    {
-        last_HLIM_status = CONTACTOR_OPEN;
-    }
-    else
-    {
-        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_CLOSED);
-        last_HLIM_status = CONTACTOR_CLOSED;
-    }
+  
+        if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN)
+        {
+            last_HLIM_status = CONTACTOR_OPEN;
+        }
+        else
+        {
+            HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_CLOSED);
+            last_HLIM_status = CONTACTOR_CLOSED;
+        }
 
-    if (LVS_ALREADY_ON == true)
-    {
-        ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = MONITORING;
-    }
-    else
-    {
-        ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = TELEM_ON;
-    }
+        if (LVS_ALREADY_ON == true)
+        {
+            ticks.last_generic_tick = HAL_GetTick();
+            FSM_state = MONITORING;
+        }
+        else
+        {
+            ticks.last_generic_tick = HAL_GetTick();
+            FSM_state = TELEM_ON;
+        }
 
-    printf("Bottom of check HLIM\r\n");
+        printf("Bottom of check HLIM\r\n");
+
+
 
     return;
 }
