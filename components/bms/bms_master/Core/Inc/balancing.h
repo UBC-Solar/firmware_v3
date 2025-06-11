@@ -23,7 +23,7 @@
  * Otherwsise set to 2.9V
  * See  https://ubcsolar26.monday.com/boards/7524367629/pulses/7524367947/posts/3569860014 for explanation
  */
-#define BAL_MIN_VOLTAGE_FOR_BALANCING 29000U // 4.0V
+#define BAL_MIN_VOLTAGE_FOR_BALANCING 40000U // 4.0V
 
 // Voltage difference within which modules are counted as balanced
 #define BAL_VOLTAGE_DIFFERENCE_TOLERANCE 500U // 0.05V
