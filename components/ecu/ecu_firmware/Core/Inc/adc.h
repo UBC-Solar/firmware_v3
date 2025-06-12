@@ -29,7 +29,7 @@
 #define HASS100S_VOLTAGE_ERROR_TERM_CONSTANT -9 // (mV) subtract from ADC measurement of BATT_CURR_SENSE pin to get accurate current reading, see https://ubcsolar26.monday.com/boards/7524367629/pulses/7524367868
 #define HASS100S_VOLTAGE_ERROR_TERM_MULTIPLE -0.0000000288
 
-#define SUPP_VOLT_DIVIDER_SCALING 0.2249408050513023 //divide ADC reading by this value to get actual SUPP voltage
+#define SUPP_VOLT_DIVIDER_SCALING 0.2166666667 //divide ADC reading by this value to get actual SUPP voltage
 
 #define SUPP_BATT_VOLTAGE_DIVIDER 11.0
 #define ADC_VOLTAGE_SCALING 1000.0 // millivolts
