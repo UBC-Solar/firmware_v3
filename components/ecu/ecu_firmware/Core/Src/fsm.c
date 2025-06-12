@@ -59,7 +59,7 @@ void FSM_Init()
         __HAL_RCC_CLEAR_RESET_FLAGS();
 
         //IWDG triggered
-        printf("watchdog-triggered software reset \r\n");
+        printf("watchdog-triggered software reset \r\n"); // Debug print
         ecu_data.status.bits.reset_from_watchdog = 1; //CAN_message now knows watchdog event has occured
         FSM_Enter_State(FAULT);
     }
@@ -91,8 +91,6 @@ void FSM_run()
  */
 void FSM_reset()
 {
-    printf("Top of FSM reset\r\n");
-
     //  Turn fans off
     HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, LOW);
     HAL_GPIO_WritePin(MDU_FAN_CTRL_GPIO_Port, MDU_FAN_CTRL_Pin, LOW);
@@ -111,8 +109,6 @@ void FSM_reset()
 
     ticks.last_generic_tick = HAL_GetTick();
 
-    printf("Bottom of FSM reset \r\n");
-    
     return;
 }
 
@@ -129,8 +125,6 @@ void FSM_reset()
  */
 void BMS_powerup()
 {
-    printf("Top of BMS_powerup\r\n");
-
     if (timer_check(BMS_STARTUP_INTERVAL, & (ticks.last_generic_tick) ))
     {
         FSM_Enter_State(FAULT);
@@ -157,8 +151,6 @@ void BMS_powerup()
  */
 void BMS_ready()
 {
-    printf("Top of BMS ready\r\n");
-
     if (timer_check(BMS_STARTUP_INTERVAL, &(ticks.last_generic_tick) ))
     {
         FSM_Enter_State(FAULT);
@@ -169,8 +161,6 @@ void BMS_ready()
         FSM_Enter_State(HV_CONNECT);
     }
     
-    printf("Bottom of BMS ready\r\n");
-
     return;
 }
 
@@ -183,8 +173,6 @@ void BMS_ready()
  */
 void HV_Connect()
 {
-    printf("Top of HV connect\r\n");
-
     static bool first_delay_tick = false;
     static bool second_delay_tick = false; 
     
@@ -231,8 +219,6 @@ void HV_Connect()
  */
 void swap_DCDC()
 {
-    printf("Top of DCDC\r\n");
-    
     HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, HIGH);
     HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, HIGH);
     HAL_GPIO_WritePin(DCH_RST_GPIO_Port, DCH_RST_Pin, HIGH);
@@ -259,8 +245,6 @@ void disable_MDU_DCH()
         FSM_Enter_State(CHECK_LLIM);
     }
 
-    printf("Bottom of MDU dch\r\n");
-    
     return;
 }
 
@@ -289,8 +273,6 @@ void check_LLIM()
         FSM_Enter_State(WAIT_FOR_PC);
     }
 
-    printf("Bottom of check LLIM\r\n");
-
     return;
 }
 
@@ -310,8 +292,6 @@ void PC_wait()
         ticks.last_generic_tick = HAL_GetTick();
         FSM_Enter_State(LLIM_CLOSED);
     }
-
-    printf("Bottom of PC wait\r\n");
 
     return;
 }
@@ -369,8 +349,6 @@ void check_HLIM()
         FSM_Enter_State(TELEM_ON);
     }
 
-    printf("Bottom of check HLIM\r\n");
-
     return;
 }
 
@@ -388,8 +366,6 @@ void TELEM_on()
         ticks.last_generic_tick = HAL_GetTick();
         FSM_Enter_State(MEM_ON);
     }
-
-    printf("Bottom of TELEM on\r\n");
 
     return;
 }
@@ -409,8 +385,6 @@ void MEM_on()
         FSM_Enter_State(DRD_ON);
     }
 
-    printf("Bottom of MEM on\r\n");
-
     return;
 }
 
@@ -429,8 +403,6 @@ void DRD_on()
         ticks.last_generic_tick = HAL_GetTick();
         FSM_Enter_State(MDU_ON);
     }
-
-    printf("Bottom of DRD on\r\n");
 
     return;
 }
@@ -457,8 +429,6 @@ void MDU_on()
         LVS_ALREADY_ON = true; // The last LVS board has been powered
     }
 
-    printf("Bottom of MDU on\r\n");
-    
     return;
 }
 
@@ -471,8 +441,6 @@ void MDU_on()
  */
 void ECU_monitor()
 {
-    printf("Top of Monitoring\r\n");
-
     startup_complete = true; // Indicates all LV boards are up
 
     // Additional ESTOP check to catch case where ESTOP is pressed during startup (see note in fault state)
@@ -562,8 +530,6 @@ void ECU_monitor()
  */
 void fault()
 {
-    printf("Top of Fault\r\n");
-
     /*************************
     Put Pack in Safe State
     **************************/
