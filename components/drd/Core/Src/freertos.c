@@ -322,8 +322,8 @@ void DriveState_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(DRIVE_STATE_MACHINE_DELAY);
     Drive_State_Machine_handler();
+    osDelay(DRIVE_STATE_MACHINE_DELAY);
   }
   /* USER CODE END DriveState_task */
 }
