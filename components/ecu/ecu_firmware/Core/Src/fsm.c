@@ -65,6 +65,7 @@ void FSM_Init()
     return;
 }
 
+
 /**
  * @brief Main loop of the FSM. Will be called in main.c.
  */
@@ -130,7 +131,7 @@ void BMS_powerup()
     {
         FSM_state = FAULT;
     }
-    else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH)
+    else //if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH)
     {
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_BMS_READY;
@@ -158,7 +159,7 @@ void BMS_ready()
     {
         FSM_state = FAULT;
     }
-    else if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == LOW)
+    else //if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == LOW)
     {
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = HV_CONNECT;
@@ -324,8 +325,31 @@ void LLIM_closed()
     {
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = CHECK_HLIM;
+        HAL_GPIO_WritePin(MPPT_PC_CTRL_GPIO_Port, MPPT_PC_CTRL_Pin, CONTACTOR_CLOSED);
+        FSM_state = WAIT_FOR_MPPT_PC;
+
     }
+
+    return;
+}
+
+/**
+ * @brief Waits for MPPT precharge to complete
+ *
+ * Exit Condition: Timer surpasses 1000ms
+ * Exit Action: Reset timer, open MPPT pre charge contactor
+ * Exit State: CHECK_HLIM
+ */
+void MPPT_PC_wait()
+{
+    if (timer_check(MPPT_PC_INTERVAL, &(ticks.last_generic_tick) ))
+    {
+        HAL_GPIO_WritePin(MPPT_PC_CTRL_GPIO_Port, MPPT_PC_CTRL_Pin, CONTACTOR_OPEN);
+        ticks.last_generic_tick = HAL_GetTick();
+        FSM_state = TELEM_ON;
+    }
+
+    printf("Bottom of MPPT PC wait\r\n");
 
     return;
 }
@@ -343,26 +367,27 @@ void LLIM_closed()
  */
 void check_HLIM()
 {
-    if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN)
-    {
-        last_HLIM_status = CONTACTOR_OPEN;
-    }
-    else
-    {
-        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_CLOSED);
-        last_HLIM_status = CONTACTOR_CLOSED;
-    }
+  
+    // if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN)
+    // {
+    //     last_HLIM_status = CONTACTOR_OPEN;
+    // }
+    // else
+    // {
+    //     HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_CLOSED);
+    //     last_HLIM_status = CONTACTOR_CLOSED;
+    // }
 
-    if (LVS_ALREADY_ON == true)
-    {
-        ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = MONITORING;
-    }
-    else
-    {
-        ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = TELEM_ON;
-    }
+    // if (LVS_ALREADY_ON == true)
+    // {
+    //     ticks.last_generic_tick = HAL_GetTick();
+    //     FSM_state = MONITORING;
+    // }
+    // else
+    // {
+    //     ticks.last_generic_tick = HAL_GetTick();
+    //     FSM_state = TELEM_ON;
+    // }
 
     printf("Bottom of check HLIM\r\n");
 
@@ -477,53 +502,53 @@ void ECU_monitor()
     }
     
     // Current Status Checks
-    if(ecu_data.adc_data.ADC_pack_current >= DOC_WARNING_THRESHOLD){
-        ecu_data.status.bits.warning_pack_overdischarge_current = true;
-        ecu_data.status.bits.warning_pack_overcharge_current = false;
-    }
-    else if(ecu_data.adc_data.ADC_pack_current <= COC_WARNING_THRESHOLD){
-        ecu_data.status.bits.warning_pack_overdischarge_current = false;
-        ecu_data.status.bits.warning_pack_overcharge_current = true;
-    }
-    else{
-        ecu_data.status.bits.warning_pack_overdischarge_current = false;
-        ecu_data.status.bits.warning_pack_overcharge_current = false;
-    }
+    // if(ecu_data.adc_data.ADC_pack_current >= DOC_WARNING_THRESHOLD){
+    //     ecu_data.status.bits.warning_pack_overdischarge_current = true;
+    //     ecu_data.status.bits.warning_pack_overcharge_current = false;
+    // }
+    // else if(ecu_data.adc_data.ADC_pack_current <= COC_WARNING_THRESHOLD){
+    //     ecu_data.status.bits.warning_pack_overdischarge_current = false;
+    //     ecu_data.status.bits.warning_pack_overcharge_current = true;
+    // }
+    // else{
+    //     ecu_data.status.bits.warning_pack_overdischarge_current = false;
+    //     ecu_data.status.bits.warning_pack_overcharge_current = false;
+    // }
 
     /*************************
     BMS Fault Checking
     **************************/
-    if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH && HAL_GPIO_ReadPin(BAL_BMS_GPIO_Port, BAL_BMS_Pin) == LOW)
-    {
-        FSM_state = FAULT;
-        return;
-    }
+    // if (HAL_GPIO_ReadPin(FLT_BMS_GPIO_Port, FLT_BMS_Pin) == HIGH && HAL_GPIO_ReadPin(BAL_BMS_GPIO_Port, BAL_BMS_Pin) == LOW)
+    // {
+    //     FSM_state = FAULT;
+    //     return;
+    // }
 
     /*************************
     Check Battery Capacity
     **************************/
-    if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_HLIM_status == CONTACTOR_CLOSED)
-    {
-        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
-        last_HLIM_status = CONTACTOR_OPEN;
-    }
-    else if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_HLIM_status == CONTACTOR_OPEN)
-    {
-        HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_CLOSED);
-        last_HLIM_status = CONTACTOR_CLOSED;
-    }
-    else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_LLIM_status == CONTACTOR_OPEN)
-    {
-        HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
-        ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = WAIT_FOR_PC;
-        return;
-    }
-    else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_LLIM_status == CONTACTOR_CLOSED)
-    {
-        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_OPEN);
-        last_LLIM_status = CONTACTOR_OPEN;
-    }
+    // if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_HLIM_status == CONTACTOR_CLOSED)
+    // {
+    //     // HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
+    //     // last_HLIM_status = CONTACTOR_OPEN;
+    // }
+    // else if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_HLIM_status == CONTACTOR_OPEN)
+    // {
+    //     //HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_CLOSED);
+    //     //last_HLIM_status = CONTACTOR_CLOSED;
+    // }
+    // else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_CLOSE && last_LLIM_status == CONTACTOR_OPEN)
+    // {
+    //     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_CLOSED);
+    //     ticks.last_generic_tick = HAL_GetTick();
+    //     FSM_state = WAIT_FOR_PC;
+    //     return;
+    // }
+    // else if (HAL_GPIO_ReadPin(LLIM_BMS_GPIO_Port, LLIM_BMS_Pin) == REQ_CONTACTOR_OPEN && last_LLIM_status == CONTACTOR_CLOSED)
+    // {
+    //     HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_OPEN);
+    //     last_LLIM_status = CONTACTOR_OPEN;
+    // }
 
     /*************************
     Send CAN Messages
@@ -563,11 +588,12 @@ void fault()
     Put Pack in Safe State
     **************************/
     HAL_GPIO_WritePin(SWAP_CTRL_GPIO_Port, SWAP_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
+    //HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(POS_CTRL_GPIO_Port, POS_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
+    HAL_GPIO_WritePin(MPPT_PC_CTRL_GPIO_Port, MPPT_PC_CTRL_Pin, CONTACTOR_OPEN);
 
     // If ESTOP pressed during startup, start all LV boards
     if(!startup_complete){

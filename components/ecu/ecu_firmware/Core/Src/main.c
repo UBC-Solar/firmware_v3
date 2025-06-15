@@ -134,6 +134,9 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_ADC1_Init();
+  if (HAL_ADCEx_Calibration_Start(&hadc1) != HAL_OK) {
+   Error_Handler();
+  };
   MX_CAN_Init();
   MX_UART5_Init();
   MX_TIM3_Init();
@@ -286,7 +289,8 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_5;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  //sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -596,7 +600,7 @@ static void MX_GPIO_Init(void)
                           |NEG_CTRL_Pin|SWAP_CTRL_Pin|ESTOP_LED_Pin|POS_CTRL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, SPAR1_CTRL_Pin|TEL_CTRL_Pin|Unused1_CTRL_Pin|Unused2_CTRL_Pin
+  HAL_GPIO_WritePin(GPIOB, SPAR1_CTRL_Pin|TEL_CTRL_Pin|Unused1_CTRL_Pin|MPPT_PC_CTRL_Pin
                           |DRD_CTRL_Pin|MDU_CTRL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : GPIO_BMS_Pin */
@@ -639,7 +643,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : SPAR1_CTRL_Pin TEL_CTRL_Pin Unused1_CTRL_Pin Unused2_CTRL_Pin
                            DRD_CTRL_Pin MDU_CTRL_Pin */
-  GPIO_InitStruct.Pin = SPAR1_CTRL_Pin|TEL_CTRL_Pin|Unused1_CTRL_Pin|Unused2_CTRL_Pin
+  GPIO_InitStruct.Pin = SPAR1_CTRL_Pin|TEL_CTRL_Pin|Unused1_CTRL_Pin|MPPT_PC_CTRL_Pin
                           |DRD_CTRL_Pin|MDU_CTRL_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
