@@ -10,6 +10,7 @@
 #include "drive_state.h"
 #include "CAN_comms.h"
 #include "can.h"
+#include "soc.h"
 
 /*	GLOBAL VARIABLES	*/
 volatile uint32_t g_time_since_bootup = 0;
@@ -49,6 +50,7 @@ void DRD_diagnostics_transmit(DRD_diagnostic_t* diagnostics, bool from_ISR)
 	msg.data[4] = diagnostics->flags.all_flags;
 	msg.data[5] = g_drive_state;
 	msg.data[6] = diagnostics->cyclic_flags.cyclic_data_all_flags;
+    msg.data[7] = (uint8_t)(SOC_get_soc() * 100.0f);
 
 	if (from_ISR)
 	{
