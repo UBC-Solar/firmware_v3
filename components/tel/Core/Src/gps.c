@@ -137,7 +137,7 @@ void gps_task()
 /**
  * @brief CAN message for latitude and longitude GPS fields
  */
-void CAN_tx_lon_lat_msg(float latitude, float longitude) {
+void CAN_tx_lat_lon_msg(float latitude, float longitude) {
     FloatToBytes float_bytes;
     float_bytes.f = latitude;
 
@@ -362,7 +362,7 @@ void CAN_tx_gps_data_msg(GPS* gps_data) {
     osDelay(GPS_TASK_DELAY_SINGLE);
     CAN_tx_sat_count_view_fix_snr_msg(gps_data->satelliteCount, gps_data->satInView, gps_data->fix, gps_data->snr);
     osDelay(GPS_TASK_DELAY_SINGLE);
-    CAN_tx_lon_lat_msg(gps_data->longitude, gps_data->latitude);
+    CAN_tx_lat_lon_msg(gps_data->latitude, gps_data->longitude);
     osDelay(GPS_TASK_DELAY_SINGLE);
     CAN_tx_lon_side_date_msg(gps_data->lonSide, gps_data->latSide, gps_data->date, gps_data->utcTime);
     osDelay(GPS_TASK_DELAY_SINGLE);
