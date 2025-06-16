@@ -109,12 +109,36 @@ static void (*FSM_state_table[])(void) = {
     DRD_on,
     MDU_on,
     ECU_monitor,
-    fault};
+    fault
+};
+
+/*============================================================================*/
+/* STATE NAME TABLE */
+
+static const char *FSM_state_name_table[] = {
+    "FSM_RESET",
+    "BMS_POWERUP",
+    "BMS_READY",
+    "HV_CONNECT",
+    "SWAP_DCDC",
+    "DISABLE_MDU_DCH",
+    "CHECK_LLIM",
+    "PC_Wait",
+    "LLIM_CLOSED",
+    "CHECK_HLIM",
+    "TELEM_ON",
+    "MEM_ON",
+    "DRD_ON",
+    "MDU_ON",
+    "MONITORING",
+    "FAULT"
+};
 
 /*============================================================================*/
 /* FUNCTION PROTOTYPES */
 
 // FSM
+void FSM_Enter_State(FSM_state_t state);
 void FSM_Init();
 void FSM_run();
 
