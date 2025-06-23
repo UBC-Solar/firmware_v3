@@ -88,9 +88,8 @@ void FSM_reset()
 {
     printf("Top of FSM reset\r\n");
 
-    //  Turn fans off
-    HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, LOW);
-    HAL_GPIO_WritePin(MDU_FAN_CTRL_GPIO_Port, MDU_FAN_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, HIGH); // Enable pack fans before DCDC swap for the case of a fault during startup
+    HAL_GPIO_WritePin(MDU_FAN_CTRL_GPIO_Port, MDU_FAN_CTRL_Pin, LOW); // MDU fans not required to be enabled by regs
 
     // Open all contactors
     HAL_GPIO_WritePin(HLIM_CTRL_GPIO_Port, HLIM_CTRL_Pin, LOW);
