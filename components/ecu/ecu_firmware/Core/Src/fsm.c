@@ -465,7 +465,7 @@ void MDU_on()
  */
 void ECU_monitor()
 {
-    printf("Top of Monitoring\r\n");
+    //printf("Top of Monitoring\r\n");
 
     startup_complete = true; // Indicates all LV boards are up
 
@@ -556,7 +556,7 @@ void ECU_monitor()
  */
 void fault()
 {
-    printf("Top of Fault\r\n");
+    //printf("Top of Fault\r\n");
 
     /*************************
     Put Pack in Safe State

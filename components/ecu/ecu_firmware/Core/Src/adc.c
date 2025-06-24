@@ -64,6 +64,7 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
   case PACK_CURRENT_SENSE__ADC1_IN14: // Pack current sense (mA)
     curr_voltage_error = HASS100S_VOLTAGE_ERROR_TERM_CONSTANT + (HASS100S_VOLTAGE_ERROR_TERM_MULTIPLE * adc_voltage); // Error Polynomial, See https://ubcsolar26.monday.com/boards/7524367629/pulses/7524367868/posts/3902002110
     ecu_data.adc_data.ADC_pack_current = (int32_t)(HASS100S_STD_DEV + HASS100S_INTERNAL_OFFSET + 100*(adc_voltage + curr_voltage_error - ecu_data.adc_data.ADC_pack_current_offset) / 0.625); //see HASS100-S datasheet
+    printf("ADC Pack Current: %d mA, ADC Voltage: %d, ADC bits: %d\r\n", ecu_data.adc_data.ADC_pack_current, adc_voltage, (int32_t)adc_reading);
     break;
 
   case T_AMBIENT_SENSE__ADC1_IN15: // Ambient controlboard temperature (deg C)
