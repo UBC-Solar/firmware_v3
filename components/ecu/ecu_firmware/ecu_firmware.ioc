@@ -1,7 +1,7 @@
 #MicroXplorer Configuration settings - do not modify
-ADC1.AWD1HighThreshold=2710
+ADC1.AWD1HighThreshold=2729
 ADC1.AWD1ITMode=ENABLE
-ADC1.AWD1LowThreshold=2105
+ADC1.AWD1LowThreshold=2090
 ADC1.Channel-0\#ChannelRegularConversion=ADC_CHANNEL_5
 ADC1.Channel-1\#ChannelRegularConversion=ADC_CHANNEL_6
 ADC1.Channel-2\#ChannelRegularConversion=ADC_CHANNEL_7
@@ -230,7 +230,7 @@ PB12.GPIO_Label=Unused1_CTRL
 PB12.Locked=true
 PB12.Signal=GPIO_Output
 PB13.GPIOParameters=GPIO_Label
-PB13.GPIO_Label=Unused2_CTRL
+PB13.GPIO_Label=MPPT_PC_CTRL
 PB13.Locked=true
 PB13.Signal=GPIO_Output
 PB14.GPIOParameters=GPIO_Label
@@ -331,6 +331,7 @@ PD2.Signal=UART5_RX
 PinOutPanel.RotationAngle=0
 ProjectManager.AskForMigrate=true
 ProjectManager.BackupPrevious=false
+ProjectManager.CompilerLinker=GCC
 ProjectManager.CompilerOptimize=6
 ProjectManager.ComputerToolchain=false
 ProjectManager.CoupleFile=false

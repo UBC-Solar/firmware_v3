@@ -134,9 +134,6 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_ADC1_Init();
-  if (HAL_ADCEx_Calibration_Start(&hadc1) != HAL_OK) {
-   Error_Handler();
-  };
   MX_CAN_Init();
   MX_UART5_Init();
   MX_TIM3_Init();
@@ -276,8 +273,8 @@ static void MX_ADC1_Init(void)
   /** Configure Analog WatchDog 1
   */
   AnalogWDGConfig.WatchdogMode = ADC_ANALOGWATCHDOG_SINGLE_REG;
-  AnalogWDGConfig.HighThreshold = 2710;
-  AnalogWDGConfig.LowThreshold = 2105;
+  AnalogWDGConfig.HighThreshold = 2729;
+  AnalogWDGConfig.LowThreshold = 2090;
   AnalogWDGConfig.Channel = ADC_CHANNEL_14;
   AnalogWDGConfig.ITMode = ENABLE;
   if (HAL_ADC_AnalogWDGConfig(&hadc1, &AnalogWDGConfig) != HAL_OK)
@@ -289,8 +286,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_5;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  //sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
-  sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -363,6 +359,8 @@ static void MX_ADC1_Init(void)
   if (HAL_ADCEx_Calibration_Start(&hadc1) != HAL_OK){
     Error_Handler();
   }
+
+  
 
   /* USER CODE END ADC1_Init 2 */
 
@@ -641,7 +639,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SPAR1_CTRL_Pin TEL_CTRL_Pin Unused1_CTRL_Pin Unused2_CTRL_Pin
+  /*Configure GPIO pins : SPAR1_CTRL_Pin TEL_CTRL_Pin Unused1_CTRL_Pin MPPT_PC_CTRL_Pin
                            DRD_CTRL_Pin MDU_CTRL_Pin */
   GPIO_InitStruct.Pin = SPAR1_CTRL_Pin|TEL_CTRL_Pin|Unused1_CTRL_Pin|MPPT_PC_CTRL_Pin
                           |DRD_CTRL_Pin|MDU_CTRL_Pin;
