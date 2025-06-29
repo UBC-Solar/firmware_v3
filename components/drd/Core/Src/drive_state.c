@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include "diagnostic.h"
 #include "cyclic_data_handler.h"
+#include "soc.h"
 
 /*	Local Function Declarations	*/
 static void motor_command_package_and_send(motor_command_t* motor_command, bool from_ISR);
@@ -361,6 +362,7 @@ void normalize_adc_values(uint16_t adc1, uint16_t adc2)
     // uint16_t dac_from_adc2 = convert_to_dac(adc2);
 
     g_throttle_DAC = (dac_from_adc1 + dac_from_adc2) / 2;        // Take the average
+    g_throttle_DAC = (g_total_pack_voltage_soc > LOW_PACK_VOLTAGE_THRESHOLD) ? g_throttle_DAC : (uint16_t)((float)g_throttle_DAC * LOW_PACK_VOLTAGE_ACCEL_CAP);
 }
 
 
