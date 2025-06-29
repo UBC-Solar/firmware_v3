@@ -66,6 +66,7 @@ extern input_flags_t g_input_flags;
 extern volatile drive_state_t g_drive_state;
 extern volatile bool g_lcd_eco_mode_on;
 extern volatile uint32_t g_velocity_kmh;
+extern volatile uint32_t day_lights; //temp
 
 
 /*	Functions	*/
