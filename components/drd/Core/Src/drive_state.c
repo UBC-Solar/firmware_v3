@@ -204,6 +204,7 @@ void handle_state_transition()
  *
  * @param motor_command, struct containing all motor command information to be sent over CAN
  */
+static uint16_t x;
 void motor_command_package_and_send(motor_command_t* motor_command, bool from_ISR)
 {
 	CAN_comms_Tx_msg_t msg;
@@ -215,6 +216,7 @@ void motor_command_package_and_send(motor_command_t* motor_command, bool from_IS
 	uint8_t regen_first_byte = (uint8_t) (motor_command->regen_DAC_value & 255);
 	uint8_t regen_second_byte = (uint8_t) (motor_command->regen_DAC_value >> 8);
 
+	x = motor_command->accel_DAC_value;
 	data[0] = accel_first_byte;
 	data[1] = accel_second_byte;
 	data[2] = regen_first_byte;
@@ -362,7 +364,7 @@ void normalize_adc_values(uint16_t adc1, uint16_t adc2)
     }
     // Clamp lower bound
     if (adc1 <= LOWEST) {
-        g_throttle_DAC = 0;
+        g_throttle_DAC = 1023;
         return;
     }
 
