@@ -87,6 +87,11 @@ void BAL_updateBalancing(Pack_t *pack)
         }
     }
 
+    for (uint32_t module_num = 0; module_num < PACK_NUM_BATTERY_MODULES; module_num++)
+    {
+        discharge_setting[module_num] = false;
+    }
+
     // Call BTM_BAL_setDischarge to put the balancing settings into effect
     BTM_BAL_setDischarge(pack, discharge_setting);
 }

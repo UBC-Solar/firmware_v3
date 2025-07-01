@@ -355,12 +355,29 @@ void get_accel_readings()
  */
 void normalize_adc_values(uint16_t adc1, uint16_t adc2)
 {
-    uint16_t dac_from_adc1 = convert_to_dac(adc1);
-    uint16_t dac_from_adc2 = convert_to_dac(adc1);      // CHANGE THIS TO adc2 LATER
-    // uint16_t dac_from_adc1 = convert_to_dac(adc1);
-    // uint16_t dac_from_adc2 = convert_to_dac(adc2);
+    // Clamp upper bound
+    if (adc1 >= HIGHEST) {
+        g_throttle_DAC = 0;
+        return;
+    }
+    // Clamp lower bound
+    if (adc1 <= LOWEST) {
+        g_throttle_DAC = 0;
+        return;
+    }
 
-    g_throttle_DAC = (dac_from_adc1 + dac_from_adc2) / 2;        // Take the average
+    // Linear interpolation with inverted mapping
+    uint32_t range = HIGHEST - LOWEST;
+    uint32_t value = adc1 - LOWEST;
+    uint32_t scaled = (value * 1023) / range;
+
+    int temp = (int)1023 - (int)scaled;
+    if (temp < 0)
+    {
+        temp = 0;
+    }
+
+    g_throttle_DAC = (uint16_t)temp;
 }
 
 

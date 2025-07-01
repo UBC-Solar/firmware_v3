@@ -90,7 +90,8 @@ void FSM_reset()
     printf("Top of FSM reset\r\n");
 
     //  Turn fans off
-    HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, HIGH);
+
     HAL_GPIO_WritePin(MDU_FAN_CTRL_GPIO_Port, MDU_FAN_CTRL_Pin, LOW);
 
     // Open all contactors
@@ -662,9 +663,11 @@ void FSM_ESTOPActivedCallback()
 {
     ecu_data.status.bits.estop = true;
     HAL_GPIO_WritePin(ESTOP_LED_GPIO_Port, ESTOP_LED_Pin, HIGH);
+
+    HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, HIGH);
     
     FSM_state = FAULT;
-    FSM_run(); // Immediately transition to fault state
+    FSM_run(); // Immediately transition to fault state 
 }
 
 /*============================================================================*/
