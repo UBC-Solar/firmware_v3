@@ -28,7 +28,7 @@
 #define ADC_NO_THROTTLE_MAX 630                 // https://ubcsolar26.monday.com/boards/7524367653/pulses/8891936447/posts/4032506875
 #define ADC_FULL_THROTTLE_MIN 1350      
 
-#define HIGHEST 2500    
+#define HIGHEST 1950     
 #define LOWEST  800
 
 

@@ -7,13 +7,13 @@ PARK = 0
 REVERSE = 1
 FORWARD = 2
 
-CAN_ID_2              = 0x756
-CAN_DATA_2            = [REVERSE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+CAN_ID_2              = 0x08850225
+CAN_DATA_2            = [0x07]
 # CAN_DATA_2            = [PARK, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
 # CAN_DATA_2            = [FORWARD, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-CAN_IS_EXTENDED_2     = False
+CAN_IS_EXTENDED_2     = True
 
-for i in range (50):
+while True:
     bus = can.interface.Bus(channel='can0', bustype='socketcan')
     message = can.Message(arbitration_id=CAN_ID_2, data=CAN_DATA_2, is_extended_id=CAN_IS_EXTENDED_2)
     try:
@@ -22,7 +22,7 @@ for i in range (50):
     except can.CanError as e:
         print(f"Message NOT sent {e}")
 
-    time.sleep(0.050)
+    time.sleep(0.1)
 
 
 # CAN_ID              = 0x08850225
