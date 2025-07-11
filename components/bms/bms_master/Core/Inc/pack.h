@@ -57,7 +57,7 @@ typedef union {
         bool fault_temperature_expected_range : 1;  // FLT_TEMP_RANGE
 
         bool balancing_active : 1;                  // TRIP_BAL
-        bool llim : 1;                              // TRIP_BAL
+        bool llim : 1;                              // TRIP_LLIM
         bool hlim : 1;                              // TRIP_HLIM
         bool charge_over_temperature_limit : 1;     // TRIP_CHARGE_OT
 
