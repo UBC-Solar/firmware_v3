@@ -93,11 +93,11 @@ void BMS_MAIN_startupChecks(Pack_t *pack)
         {0x53, 0x6f, 0x6c, 0x61, 0x72, 0x21}};
     uint8_t test_data_rx[BTM_NUM_DEVICES][BTM_REG_GROUP_SIZE] = {0};
     BTM_Status_t comm_status = {BTM_OK, 0};
-    BTM_Status_t ltc_temp_status = {BTM_OK, 0};
-    BTM_Status_t ltc_vref2_status = {BTM_OK, 0};
-    BTM_Status_t shorted_cells_status = {BTM_OK, 0};
-    BTM_Status_t open_wire_status = {BTM_OK, 0};
-    BTM_Status_t overlap_measurement_status = {BTM_OK, 0};
+    // BTM_Status_t ltc_temp_status = {BTM_OK, 0};
+    // BTM_Status_t ltc_vref2_status = {BTM_OK, 0};
+    // BTM_Status_t shorted_cells_status = {BTM_OK, 0};
+    // BTM_Status_t open_wire_status = {BTM_OK, 0};
+    // BTM_Status_t overlap_measurement_status = {BTM_OK, 0};
     // BTM_Status_t discharge_test_status = {BTM_OK, 0};
     bool reg_group_match;
 
