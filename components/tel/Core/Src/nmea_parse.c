@@ -64,10 +64,19 @@ int nmea_GPGGA(GPS *gps_data, char*inputString)
     memset(values, 0, sizeof(values));
     char *marker = strtok(inputString, ",");  // Tokenize the input string using ',' as a delimiter
 
-    while (marker != NULL) 
-    {
-        values[counter++] = malloc(strlen(marker) + 1);
-        strcpy(values[counter - 1], marker);
+    /* Dynamically allocated */
+
+    // while (marker != NULL) 
+    // {
+    //     values[counter++] = malloc(strlen(marker) + 1);
+    //     strcpy(values[counter - 1], marker);
+    //     marker = strtok(NULL, ",");
+    // }
+
+    /* Statically allocated */
+
+    while(counter < 25 && marker != NULL) {
+        values[counter++] = marker;
         marker = strtok(NULL, ",");
     }
 
@@ -127,12 +136,12 @@ int nmea_GPGGA(GPS *gps_data, char*inputString)
                 gps_data->utcTime[0] = '\0';
             }
         } else {
-            for(int i=0; i<counter; i++) free(values[i]);
+            // for(int i=0; i<counter; i++) free(values[i]);
             return 0; // Failure
         }
     }
 
-    for(int i = 0; i < counter; i++) free(values[i]);
+    // for(int i = 0; i < counter; i++) free(values[i]);
     return 1; // Success
 }
 
@@ -201,17 +210,26 @@ int nmea_GPGSA(GPS *gps_data, char* inputString)
  * @param inputString Pointer to the string beginning with GPGLL or GNGLL
  * @return returns true for success, false for failure
  */
-int nmea_GPGLL(GPS *gps_data, char*inputString) 
+int nmea_GPGLL(GPS *gps_data, char*inputString)
 {
     char *values[25];
     int counter = 0;
-    memset(values, 0, sizeof(values));
+    
     char *marker = strtok(inputString, ","); // Tokenize the input string using ',' as a delimiter
 
-    while (marker != NULL) 
-    {
-        values[counter++] = malloc(strlen(marker) + 1); 
-        strcpy(values[counter - 1], marker);
+    /* Orginal code using dynamic memory allocation to store tokens */
+
+    // while (marker != NULL) 
+    // {
+    //     values[counter++] = malloc(strlen(marker) + 1); 
+    //     strcpy(values[counter - 1], marker);
+    //     marker = strtok(NULL, ",");
+    // }
+
+    /* Alternative code using static memory allocation */
+
+    while (counter < 25 && marker != NULL) {
+        values[counter++] = marker;
         marker = strtok(NULL, ",");
     }
 
@@ -241,7 +259,7 @@ int nmea_GPGLL(GPS *gps_data, char*inputString)
         // Validate parsed latitude and longitude values
         if(lon_deg_strtol == 0 || lon_min_strtof == 0 || lat_deg_strtol == 0 || lat_min_strtof == 0)
         {
-            for (int i = 0; i<counter; i++) free(values[i]);
+            // for (int i = 0; i<counter; i++) free(values[i]);
             return 0;
 
         } else {
@@ -250,7 +268,7 @@ int nmea_GPGLL(GPS *gps_data, char*inputString)
             gps_data->longitude = lon_deg;
             gps_data->latSide = latSide;
             gps_data->lonSide = lonSide;
-            for (int i = 0; i<counter; i++) free(values[i]);
+            // for (int i = 0; i<counter; i++) free(values[i]);
             return 1; // Success
         }
     }
@@ -272,12 +290,42 @@ int nmea_GPRMC(GPS *gps_data, char* inputString)
 {
     char *values[25];
     int counter = 0;
-    memset(values, 0, sizeof(values));
+    // memset(values, 0, sizeof(values));
     char *start = inputString;
     char *end;
 
     // Loop until the end of the string is reached
-    while (start != NULL && *start != '\0') {
+    // while (start != NULL && *start != '\0') {
+
+    //     end = strchr(start, ',');
+
+    //     if (end == NULL) 
+    //     {
+    //         end = start + strlen(start); // Last token reached
+    //     }
+
+    //     if (end == start) 
+    //     {
+    //         values[counter] = malloc(1); // Allocate space for a single character
+
+    //         values[counter][0] = '\0';   // Set it to the empty string
+    //     } else {
+    //         // Non-empty field found.
+    //         values[counter] = malloc(end - start + 1); // Allocate space for the token
+    //         strncpy(values[counter], start, end - start); // Copy the token
+    //         values[counter][end - start] = '\0'; // Null-terminate it
+    //     }
+
+    //     counter++;
+    //     if (*end == '\0') 
+    //     {
+    //         // End of the string reached.
+    //         break;
+    //     }
+    //     start = end + 1; // Move to the start of the next token.
+    // }
+
+    while(counter < 25 && start != NULL && *start != '\0') {
 
         end = strchr(start, ',');
 
@@ -286,24 +334,9 @@ int nmea_GPRMC(GPS *gps_data, char* inputString)
             end = start + strlen(start); // Last token reached
         }
 
-        if (end == start) 
-        {
-            values[counter] = malloc(1); // Allocate space for a single character
-            values[counter][0] = '\0';   // Set it to the empty string
-        } else {
-            // Non-empty field found.
-            values[counter] = malloc(end - start + 1); // Allocate space for the token
-            strncpy(values[counter], start, end - start); // Copy the token
-            values[counter][end - start] = '\0'; // Null-terminate it
-        }
-
-        counter++;
-        if (*end == '\0') 
-        {
-            // End of the string reached.
-            break;
-        }
-        start = end + 1; // Move to the start of the next token.
+        *end = '\0';
+        values[counter++] = start;
+        start = end + 1;
     }
 
     // Confirms if the date was successfully extracted
@@ -311,11 +344,11 @@ int nmea_GPRMC(GPS *gps_data, char* inputString)
     {
         strncpy(gps_data->date, values[9], 6);
         gps_data->date[6] = '\0';
-        for (int i = 0; i < counter; i++) free(values[i]);
+        // for (int i = 0; i < counter; i++) free(values[i]);
         gps_data->RMC_Flag = 1;
         return 1; // Success
     } else {
-        for (int i = 0; i < counter; i++) free(values[i]);
+        // for (int i = 0; i < counter; i++) free(values[i]);
         return 0; // Failure
     }
 }
@@ -335,11 +368,11 @@ int nmea_GPVTG(GPS *gps_data, char* inputString)
 {
     char *values[25];
     int counter = 0;
-    memset(values, 0, sizeof(values));
+    // memset(values, 0, sizeof(values));
     char *marker = inputString;
     char *token;
 
-    while ((token = strsep(&marker, ",")) != NULL) 
+    while ((token = strsep(&marker, ",")) != NULL && counter < 25) 
     {
         values[counter++] = strdup(token);
     }
@@ -354,10 +387,10 @@ int nmea_GPVTG(GPS *gps_data, char* inputString)
     float speedKmh = strtof(values[7], NULL);
     gps_data->speedKmh = speedKmh!=0 ? speedKmh : gps_data->speedKmh; 
 
-    for (int i = 0; i < counter; i++) 
-    {
-        free(values[i]);
-    }
+    // for (int i = 0; i < counter; i++) 
+    // {
+    //     free(values[i]);
+    // }
 
     return 1;
 }
@@ -377,13 +410,18 @@ int nmea_GPGSV(GPS *gps_data, char* inputString)
 {
     char *values[25];
     int counter = 0;
-    memset(values, 0, sizeof(values));
+    // memset(values, 0, sizeof(values));
     char *marker = strtok(inputString, ",");  // Tokenize the input string using ',' as a delimiter
 
-    while (marker != NULL) 
-    {
-        values[counter++] = malloc(strlen(marker) + 1); 
-        strcpy(values[counter - 1], marker);
+    // while (marker != NULL) 
+    // {
+    //     values[counter++] = malloc(strlen(marker) + 1); 
+    //     strcpy(values[counter - 1], marker);
+    //     marker = strtok(NULL, ",");
+    // }
+
+    while (counter < 25 && marker != NULL) {
+        values[counter++] = marker;
         marker = strtok(NULL, ",");
     }
 
@@ -394,10 +432,10 @@ int nmea_GPGSV(GPS *gps_data, char* inputString)
     int satInView = strtol(values[3], NULL, 10);
     gps_data->satInView = satInView!=0 ? satInView : gps_data->satInView;
 
-    for (int i = 0; i < counter; i++) 
-    {
-        free(values[i]);
-    }
+    // for (int i = 0; i < counter; i++) 
+    // {
+    //     free(values[i]);
+    // }
 
     return 1;
 }
@@ -415,30 +453,36 @@ int nmea_GPGSV(GPS *gps_data, char* inputString)
  */
 void nmea_parse(GPS *gps_data, uint8_t *buffer) {
     
-    memset(data, 0, sizeof(data)); // Clear array
+    // memset(data, 0, sizeof(data)); // Clear array
 
+    // char *token = strtok((char *)buffer, "$"); // Tokenize the buffer using '$' as a delimiter
+    // int cnt = 0;
 
-    char *token = strtok((char *)buffer, "$"); // Tokenize the buffer using '$' as a delimiter
-    token = strtok(NULL, "$");
+    // while(token != NULL)
+    // {
+    //     data[cnt++] = token;
+
+    //     data[cnt++] = malloc(strlen(token) + 1); // Allocate memory for each sentence
+    //     strcpy(data[cnt-1], token); // Copy the token into allocated memory
+    //     token = strtok(NULL, "$"); // Get the next sentence
+    // }
 
     int cnt = 0;
+    char *token = strtok((char *)buffer, "$");
 
-    while(token !=NULL)
-    {
-
-        data[cnt++] = malloc(strlen(token) + 1 ); // Allocate memory for each sentence
-        strcpy(data[cnt-1], token); // Copy the token into allocated memory
-        token = strtok(NULL, "$"); // Get the next sentence
+    while (token && cnt < 20) {
+        data[cnt++] = token;
+        token = strtok(NULL, "$");
     }
 
-    for(int i = 0; i<cnt; i++)
+    for(int i = 0; i < cnt; i++)
     {
         if(strstr(data[i], "\r\n") != NULL) // Check if the sentence is complete with a newline
         {
             // Identify sentence type and call corresponding parsing function
-            if(strstr(data[i], "GPGLL")!=NULL || strstr(data[i], "GNGLL")!=NULL)
+            if(strstr(data[i], "GPGLL")!=NULL)
             {
-                nmea_GPGLL(gps_data, data[i]);
+               nmea_GPGLL(gps_data, data[i]);
             }
             else if(strstr(data[i], "GNGSA")!= NULL || (strstr(data[i], "GPGSA"))!=NULL)
             {
@@ -462,8 +506,8 @@ void nmea_parse(GPS *gps_data, uint8_t *buffer) {
             }
         }
     }
-    for(int i = 0; i<cnt; i++) 
-    {
-        if (data[i] != NULL) { free(data[i]); }
-    }
+    // for(int i = 0; i<cnt; i++) 
+    // {
+    //     if (data[i] != NULL) { free(data[i]); }
+    // }
 }
