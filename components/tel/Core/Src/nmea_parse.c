@@ -214,7 +214,7 @@ int nmea_GPGLL(GPS *gps_data, char*inputString)
 {
     char *values[25];
     int counter = 0;
-    
+    memset(values, 0, sizeof(values));
     char *marker = strtok(inputString, ","); // Tokenize the input string using ',' as a delimiter
 
     /* Orginal code using dynamic memory allocation to store tokens */
