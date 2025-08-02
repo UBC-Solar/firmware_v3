@@ -480,7 +480,7 @@ void nmea_parse(GPS *gps_data, uint8_t *buffer) {
         if(strstr(data[i], "\r\n") != NULL) // Check if the sentence is complete with a newline
         {
             // Identify sentence type and call corresponding parsing function
-            if(strstr(data[i], "GPGLL")!=NULL)
+            if(strstr(data[i], "GNGLL")!=NULL || (strstr(data[i], "GPGLL"))!=NULL)
             {
                nmea_GPGLL(gps_data, data[i]);
             }
