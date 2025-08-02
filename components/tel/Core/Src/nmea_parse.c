@@ -290,7 +290,7 @@ int nmea_GPRMC(GPS *gps_data, char* inputString)
 {
     char *values[25];
     int counter = 0;
-    // memset(values, 0, sizeof(values));
+    memset(values, 0, sizeof(values));
     char *start = inputString;
     char *end;
 
@@ -368,7 +368,7 @@ int nmea_GPVTG(GPS *gps_data, char* inputString)
 {
     char *values[25];
     int counter = 0;
-    // memset(values, 0, sizeof(values));
+    memset(values, 0, sizeof(values));
     char *marker = inputString;
     char *token;
 
@@ -410,7 +410,7 @@ int nmea_GPGSV(GPS *gps_data, char* inputString)
 {
     char *values[25];
     int counter = 0;
-    // memset(values, 0, sizeof(values));
+    memset(values, 0, sizeof(values));
     char *marker = strtok(inputString, ",");  // Tokenize the input string using ',' as a delimiter
 
     // while (marker != NULL) 
@@ -453,7 +453,7 @@ int nmea_GPGSV(GPS *gps_data, char* inputString)
  */
 void nmea_parse(GPS *gps_data, uint8_t *buffer) {
     
-    // memset(data, 0, sizeof(data)); // Clear array
+    memset(data, 0, sizeof(data)); // Clear array
 
     // char *token = strtok((char *)buffer, "$"); // Tokenize the buffer using '$' as a delimiter
     // int cnt = 0;
