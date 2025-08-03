@@ -187,8 +187,8 @@ BTM_Status_t BTM_TEMP_getTemperatures(Pack_t *pack)
         }
     }
     
-    pack->module[22].temperature = pack->module[21].temperature;   // Force module 7 temp to 6 and module 8 temp to 9.
-    pack->module[23].temperature = pack->module[24].temperature;   // Force module 7 temp to 6 and module 8 temp to 9.
+    // pack->module[22].temperature = pack->module[21].temperature;   // Force module 7 temp to 6 and module 8 temp to 9.
+    // pack->module[23].temperature = pack->module[24].temperature;   // Force module 7 temp to 6 and module 8 temp to 9.
 
     return status;
 }
