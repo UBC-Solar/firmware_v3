@@ -26,7 +26,7 @@
 #define BAL_MIN_VOLTAGE_FOR_BALANCING 29000U // 4.0V
 
 // Voltage difference within which modules are counted as balanced
-#define BAL_VOLTAGE_DIFFERENCE_TOLERANCE 500U // 0.05V
+#define BAL_VOLTAGE_DIFFERENCE_TOLERANCE 300U // 0.03V. 
 
 // Voltages are multiplied by 10^4 to match the format in the pack
 

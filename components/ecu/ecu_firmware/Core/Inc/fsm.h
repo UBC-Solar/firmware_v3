@@ -31,6 +31,7 @@ typedef enum
     CHECK_LLIM,
     WAIT_FOR_PC,
     LLIM_CLOSED,
+    WAIT_FOR_MPPT_PC,
     CHECK_HLIM,
     TELEM_ON,
     MEM_ON,
@@ -48,6 +49,7 @@ typedef enum
 #define MESSAGE_INTERVAL_0X450 200
 #define MDU_DCH_INTERVAL 500
 #define SHORT_INTERVAL 200
+#define MPPT_PC_INTERVAL 2000
 #define MDU_PC_INTERVAL 1500
 #define FLT_BLINK_INTERVAL 200
 #define LVS_INTERVAL 100
@@ -82,6 +84,7 @@ void disable_MDU_DCH();
 void check_LLIM();
 void PC_wait();
 void LLIM_closed();
+void MPPT_PC_wait();
 void check_HLIM();
 void TELEM_on();
 void MEM_on();
@@ -103,6 +106,7 @@ static void (*FSM_state_table[])(void) = {
     check_LLIM,
     PC_wait,
     LLIM_closed,
+    MPPT_PC_wait,
     check_HLIM,
     TELEM_on,
     MEM_on,
