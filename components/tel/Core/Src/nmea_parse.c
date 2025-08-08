@@ -166,7 +166,7 @@ int nmea_GPGSA(GPS *gps_data, char* inputString)
 
     while ((token = strsep(&marker, ",")) != NULL) // Tokenize the input string using ',' as a delimiter
     {
-        values[counter++] = strdup(token);
+        values[counter++] = token;
     }
     
     int fix = strtol(values[2], NULL, 10);
@@ -193,7 +193,7 @@ int nmea_GPGSA(GPS *gps_data, char* inputString)
     float vdop = strtof(values[17], NULL);
     gps_data->vdop = vdop!=0.0 ? vdop : gps_data->vdop;
 
-    for(int i = 0; i < counter; i++) free(values[i]);
+    // for(int i = 0; i < counter; i++) free(values[i]);
 
     return 1; // Success
 }
@@ -374,7 +374,7 @@ int nmea_GPVTG(GPS *gps_data, char* inputString)
 
     while ((token = strsep(&marker, ",")) != NULL && counter < 25) 
     {
-        values[counter++] = strdup(token);
+        values[counter++] = token;
     }
 
     // Extact and store values to gps_data
