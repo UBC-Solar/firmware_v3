@@ -219,7 +219,7 @@ int nmea_GPGLL(GPS *gps_data, char*inputString)
 
     /* Orginal code using dynamic memory allocation to store tokens */
 
-    // while (marker != NULL) 
+    // while (marker != NULL)  
     // {
     //     values[counter++] = malloc(strlen(marker) + 1); 
     //     strcpy(values[counter - 1], marker);
