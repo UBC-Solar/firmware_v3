@@ -444,5 +444,5 @@ HAL_StatusTypeDef gps_config_meas_rate() {
     frame[6 + len] = ckA;
     frame[7 + len] = ckB;
 
-    return HAL_I2C_Master_Transmit(hi2c1, GPS_DEVICE_ADDRESS, frame, sizeof(frame), HAL_MAX_DELAY);
+    return HAL_I2C_Master_Transmit(&hi2c1, GPS_DEVICE_ADDRESS, frame, sizeof(frame), HAL_MAX_DELAY);
 }
