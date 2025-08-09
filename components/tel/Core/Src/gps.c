@@ -403,7 +403,7 @@ static void ubx_cksum(const uint8_t *buf, uint16_t len, uint8_t *ckA, uint8_t *c
     }
 }
 
-HAL_StatusTypeDef ubx_valset_set_meas(I2C_HandleTypeDef *hi2c) {
+HAL_StatusTypeDef gps_config_meas_rate() {
 
     uint8_t payload[10];
     uint32_t key = UBX_KEY_CFG_RATE_MEAS;
@@ -444,6 +444,6 @@ HAL_StatusTypeDef ubx_valset_set_meas(I2C_HandleTypeDef *hi2c) {
     frame[6 + len] = ckA;
     frame[7 + len] = ckB;
 
-    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(hi2c, GPS_DEVICE_ADDRESS << 1, frame, sizeof(frame), HAL_MAX_DELAY);
+    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(hi2c1, GPS_DEVICE_ADDRESS << 1, frame, sizeof(frame), HAL_MAX_DELAY);
     return status;
 }

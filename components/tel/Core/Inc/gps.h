@@ -32,7 +32,7 @@ void gps_task();
 
 void read_i2c_gps_module(uint8_t* receive_buffer);
 
-HAL_StatusTypeDef ubx_valset_set_meas();
+HAL_StatusTypeDef gps_config_meas_rate();
 
 /** CAN SENDING FUNCTION DECLARATIONS */
 void CAN_tx_lat_lon_msg(float latitude, float longitude);

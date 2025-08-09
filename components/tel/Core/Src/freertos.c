@@ -277,7 +277,7 @@ void GPS_task(void *argument)
     /* Infinite loop */
     
     osDelay(GPS_TASK_OFFSET_DELAY);
-    ubx_valset_set_meas(hi2c1);
+    gps_config_meas_rate(hi2c1);
     for(;;)
     {
         gps_task();
