@@ -35,7 +35,6 @@
 #include "nmea_parse.h"
 #include "imu.h"
 #include "canload.h"
-#include "gps_config.h"
 
 /* USER CODE END Includes */
 
@@ -278,6 +277,7 @@ void GPS_task(void *argument)
     /* Infinite loop */
     
     osDelay(GPS_TASK_OFFSET_DELAY);
+    
     for(;;)
     {
         gps_task();
