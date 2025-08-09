@@ -35,6 +35,7 @@
 #include "nmea_parse.h"
 #include "imu.h"
 #include "canload.h"
+#include "gps_config.h"
 
 /* USER CODE END Includes */
 
@@ -51,6 +52,8 @@ typedef StaticTask_t osStaticMessageQDef_t;
 #define WINDOW_SIZE 10
 #define FREQUENCY_MS 100
 #define NUM_USART1_TX_SEMAPHORES        1
+
+
 
 /* USER CODE END PD */
 
