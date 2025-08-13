@@ -279,7 +279,7 @@ void GPS_task(void *argument)
     // uint16_t current_rate_ms;
     
     osDelay(GPS_TASK_OFFSET_DELAY);
-    gps_config_meas_rate();
+    // gps_config_meas_rate();
     // get_gps_meas_rate(&current_rate_ms);
     for(;;)
     {
