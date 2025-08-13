@@ -20,13 +20,14 @@
 #define UBX_HEAD2             0x62
 #define UBX_CLASS_CFG         0x06
 #define UBX_ID_VALSET         0x8A
+#define UBX_ID_VALGET         0x8B
 #define UBX_KEY_CFG_RATE_MEAS 0x30210001u
 
 #define UBX_LAYER_RAM         0x01
 #define UBX_LAYER_BBR         0x02
 #define UBX_LAYER_FLASH       0x04
 
-#define MEAS_MS               100
+#define MEAS_MS               250
 
 bool g_gps_read_okay = false;
 uint8_t g_gps_data[GPS_MESSAGE_LEN];
@@ -446,3 +447,80 @@ HAL_StatusTypeDef gps_config_meas_rate() {
 
     return HAL_I2C_Master_Transmit(&hi2c1, GPS_DEVICE_ADDRESS, frame, sizeof(frame), HAL_MAX_DELAY);
 }
+
+// bool get_gps_meas_rate(uint16_t *out_ms)
+// {
+//     // -------- Build VALGET request: version=0, layers=RAM, key=CFG-RATE-MEAS --------
+//     uint8_t payload[8];
+//     const uint32_t key = UBX_KEY_CFG_RATE_MEAS;
+
+//     payload[0] = 0x00;                    // version
+//     payload[1] = UBX_LAYER_RAM;           // layers (RAM)
+//     payload[2] = 0x00; payload[3] = 0x00; // reserved
+//     payload[4] = (uint8_t)(key & 0xFF);
+//     payload[5] = (uint8_t)((key >> 8) & 0xFF);
+//     payload[6] = (uint8_t)((key >> 16) & 0xFF);
+//     payload[7] = (uint8_t)((key >> 24) & 0xFF);
+
+//     const uint16_t len = sizeof(payload);
+
+//     uint8_t tx[8 + sizeof(payload)];
+//     tx[0] = UBX_HEAD1; tx[1] = UBX_HEAD2;
+//     tx[2] = UBX_CLASS_CFG; tx[3] = UBX_ID_VALGET;
+//     tx[4] = (uint8_t)(len & 0xFF);
+//     tx[5] = (uint8_t)(len >> 8);
+//     memcpy(&tx[6], payload, len);
+
+//     uint8_t ckA, ckB;
+//     ubx_cksum(&tx[2], (uint16_t)(4 + len), &ckA, &ckB); // CLASS..payload
+//     tx[6 + len] = ckA;
+//     tx[7 + len] = ckB;
+
+//     // -------- Send request (make sure GPS_DEVICE_ADDRESS is 8-bit; if it's 7-bit, shift here) --------
+//     if (HAL_I2C_Master_Transmit(&hi2c1, GPS_DEVICE_ADDRESS, tx, sizeof(tx), 100) != HAL_OK)
+//         return false;
+
+//     // -------- Receive response --------
+//     uint8_t rx[64] = {0};
+//     if (HAL_I2C_Master_Receive(&hi2c1, GPS_DEVICE_ADDRESS, rx, sizeof(rx), 100) != HAL_OK)
+//         return false;
+
+//     // -------- Find UBX sync --------
+//     int s = -1;
+//     for (int i = 0; i + 7 < (int)sizeof(rx); ++i) {
+//         if (rx[i] == UBX_HEAD1 && rx[i+1] == UBX_HEAD2) { s = i; break; }
+//     }
+//     if (s < 0) return false;
+
+//     // Validate class/id
+//     if (rx[s+2] != UBX_CLASS_CFG || rx[s+3] != UBX_ID_VALGET) return false;
+
+//     // Payload length
+//     uint16_t rlen = (uint16_t)(rx[s+4] | (rx[s+5] << 8));
+//     if ((size_t)(s + 6 + rlen + 2) > sizeof(rx)) return false; // bounds check
+
+//     // Validate checksum
+//     ubx_cksum(&rx[s+2], (uint16_t)(4 + rlen), &ckA, &ckB);
+//     if (rx[s+6 + rlen] != ckA || rx[s+7 + rlen] != ckB) return false;
+
+//     // -------- Parse payload (aligned) --------
+//     const int p0 = s + 6;        // payload start
+//     if (rlen < 4) return false;  // need at least version/layers/reserved[2]
+
+//     int p = p0 + 4;              // first item after version/layers/reserved
+//     const int pend = p0 + rlen;
+
+//     // We requested exactly one key, so the first item should be our key:
+//     if (p + 6 > pend) return false; // key(4) + U2(2)
+
+//     uint32_t key_le = (uint32_t)rx[p] |
+//                       ((uint32_t)rx[p+1] << 8) |
+//                       ((uint32_t)rx[p+2] << 16) |
+//                       ((uint32_t)rx[p+3] << 24);
+//     p += 4;
+
+//     if (key_le != UBX_KEY_CFG_RATE_MEAS) return false; // unexpected key
+
+//     *out_ms = (uint16_t)(rx[p] | (rx[p+1] << 8));       // U2, little-endian
+//     return true;
+// }
