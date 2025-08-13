@@ -27,15 +27,6 @@ static int split_commas_inplace(char *s, char *out[], int max_out) {
     return n;
 }
 
-/**
- * @brief Alidates the checksum
- *
- * Extracts the checksum from the received NMEA sentence 
- * and compares it against the computed checksum for verification.
- * 
- * @param nmea_data Pointer to the checksum string
- * @return returns true for success, false for failure
- */
 int gps_checksum(char *nmea_data)
 {
     if (!nmea_data) return 0;
