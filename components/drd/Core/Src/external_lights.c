@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include "external_lights.h"
 #include "can.h"
+#include "drive_state.h"
 
 /*	Local Function Prototypes	*/
 static void Set_ExternalLights(uint8_t dtr, uint8_t lts, uint8_t rts);
@@ -112,7 +113,7 @@ void ExternalLights_state_machine()
 		rts = 0;
 		prev_state = DTR_STATE;
 	}
-
+	day_lights = dtr; //temp
 	Set_ExternalLights(dtr, lts, rts);
 }
 
