@@ -52,6 +52,8 @@ typedef StaticTask_t osStaticMessageQDef_t;
 #define FREQUENCY_MS 100
 #define NUM_USART1_TX_SEMAPHORES        1
 
+
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -273,8 +275,10 @@ void GPS_task(void *argument)
 {
   /* USER CODE BEGIN GPS_task */
     /* Infinite loop */
-    
+
     osDelay(GPS_TASK_OFFSET_DELAY);
+    osDelay(5000);
+    gps_config_meas_rate();   // GPS configuration to change data refresh rate
     for(;;)
     {
         gps_task();
