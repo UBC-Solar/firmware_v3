@@ -13,18 +13,26 @@
 
 char *data[20];
 
-// Modifies the input string in-place by writing '\0' at commas.
-// Returns number of tokens written to out[] (up to max_out).
-static int split_commas_inplace(char *s, char *out[], int max_out) {
+/**
+ * @brief Splits a string by commas creating new individual strings within an array
+ * 
+ * This function perserves empty fields when tokenizing strings compared to the
+ * string function 'strtok' which skips over these fields resulting in the loss
+ * of data.
+ *
+ * @param 
+ * @param 
+ */
+void split_commas(char *s, char *out[], int max_out) {
     int n = 0;
     char *start = s;
     while (start && n < max_out) {
         char *comma = strchr(start, ',');
         if (comma) *comma = '\0';
-        out[n++] = start;       // may be an empty string if there were ",,"
+        out[n++] = start;
         start = comma ? (comma + 1) : NULL;
     }
-    return n;
+    if (n < max_out) out[n] = NULL;
 }
 
 int gps_checksum(char *nmea_data)
@@ -75,10 +83,9 @@ int nmea_GPGGA(GPS *gps_data, char*inputString)
     line[sizeof(line)-1] = '\0';
 
     char *values[25];
-    int counter = 0;
     memset(values, 0, sizeof(values));
 
-    counter = split_commas_inplace(line, values, 25);
+    split_commas(line, values, 25);
 
     // Extract direction indicators for longitude and latitude
     char lonSide = values[5] ? values[5][0] : '\0';
@@ -165,10 +172,9 @@ int nmea_GPGSA(GPS *gps_data, char* inputString)
     line[sizeof(line)-1] = '\0';
 
     char *values[25];
-    int counter = 0;
     memset(values, 0, sizeof(values));
 
-    counter = split_commas_inplace(line, values, 25);
+    split_commas(line, values, 25);
     
     int fix = values[2] ? strtol(values[2], NULL, 10) : 0;
     gps_data->fix = fix > 1 ? 1 : 0;
@@ -216,10 +222,9 @@ int nmea_GPGLL(GPS *gps_data, char*inputString)
     line[sizeof(line)-1] = '\0';
 
     char *values[25];
-    int counter = 0;
     memset(values, 0, sizeof(values));
 
-    counter = split_commas_inplace(line, values, 25);
+    split_commas(line, values, 25);
 
     char latSide = values[2] ? values[2][0] : '\0';
     if (latSide == 'S' || latSide == 'N') 
@@ -283,13 +288,12 @@ int nmea_GPRMC(GPS *gps_data, char* inputString)
     line[sizeof(line)-1] = '\0';
 
     char *values[25];
-    int counter = 0;
     memset(values, 0, sizeof(values));
 
-    counter = split_commas_inplace(line, values, 25);
+    split_commas(line, values, 25);
 
     // Confirms if the date was successfully extracted
-    if (counter > 9 && values[9] && strlen(values[9]) == 6) 
+    if (values[9] && strlen(values[9]) == 6) 
     {
         strncpy(gps_data->date, values[9], 6);
         gps_data->date[6] = '\0';
@@ -318,10 +322,9 @@ int nmea_GPVTG(GPS *gps_data, char* inputString)
     line[sizeof(line)-1] = '\0';
 
     char *values[25];
-    int counter = 0;
     memset(values, 0, sizeof(values));
 
-    counter = split_commas_inplace(line, values, 25);
+    split_commas(line, values, 25);
 
     // Extact and store values to gps_data
     float trueHeading = values[1] ? strtof(values[1], NULL) : 0.0f;
@@ -354,10 +357,9 @@ int nmea_GPGSV(GPS *gps_data, char* inputString)
     line[sizeof(line)-1] = '\0';
 
     char *values[25];
-    int counter = 0;
     memset(values, 0, sizeof(values));
 
-    counter = split_commas_inplace(line, values, 25);
+    split_commas(line, values, 25);
 
     // Extact and store values to gps_data
     int snr = values[7] ? strtol(values[7], NULL, 10) : 0;

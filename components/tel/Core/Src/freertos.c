@@ -276,11 +276,9 @@ void GPS_task(void *argument)
   /* USER CODE BEGIN GPS_task */
     /* Infinite loop */
 
-    // uint16_t current_rate_ms;
-    
     osDelay(GPS_TASK_OFFSET_DELAY);
-    // gps_config_meas_rate();
-    // get_gps_meas_rate(&current_rate_ms);
+    osDelay(5000);
+    gps_config_meas_rate();   // GPS configuration to change data refresh rate
     for(;;)
     {
         gps_task();
