@@ -20,48 +20,53 @@ char *data[20];
  * string function 'strtok' which skips over these fields resulting in the loss
  * of data.
  *
- * @param 
- * @param 
+ * @param sentence The input string to split
+ * @param tokens The array to store the split tokens
+ * @param max_value The maximum number of tokens to extract
  */
-void split_commas(char *s, char *out[], int max_out) {
-    int n = 0;
-    char *start = s;
-    while (start && n < max_out) {
-        char *comma = strchr(start, ',');
+void split_commas(char *sentence, char *tokens[], int max_value) {
+    int count = 0;
+    char *pos = sentence;
+    while (pos && count < max_value) {
+        char *comma = strchr(pos, ',');
         if (comma) *comma = '\0';
-        out[n++] = start;
-        start = comma ? (comma + 1) : NULL;
+        tokens[count++] = pos;
+        pos = comma ? (comma + 1) : NULL;
     }
-    if (n < max_out) out[n] = NULL;
+    if (count < max_value) tokens[count] = NULL;
 }
 
+
+/**
+ * @brief Validates the checksum
+ *
+ * Extracts the checksum from the received NMEA sentence 
+ * and compares it against the computed checksum for verification.
+ * 
+ * @param nmea_data Pointer to the checksum string
+ * @return returns true for success, false for failure
+ */
 int gps_checksum(char *nmea_data)
 {
-    if (!nmea_data) return 0;
-    size_t len = strlen(nmea_data);
-    if (len < 5) return 0;
-
+    // Pointing a string with less than 5 characters the function will read outside of scope and crash the mcu.
+    if(strlen(nmea_data) < 5) return 0;
+    char recv_crc[2];
+    recv_crc[0] = nmea_data[strlen(nmea_data) - 4];
+    recv_crc[1] = nmea_data[strlen(nmea_data) - 3];
     int crc = 0;
-    size_t i = 0;
+    int i;
 
-    // Start after '$' if present
-    if (nmea_data[0] == '$') i = 1;
-
-    // XOR until '*' or end
-    for (; i < len && nmea_data[i] != '*'; i++) {
-        crc ^= (unsigned char)nmea_data[i];
+    // Exclude the CRLF plus CRC with an * from the end
+    for (i = 0; i < strlen(nmea_data) - 5; i ++) {
+        crc ^= nmea_data[i];
     }
-
-    // Need two hex chars after '*'
-    if (i + 2 >= len) return 0;
-
-    char recv_crc[3];
-    recv_crc[0] = nmea_data[i + 1];
-    recv_crc[1] = nmea_data[i + 2];
-    recv_crc[2] = '\0';
-
-    int receivedHash = (int)strtol(recv_crc, NULL, 16);
-    return (crc == receivedHash) ? 1 : 0;
+    int receivedHash = strtol(recv_crc, NULL, 16);
+    if (crc == receivedHash) {
+        return 1; // Success
+    }
+    else{
+        return 0; // Failure
+    }
 }
 
 
