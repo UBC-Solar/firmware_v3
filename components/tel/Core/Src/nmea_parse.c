@@ -11,6 +11,14 @@
 #include <stdlib.h>
 #include "nmea_parse.h"
 
+#define NMEA_MAX_SENTENCE 140
+#define GPGGA_MAX_VALUES  12
+#define GPGSA_MAX_VALUES  18
+#define GPGLL_MAX_VALUES  5
+#define GPRMC_MAX_VALUES  10
+#define GPVTG_MAX_VALUES  8
+#define GPGSV_MAX_VALUES  8
+
 char *data[20];
 
 /**
@@ -36,6 +44,20 @@ void split_commas(char *sentence, char *tokens[], int max_value) {
     if (count < max_value) tokens[count] = NULL;
 }
 
+
+void copy_sentence(char *output, const char *source, size_t size) {
+
+    if(!output || size == 0 || !source) return;
+
+    const char *end = strstr(source, "\r\n");
+
+    size_t length = end ? (size_t)(end - source) : strnlen(source, size - 1);
+
+    if (length >= size) length = size - 1;
+
+    memcpy(output, source, length);
+    output[length] = '\0';
+}
 
 /**
  * @brief Validates the checksum
@@ -83,20 +105,23 @@ int gps_checksum(char *nmea_data)
  */
 int nmea_GPGGA(GPS *gps_data, char*inputString) 
 {
-    char line[128];
-    strncpy(line, inputString, sizeof(line)-1);
-    line[sizeof(line)-1] = '\0';
+    char sentence[NMEA_MAX_SENTENCE];
+    // strncpy(line, inputString, sizeof(line)-1);
+    // line[sizeof(line)-1] = '\0';
 
-    char *values[25];
+    copy_sentence(sentence, inputString, sizeof(sentence));
+
+    char *values[GPGGA_MAX_VALUES];
     memset(values, 0, sizeof(values));
 
-    split_commas(line, values, 25);
+    split_commas(sentence, values, GPGGA_MAX_VALUES);
 
     // Extract direction indicators for longitude and latitude
     char lonSide = values[5] ? values[5][0] : '\0';
     char latSide = values[3] ? values[3][0] : '\0';
 
     if (values[1]) strcpy(gps_data->lastMeasure, values[1]);
+
     if(latSide == 'S' || latSide == 'N')
     {
         char lat_d[3];
@@ -133,6 +158,14 @@ int nmea_GPGGA(GPS *gps_data, char*inputString)
             gps_data->longitude = lon_deg;
             gps_data->lonSide = lonSide;
 
+            if (values[1] && values[1][0] != '\0') 
+            {
+                strncpy(gps_data->utcTime, values[1], sizeof(gps_data->utcTime) - 1);
+                gps_data->utcTime[sizeof(gps_data->utcTime) - 1] = '\0';
+            } else {
+                gps_data->utcTime[0] = '\0';
+            }
+
             float altitude = values[9] ? strtof(values[9], NULL) : 0.0f;
             gps_data->altitude = altitude!=0 ? altitude : gps_data->altitude;
 
@@ -143,15 +176,9 @@ int nmea_GPGGA(GPS *gps_data, char*inputString)
 
             int fixQuality = values[6] ? strtol(values[6], NULL, 10) : 0;
             gps_data->fix = fixQuality > 0 ? 1 : 0;
-
-            if (values[1] && values[1][0] != '\0') 
-            {
-                strncpy(gps_data->utcTime, values[1], sizeof(gps_data->utcTime) - 1);
-                gps_data->utcTime[sizeof(gps_data->utcTime) - 1] = '\0';
-            } else {
-                gps_data->utcTime[0] = '\0';
-            }
-        } else {
+        }
+        else
+        {
             return 0; // Failure
         }
     }
@@ -172,15 +199,17 @@ int nmea_GPGGA(GPS *gps_data, char*inputString)
  */
 int nmea_GPGSA(GPS *gps_data, char* inputString) 
 {
-    char line[128];
-    strncpy(line, inputString, sizeof(line)-1);
-    line[sizeof(line)-1] = '\0';
+    char sentence[NMEA_MAX_SENTENCE];
+    // strncpy(line, inputString, sizeof(line)-1);
+    // line[sizeof(line)-1] = '\0';
 
-    char *values[25];
+    copy_sentence(sentence, inputString, sizeof(sentence));
+
+    char *values[GPGSA_MAX_VALUES];
     memset(values, 0, sizeof(values));
 
-    split_commas(line, values, 25);
-    
+    split_commas(sentence, values, GPGSA_MAX_VALUES);
+
     int fix = values[2] ? strtol(values[2], NULL, 10) : 0;
     gps_data->fix = fix > 1 ? 1 : 0;
     int satelliteCount = 0;
@@ -222,14 +251,16 @@ int nmea_GPGSA(GPS *gps_data, char* inputString)
  */
 int nmea_GPGLL(GPS *gps_data, char*inputString)
 {
-    char line[128];
-    strncpy(line, inputString, sizeof(line)-1);
-    line[sizeof(line)-1] = '\0';
+    char sentence[NMEA_MAX_SENTENCE];
+    // strncpy(line, inputString, sizeof(line)-1);
+    // line[sizeof(line)-1] = '\0';
 
-    char *values[25];
+    copy_sentence(sentence, inputString, sizeof(sentence));
+
+    char *values[GPGLL_MAX_VALUES];
     memset(values, 0, sizeof(values));
 
-    split_commas(line, values, 25);
+    split_commas(sentence, values, GPGLL_MAX_VALUES);
 
     char latSide = values[2] ? values[2][0] : '\0';
     if (latSide == 'S' || latSide == 'N') 
@@ -288,14 +319,16 @@ int nmea_GPGLL(GPS *gps_data, char*inputString)
  */
 int nmea_GPRMC(GPS *gps_data, char* inputString) 
 {
-    char line[128];
-    strncpy(line, inputString, sizeof(line)-1);
-    line[sizeof(line)-1] = '\0';
+    char sentence[NMEA_MAX_SENTENCE];
+    // strncpy(line, inputString, sizeof(line)-1);
+    // line[sizeof(line)-1] = '\0';
 
-    char *values[25];
+    copy_sentence(sentence, inputString, sizeof(sentence));
+
+    char *values[GPRMC_MAX_VALUES];
     memset(values, 0, sizeof(values));
 
-    split_commas(line, values, 25);
+    split_commas(sentence, values, GPRMC_MAX_VALUES);
 
     // Confirms if the date was successfully extracted
     if (values[9] && strlen(values[9]) == 6) 
@@ -322,14 +355,16 @@ int nmea_GPRMC(GPS *gps_data, char* inputString)
  */
 int nmea_GPVTG(GPS *gps_data, char* inputString) 
 {
-    char line[128];
-    strncpy(line, inputString, sizeof(line)-1);
-    line[sizeof(line)-1] = '\0';
+    char sentence[NMEA_MAX_SENTENCE];
+    // strncpy(line, inputString, sizeof(line)-1);
+    // line[sizeof(line)-1] = '\0';
 
-    char *values[25];
+    copy_sentence(sentence, inputString, sizeof(sentence));
+
+    char *values[GPVTG_MAX_VALUES];
     memset(values, 0, sizeof(values));
 
-    split_commas(line, values, 25);
+    split_commas(sentence, values, GPVTG_MAX_VALUES);
 
     // Extact and store values to gps_data
     float trueHeading = values[1] ? strtof(values[1], NULL) : 0.0f;
@@ -357,14 +392,16 @@ int nmea_GPVTG(GPS *gps_data, char* inputString)
  */
 int nmea_GPGSV(GPS *gps_data, char* inputString)
 {
-    char line[128];
-    strncpy(line, inputString, sizeof(line)-1);
-    line[sizeof(line)-1] = '\0';
+    char sentence[NMEA_MAX_SENTENCE];
+    // strncpy(line, inputString, sizeof(line)-1);
+    // line[sizeof(line)-1] = '\0';
 
-    char *values[25];
+    copy_sentence(sentence, inputString, sizeof(sentence));
+
+    char *values[GPGSV_MAX_VALUES];
     memset(values, 0, sizeof(values));
 
-    split_commas(line, values, 25);
+    split_commas(sentence, values, GPGSV_MAX_VALUES);
 
     // Extact and store values to gps_data
     int snr = values[7] ? strtol(values[7], NULL, 10) : 0;
