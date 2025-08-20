@@ -15,7 +15,7 @@
 
 #define GPS_MESSAGE_LEN 500
 #define GPS_TASK_DELAY      250
-#define GPS_TASK_DELAY_SINGLE      50
+#define GPS_TASK_DELAY_SINGLE       50
 #define GPS_TASK_OFFSET_DELAY       66
 
 #define GPS_DATA_SAT_COUNT_VIEW_FIX_SNR_CAN_MESSAGE_ID 0x755
@@ -32,7 +32,7 @@ void gps_task();
 
 void read_i2c_gps_module(uint8_t* receive_buffer);
 
-void gps_config_meas_rate();
+HAL_StatusTypeDef gps_config_meas_rate();
 
 /** CAN SENDING FUNCTION DECLARATIONS */
 void CAN_tx_lat_lon_msg(float latitude, float longitude);
