@@ -283,16 +283,13 @@ void GPS_task(void *argument)
 
     HAL_StatusTypeDef status = gps_config_meas_rate();
 
-    if(status != HAL_OK)
+    while(status != HAL_OK)
     {
       g_tel_diagnostic_flags.bits.gps_config_fail = false;
       status = gps_config_meas_rate();
     }
-    else
-    {
-      g_tel_diagnostic_flags.bits.gps_config_fail = true;
-    }
-
+    g_tel_diagnostic_flags.bits.gps_config_fail = true;
+    
     for(;;)
     {
         gps_task();
