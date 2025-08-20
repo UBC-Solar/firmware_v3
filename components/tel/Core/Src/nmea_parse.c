@@ -11,15 +11,7 @@
 #include <stdlib.h>
 #include "nmea_parse.h"
 
-#define NMEA_MAX_SENTENCE 140
-#define GPGGA_MAX_VALUES  12
-#define GPGSA_MAX_VALUES  18
-#define GPGLL_MAX_VALUES  5
-#define GPRMC_MAX_VALUES  10
-#define GPVTG_MAX_VALUES  8
-#define GPGSV_MAX_VALUES  8
-
-char *data[20];
+char* data[DATA_BUFFER_SIZE]; // Data buffer for a NMEA sentence
 
 /**
  * @brief Splits a string by commas creating new individual strings within an array
@@ -33,14 +25,21 @@ char *data[20];
  * @param max_value The maximum number of tokens to extract
  */
 void split_commas(char *sentence, char *tokens[], int max_value) {
+
     int count = 0;
-    char *pos = sentence;
-    while (pos && (count < max_value)) {
-        char *comma = strchr(pos, ',');
-        if (comma) *comma = '\0';
-        tokens[count++] = pos;
-        pos = comma ? (comma + 1) : NULL;
+    char* position = sentence;
+
+    while (position && (count < max_value)) 
+    {
+        char* comma = strchr(position, ',');
+        if (comma) *comma = '\0'; // Replace comma with null terminator if found
+        tokens[count++] = position;
+
+        // If comma found, move to the next instance of a comma, else position is NULL
+        position = comma ? (comma + 1) : NULL;
     }
+
+    // Null-terminate the array if fewer tokens than max_value
     if (count < max_value) tokens[count] = NULL;
 }
 
@@ -60,10 +59,12 @@ void copy_sentence(char *output, const char *source, size_t size) {
 
     if(!output || size == 0 || !source) return;
 
-    const char *end = strstr(source, "\r\n");
+    const char* end = strstr(source, "\r\n");
 
+    // Find the length to copy if the line ending is found using the elements before "\r\n", else copy up to size - 1
     size_t length = end ? (size_t)(end - source) : strnlen(source, size - 1);
 
+    // Ensures the buffer size is not exceeded
     if (length >= size) length = size - 1;
 
     memcpy(output, source, length);
@@ -97,7 +98,7 @@ int gps_checksum(char *nmea_data)
     if (crc == receivedHash) {
         return 1; // Success
     }
-    else{
+    else {
         return 0; // Failure
     }
 }
@@ -117,12 +118,10 @@ int gps_checksum(char *nmea_data)
 int nmea_GPGGA(GPS *gps_data, char*inputString) 
 {
     char sentence[NMEA_MAX_SENTENCE];
-    // strncpy(line, inputString, sizeof(line)-1);
-    // line[sizeof(line)-1] = '\0';
 
     copy_sentence(sentence, inputString, sizeof(sentence));
 
-    char *values[GPGGA_MAX_VALUES];
+    char* values[GPGGA_MAX_VALUES];
     memset(values, 0, sizeof(values));
 
     split_commas(sentence, values, GPGGA_MAX_VALUES);
@@ -213,12 +212,10 @@ int nmea_GPGGA(GPS *gps_data, char*inputString)
 int nmea_GPGSA(GPS *gps_data, char* inputString) 
 {
     char sentence[NMEA_MAX_SENTENCE];
-    // strncpy(line, inputString, sizeof(line)-1);
-    // line[sizeof(line)-1] = '\0';
 
     copy_sentence(sentence, inputString, sizeof(sentence));
 
-    char *values[GPGSA_MAX_VALUES];
+    char* values[GPGSA_MAX_VALUES];
     memset(values, 0, sizeof(values));
 
     split_commas(sentence, values, GPGSA_MAX_VALUES);
@@ -266,12 +263,10 @@ int nmea_GPGSA(GPS *gps_data, char* inputString)
 int nmea_GPGLL(GPS *gps_data, char*inputString)
 {
     char sentence[NMEA_MAX_SENTENCE];
-    // strncpy(line, inputString, sizeof(line)-1);
-    // line[sizeof(line)-1] = '\0';
 
     copy_sentence(sentence, inputString, sizeof(sentence));
 
-    char *values[GPGLL_MAX_VALUES];
+    char* values[GPGLL_MAX_VALUES];
     memset(values, 0, sizeof(values));
 
     split_commas(sentence, values, GPGLL_MAX_VALUES);
@@ -334,12 +329,10 @@ int nmea_GPGLL(GPS *gps_data, char*inputString)
 int nmea_GPRMC(GPS *gps_data, char* inputString) 
 {
     char sentence[NMEA_MAX_SENTENCE];
-    // strncpy(line, inputString, sizeof(line)-1);
-    // line[sizeof(line)-1] = '\0';
 
     copy_sentence(sentence, inputString, sizeof(sentence));
 
-    char *values[GPRMC_MAX_VALUES];
+    char* values[GPRMC_MAX_VALUES];
     memset(values, 0, sizeof(values));
 
     split_commas(sentence, values, GPRMC_MAX_VALUES);
@@ -371,17 +364,16 @@ int nmea_GPRMC(GPS *gps_data, char* inputString)
 int nmea_GPVTG(GPS *gps_data, char* inputString) 
 {
     char sentence[NMEA_MAX_SENTENCE];
-    // strncpy(line, inputString, sizeof(line)-1);
-    // line[sizeof(line)-1] = '\0';
 
     copy_sentence(sentence, inputString, sizeof(sentence));
 
-    char *values[GPVTG_MAX_VALUES];
+    char* values[GPVTG_MAX_VALUES];
     memset(values, 0, sizeof(values));
 
     split_commas(sentence, values, GPVTG_MAX_VALUES);
 
     // -- Currently not using these following fields - trueHeading, magneticHeading, speedKmh -- //
+
     // float trueHeading = values[1] ? strtof(values[1], NULL) : 0.0f;
     // gps_data->trueHeading = trueHeading!=0 ? trueHeading : gps_data->trueHeading;
 
@@ -408,12 +400,10 @@ int nmea_GPVTG(GPS *gps_data, char* inputString)
 int nmea_GPGSV(GPS *gps_data, char* inputString)
 {
     char sentence[NMEA_MAX_SENTENCE];
-    // strncpy(line, inputString, sizeof(line)-1);
-    // line[sizeof(line)-1] = '\0';
 
     copy_sentence(sentence, inputString, sizeof(sentence));
 
-    char *values[GPGSV_MAX_VALUES];
+    char* values[GPGSV_MAX_VALUES];
     memset(values, 0, sizeof(values));
 
     split_commas(sentence, values, GPGSV_MAX_VALUES);
@@ -443,15 +433,15 @@ void nmea_parse(GPS *gps_data, uint8_t *buffer) {
     
     memset(data, 0, sizeof(data)); // Clear array
 
-    int cnt = 0;
-    char *token = strtok((char *)buffer, "$");
+    int token_count = 0;
+    char* token = strtok((char *)buffer, "$");
 
-    while (token && cnt < 20) {
+    while (token && token_count < DATA_BUFFER_SIZE) {
         data[cnt++] = token;
         token = strtok(NULL, "$");
     }
 
-    for(int i = 0; i < cnt; i++)
+    for(int i = 0; i < token_count; i++)
     {
         if(strstr(data[i], "\r\n") != NULL) // Check if the sentence is complete with a newline
         {
