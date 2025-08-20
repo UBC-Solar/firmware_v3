@@ -417,7 +417,7 @@ void ubx_cksum(const uint8_t *buf, uint16_t len, uint8_t *ckA, uint8_t *ckB)
  * 
  * @return Sends the configured MEAS_MS over I2C
  */
-HAL_StatusTypeDef gps_config_meas_rate() {
+void gps_config_meas_rate() {
 
     uint8_t payload[10];
     uint32_t key = UBX_KEY_CFG_RATE_MEAS;
@@ -458,5 +458,7 @@ HAL_StatusTypeDef gps_config_meas_rate() {
     frame[6 + len] = ckA;
     frame[7 + len] = ckB;
 
-    return HAL_I2C_Master_Transmit(&hi2c1, GPS_DEVICE_ADDRESS, frame, sizeof(frame), HAL_MAX_DELAY);
+    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, GPS_DEVICE_ADDRESS, frame, sizeof(frame), HAL_MAX_DELAY);
+
+    return;
 }
