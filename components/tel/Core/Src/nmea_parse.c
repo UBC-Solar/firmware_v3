@@ -35,7 +35,7 @@ char *data[20];
 void split_commas(char *sentence, char *tokens[], int max_value) {
     int count = 0;
     char *pos = sentence;
-    while (pos && count < max_value) {
+    while (pos && (count < max_value)) {
         char *comma = strchr(pos, ',');
         if (comma) *comma = '\0';
         tokens[count++] = pos;
@@ -45,6 +45,17 @@ void split_commas(char *sentence, char *tokens[], int max_value) {
 }
 
 
+/**
+ * @brief Copies a string from source to output up to a specified size
+ * 
+ * This function ensures additional sentences are not parsed by copying
+ * until the line "\r\n" is reached or the specified size if the line
+ * ending is not found.
+ *
+ * @param output The destination buffer for the copied string
+ * @param source The source string to copy from
+ * @param size The maximum number of bytes to copy
+ */
 void copy_sentence(char *output, const char *source, size_t size) {
 
     if(!output || size == 0 || !source) return;
@@ -116,6 +127,27 @@ int nmea_GPGGA(GPS *gps_data, char*inputString)
 
     split_commas(sentence, values, GPGGA_MAX_VALUES);
 
+    if (values[1] && values[1][0] != '\0') 
+    {
+        strncpy(gps_data->utcTime, values[1], sizeof(gps_data->utcTime) - 1);
+        gps_data->utcTime[sizeof(gps_data->utcTime) - 1] = '\0';
+    } else {
+        gps_data->utcTime[0] = '\0';
+    }
+
+    // -- Currently not using these following fields - altitude, geodHeight, satelliteCount, fixQuality -- //
+
+    // float altitude = values[9] ? strtof(values[9], NULL) : 0.0f;
+    // gps_data->altitude = altitude!=0 ? altitude : gps_data->altitude;
+
+    // float geodHeight = values[11] ? strtof(values[11], NULL) : 0.0f;
+    // gps_data->geodHeight = geodHeight!=0 ? geodHeight : gps_data->geodHeight;
+
+    // gps_data->satelliteCount = values[7] ? strtol(values[7], NULL, 10) : gps_data->satelliteCount;
+
+    // int fixQuality = values[6] ? strtol(values[6], NULL, 10) : 0;
+    // gps_data->fix = fixQuality > 0 ? 1 : 0;
+
     // Extract direction indicators for longitude and latitude
     char lonSide = values[5] ? values[5][0] : '\0';
     char latSide = values[3] ? values[3][0] : '\0';
@@ -157,25 +189,6 @@ int nmea_GPGGA(GPS *gps_data, char*inputString)
             gps_data->latSide = latSide;
             gps_data->longitude = lon_deg;
             gps_data->lonSide = lonSide;
-
-            if (values[1] && values[1][0] != '\0') 
-            {
-                strncpy(gps_data->utcTime, values[1], sizeof(gps_data->utcTime) - 1);
-                gps_data->utcTime[sizeof(gps_data->utcTime) - 1] = '\0';
-            } else {
-                gps_data->utcTime[0] = '\0';
-            }
-
-            float altitude = values[9] ? strtof(values[9], NULL) : 0.0f;
-            gps_data->altitude = altitude!=0 ? altitude : gps_data->altitude;
-
-            float geodHeight = values[11] ? strtof(values[11], NULL) : 0.0f;
-            gps_data->geodHeight = geodHeight!=0 ? geodHeight : gps_data->geodHeight;
-
-            gps_data->satelliteCount = values[7] ? strtol(values[7], NULL, 10) : gps_data->satelliteCount;
-
-            int fixQuality = values[6] ? strtol(values[6], NULL, 10) : 0;
-            gps_data->fix = fixQuality > 0 ? 1 : 0;
         }
         else
         {
@@ -222,17 +235,18 @@ int nmea_GPGSA(GPS *gps_data, char* inputString)
         }
     }
 
-    // Extact and store values to gps_data
     gps_data->satelliteCount = satelliteCount;
 
-    float pdop = values[15] ? strtof(values[15], NULL) : 0.0f;
-    gps_data->pdop = pdop!=0.0 ? pdop : gps_data->pdop;
+    // -- Currently not using these following fields - pdop, hdop, vdop -- //
 
-    float hdop = values[16] ? strtof(values[16], NULL) : 0.0f;
-    gps_data->hdop = hdop!=0.0 ? hdop : gps_data->hdop;
+    // float pdop = values[15] ? strtof(values[15], NULL) : 0.0f;
+    // gps_data->pdop = pdop!=0.0 ? pdop : gps_data->pdop;
 
-    float vdop = values[17] ? strtof(values[17], NULL) : 0.0f;
-    gps_data->vdop = vdop!=0.0 ? vdop : gps_data->vdop;
+    // float hdop = values[16] ? strtof(values[16], NULL) : 0.0f;
+    // gps_data->hdop = hdop!=0.0 ? hdop : gps_data->hdop;
+
+    // float vdop = values[17] ? strtof(values[17], NULL) : 0.0f;
+    // gps_data->vdop = vdop!=0.0 ? vdop : gps_data->vdop;
 
     return 1; // Success
 }
@@ -330,16 +344,17 @@ int nmea_GPRMC(GPS *gps_data, char* inputString)
 
     split_commas(sentence, values, GPRMC_MAX_VALUES);
 
-    // Confirms if the date was successfully extracted
-    if (values[9] && strlen(values[9]) == 6) 
-    {
-        strncpy(gps_data->date, values[9], 6);
-        gps_data->date[6] = '\0';
-        gps_data->RMC_Flag = 1;
-        return 1; // Success
-    } else {
-        return 0; // Failure
-    }
+    // -- Currently not using these following fields - date -- //
+    
+    // if (values[9] && strlen(values[9]) == 6) 
+    // {
+    //     strncpy(gps_data->date, values[9], 6);
+    //     gps_data->date[6] = '\0';
+    //     gps_data->RMC_Flag = 1;
+    //     return 1; // Success
+    // } else {
+    //     return 0; // Failure
+    // }
 }
 
 
@@ -366,15 +381,15 @@ int nmea_GPVTG(GPS *gps_data, char* inputString)
 
     split_commas(sentence, values, GPVTG_MAX_VALUES);
 
-    // Extact and store values to gps_data
-    float trueHeading = values[1] ? strtof(values[1], NULL) : 0.0f;
-    gps_data->trueHeading = trueHeading!=0 ? trueHeading : gps_data->trueHeading;
+    // -- Currently not using these following fields - trueHeading, magneticHeading, speedKmh -- //
+    // float trueHeading = values[1] ? strtof(values[1], NULL) : 0.0f;
+    // gps_data->trueHeading = trueHeading!=0 ? trueHeading : gps_data->trueHeading;
 
-    float magneticHeading = values[3] ? strtof(values[3], NULL) : 0.0f;
-    gps_data->magneticHeading = magneticHeading!=0 ? magneticHeading : gps_data->magneticHeading;
+    // float magneticHeading = values[3] ? strtof(values[3], NULL) : 0.0f;
+    // gps_data->magneticHeading = magneticHeading!=0 ? magneticHeading : gps_data->magneticHeading;
 
-    float speedKmh = values[7] ? strtof(values[7], NULL) : 0.0f;
-    gps_data->speedKmh = speedKmh!=0 ? speedKmh : gps_data->speedKmh; 
+    // float speedKmh = values[7] ? strtof(values[7], NULL) : 0.0f;
+    // gps_data->speedKmh = speedKmh!=0 ? speedKmh : gps_data->speedKmh; 
 
     return 1;
 }

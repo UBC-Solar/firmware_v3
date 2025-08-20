@@ -11,7 +11,7 @@
 #include "CAN_comms.h"
 #include "radio.h"
 #include "bitops.h"
-#include "stm32f1xx_hal.h"
+#include "main.h"
 
 #define GPS_DEVICE_ADDRESS ((0x42)<<1)
 
@@ -453,7 +453,7 @@ HAL_StatusTypeDef gps_config_meas_rate() {
     uint8_t ckA;
     uint8_t ckB;
 
-    ubx_cksum(&frame[2], 4 + len, &ckA, &ckB);
+    ubx_cksum(&frame[2], 4 + len, &ckA, &ckB); // len + 4 the length of the payload + 4 bytes of header in frame
 
     frame[6 + len] = ckA;
     frame[7 + len] = ckB;
