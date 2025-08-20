@@ -348,6 +348,8 @@ int nmea_GPRMC(GPS *gps_data, char* inputString)
     // } else {
     //     return 0; // Failure
     // }
+
+    return 1; // Keep when not using date
 }
 
 
