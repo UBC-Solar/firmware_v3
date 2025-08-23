@@ -98,7 +98,6 @@ CAN_TxHeaderTypeDef gps_true_mag_heading = {
 };
 
 
-
  /**
  * @brief Callback function triggered when an I2C master receive operation completes.
  * @param hi2c Pointer to the I2C handle structure that triggered the callback
@@ -111,6 +110,7 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
         g_gps_read_okay = true;
     }
 }
+
 
 /**
  * @brief Continually tries to get a fix and sets if the GPS messages are read or not
@@ -129,6 +129,8 @@ void read_i2c_gps_module(uint8_t* receive_buffer)
         g_tel_diagnostic_flags.bits.gps_read_fail = true;
     }
 }
+
+
 /**
  * @brief Reads the GPS data and confirms if it is read to be parsed into gps_data 
  */
@@ -148,6 +150,7 @@ void gps_task()
     memset(g_gps_data, 0, GPS_MESSAGE_LEN);
     read_i2c_gps_module(g_gps_data);
 }
+
 
 /** CAN SENDING LOGIC */
 /**
@@ -370,6 +373,7 @@ void CAN_tx_lon_side_date_msg(char lonSide, char latSide, char date[7], char utc
   RADIO_filter_and_queue_msg_tx(&CAN_comms_Tx_msg);
 }
 
+
 /**
  * @brief Calls all CAN messages for every GPS field
  * @param gps_data Pointer to GPS struct of all fields
@@ -394,6 +398,7 @@ void CAN_tx_gps_data_msg(GPS* gps_data) {
     // osDelay(3);
 }
 
+
 /**
  * @brief Calculates the two-byte UBX checksum for a message buffer
  */
@@ -408,6 +413,7 @@ void ubx_cksum(const uint8_t *buf, uint16_t len, uint8_t *ckA, uint8_t *ckB)
     }
 }
 
+
 /**
  * @brief GPS measurement rate configuration message sent over I2C
  * 
@@ -417,7 +423,7 @@ void ubx_cksum(const uint8_t *buf, uint16_t len, uint8_t *ckA, uint8_t *ckB)
  * 
  * @return Sends the configured MEAS_MS over I2C
  */
-HAL_StatusTypeDef gps_config_meas_rate() {
+void gps_config_meas_rate() {
 
     uint8_t payload[10];
     uint32_t key = UBX_KEY_CFG_RATE_MEAS;
@@ -460,5 +466,5 @@ HAL_StatusTypeDef gps_config_meas_rate() {
 
     HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, GPS_DEVICE_ADDRESS, frame, sizeof(frame), HAL_MAX_DELAY);
 
-    return status;
+    return;
 }

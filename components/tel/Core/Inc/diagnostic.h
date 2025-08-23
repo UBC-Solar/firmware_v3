@@ -10,7 +10,6 @@ typedef union {
         volatile bool imu_read_fail : 1;
         volatile bool imu_write_fail : 1;
         volatile bool gps_read_fail : 1;
-        volatile bool gps_config_fail : 1;
     } bits;
     volatile uint8_t raw;
 } TEL_Diagnostic_Flags_t;

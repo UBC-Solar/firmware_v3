@@ -277,18 +277,8 @@ void GPS_task(void *argument)
 {
   /* USER CODE BEGIN GPS_task */
     /* Infinite loop */
-
-    osDelay(GPS_TASK_OFFSET_DELAY);
-    osDelay(5000);
-
-    HAL_StatusTypeDef status = gps_config_meas_rate();
-
-    while(status != HAL_OK)
-    {
-      g_tel_diagnostic_flags.bits.gps_config_fail = false;
-      status = gps_config_meas_rate();
-    }
-    g_tel_diagnostic_flags.bits.gps_config_fail = true;
+    osDelay(GPS_TASK_OFFSET_DELAY + GPS_START_UP_DELAY);
+    gps_config_meas_rate();
     
     for(;;)
     {
