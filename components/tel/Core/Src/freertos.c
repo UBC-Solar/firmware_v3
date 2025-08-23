@@ -281,6 +281,7 @@ void GPS_task(void *argument)
 
     while(status != HAL_OK) {
       status = gps_config_meas_rate();
+      osDelay(GPS_TASK_DELAY);
     }
 
     for(;;)
