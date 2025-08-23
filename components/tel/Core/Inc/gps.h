@@ -34,7 +34,7 @@ void gps_task();
 
 void read_i2c_gps_module(uint8_t* receive_buffer);
 
-void gps_config_meas_rate();
+HAL_StatusTypeDef gps_config_meas_rate();
 
 /** CAN SENDING FUNCTION DECLARATIONS */
 void CAN_tx_lat_lon_msg(float latitude, float longitude);
