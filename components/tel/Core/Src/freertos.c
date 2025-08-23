@@ -279,10 +279,14 @@ void GPS_task(void *argument)
 
     HAL_StatusTypeDef status = gps_config_meas_rate();
 
-    while(status != HAL_OK) {
+    while(status != HAL_OK) 
+    {
       status = gps_config_meas_rate();
+      g_tel_diagnostic_flags.bits.gps_write_fail = true;
       osDelay(GPS_TASK_DELAY);
     }
+
+    g_tel_diagnostic_flags.bits.gps_write_fail = false;
 
     for(;;)
     {
