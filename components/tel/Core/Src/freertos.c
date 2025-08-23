@@ -233,8 +233,6 @@ void StartDefaultTask(void *argument)
     {
         IWDG_Refresh(&hiwdg);	                                 // Refresh the IWDG to ensure no reset occurs
         osDelay(REFRESH_DELAY_MS);
-
-        HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
     }
 
   /* USER CODE END StartDefaultTask */
@@ -277,9 +275,14 @@ void GPS_task(void *argument)
 {
   /* USER CODE BEGIN GPS_task */
     /* Infinite loop */
-    osDelay(GPS_TASK_OFFSET_DELAY + GPS_START_UP_DELAY);
-    gps_config_meas_rate();
-    
+    osDelay(GPS_OVERALL_TASK_DELAY);
+
+    HAL_StatusTypeDef status = gps_config_meas_rate();
+
+    while(status != HAL_OK) {
+      status = gps_config_meas_rate();
+    }
+
     for(;;)
     {
         gps_task();
