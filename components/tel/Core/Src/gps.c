@@ -31,6 +31,8 @@
 #define UBX_KEY_CFG_RATE_MEAS 0x30210001u
 #define MEAS_MS               250
 
+#define GPS_CONFIG_DELAY      1000
+
 bool g_gps_read_okay = false;
 uint8_t g_gps_data[GPS_MESSAGE_LEN];
 char gps_parse_data[GPS_MESSAGE_LEN];
@@ -464,7 +466,7 @@ HAL_StatusTypeDef gps_config_meas_rate() {
     frame[6 + len] = ckA;
     frame[7 + len] = ckB;
 
-    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, GPS_DEVICE_ADDRESS, frame, sizeof(frame), 5000);
+    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, GPS_DEVICE_ADDRESS, frame, sizeof(frame), GPS_CONFIG_DELAY);
 
     return status;
 }
