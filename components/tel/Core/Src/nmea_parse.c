@@ -24,7 +24,7 @@ char* data[DATA_BUFFER_SIZE]; // Data buffer for a NMEA sentence
  * @param tokens The array to store the split tokens
  * @param max_value The maximum number of tokens to extract
  */
-void split_commas(char *sentence, char *tokens[], int max_value) {
+void split_commas(char* sentence, char* tokens[], int max_value) {
 
     int count = 0;
     char* position = sentence;
@@ -80,7 +80,7 @@ void copy_sentence(char *output, const char *source, size_t size) {
  * @param nmea_data Pointer to the checksum string
  * @return returns true for success, false for failure
  */
-int gps_checksum(char *nmea_data)
+int gps_checksum(char* nmea_data)
 {
     // Pointing a string with less than 5 characters the function will read outside of scope and crash the mcu.
     if(strlen(nmea_data) < 5) return 0;
@@ -115,7 +115,7 @@ int gps_checksum(char *nmea_data)
  * @param inputString Pointer to the string beginning with GPGGA or GNGGA
  * @return returns true for success, false for failure
  */
-int nmea_GPGGA(GPS *gps_data, char*inputString) 
+int nmea_GPGGA(GPS* gps_data, char* inputString) 
 {
     char sentence[NMEA_MAX_SENTENCE];
 
@@ -209,7 +209,7 @@ int nmea_GPGGA(GPS *gps_data, char*inputString)
  * @param inputString Pointer to the string beginning with GPGSA or GNGSA
  * @return returns true for success
  */
-int nmea_GPGSA(GPS *gps_data, char* inputString) 
+int nmea_GPGSA(GPS* gps_data, char* inputString) 
 {
     char sentence[NMEA_MAX_SENTENCE];
 
@@ -260,7 +260,7 @@ int nmea_GPGSA(GPS *gps_data, char* inputString)
  * @param inputString Pointer to the string beginning with GPGLL or GNGLL
  * @return returns true for success, false for failure
  */
-int nmea_GPGLL(GPS *gps_data, char*inputString)
+int nmea_GPGLL(GPS* gps_data, char* inputString)
 {
     char sentence[NMEA_MAX_SENTENCE];
 
@@ -326,7 +326,7 @@ int nmea_GPGLL(GPS *gps_data, char*inputString)
  * @param inputString Pointer to the string beginning with GPRMC or GNGRMC
  * @return returns true for success, false for failure
  */
-int nmea_GPRMC(GPS *gps_data, char* inputString) 
+int nmea_GPRMC(GPS* gps_data, char* inputString) 
 {
     char sentence[NMEA_MAX_SENTENCE];
 
@@ -363,7 +363,7 @@ int nmea_GPRMC(GPS *gps_data, char* inputString)
  * @param inputString Pointer to the string beginning with GPVTG or GNVTG
  * @return returns true for success
  */
-int nmea_GPVTG(GPS *gps_data, char* inputString) 
+int nmea_GPVTG(GPS* gps_data, char* inputString) 
 {
     char sentence[NMEA_MAX_SENTENCE];
 
@@ -399,7 +399,7 @@ int nmea_GPVTG(GPS *gps_data, char* inputString)
  * @param inputString Pointer to the string beginning with GPGSV or GNGSV
  * @return returns true for success, false for failure
  */
-int nmea_GPGSV(GPS *gps_data, char* inputString)
+int nmea_GPGSV(GPS* gps_data, char* inputString)
 {
     char sentence[NMEA_MAX_SENTENCE];
 
