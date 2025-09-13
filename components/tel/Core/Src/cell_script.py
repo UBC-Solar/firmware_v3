@@ -11,11 +11,11 @@ BAUDRATE        = 115200
 DBC_FILE        = ""
 
 INFLUX_URL      = "https://localhost:8086"
-INFLUX_ORG      = ""
-INFLUX_BUCKET   = ""
+INFLUX_ORG      = "UBC Solar"
+INFLUX_BUCKET   = "CAN_test"
 # INFLUX_DEBUG_BUCKET = ""
 
-INFLUX_TOKEN    = ""
+INFLUX_TOKEN    = "Lx4HgBaoCEzFcrwmCOLeGR1NASTw0gvu9u8bX1Xu_GFG0ksiW6-nqV1Dginno7te8qu_QeC2dvfvrYavdLat-w=="
 # GRAFANA_TOKEN   = ""
 
 TAG             = ""
