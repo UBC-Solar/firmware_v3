@@ -7,6 +7,16 @@
 #include <stdint.h>
 #include "main.h"
 
+/* Defines -------------------------------------------------------------------*/
+#define NMEA_MAX_SENTENCE 140
+#define DATA_BUFFER_SIZE  20
+
+#define GPGGA_MAX_VALUES  12
+#define GPGSA_MAX_VALUES  18
+#define GPGLL_MAX_VALUES  5
+#define GPRMC_MAX_VALUES  10
+#define GPVTG_MAX_VALUES  8
+#define GPGSV_MAX_VALUES  8
 
 /*******************************************************************************
  * @brief GPS data structure for storing parsed data

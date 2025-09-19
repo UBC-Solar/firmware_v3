@@ -65,6 +65,7 @@ void FSM_Init()
     return;
 }
 
+
 /**
  * @brief Main loop of the FSM. Will be called in main.c.
  */
@@ -89,7 +90,8 @@ void FSM_reset()
     printf("Top of FSM reset\r\n");
 
     //  Turn fans off
-    HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, LOW);
+    HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, HIGH);
+
     HAL_GPIO_WritePin(MDU_FAN_CTRL_GPIO_Port, MDU_FAN_CTRL_Pin, LOW);
 
     // Open all contactors
@@ -134,6 +136,8 @@ void BMS_powerup()
     {
         ticks.last_generic_tick = HAL_GetTick();
         FSM_state = WAIT_FOR_BMS_READY;
+        CAN_SendMessage450();
+
     }
 
     return;
@@ -213,6 +217,7 @@ void HV_Connect()
             }
         }
     }
+    
 
     return;
 }
@@ -324,8 +329,36 @@ void LLIM_closed()
     {
         HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
         ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = CHECK_HLIM;
+        HAL_GPIO_WritePin(MPPT_PC_CTRL_GPIO_Port, MPPT_PC_CTRL_Pin, CONTACTOR_CLOSED);
+        ecu_data.status.bits.mppt_pc_relay_closed = HIGH;
+        CAN_SendMessage450();
+        FSM_state = WAIT_FOR_MPPT_PC;
+
     }
+
+    return;
+}
+
+/**
+ * @brief Waits for MPPT precharge to complete
+ *
+ * Exit Condition: Timer surpasses 1000ms
+ * Exit Action: Reset timer, open MPPT pre charge contactor
+ * Exit State: CHECK_HLIM
+ */
+void MPPT_PC_wait()
+{
+    if (timer_check(MPPT_PC_INTERVAL, &(ticks.last_generic_tick) ))
+    {
+        HAL_GPIO_WritePin(MPPT_PC_CTRL_GPIO_Port, MPPT_PC_CTRL_Pin, CONTACTOR_OPEN);
+        ticks.last_generic_tick = HAL_GetTick();
+        FSM_state = CHECK_HLIM;
+        ecu_data.status.bits.mppt_pc_relay_closed = LOW;
+        CAN_SendMessage450();
+
+    }
+
+    printf("Bottom of MPPT PC wait\r\n");
 
     return;
 }
@@ -343,6 +376,7 @@ void LLIM_closed()
  */
 void check_HLIM()
 {
+  
     if (HAL_GPIO_ReadPin(HLIM_BMS_GPIO_Port, HLIM_BMS_Pin) == REQ_CONTACTOR_OPEN)
     {
         last_HLIM_status = CONTACTOR_OPEN;
@@ -476,7 +510,7 @@ void ECU_monitor()
         return;
     }
     
-    // Current Status Checks
+    //Current Status Checks
     if(ecu_data.adc_data.ADC_pack_current >= DOC_WARNING_THRESHOLD){
         ecu_data.status.bits.warning_pack_overdischarge_current = true;
         ecu_data.status.bits.warning_pack_overcharge_current = false;
@@ -568,6 +602,7 @@ void fault()
     HAL_GPIO_WritePin(POS_CTRL_GPIO_Port, POS_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(NEG_CTRL_GPIO_Port, NEG_CTRL_Pin, CONTACTOR_OPEN);
     HAL_GPIO_WritePin(PC_CTRL_GPIO_Port, PC_CTRL_Pin, CONTACTOR_OPEN);
+    HAL_GPIO_WritePin(MPPT_PC_CTRL_GPIO_Port, MPPT_PC_CTRL_Pin, CONTACTOR_OPEN);
 
     // If ESTOP pressed during startup, start all LV boards
     if(!startup_complete){
@@ -628,9 +663,11 @@ void FSM_ESTOPActivedCallback()
 {
     ecu_data.status.bits.estop = true;
     HAL_GPIO_WritePin(ESTOP_LED_GPIO_Port, ESTOP_LED_Pin, HIGH);
+
+    HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, HIGH);
     
     FSM_state = FAULT;
-    FSM_run(); // Immediately transition to fault state
+    FSM_run(); // Immediately transition to fault state 
 }
 
 /*============================================================================*/

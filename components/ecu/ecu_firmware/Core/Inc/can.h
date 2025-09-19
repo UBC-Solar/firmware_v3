@@ -17,7 +17,7 @@
 
 #define CAN_TIMEOUT 50 // (ms)
 
-#define MAX_CHARGING_CURRENT 100U  // Max outlet current is 15A, power bar breaker tripped at ~15A. 
+#define MAX_CHARGING_CURRENT 137U  // Max outlet current is 15A, power bar breaker tripped at ~15A. 
 #define MAX_CHARGING_VOLTAGE 1344U // 134.4 V 0.1V/bit offset
 
 #define CAN_MAX_DATAFRAME_BYTES 8U

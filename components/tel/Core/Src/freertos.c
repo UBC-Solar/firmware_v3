@@ -52,6 +52,8 @@ typedef StaticTask_t osStaticMessageQDef_t;
 #define FREQUENCY_MS 100
 #define NUM_USART1_TX_SEMAPHORES        1
 
+
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -273,8 +275,19 @@ void GPS_task(void *argument)
 {
   /* USER CODE BEGIN GPS_task */
     /* Infinite loop */
-    
-    osDelay(GPS_TASK_OFFSET_DELAY);
+    osDelay(GPS_OVERALL_TASK_DELAY);
+
+    HAL_StatusTypeDef status = gps_config_meas_rate();
+
+    while(status != HAL_OK) 
+    {
+      status = gps_config_meas_rate();
+      g_tel_diagnostic_flags.bits.gps_write_fail = true;
+      osDelay(GPS_TASK_DELAY);
+    }
+
+    g_tel_diagnostic_flags.bits.gps_write_fail = false;
+
     for(;;)
     {
         gps_task();
@@ -306,7 +319,7 @@ void CANLoad_task(void *argument)
   for(;;)
   {
    CANLOAD_update_sliding_window();
-//    CAN_tx_canload_msg();
+   // CAN_tx_canload_msg();
    osDelay(CANLOAD_MSG_RATE);
   }
   /* USER CODE END CANLoad_task */

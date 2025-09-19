@@ -99,8 +99,8 @@ void Error_Handler(void);
 #define TEL_CTRL_GPIO_Port GPIOB
 #define Unused1_CTRL_Pin GPIO_PIN_12
 #define Unused1_CTRL_GPIO_Port GPIOB
-#define Unused2_CTRL_Pin GPIO_PIN_13
-#define Unused2_CTRL_GPIO_Port GPIOB
+#define MPPT_PC_CTRL_Pin GPIO_PIN_13
+#define MPPT_PC_CTRL_GPIO_Port GPIOB
 #define DRD_CTRL_Pin GPIO_PIN_14
 #define DRD_CTRL_GPIO_Port GPIOB
 #define MDU_CTRL_Pin GPIO_PIN_15

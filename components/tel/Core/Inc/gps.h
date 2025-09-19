@@ -13,10 +13,12 @@
 #include "main.h"
 #include "nmea_parse.h"
 
-#define GPS_MESSAGE_LEN 500
-#define GPS_TASK_DELAY      250
-#define GPS_TASK_DELAY_SINGLE      50
+#define GPS_MESSAGE_LEN             500
+#define GPS_TASK_DELAY              250
+#define GPS_TASK_DELAY_SINGLE       50
 #define GPS_TASK_OFFSET_DELAY       66
+#define GPS_START_UP_DELAY          5000
+#define GPS_OVERALL_TASK_DELAY      GPS_TASK_OFFSET_DELAY + GPS_START_UP_DELAY
 
 #define GPS_DATA_SAT_COUNT_VIEW_FIX_SNR_CAN_MESSAGE_ID 0x755
 #define GPS_DATA_LON_LAT_CAN_MESSAGE_ID                0x756
@@ -31,6 +33,8 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c);
 void gps_task();
 
 void read_i2c_gps_module(uint8_t* receive_buffer);
+
+HAL_StatusTypeDef gps_config_meas_rate();
 
 /** CAN SENDING FUNCTION DECLARATIONS */
 void CAN_tx_lat_lon_msg(float latitude, float longitude);

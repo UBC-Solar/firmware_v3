@@ -57,6 +57,9 @@ void BAL_updateBalancing(Pack_t *pack)
     findMinModuleVoltage(&min_voltage, &min_voltage_module, pack);
 
     // Discharge all modules that are above the threshold voltage if any cell is below the threshold
+    // EXTRA COMMENT FOR EXPLANATION: Good for comp to closely discharge modules but only at a set voltage. Doesnt consider a 
+        // particular V diff like the else statement does, only cares if the module voltage min < threshold and module > threshold.
+        // Purpose is to perform balance INITIALLY (Ex. Threshold = 41000 = 4.1V) and to only balance again later if voltage difference is exceeded 
     if (min_voltage < BAL_MIN_VOLTAGE_FOR_BALANCING)
     {
         for (uint32_t module_num = 0; module_num < PACK_NUM_BATTERY_MODULES; module_num++)

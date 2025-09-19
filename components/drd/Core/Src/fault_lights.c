@@ -109,9 +109,13 @@ void parse_batt_faults(uint8_t* can_rx_data){
 	charge_overcurrent_fault = (discharge_or_charge_overcurr_fault && g_last_pack_current_sign);  	 	// Charging overcurrent fault if pack current is negative(MSB = 1)
 	discharge_overcurrent_fault = (discharge_or_charge_overcurr_fault && (!g_last_pack_current_sign));  	// Discharging overcurrent fault if pack current is positive (MSB = 0)
 
+    if (slave_board_comm_fault || self_test_fault || overtemp_fault || undervolt_fault || overvolt_fault || discharge_or_charge_overcurr_fault || charge_overcurrent_fault || discharge_overcurrent_fault)
+    {
+        HAL_GPIO_WritePin(BATT_FLT_GPIO_Port, BATT_FLT_Pin, GPIO_PIN_SET); 				 	// Battery self-test fault
+    }
+
 	HAL_GPIO_WritePin(BMS_COMM_FLT_GPIO_Port, BMS_COMM_FLT_Pin, slave_board_comm_fault); 	// BMS communications fault
 	HAL_GPIO_WritePin(BATT_OV_GPIO_Port, BATT_OV_Pin, overvolt_fault); 					 	// Battery over voltage fault
-	HAL_GPIO_WritePin(BATT_FLT_GPIO_Port, BATT_FLT_Pin, self_test_fault); 				 	// Battery self-test fault
 	HAL_GPIO_WritePin(BATT_OT_GPIO_Port, BATT_OT_Pin, overtemp_fault); 					 	// Battery over temperature fault
 	HAL_GPIO_WritePin(BATT_UV_GPIO_Port, BATT_UV_Pin, undervolt_fault); 				 	// Battery under voltage fault
 	HAL_GPIO_WritePin(CH_OC_GPIO_Port, CH_OC_Pin, charge_overcurrent_fault); 			 	// Charge Over-current fault
