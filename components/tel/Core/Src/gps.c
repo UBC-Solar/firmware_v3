@@ -11,6 +11,8 @@
 #include "CAN_comms.h"
 #include "radio.h"
 #include "bitops.h"
+#include "usart.h"
+#include <stdio.h>
 
 #define GPS_DEVICE_ADDRESS ((0x42)<<1)
 
@@ -81,7 +83,32 @@ CAN_TxHeaderTypeDef gps_true_mag_heading = {
   .DLC = GPS_CAN_MESSAGE_LENGTH
 };
 
+static void uart_send_can_json(uint32_t can_id, const uint8_t *data, uint8_t len)
+{
+    // Room for JSON + spaced hex; 8 bytes fits easily. Increase if needed.
+    char line[192];
+    int n = 0;
 
+    // seconds (float) since boot; good enough for logging
+    float t = HAL_GetTick() / 1000.0f;
+
+    // Header: id and data opening
+    n += snprintf(line + n, sizeof(line) - n,
+                  "{\"id\":\"0x%X\",\"data\":\"", (unsigned)can_id);
+
+    // Spaced hex bytes, uppercase
+    for (uint8_t i = 0; i < len && n < (int)sizeof(line) - 4; i++) {
+        n += snprintf(line + n, sizeof(line) - n, "%02X%s",
+                      data[i], (i + 1 < len) ? " " : "");
+    }
+
+    // Close data + dlc + timestamp + newline
+    n += snprintf(line + n, sizeof(line) - n,
+                  "\",\"dlc\":%u,\"t\":%.3f}\n", (unsigned)len, t);
+
+    // Blocking TX (simple). For high rate, switch to DMA.
+    HAL_UART_Transmit(&huart1, (uint8_t*)line, (uint16_t)n, 50);
+}
 
  /**
  * @brief Callback function triggered when an I2C master receive operation completes.
@@ -161,6 +188,8 @@ void CAN_tx_lat_lon_msg(float latitude, float longitude) {
 
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
   RADIO_filter_and_queue_msg_tx(&CAN_comms_Tx_msg);  
+
+  uart_send_can_json((uint32_t)GPS_DATA_LON_LAT_CAN_MESSAGE_ID, CAN_comms_Tx_msg.data, 8);
 }
 
 
