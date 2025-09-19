@@ -7,7 +7,7 @@ BAUDRATE      = 115200
 
 DBC_FILE      = "/home/tonychen/brightside.dbc"
 
-INFLUX_URL    = "http://localhost:8086"
+INFLUX_URL    = "influxdb.telemetry.ubcsolar.com"
 GRAFANA_URL   = "http://localhost:3000"
 INFLUX_ORG    = "UBC Solar"
 INFLUX_BUCKET = "CAN_test"
