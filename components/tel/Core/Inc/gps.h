@@ -47,5 +47,6 @@ void CAN_tx_lon_side_date_msg(char lonSide, char latSide, char date[7], char utc
 
 void CAN_tx_gps_data_msg(GPS* gps_data);
 
+void uart_send_can_json(uint32_t id, const uint8_t *data, size_t len);
 
 #endif /* __GPS__H__ */

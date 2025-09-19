@@ -134,6 +134,28 @@ void read_i2c_gps_module(uint8_t* receive_buffer)
     }
 }
 
+// void uart_send_can_json(uint32_t id, const uint8_t *data, size_t len)
+// {
+//     char buffer[128];
+//     int n = 0;
+
+//     // Start JSON object
+//     n += snprintf(buffer + n, sizeof(buffer) - n, "{\"id\":%lu,\"data\":[", (unsigned long)id);
+
+//     // Dump CAN payload as hex bytes
+//     for (size_t i = 0; i < len; i++) {
+//         n += snprintf(buffer + n, sizeof(buffer) - n, "%u", data[i]);
+//         if (i < len - 1) {
+//             n += snprintf(buffer + n, sizeof(buffer) - n, ",");
+//         }
+//     }
+
+//     // Close JSON object
+//     n += snprintf(buffer + n, sizeof(buffer) - n, "]}\r\n");
+
+//     // Send over UART
+//     HAL_UART_Transmit(&huart1, (uint8_t *)buffer, n, HAL_MAX_DELAY);
+// }
 
 /**
  * @brief Reads the GPS data and confirms if it is read to be parsed into gps_data 
@@ -147,8 +169,6 @@ void gps_task()
         nmea_parse(&gps_data, g_gps_data);
         
         CAN_tx_gps_data_msg(&gps_data);
-
-        HAL_UART_Transmit(&huart1, (uint8_t*)g_gps_data, GPS_MESSAGE_LEN, HAL_MAX_DELAY);
         
         HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
     }
@@ -185,7 +205,7 @@ void CAN_tx_lat_lon_msg(float latitude, float longitude) {
   CAN_comms_Add_Tx_message(&CAN_comms_Tx_msg);
   RADIO_filter_and_queue_msg_tx(&CAN_comms_Tx_msg);  
 
-  uart_send_can_json((uint32_t)GPS_DATA_LON_LAT_CAN_MESSAGE_ID, CAN_comms_Tx_msg.data, 8);
+  // uart_send_can_json((uint32_t)GPS_DATA_LON_LAT_CAN_MESSAGE_ID, CAN_comms_Tx_msg.data, 8);
 }
 
 

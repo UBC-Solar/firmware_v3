@@ -11,7 +11,7 @@ INFLUX_URL    = "http://localhost:8086"
 GRAFANA_URL   = "http://localhost:3000"
 INFLUX_ORG    = "UBC Solar"
 INFLUX_BUCKET = "CAN_test"
-INFLUX_TOKEN  = "Lx4HgBaoCEzFcrwmCOLeGR1NASTw0gvu9u8bX1Xu_GFG0ksiW6-nqV1Dginno7te8qu_QeC2dvfvrYavdLat-w=="
+INFLUX_TOKEN  = "ozPSIbG0O-tOZSWSVCAgGL2QCDqbqwnTHE72DlVAdLZxGGwTfH3tjQbMnhKyBrvDWYLEBwr5JgeLnJzh6qsXXg=="
 GRAFANA_TOKEN = ""
 
 def to_int_id(raw):
@@ -67,6 +67,7 @@ def main():
 
             try:
                 decoded = msg.decode(data)
+                print(f"[DECODE] {msg.name} 0x{can_id:X} -> {decoded}")
             except Exception:
                 continue
 
