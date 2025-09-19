@@ -125,6 +125,8 @@ void gps_task()
         nmea_parse(&gps_data, g_gps_data);
         
         CAN_tx_gps_data_msg(&gps_data);
+
+        HAL_UART_Transmit(&huart1, (uint8_t*)g_gps_data, GPS_MESSAGE_LEN, HAL_MAX_DELAY);
         
         HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
     }
