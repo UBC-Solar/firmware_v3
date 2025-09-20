@@ -11,7 +11,7 @@ INFLUX_URL    = "influxdb.telemetry.ubcsolar.com"
 GRAFANA_URL   = "http://localhost:3000"
 INFLUX_ORG    = "UBC Solar"
 INFLUX_BUCKET = "CAN_test"
-INFLUX_TOKEN  = "ozPSIbG0O-tOZSWSVCAgGL2QCDqbqwnTHE72DlVAdLZxGGwTfH3tjQbMnhKyBrvDWYLEBwr5JgeLnJzh6qsXXg=="
+INFLUX_TOKEN  = ""
 GRAFANA_TOKEN = ""
 
 def to_int_id(raw):
