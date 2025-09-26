@@ -1,104 +1,191 @@
-import re, time, serial
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import sys
+import struct
+import serial
+import cantools
+from datetime import datetime, timezone
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 
+# ---------------- CONFIG ----------------
+DBC_FILE      = "/home/tonychen/brightside.dbc"
 SERIAL_PORT   = "/dev/ttyUSB0"
 BAUDRATE      = 115200
 INFLUX_URL    = "http://100.120.214.69"
 INFLUX_ORG    = "UBC Solar"
 INFLUX_BUCKET = "CAN_test"
-INFLUX_TOKEN  = ""
-HEX_RE = re.compile(r'^[0-9A-Fa-f]+$')
-def _latin1(b: bytes) -> str:
-    # Your CAN class takes a latin-1 string that preserves raw bytes 0x00..0xFF 1:1
-    return b.decode('latin-1', errors='ignore')
-def parse_brightside_hex_to_can_message_str(line: str) -> str | None:
-    """
-    Accepts a raw line like:
-      41cc36a20c78937523000007537b1448c200000c43080d0a
-    Returns a latin-1 string of the first 21 bytes:
-      [8B ts][0x23][4B id][8B data]
-    (DLC, CR, LF are ignored if present.)
-    """
-    # keep only hex
-    s = re.sub(r'[^0-9A-Fa-f]', '', line)
-    if len(s) % 2 != 0 or not s:
-        return None
+INFLUX_TOKEN  = "3_6_0DeM1pOQb40UwG0atnA8gisPhs7Nf_svk9da-NP5t0vUjKcXsjSW16HCA3cJGSoBhHkCrPtPUsFxZPwBtw=="
+
+USE_NOW_TIME = True  # Use current time for Influx _time
+FRAME_LEN = 21       # 8 (ts) + 1 (filler?) + 4 (id) + 8 (data)
+
+# ---------------- SETUP ----------------
+try:
+    ser = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=1)
+except Exception as e:
+    raise RuntimeError(f"Failed to open {SERIAL_PORT}: {e}")
+
+db = cantools.database.load_file(DBC_FILE)
+
+client = InfluxDBClient(url=INFLUX_URL, org=INFLUX_ORG, token=INFLUX_TOKEN)
+write_api = client.write_api(write_options=SYNCHRONOUS)
+
+print(f"INFLUX READY: {INFLUX_URL} org={INFLUX_ORG} bucket={INFLUX_BUCKET}")
+print(f"Listening for CAN messages on {SERIAL_PORT} @ {BAUDRATE}... (USE_NOW_TIME={USE_NOW_TIME})")
+
+# ---- Health check + smoke write ----
+print("Pinging Influx...")
+try:
+    ok = client.ping()
+    if ok:
+        print("Influx ping OK")
+    else:
+        print("Influx ping failed")
+except Exception as e:
+    print(f"Influx ping threw exception: {e}")
+
+print("Writing smoke_test point...")
+try:
+    smoke = (Point("smoke_test")
+             .tag("host", "raspi")
+             .field("value", 1.0)
+             .time(datetime.now(timezone.utc)))
+    write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=smoke)
+    print("Wrote smoke_test point. Check Data Explorer → measurement=smoke_test (Last 15m).")
+except Exception as e:
+    print(f"Smoke write failed: {e}")
+
+# ---------------- TIMESTAMP PARSER ----------------
+def parse_timestamp_seconds(ts8: bytes) -> float:
     try:
-        raw = bytes.fromhex(s)
-    except ValueError:
-        return None
-    # The minimal frame we can use is 8+1+4+8 = 21 bytes
-    if len(raw) < 21:
-        return None
-    # Some sources append DLC (1B) then CRLF; we only need first 21
-    msg = raw[:21]
-    # Optional sanity check: middle separator byte
-    sep = msg[8]
-    if sep != 0x23:  # '#'
-        # Not fatal; many builds still use same layout, but you can enforce if you want:
-        # return None
+        return float(struct.unpack(">d", ts8)[0])
+    except Exception:
         pass
-    return _latin1(msg)
-def write_can_to_influx(write_api, can_obj):
-    """
-    can_obj is your CAN(message_str). It exposes can_obj.data with:
-      Source[], Class[], Measurement[], Value[], Timestamp[]
-    We write each numeric (int/float) Value as a field on measurement 'Class'.
-    """
-    data = can_obj.data
-    if not data or not data.get("Measurement"):
-        return
-    src = (data["Source"][0] if data["Source"] else "UNKNOWN")
-    cls = (data["Class"][0] if data["Class"] else "CAN")
-    points = []
-    for name, val, ts in zip(data["Measurement"], data["Value"], data["Timestamp"]):
-        if isinstance(val, (int, float)):
-            points.append(
-                Point(cls)
-                .tag("source", src)
-                .tag("measurement", name)  # optional: makes Grafana filtering easy
-                .field(name, float(val))
-                .time(int(ts * 1e9))      # ns
-            )
-    if points:
-        write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=points)
-def handle_raw_hex_line(line: str, write_api):
-    """
-    Parse one raw hex line, feed your CAN class, write to Influx.
-    """
-    msg_str = parse_brightside_hex_to_can_message_str(line)
-    if not msg_str:
-        return False
     try:
-        can_obj = CAN(msg_str)  # your class does DBC decoding internally
-        # Logging for visibility
-        cls = can_obj.data["Class"][0] if can_obj.data["Class"] else "CAN"
-        print(f"[DECODE] {cls} {can_obj.data['display_data']['COL']['Hex_ID'][0]} "
-              f"-> {dict(zip(can_obj.data['Measurement'], can_obj.data['Value']))}")
-        write_can_to_influx(write_api, can_obj)
-        return True
-    except Exception as e:
-        # Your CAN class already emits a detailed exception; keep this quiet in hot path
-        # print(f"[CAN-ERR] {e}")
-        return False
-def main_loop():
-    client = InfluxDBClient(url=INFLUX_URL, org=INFLUX_ORG, token=INFLUX_TOKEN, timeout=10000)
-    write_api = client.write_api(write_options=SYNCHRONOUS)
-    with serial.Serial(SERIAL_PORT, BAUDRATE, timeout=1) as ser:
-        print(f"INFLUX READY: {INFLUX_URL} org={INFLUX_ORG} bucket={INFLUX_BUCKET}")
-        while True:
-            raw = ser.readline()
-            if not raw:
-                continue
-            # raw may already be the 21–22 bytes; sometimes the upstream prints hex text
+        return float(struct.unpack(">Q", ts8)[0])
+    except Exception:
+        pass
+    try:
+        ms = struct.unpack(">Q", ts8)[0]
+        return float(ms) / 1000.0
+    except Exception:
+        pass
+    return struct.unpack(">d", ts8)[0]
+
+# ---------------- CORE BUILD ----------------
+def build_output_dict(source, message_obj, measurements, hex_id, ts_seconds, raw_bytes):
+    data = {
+        "Source": [],
+        "Class": [],
+        "Measurement": [],
+        "Value": [],
+        "Timestamp": [],
+        "display_data": {
+            "ROW": {"Raw Hex": [raw_bytes.hex()]},
+            "COL": {"Hex_ID": [], "Source": [], "Class": [], "Measurement": [], "Value": [], "Timestamp": []}
+        }
+    }
+    
+    for name, val in measurements.items():
+        data["Source"].append(source)
+        data["Class"].append(message_obj.name)
+        data["Measurement"].append(name)
+        data["Value"].append(val)
+        data["Timestamp"].append(ts_seconds)
+
+        data["display_data"]["COL"]["Hex_ID"].append(hex_id)
+        data["display_data"]["COL"]["Source"].append(source)
+        data["display_data"]["COL"]["Class"].append(message_obj.name)
+        data["display_data"]["COL"]["Measurement"].append(name)
+        data["display_data"]["COL"]["Value"].append(val)
+        data["display_data"]["COL"]["Timestamp"].append(
+            datetime.fromtimestamp(ts_seconds).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        )
+        
+    return data
+
+def try_decode_layout(raw21: bytes, layout: str):
+    if layout == "with_filler":
+        ts_bytes, id_bytes, data_bytes = raw21[0:8], raw21[9:13], raw21[13:21]
+    elif layout == "no_filler":
+        ts_bytes, id_bytes, data_bytes = raw21[0:8], raw21[8:12], raw21[12:20]
+    else:
+        raise ValueError("Unknown layout")
+
+    ts_seconds = parse_timestamp_seconds(ts_bytes)
+    can_id = int.from_bytes(id_bytes, "big")
+    hex_id = "0x" + hex(can_id)[2:].upper()
+
+    message_obj = db.get_message_by_frame_id(can_id)
+    measurements = db.decode_message(can_id, bytearray(data_bytes))
+
+    sources = getattr(message_obj, "senders", []) or []
+    source = sources[0] if sources else "UNKNOWN"
+
+    return build_output_dict(source, message_obj, measurements, hex_id, ts_seconds, raw21)
+
+def decode_frame(raw21: bytes):
+    try:
+        return try_decode_layout(raw21, "with_filler")
+    except Exception:
+        return try_decode_layout(raw21, "no_filler")
+
+# ---------------- INFLUX WRITE ----------------
+def write_to_influx(parsed: dict):
+    can_ts = parsed["Timestamp"][0]
+    ts_influx = datetime.now(timezone.utc) if USE_NOW_TIME else datetime.fromtimestamp(can_ts, tz=timezone.utc)
+
+    for name, val in zip(parsed["Measurement"], parsed["Value"]):
+        if isinstance(val, bool):
+            val = 1.0 if val else 0.0
+        elif not isinstance(val, (int, float)):
+            continue
+
+        point = (Point("CAN")
+                 .tag("source", parsed["Source"][0])
+                 .tag("class",  parsed["Class"][0])
+                 .tag("measurement", name)
+                 .field("value", float(val))
+                 .field("can_timestamp", float(can_ts))
+                 .time(ts_influx))
+        try:
+            write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=point)
+        except Exception as e:
+            print(f"Write failed: {e}")
+
+# ---------------- RESYNCING SERIAL LOOP ----------------
+def run():
+    buf = bytearray()
+    while True:
+        chunk = ser.read(256)
+        if not chunk:
+            continue
+        buf.extend(chunk)
+
+        while len(buf) >= FRAME_LEN:
+            window = bytes(buf[:FRAME_LEN])
             try:
-                line = raw.decode('ascii', errors='ignore').strip()
+                parsed = decode_frame(window)
+                del buf[:FRAME_LEN]
+
+                print(f"OK id={parsed['display_data']['COL']['Hex_ID'][0]} "
+                      f"src={parsed['Source'][0]} cls={parsed['Class'][0]} "
+                      f"val={parsed['Value'][0]} ts={parsed['Timestamp'][0]:.3f}")
+
+                write_to_influx(parsed)
+
             except Exception:
-                line = raw.hex()
-            if not handle_raw_hex_line(line, write_api):
-                # If the upstream already gives you binary (not hex text),
-                # you can fall back to raw.hex():
-                handle_raw_hex_line(raw.hex(), write_api)
+                del buf[:1]
+
 if __name__ == "__main__":
-    main_loop()
+    try:
+        run()
+    except KeyboardInterrupt:
+        print("EXIT")
+        try:
+            client.close()
+        except Exception:
+            pass
+        sys.exit(0)
