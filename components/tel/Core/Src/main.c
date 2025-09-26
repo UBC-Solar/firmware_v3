@@ -80,7 +80,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+//  const char msg[] = "Hello World!\r\n";
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/

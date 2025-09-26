@@ -198,6 +198,7 @@
  RADIO_Msg_TypeDef radio_msg = {0};
  void RADIO_filter_and_queue_msg(CAN_comms_Rx_msg_t* CAN_comms_Rx_msg)
  {
+	 return;
      uint32_t can_id = (CAN_comms_Rx_msg->header.IDE == CAN_ID_STD)? CAN_comms_Rx_msg->header.StdId : CAN_comms_Rx_msg->header.ExtId;
  
      if (filter(can_id))
@@ -219,11 +220,14 @@
   */
  void RADIO_filter_and_queue_msg_tx(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
  {
+
+//	 return;
+
      uint32_t can_id = (CAN_comms_Tx_msg->header.IDE == CAN_ID_STD)? CAN_comms_Tx_msg->header.StdId : CAN_comms_Tx_msg->header.ExtId;
      
      if (filter(can_id))
      {
-         osSemaphoreAcquire(usart1_tx_semaphore, osWaitForever);   // Dont Tx until previous Tx is done
+//         osSemaphoreAcquire(usart1_tx_semaphore, osWaitForever);   // Dont Tx until previous Tx is done
          
          /* Create radio message struct */
          set_radio_msg_tx(&(CAN_comms_Tx_msg->header), CAN_comms_Tx_msg->data, &radio_msg);

@@ -123,6 +123,9 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
+    /* UART5 interrupt Init */
+    HAL_NVIC_SetPriority(UART5_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(UART5_IRQn);
   /* USER CODE BEGIN UART5_MspInit 1 */
 
   /* USER CODE END UART5_MspInit 1 */
@@ -195,6 +198,8 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 
     HAL_GPIO_DeInit(GPIOD, GPIO_PIN_2);
 
+    /* UART5 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(UART5_IRQn);
   /* USER CODE BEGIN UART5_MspDeInit 1 */
 
   /* USER CODE END UART5_MspDeInit 1 */
@@ -235,15 +240,16 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
  */
 void UART_radio_transmit(RADIO_Msg_TypeDef* can_radio_msg)
 {
-    if(HAL_OK != HAL_UART_Transmit_DMA(&huart1, (uint8_t*)can_radio_msg, sizeof(RADIO_Msg_TypeDef)))
-    {
-    	Radio_diagnostic.radio_hal_transmit_failures++;
-    	osSemaphoreRelease(usart1_tx_semaphore);
-    }
-    else
-    {
-    	Radio_diagnostic.successful_radio_tx++;
-    }
+	HAL_UART_Transmit(&huart5, (uint8_t*)can_radio_msg, sizeof(RADIO_Msg_TypeDef), HAL_MAX_DELAY);
+//    if(HAL_OK != HAL_UART_Transmit_DMA(&huart5, (uint8_t*)can_radio_msg, sizeof(RADIO_Msg_TypeDef)))
+//    {
+//    	Radio_diagnostic.radio_hal_transmit_failures++;
+//    	osSemaphoreRelease(usart1_tx_semaphore);
+//    }
+//    else
+//    {
+//    	Radio_diagnostic.successful_radio_tx++;
+//    }
 
 }
 
