@@ -16,7 +16,7 @@ BAUDRATE      = 115200
 INFLUX_URL    = "http://100.120.214.69"
 INFLUX_ORG    = "UBC Solar"
 INFLUX_BUCKET = "CAN_test"
-INFLUX_TOKEN  = "3_6_0DeM1pOQb40UwG0atnA8gisPhs7Nf_svk9da-NP5t0vUjKcXsjSW16HCA3cJGSoBhHkCrPtPUsFxZPwBtw=="
+INFLUX_TOKEN  = ""
 
 USE_NOW_TIME = True  # Use current time for Influx _time
 FRAME_LEN = 21       # 8 (ts) + 1 (filler?) + 4 (id) + 8 (data)
