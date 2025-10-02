@@ -12,7 +12,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 # ---------------- CONFIG ----------------
 DBC_FILE      = "/home/tonychen/brightside.dbc"
 SERIAL_PORT   = "/dev/ttyUSB0"
-BAUDRATE      = 115200
+BAUDRATE      = 115200*2
 INFLUX_URL    = "http://100.120.214.69"
 INFLUX_ORG    = "UBC Solar"
 INFLUX_BUCKET = "CAN_test"
@@ -190,14 +190,13 @@ def process_message(message: str, buffer: str = "") -> list:
 
 # ---------------- RESYNCING SERIAL LOOP ----------------
 CHUNK_SIZE = 24 * 21        # 21 CAN messages from serial at a time.
-buffer = ""
 def run():
+    buffer = ""
     buf = bytearray()
     while True:
         chunk = ser.read(CHUNK_SIZE)
         if not chunk:
             continue
-        # buf.extend(chunk)
         chunk = chunk.hex()
         parts, buffer = process_message(chunk, buffer)
 
