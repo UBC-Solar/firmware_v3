@@ -117,7 +117,13 @@ def send_message(bus, can_id, data, rate, dlc, board_delay, num_in_burst):
         time.sleep(rate * RATE_SCALER)
 
 def send_can_messages():
-    bus = can.interface.Bus(channel='can0', bustype='socketcan')
+    
+    # Use PCAN-USB adapter
+    bus = can.interface.Bus(
+        channel='PCAN_USBBUS1',   # first USB adapter
+        bustype='pcan'
+    )
+    
     load_can_messages('can_messages.yaml')
 
     threads = []
