@@ -153,20 +153,57 @@ def write_to_influx(parsed: dict):
         except Exception as e:
             print(f"Write failed: {e}")
 
+
+"""
+Purpose: Processes the message by splitting it into parts and returning the parts and the buffer
+Parameters: 
+    message - The total chunk read from the serial stream
+    buffer - the buffer to be added to the start of the message
+Returns (tuple):
+    parts - the fully complete messages of the total chunk read
+    buffer - leftover chunk that is not a message
+"""
+def process_message(message: str, buffer: str = "") -> list:
+    # Remove 00 0a from the start if present
+    if message.startswith("000a"):
+        message = message[4:]
+    elif message.startswith("0a"):
+        message = message[2:]
+    
+    # Add buffer to the start of the message
+    message = buffer + message
+
+    # Split the message by 0d 0a. TEL board sends messages ending with \r\n which is 0d0a in hex. Use as delimeter
+    parts = message.split("0d0a")
+
+    if len(parts[-1]) != 30 or len(parts[-1]) != 396 or len(parts[-1]) != 44:
+        buffer = parts.pop()
+
+    try:
+        parts = [part + "0d0a" for part in parts if len(part) == 30 or len(part) == 396 or len(part) == 44]
+    except ValueError as e:
+        print(f"{ANSI_RED}Failed to split message: {str([part for part in parts])}{ANSI_ESCAPE}"
+              f"    ERROR: {e}")
+        return [], buffer
+    return [bytes.fromhex(part).decode('latin-1') for part in parts] , buffer
+
+
 # ---------------- RESYNCING SERIAL LOOP ----------------
+CHUNK_SIZE = 24 * 21        # 21 CAN messages from serial at a time.
+buffer = ""
 def run():
     buf = bytearray()
     while True:
-        chunk = ser.read(256)
+        chunk = ser.read(CHUNK_SIZE)
         if not chunk:
             continue
-        buf.extend(chunk)
+        # buf.extend(chunk)
+        chunk = chunk.hex()
+        parts, buffer = process_message(chunk, buffer)
 
-        while len(buf) >= FRAME_LEN:
-            window = bytes(buf[:FRAME_LEN])
+        for part in parts:
             try:
-                parsed = decode_frame(window)
-                del buf[:FRAME_LEN]
+                parsed = decode_frame(part)
 
                 print(f"OK id={parsed['display_data']['COL']['Hex_ID'][0]} "
                       f"src={parsed['Source'][0]} cls={parsed['Class'][0]} "
@@ -174,8 +211,8 @@ def run():
 
                 write_to_influx(parsed)
 
-            except Exception:
-                del buf[:1]
+            except Exception as e:
+                print("ERROR", e)
 
 if __name__ == "__main__":
     try:
