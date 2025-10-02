@@ -143,11 +143,9 @@ def write_to_influx(parsed: dict):
         elif not isinstance(val, (int, float)):
             continue
 
-        point = (Point("CAN")
-                 .tag("source", parsed["Source"][0])
+        point = (Point(parsed["Source"][0])
                  .tag("class",  parsed["Class"][0])
-                 .tag("measurement", name)
-                 .field("value", float(val))
+                 .field(name, float(val))
                  .field("can_timestamp", float(can_ts))
                  .time(ts_influx))
         try:
