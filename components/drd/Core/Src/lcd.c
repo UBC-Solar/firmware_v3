@@ -101,7 +101,7 @@ static void lcd_clear_bounding_box(unsigned char x1, unsigned char y1, unsigned 
 /**
  * @brief Refreshes the LCD display by calling the ST7565 display update.
  */
-static void lcd_refresh() 
+static void lcd_refresh()
 {
     for (int y = 0; y < 8; y++) {
 
@@ -474,6 +474,15 @@ void LCD_display_drive_mode(volatile uint8_t drive_mode)
     }
     
     // With LCD Refresh the topbar gets cut into. This is because lighting bolt has unecesary white space :(.
+}
+
+/**
+ * @brief Displays an Temperature on the LCD
+ *
+ * @param temperature The temperature of moto
+ */
+void LCD_display_temperature(volatile uint8_t* temperature){
+
 }
 
 /**
