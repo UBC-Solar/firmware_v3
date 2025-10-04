@@ -479,10 +479,32 @@ void LCD_display_drive_mode(volatile uint8_t drive_mode)
 /**
  * @brief Displays an Temperature on the LCD
  *
- * @param temperature The temperature of moto
+ * @param temperature The temperature of motor
  */
 void LCD_display_temperature(volatile uint8_t* temperature){
+    char temp_str[3];
+    bounding_box_t bb;
+    lcd_clear_bounding_box(TEMP_X - TEMP_SPACING, TEMP_Y, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
 
+    // Check
+    if (speed == NULL) {  // Stale speed data
+        sprintf(speed_str, "--");
+        old_bb_speed = draw_text(speed_str, SPEED_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+        g_diagnostics.cyclic_flags.speed_timeout = true;
+    }
+    else if (*speed < 10) { // Single digit speed
+        sprintf(speed_str, "%01lu", (unsigned long)*speed);
+        old_bb_speed = draw_text(speed_str, SPEED_X + 14, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+        g_diagnostics.cyclic_flags.speed_timeout = false;
+    } else {
+        sprintf(speed_str, "%02lu", (unsigned long)*speed);
+        old_bb_speed = draw_text(speed_str, SPEED_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+        g_diagnostics.cyclic_flags.speed_timeout = false;
+    }
+    UNUSED(bb);     // remove warning
+
+    old_bb_soc = draw_char(SOC_UNITS, SOC_X + 2 * WIDEST_NUM_LEN_VERDANA16 + 2, SOC_Y, SOC_UNITS_FONT);
+    lcd_refresh();
 }
 
 /**
