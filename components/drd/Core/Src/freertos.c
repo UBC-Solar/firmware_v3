@@ -277,6 +277,9 @@ void LCDUpdatetask(void *argument)
 
   g_lcd_data.speed_units = KPH;
   
+  // VARIABLE FOR TEST!!!
+  uint32_t* lcd_temp = 50;
+
   for(;;)
   {
     // When debugging we can check the duration of this function to measure performance.
@@ -297,6 +300,9 @@ void LCDUpdatetask(void *argument)
     LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
     LCD_display_drive_mode(g_lcd_data.drive_mode);
     
+    // Greg's Test code
+    LCD_display_temperature(lcd_temp);
+
     #ifdef DEBUG
         lcd_time_diff = HAL_GetTick() - lcd_time_start;
     #endif // DEBUG
