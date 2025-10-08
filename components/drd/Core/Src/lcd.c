@@ -486,7 +486,7 @@ void LCD_display_temperature(volatile uint8_t* temperature){
     char temp_str[3];
 
     // TEST - CLEARING THE ENTIRE SCREEN
-    lcd_clear_bounding_box(0, 0, 127, 63);
+    lcd_clear_bounding_box(0,0,127,63);
 
     //lcd_clear_bounding_box(TEMP_X - TEMP_SPACING, TEMP_Y, old_bb_temp.x2, old_bb_temp.y2);
 
@@ -508,9 +508,7 @@ void LCD_display_temperature(volatile uint8_t* temperature){
 		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
 	}
 
-    UNUSED(bb);     // remove warning
-
-    draw_text(TEMP_UNITS, TEMP_X - 5, TEMP_Y, TEMP_FONT);
+    //draw_text(TEMP_UNITS, TEMP_X - 5, TEMP_Y, TEMP_FONT, TEMP_SPACING);
     lcd_refresh();
 }
 

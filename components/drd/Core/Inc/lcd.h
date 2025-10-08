@@ -70,7 +70,7 @@
 #define TEMP_Y              	30
 #define TEMP_SPACING         	1
 #define TEMP_UNITS_FONT      	(Verdana8)
-#define TEMP_UNITS           	'°C'
+#define TEMP_UNITS           	"°C"
 
 #define SCREEN_HEIGHT                   64
 #define SCREEN_WIDTH                    128
