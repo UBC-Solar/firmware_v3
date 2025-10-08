@@ -278,7 +278,7 @@ void LCDUpdatetask(void *argument)
   g_lcd_data.speed_units = KPH;
   
   // VARIABLE FOR TEST!!!
-  uint8_t lcd_temp = 100;
+  uint8_t lcd_temp = 5;
 
   for(;;)
   {

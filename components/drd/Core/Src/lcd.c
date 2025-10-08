@@ -50,6 +50,23 @@ static uint8_t lcd_dirty_pages;
 /*--------------------------------------------------------------------------
   Internal Helper Functions
 --------------------------------------------------------------------------*/
+const unsigned char fontDegree[] = {
+    // ----- Header -----
+    0x01,   // FONT_TYPE_PROPORTIONAL
+    0x02,   // FONT_ORIENTATION_VERTICAL_CEILING
+    0xB0,   // Start char = 176 ('°')
+    0x01,   // One character
+    0x08,   // Height = 8
+
+    // ----- Index table -----
+    0x00, 0x07,   // offset to bitmap start
+
+    // ----- Bitmap -----
+    0x05,          // width = 5
+    0x30, 0x48, 0x48, 0x30, 0x00
+};
+
+
 
 /**
  * @brief Sets or clears a single pixel in the internal display buffer.
@@ -507,8 +524,9 @@ void LCD_display_temperature(volatile uint8_t* temperature){
 		sprintf(temp_str, "%03lu", (unsigned long)*temperature);
 		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
 	}
+    draw_char(0xB0, 10, 10, fontDegree);
 
-    //draw_text(TEMP_UNITS, TEMP_X - 5, TEMP_Y, TEMP_FONT, TEMP_SPACING);
+    draw_text(TEMP_UNITS, TEMP_X + 25, TEMP_Y, TEMP_FONT, TEMP_SPACING);
     lcd_refresh();
 }
 

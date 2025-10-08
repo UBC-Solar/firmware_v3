@@ -67,10 +67,12 @@
 
 #define TEMP_FONT            	(Verdana16)
 #define TEMP_X              	70
-#define TEMP_Y              	30
+#define TEMP_Y              	0
 #define TEMP_SPACING         	1
 #define TEMP_UNITS_FONT      	(Verdana8)
 #define TEMP_UNITS           	"°C"
+#define TEMP_DEGREES_SYMBOL 	173
+
 
 #define SCREEN_HEIGHT                   64
 #define SCREEN_WIDTH                    128

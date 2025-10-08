@@ -31,7 +31,7 @@ const unsigned char Verdana8[] =
 	0x02,	// 0x00: horizontalLeft,  0x01: horizontalRight 
 			// 0x02: verticalCeiling, 0x03: verticalBottom 
 	0x20,	// Start character 
-	0x5F,	// Number of Bitmaps 
+	0x5F,	// Number of Bitmaps
 	0xB,	// Height 
 
 	// Bitmap Index (number of index entries 95)
