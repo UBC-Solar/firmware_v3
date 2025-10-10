@@ -4489,3 +4489,32 @@ const unsigned char Webdings18[] =
 	/* Index 95, character 127 "." (width: 8 pixels) */
 	0x8, 0xE0,0xFF,0x0F,0x00,0xE0,0xFF,0x0F,0x00,0x60,0x00,0x0C,0x00,0x60,0x00,0x0C,0x00,0x60,0x00,0x0C,0x00,0x60,0x00,0x0C,0x00,0xE0,0xFF,0x0F,0x00,0xE0,0xFF,0x0F,0x00
 };
+
+
+//---------------------------------------------------------------
+// Group Name: Custom
+// Designer: Chatgpt/Gregory
+// Date: 07 Oct 2025
+// Description: Custom Font
+// Byte Orientation: verticalCeiling
+// Font Height: 8 pixel(s)
+// Font Type: Proportional
+// Font Width: Individual
+// Number of Bitmaps: 1
+// Start char = 1 ('°')
+//---------------------------------------------------------------
+const unsigned char Custom[] = {
+    // ----- Header -----
+    0x01,   // FONT_TYPE_PROPORTIONAL
+    0x02,   // FONT_ORIENTATION_VERTICAL_CEILING
+    0xB0,   // Start char = 176 ('°')
+    0x01,   // One character
+    0x08,   // Height = 8
+
+    // ----- Index table -----
+    0x00, 0x07,   // offset to bitmap start
+
+    // ----- Bitmap -----
+	/* Index 1, character 1 "°" (width: 8 pixels) */
+    0x05, 0x30,0x48,0x48,0x30,0x00
+};

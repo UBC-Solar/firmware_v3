@@ -50,22 +50,6 @@ static uint8_t lcd_dirty_pages;
 /*--------------------------------------------------------------------------
   Internal Helper Functions
 --------------------------------------------------------------------------*/
-const unsigned char fontDegree[] = {
-    // ----- Header -----
-    0x01,   // FONT_TYPE_PROPORTIONAL
-    0x02,   // FONT_ORIENTATION_VERTICAL_CEILING
-    0xB0,   // Start char = 176 ('°')
-    0x01,   // One character
-    0x08,   // Height = 8
-
-    // ----- Index table -----
-    0x00, 0x07,   // offset to bitmap start
-
-    // ----- Bitmap -----
-    0x05,          // width = 5
-    0x30, 0x48, 0x48, 0x30, 0x00
-};
-
 
 
 /**
@@ -502,10 +486,7 @@ void LCD_display_drive_mode(volatile uint8_t drive_mode)
 void LCD_display_temperature(volatile uint8_t* temperature){
     char temp_str[3];
 
-    // TEST - CLEARING THE ENTIRE SCREEN
-    lcd_clear_bounding_box(0,0,127,63);
-
-    //lcd_clear_bounding_box(TEMP_X - TEMP_SPACING, TEMP_Y, old_bb_temp.x2, old_bb_temp.y2);
+    lcd_clear_bounding_box(TEMP_X - TEMP_SPACING, TEMP_Y, old_bb_temp.x2, old_bb_temp.y2);
 
     // Check
     if (temperature == NULL) {  // temperature not read
@@ -524,10 +505,20 @@ void LCD_display_temperature(volatile uint8_t* temperature){
 		sprintf(temp_str, "%03lu", (unsigned long)*temperature);
 		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
 	}
-    draw_char(0xB0, 10, 10, fontDegree);
 
-    draw_text(TEMP_UNITS, TEMP_X + 25, TEMP_Y, TEMP_FONT, TEMP_SPACING);
+
+    // Draws the Degrees Celsius symbol according to the position of the bounding box
+    draw_char(TEMP_DEGREES_SYMBOL, old_bb_temp.x2 + TEMP_DEGREES_SPACING, TEMP_Y - TEMP_DEGREES_SPACING, TEMP_DEGREES_FONT);
+    draw_char(TEMP_UNITS, old_bb_temp.x2 + TEMP_UNITS_SPACING, TEMP_Y, TEMP_UNITS_FONT);
+
     lcd_refresh();
+}
+
+/**
+ * @brief Clears the LCD Display
+ */
+void LCD_clear_screen(){
+	lcd_clear_bounding_box(0,0,127,63);
 }
 
 /**
