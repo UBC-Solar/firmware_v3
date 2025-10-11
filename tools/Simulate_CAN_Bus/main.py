@@ -121,7 +121,8 @@ def send_can_messages():
     # Use PCAN-USB adapter
     bus = can.interface.Bus(
         channel='PCAN_USBBUS1',   # first USB adapter
-        bustype='pcan'
+        bustype='pcan',
+        bitrate=500000
     )
     
     load_can_messages('can_messages.yaml')
