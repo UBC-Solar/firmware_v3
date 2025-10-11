@@ -21,6 +21,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "gpio.h"
 
+#include "lcd.h"
+
 /* USER CODE BEGIN 0 */
 #include "drive_state.h"
 /* USER CODE END 0 */
@@ -142,6 +144,12 @@ void MX_GPIO_Init(void)
  */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	Drive_State_interrupt_handler(GPIO_Pin);
+	if(GPIO_Pin == FORWARD_EN_Pin){
+		page = 1;
+	}
+	else if(GPIO_Pin == PARK_EN_Pin){
+		page = 2;
+	}
+	//Drive_State_interrupt_handler(GPIO_Pin);
 }
 /* USER CODE END 2 */

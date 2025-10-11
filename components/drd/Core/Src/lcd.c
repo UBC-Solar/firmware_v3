@@ -19,15 +19,17 @@ typedef struct {
 } bounding_box_t;
 
 /* Function Declarations */
-static void lcd_pixel(uint8_t x, uint8_t y, uint8_t colour);
-static void lcd_clear_bounding_box(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
-static void lcd_refresh();
-static void draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t color);
-static bounding_box_t draw_text(char *string, unsigned char x, unsigned char y, const unsigned char *font, unsigned char spacing);
-static bounding_box_t draw_char(unsigned char c, unsigned char x, unsigned char y, const unsigned char *font);
+static void lcd_pixel(uint8_t x, uint8_t y, uint8_t colour, uint8_t* lcd_buffer);
+static void lcd_clear_bounding_box(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t* lcd_buffer);
+static void lcd_refresh(uint8_t* lcd_buffer);
+static void draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t color, uint8_t* lcd_buffer);
+static bounding_box_t draw_text(char *string, unsigned char x, unsigned char y, const unsigned char *font, unsigned char spacing, uint8_t* lcd_buffer);
+static bounding_box_t draw_char(unsigned char c, unsigned char x, unsigned char y, const unsigned char *font, uint8_t* lcd_buffer);
 
 /* Internal buffer for pixel operations (assumes a 128x64 display) */
 static uint8_t lcd_buffer[(128 * 64) / 8];
+static uint8_t lcd_buffer2[(128 * 64) / 8];
+
 
 /* Internal SPI handle for LCD communication */
 static SPI_HandleTypeDef* sg_spi_handle = NULL;
@@ -38,6 +40,7 @@ static bounding_box_t old_bb_speed_units    = {0, 0, 0, 0};
 static bounding_box_t old_bb_drive_state    = {0, 0, 0, 0};
 static bounding_box_t old_bb_drive_mode    = {0, 0, 0, 0};
 static bounding_box_t old_bb_soc            = {0, 0, 0, 0};
+static bounding_box_t old_bb_temp			= {0, 0, 0, 0};
 
 static uint8_t lcd_flipped = 0;
 lcd_data_t g_lcd_data = {0};
@@ -46,9 +49,13 @@ lcd_data_t g_lcd_data = {0};
 static uint8_t lcd_dirty_pages;
 #endif
 
+
+int page;
+
 /*--------------------------------------------------------------------------
   Internal Helper Functions
 --------------------------------------------------------------------------*/
+
 
 /**
  * @brief Sets or clears a single pixel in the internal display buffer.
@@ -57,7 +64,7 @@ static uint8_t lcd_dirty_pages;
  * @param y The y coordinate (1-based).
  * @param color 1 to set the pixel, 0 to clear it.
  */
-static void lcd_pixel(uint8_t x, uint8_t y, uint8_t colour) {
+static void lcd_pixel(uint8_t x, uint8_t y, uint8_t colour, uint8_t* lcd_buffer) {
 
     if (x > SCREEN_WIDTH || y > SCREEN_HEIGHT) return;
 
@@ -86,7 +93,7 @@ static void lcd_pixel(uint8_t x, uint8_t y, uint8_t colour) {
  * @param x2 Right coordinate (1-based).
  * @param y2 Bottom coordinate (1-based).
  */
-static void lcd_clear_bounding_box(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2) {
+static void lcd_clear_bounding_box(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2, uint8_t* lcd_buffer) {
     if (x1 >= SCREEN_WIDTH || x2 >= SCREEN_WIDTH || y1 >= SCREEN_HEIGHT || y2 >= SCREEN_HEIGHT || x1 > x2 || y1 > y2)
         return;
 
@@ -101,7 +108,7 @@ static void lcd_clear_bounding_box(unsigned char x1, unsigned char y1, unsigned 
 /**
  * @brief Refreshes the LCD display by calling the ST7565 display update.
  */
-static void lcd_refresh()
+static void lcd_refresh(uint8_t* lcd_buffer)
 {
     for (int y = 0; y < 8; y++) {
 
@@ -150,15 +157,15 @@ static void lcd_refresh()
  * @param y2 Bottom coordinate (1-based).
  * @param color 1 to draw pixel.
  */
-static void draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t color)
+static void draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t color, uint8_t* lcd_buffer)
 {
     for(uint8_t x = x1; x <= x2; x++) {
-        lcd_pixel(x, y1, color);
-        lcd_pixel(x, y2, color);
+        lcd_pixel(x, y1, color, lcd_buffer);
+        lcd_pixel(x, y2, color, lcd_buffer);
     }
     for(uint8_t y = y1; y <= y2; y++) {
-        lcd_pixel(x1, y, color);
-        lcd_pixel(x2, y, color);
+        lcd_pixel(x1, y, color, lcd_buffer);
+        lcd_pixel(x2, y, color, lcd_buffer);
     }
 }
 
@@ -172,7 +179,7 @@ static void draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8
  * @param spacing Spacing between characters.
  * @return bounding_box_t The bounding box of the drawn text.
  */
-static bounding_box_t draw_text(char *string, unsigned char x, unsigned char y, const unsigned char *font, unsigned char spacing) {
+static bounding_box_t draw_text(char *string, unsigned char x, unsigned char y, const unsigned char *font, unsigned char spacing, uint8_t* lcd_buffer) {
 	bounding_box_t ret;
 	bounding_box_t tmp = {0};
 
@@ -183,7 +190,7 @@ static bounding_box_t draw_text(char *string, unsigned char x, unsigned char y, 
 
 	// BUG: As we move right between chars we don't actually wipe the space
 	while (*string != 0) {
-		tmp = draw_char(*string++, x, y, font);
+		tmp = draw_char(*string++, x, y, font, lcd_buffer);
 
 		// Leave a single space between characters
 		x = tmp.x2 + spacing;
@@ -204,7 +211,7 @@ static bounding_box_t draw_text(char *string, unsigned char x, unsigned char y, 
  * @param font Pointer to the font to use.
  * @return bounding_box_t The bounding box of the drawn character.
  */
-static bounding_box_t draw_char(unsigned char c, unsigned char x, unsigned char y, const unsigned char *font) {
+static bounding_box_t draw_char(unsigned char c, unsigned char x, unsigned char y, const unsigned char *font, uint8_t* lcd_buffer) {
 	unsigned short pos;
 	uint8_t width;
 	bounding_box_t ret;
@@ -246,9 +253,9 @@ static bounding_box_t draw_char(unsigned char c, unsigned char x, unsigned char 
 			if (j % 8 == 0) pos++;
 
 			if (font[pos] & 1 << (j % 8)) {
-				lcd_pixel(x + i, y + j, 1);
+				lcd_pixel(x + i, y + j, 1, lcd_buffer);
 			} else {
-				lcd_pixel(x + i, y + j, 0);
+				lcd_pixel(x + i, y + j, 0, lcd_buffer);
 			}
 		}
 	}
@@ -274,21 +281,21 @@ void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units)
 {
     char speed_str[12];
     /* Clear the previous speed and unit areas */
-    lcd_clear_bounding_box(SPEED_X - SPEED_SPACING, SPEED_Y, old_bb_speed.x2 + SPEED_SPACING, BOTTOM_RIGHT_Y);
-    lcd_clear_bounding_box(old_bb_speed.x2 - SPEED_SPACING, SPEED_Y, old_bb_speed_units.x2 + SPEED_UNITS_SPACING, SPEED_Y + 11);
+    lcd_clear_bounding_box(SPEED_X - SPEED_SPACING, SPEED_Y, old_bb_speed.x2 + SPEED_SPACING, BOTTOM_RIGHT_Y, lcd_buffer);
+    lcd_clear_bounding_box(old_bb_speed.x2 - SPEED_SPACING, SPEED_Y, old_bb_speed_units.x2 + SPEED_UNITS_SPACING, SPEED_Y + 11, lcd_buffer);
     
     if (speed == NULL) {  // Stale speed data
         sprintf(speed_str, "--"); 
-        old_bb_speed = draw_text(speed_str, SPEED_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+        old_bb_speed = draw_text(speed_str, SPEED_X, SPEED_Y, SPEED_FONT, SPEED_SPACING, lcd_buffer);
         g_diagnostics.cyclic_flags.speed_timeout = true; 
     } 
     else if (*speed < 10) { // Single digit speed
         sprintf(speed_str, "%01lu", (unsigned long)*speed);  
-        old_bb_speed = draw_text(speed_str, SPEED_X + 14, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+        old_bb_speed = draw_text(speed_str, SPEED_X + 14, SPEED_Y, SPEED_FONT, SPEED_SPACING, lcd_buffer);
         g_diagnostics.cyclic_flags.speed_timeout = false; 
     } else {
         sprintf(speed_str, "%02lu", (unsigned long)*speed);  
-        old_bb_speed = draw_text(speed_str, SPEED_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+        old_bb_speed = draw_text(speed_str, SPEED_X, SPEED_Y, SPEED_FONT, SPEED_SPACING, lcd_buffer);
         g_diagnostics.cyclic_flags.speed_timeout = false; 
     }
     
@@ -296,16 +303,16 @@ void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units)
     
     switch (units) {
         case KPH:
-            old_bb_speed_units = draw_text("kph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+            old_bb_speed_units = draw_text("kph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING, lcd_buffer);
             break;
         case MPH:
-            old_bb_speed_units = draw_text("mph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+            old_bb_speed_units = draw_text("mph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING, lcd_buffer);
             break;
         default:
-            old_bb_speed_units = draw_text("xxx", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+            old_bb_speed_units = draw_text("xxx", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING, lcd_buffer);
             break;
     }
-    lcd_refresh();
+    lcd_refresh(lcd_buffer);
 }
 
 /**
@@ -316,7 +323,7 @@ void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units)
 void LCD_display_drive_state(volatile drive_state_t* state)
 {
     char state_str[2] = {ERROR_SYMBOL, '\0'};  // Default to error symbol.
-    lcd_clear_bounding_box(STATE_X, STATE_Y, old_bb_drive_state.x2, BOTTOM_RIGHT_Y);
+    lcd_clear_bounding_box(STATE_X, STATE_Y, old_bb_drive_state.x2, BOTTOM_RIGHT_Y, lcd_buffer);
     if (state == NULL) {  // Stale data for drive state
         sprintf(state_str, "-");
         g_diagnostics.cyclic_flags.drive_state_timeout = true;
@@ -338,8 +345,8 @@ void LCD_display_drive_state(volatile drive_state_t* state)
         }
         g_diagnostics.cyclic_flags.drive_state_timeout = false; 
     }
-    old_bb_drive_state = draw_text(state_str, STATE_X, STATE_Y, STATE_FONT, STATE_SPACING);
-    lcd_refresh();
+    old_bb_drive_state = draw_text(state_str, STATE_X, STATE_Y, STATE_FONT, STATE_SPACING, lcd_buffer);
+    lcd_refresh(lcd_buffer);
 }
 
 /**
@@ -351,28 +358,28 @@ void LCD_display_SOC(volatile uint32_t* soc)
 {
     char soc_str[12];
     bounding_box_t bb;
-    lcd_clear_bounding_box(SOC_X - SOC_SPACING, SOC_Y, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
+    lcd_clear_bounding_box(SOC_X - SOC_SPACING, SOC_Y, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y, lcd_buffer);
     
     // Check for stale data and display "--" if so.
     if (soc == NULL) {
         sprintf(soc_str, "--");
-        bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
+        bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING, lcd_buffer);
         g_diagnostics.cyclic_flags.soc_timeout = true; 
     } 
     else if (*soc < 10) {
         sprintf(soc_str, "%01lu", (unsigned long)* soc);
-        bb = draw_text(soc_str, SOC_X + 10, SOC_Y, SOC_FONT, SOC_SPACING);
+        bb = draw_text(soc_str, SOC_X + 10, SOC_Y, SOC_FONT, SOC_SPACING, lcd_buffer);
         g_diagnostics.cyclic_flags.soc_timeout = false;
     } else {
         sprintf(soc_str, "%02lu", (unsigned long)* soc);
-        bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
+        bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING, lcd_buffer);
         g_diagnostics.cyclic_flags.soc_timeout = false;
     }
 
     UNUSED(bb);     // remove warning
 
-    old_bb_soc = draw_char(SOC_UNITS, SOC_X + 2 * WIDEST_NUM_LEN_VERDANA16 + 2, SOC_Y, SOC_UNITS_FONT);
-    lcd_refresh();
+    old_bb_soc = draw_char(SOC_UNITS, SOC_X + 2 * WIDEST_NUM_LEN_VERDANA16 + 2, SOC_Y, SOC_UNITS_FONT, lcd_buffer);
+    lcd_refresh(lcd_buffer);
 }
 
 /**
@@ -384,10 +391,10 @@ void LCD_display_SOC(volatile uint32_t* soc)
 void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* pack_voltage)
 {
     /* Clear the drawing area (including extra space for the center line) */
-    lcd_clear_bounding_box(BAR_LEFT, BAR_TOP, BAR_RIGHT, BAR_BOTTOM + 3);
+    lcd_clear_bounding_box(BAR_LEFT, BAR_TOP, BAR_RIGHT, BAR_BOTTOM + 3, lcd_buffer);
 
     /* Draw the outline of the power bar */
-    draw_rectangle(BAR_LEFT, BAR_TOP, BAR_RIGHT, BAR_BOTTOM, 1);
+    draw_rectangle(BAR_LEFT, BAR_TOP, BAR_RIGHT, BAR_BOTTOM, 1, lcd_buffer);
 
     g_diagnostics.cyclic_flags.current_timeout = (pack_current == NULL) ? true : false;
     g_diagnostics.cyclic_flags.voltage_timeout = (pack_voltage == NULL) ? true : false;
@@ -399,14 +406,14 @@ void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* p
         for (int i=0; i <= bar_width; i++) {
             int x = BAR_LEFT + i;
             int y = BAR_TOP + (i * bar_height) / bar_width;
-            lcd_pixel(x, y, 1);
+            lcd_pixel(x, y, 1, lcd_buffer);
         }
         for (int i = 0; i <= bar_width; i++) {
             int x = BAR_RIGHT - i;
             int y = BAR_TOP + (i * bar_height) / bar_width;
-            lcd_pixel(x, y, 1);
+            lcd_pixel(x, y, 1, lcd_buffer);
         }
-        lcd_refresh();
+        lcd_refresh(lcd_buffer);
         return;
     }
     else{
@@ -421,7 +428,7 @@ void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* p
             fill_pixels = (int)(ratio * total_pixels_right);
             for (int y = BAR_TOP + 1; y < BAR_BOTTOM; y++) {
                 for (int x = CENTER_X + 1; x <= CENTER_X + fill_pixels; x++) {
-                    lcd_pixel(x, y, 1);
+                    lcd_pixel(x, y, 1, lcd_buffer);
                 }
             }
         } 
@@ -433,16 +440,16 @@ void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* p
             fill_pixels = (int)(ratio * total_pixels_left);
             for (int y = BAR_TOP + 1; y < BAR_BOTTOM; y++) {
                 for (int x = CENTER_X - 1; x >= CENTER_X - fill_pixels; x--) {
-                    lcd_pixel(x, y, 1);
+                    lcd_pixel(x, y, 1, lcd_buffer);
                 }
             }
         }
 
         /* Redraw the center line extending 3 pixels below the bar */
         for (int y = BAR_TOP; y <= BAR_BOTTOM + 3; y++) {
-            lcd_pixel(CENTER_X, y, 1);
+            lcd_pixel(CENTER_X, y, 1, lcd_buffer);
         }
-        lcd_refresh();
+        lcd_refresh(lcd_buffer);
     }
 }
 
@@ -455,21 +462,21 @@ void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* p
 void LCD_display_drive_mode(volatile uint8_t drive_mode)
 {
     char drive_mode_c = ERROR_SYMBOL;   // Default to error symbol.
-    lcd_clear_bounding_box(0, old_bb_drive_mode.y1 + 7, old_bb_drive_mode.x2, old_bb_drive_mode.y2);
+    lcd_clear_bounding_box(0, old_bb_drive_mode.y1 + 7, old_bb_drive_mode.x2, old_bb_drive_mode.y2, lcd_buffer);
     
     // Drive mode is valid, display the corresponding symbol.
     switch (drive_mode) {
         case DRIVE_MODE_ECO:
             drive_mode_c = ECO_SYMBOL;
-            old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
+            old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT, lcd_buffer);
             break;
         case DRIVE_MODE_POWER:
             drive_mode_c = POWER_SYMBOL; 
-            old_bb_drive_mode = draw_char(drive_mode_c, POWER_MODE_X, POWER_MODE_Y, POWER_MODE_FONT);
+            old_bb_drive_mode = draw_char(drive_mode_c, POWER_MODE_X, POWER_MODE_Y, POWER_MODE_FONT, lcd_buffer);
             break;
         default:
             drive_mode_c = ERROR_SYMBOL;  // Display error symbol for invalid mode.
-            old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
+            old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT, lcd_buffer);
             break;
     }
     
@@ -479,10 +486,49 @@ void LCD_display_drive_mode(volatile uint8_t drive_mode)
 /**
  * @brief Displays an Temperature on the LCD
  *
- * @param temperature The temperature of moto
+ * @param temperature The temperature of motor
  */
 void LCD_display_temperature(volatile uint8_t* temperature){
+    char temp_str[4];
 
+    lcd_clear_bounding_box(TEMP_X - TEMP_SPACING, TEMP_Y, old_bb_temp.x2, old_bb_temp.y2, lcd_buffer2);
+
+    // Check
+    if (temperature == NULL) {  // temperature not read
+        sprintf(temp_str, "--");
+        old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING, lcd_buffer2);
+    }
+    else if (*temperature < 10) { // Single digit temperature
+        sprintf(temp_str, "%01lu", (unsigned long)*temperature);
+        old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING, lcd_buffer2);
+    }
+    else if(*temperature < 100){ // Double digit temperature
+        sprintf(temp_str, "%02lu", (unsigned long)*temperature);
+        old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING, lcd_buffer2);
+    }
+    else{ // Triple digit
+		sprintf(temp_str, "%03lu", (unsigned long)*temperature);
+		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING, lcd_buffer2);
+	}
+
+
+    // Draws the Degrees Celsius symbol according to the position of the bounding box
+    draw_char(TEMP_DEGREES_SYMBOL, old_bb_temp.x2 + TEMP_DEGREES_SPACING, TEMP_Y - TEMP_DEGREES_SPACING, TEMP_DEGREES_FONT, lcd_buffer2);
+    draw_char(TEMP_UNITS, old_bb_temp.x2 + TEMP_UNITS_SPACING, TEMP_Y, TEMP_UNITS_FONT, lcd_buffer2);
+
+    lcd_refresh(lcd_buffer2);
+}
+
+/**
+ * @brief Clears the LCD Display
+ */
+void LCD_clear_screen(uint8_t page){
+	if(page == 1){
+		lcd_clear_bounding_box(0,0,);
+		lcd_refresh(lcd_buffer);
+	}else if(page == 2){
+		lcd_refresh(lcd_buffer2);
+	}
 }
 
 /**

@@ -67,10 +67,16 @@
 
 #define TEMP_FONT            	(Verdana16)
 #define TEMP_X              	70
-#define TEMP_Y              	30
+#define TEMP_Y              	0
 #define TEMP_SPACING         	1
 #define TEMP_UNITS_FONT      	(Verdana8)
-#define TEMP_UNITS           	'°C'
+#define TEMP_UNITS           	'C'
+#define TEMP_UNITS_SPACING		7
+#define TEMP_DEGREES_FONT		(Custom)
+#define TEMP_DEGREES_SYMBOL 	0xB0
+#define TEMP_DEGREES_SPACING	2
+
+extern int page;
 
 #define SCREEN_HEIGHT                   64
 #define SCREEN_WIDTH                    128
@@ -181,6 +187,11 @@ void LCD_display_drive_mode(volatile uint8_t drive_mode);
  * @param temperature The temperature of moto
  */
 void LCD_display_temperature(volatile uint8_t* temperature);
+
+/**
+ * @brief Clears the LCD Display
+ */
+void LCD_clear_screen(uint8_t page);
 
 /**
  * @brief Initializes the LCD and SPI interface.
