@@ -77,6 +77,7 @@
 #define TEMP_DEGREES_SPACING	2
 
 extern int page;
+extern int page_change;
 
 #define SCREEN_HEIGHT                   64
 #define SCREEN_WIDTH                    128
@@ -189,9 +190,9 @@ void LCD_display_drive_mode(volatile uint8_t drive_mode);
 void LCD_display_temperature(volatile uint8_t* temperature);
 
 /**
- * @brief Clears the LCD Display
+ * @brief Changes the screen
  */
-void LCD_clear_screen(uint8_t page);
+void LCD_change_screen();
 
 /**
  * @brief Initializes the LCD and SPI interface.

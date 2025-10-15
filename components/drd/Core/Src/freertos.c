@@ -294,18 +294,30 @@ void LCDUpdatetask(void *argument)
 	g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
 	g_lcd_data.soc              = get_cyclic_soc();
 
-    if(page == 1){
-    	LCD_clear_screen(1);
-        LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
-        LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
-        LCD_display_drive_state(g_lcd_data.drive_state);
-        LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
-        LCD_display_drive_mode(g_lcd_data.drive_mode);
-    }
-    else if(page == 2){
-    	LCD_clear_screen(2);
-    	LCD_display_temperature(&lcd_temp);
-    }
+//	if(page == 1 && prev_page == 2){
+//		LCD_change_screen();
+//		prev_page = 1;
+//	}
+//	if(page == 2 && prev_page == 1){
+//
+//		prev_page = 2;
+	if(page_change == 1){
+		LCD_change_screen();
+		page_change = 0;
+	}
+
+	if(page == 1){
+		LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
+		LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
+		LCD_display_drive_state(g_lcd_data.drive_state);
+		LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
+		LCD_display_drive_mode(g_lcd_data.drive_mode);
+	}
+	else if(page == 2){
+		LCD_display_temperature(&lcd_temp);
+	}
+
+
 
     #ifdef DEBUG
         lcd_time_diff = HAL_GetTick() - lcd_time_start;

@@ -145,11 +145,14 @@ void MX_GPIO_Init(void)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if(GPIO_Pin == FORWARD_EN_Pin){
+		page_change = 1;
 		page = 1;
 	}
 	else if(GPIO_Pin == PARK_EN_Pin){
+		page_change = 1;
 		page = 2;
 	}
+
 	//Drive_State_interrupt_handler(GPIO_Pin);
 }
 /* USER CODE END 2 */
