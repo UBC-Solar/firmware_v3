@@ -522,13 +522,8 @@ void LCD_display_temperature(volatile uint8_t* temperature){
 /**
  * @brief Clears the LCD Display
  */
-void LCD_clear_screen(uint8_t page){
-	if(page == 1){
-		lcd_clear_bounding_box(0,0,);
-		lcd_refresh(lcd_buffer);
-	}else if(page == 2){
-		lcd_refresh(lcd_buffer2);
-	}
+void LCD_clear_screen(){
+	lcd_clear_bounding_box(1,1, 128, 64, lcd_buffer);
 }
 
 /**

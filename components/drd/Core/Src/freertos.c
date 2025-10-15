@@ -286,15 +286,15 @@ void LCDUpdatetask(void *argument)
     #ifdef DEBUG
         lcd_time_start = HAL_GetTick();
     #endif // DEBUG
-        
-    if(page == 1){
-        g_lcd_data.speed            = get_cyclic_speed();
-        g_lcd_data.drive_state      = get_cyclic_drive_state();
-        g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;
-        g_lcd_data.pack_current     = get_cyclic_pack_current();
-        g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
-        g_lcd_data.soc              = get_cyclic_soc();
 
+	g_lcd_data.speed            = get_cyclic_speed();
+	g_lcd_data.drive_state      = get_cyclic_drive_state();
+	g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;
+	g_lcd_data.pack_current     = get_cyclic_pack_current();
+	g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
+	g_lcd_data.soc              = get_cyclic_soc();
+
+    if(page == 1){
     	LCD_clear_screen(1);
         LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
         LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
