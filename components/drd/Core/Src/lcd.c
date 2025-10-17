@@ -143,7 +143,7 @@ static void lcd_refresh()
 
     #ifdef ST7565_DIRTY_PAGES
         // All pages have now been updated, reset the indicator.
-        lcd_dirty_pages = 255;
+        lcd_dirty_pages = 0;
     #endif
 }
 
@@ -523,7 +523,7 @@ void LCD_display_temperature(volatile uint8_t* temperature){
  * @brief Changes the screen
  */
 void LCD_change_screen(){
-	lcd_dirty_pages = 0;
+	lcd_dirty_pages = 255;
 	lcd_clear_bounding_box(0,0, SCREEN_WIDTH-1 ,SCREEN_HEIGHT-1);
 	lcd_refresh();
 }
@@ -612,4 +612,17 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
         
         osEventFlagsSet(calculate_soc_flagHandle, SOC_CALCULATE_ON);
 	}
+    if(msg_id == STR_CAN_MSG_ID)
+    {
+    	uint8_t next_page = (data[0] & 1);
+    	if(next_page){
+    		page_change = 1;
+    		if(page > MAXPAGES){
+				page = 1;
+			} else{
+				page ++;
+			}
+    	}
+
+    }
 }

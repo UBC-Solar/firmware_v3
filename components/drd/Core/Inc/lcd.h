@@ -78,6 +78,7 @@
 
 extern int page;
 extern int page_change;
+#define MAXPAGES						2
 
 #define SCREEN_HEIGHT                   64
 #define SCREEN_WIDTH                    128

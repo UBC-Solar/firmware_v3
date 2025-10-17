@@ -294,13 +294,6 @@ void LCDUpdatetask(void *argument)
 	g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
 	g_lcd_data.soc              = get_cyclic_soc();
 
-//	if(page == 1 && prev_page == 2){
-//		LCD_change_screen();
-//		prev_page = 1;
-//	}
-//	if(page == 2 && prev_page == 1){
-//
-//		prev_page = 2;
 	if(page_change == 1){
 		LCD_change_screen();
 		page_change = 0;
