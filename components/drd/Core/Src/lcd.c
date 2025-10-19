@@ -47,9 +47,9 @@ lcd_data_t g_lcd_data = {0};
 static uint8_t lcd_dirty_pages;
 #endif
 
-
-int page = 1;
-int page_change = 0;
+/* External variables to store page current state of the page */
+uint8_t g_page = 1;
+uint8_t g_page_change = 0;
 
 /*--------------------------------------------------------------------------
   Internal Helper Functions
@@ -523,8 +523,8 @@ void LCD_display_temperature(volatile uint8_t* temperature){
  * @brief Changes the screen
  */
 void LCD_change_screen(){
-	lcd_dirty_pages = 255;
-	lcd_clear_bounding_box(0,0, SCREEN_WIDTH-1 ,SCREEN_HEIGHT-1);
+	lcd_dirty_pages = DIRTY_PAGE_CHANGE;
+	lcd_clear_bounding_box(0,0, BOTTOM_RIGHT_X ,BOTTOM_RIGHT_Y);
 	lcd_refresh();
 }
 
@@ -615,14 +615,20 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
     if(msg_id == STR_CAN_MSG_ID)
     {
     	uint8_t next_page = (data[0] & 1);
+    	uint8_t previous_page = (data[0] >> 1 & 1);
     	if(next_page){
-    		page_change = 1;
-    		if(page > MAXPAGES){
-				page = 1;
-			} else{
-				page ++;
+    		g_page_change = 1;
+    		if(g_page < MAXPAGES){
+    			g_page++;
 			}
     	}
+    	else if(previous_page){
+    		g_page_change = 1;
+    		if(g_page > 0){
+				g_page--;
+			}
+    	}
+
 
     }
 }

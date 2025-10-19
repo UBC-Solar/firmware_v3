@@ -33,8 +33,6 @@ extern "C" {
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN Private defines */
-#define REVERSE_EN_Pin GPIO_PIN_10
-#define FORWARD_EN_Pin GPIO_PIN_9
 
 /* USER CODE END Private defines */
 

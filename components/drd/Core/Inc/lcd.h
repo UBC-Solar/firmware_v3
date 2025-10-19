@@ -76,9 +76,9 @@
 #define TEMP_DEGREES_SYMBOL 	0xB0
 #define TEMP_DEGREES_SPACING	2
 
-extern int page;
-extern int page_change;
-#define MAXPAGES						2
+#define DIRTY_PAGE_CHANGE		255
+
+#define MAXPAGES				2
 
 #define SCREEN_HEIGHT                   64
 #define SCREEN_WIDTH                    128
@@ -130,12 +130,14 @@ extern int page_change;
     volatile uint8_t* drive_state;
     volatile uint8_t* soc;
     volatile uint8_t drive_mode;
+    volatile uint8_t* temperature;
 } lcd_data_t;
 
 
 /*	User Variables	*/
 extern lcd_data_t g_lcd_data;
-
+extern uint8_t g_page;
+extern uint8_t g_page_change;
 
 
 /*
