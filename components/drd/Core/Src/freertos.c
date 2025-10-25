@@ -267,8 +267,6 @@ void ExternalLights_task(void *argument)
     static uint32_t lcd_time_diff;
 #endif // DEBUG
 
-uint8_t lcd_temp = 50;
-
 
 /* USER CODE END Header_LCDUpdatetask */
 void LCDUpdatetask(void *argument)
@@ -298,16 +296,23 @@ void LCDUpdatetask(void *argument)
 	if(g_page_change == 1){
 		LCD_change_screen();
 		g_page_change = 0;
+
 	}
-	if(g_page == 1){
-		LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
-		LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
-		LCD_display_drive_state(g_lcd_data.drive_state);
-		LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
-		LCD_display_drive_mode(g_lcd_data.drive_mode);
-	}
-	else if(g_page == 2){
-		LCD_display_temperature(g_lcd_data.temperature);
+	switch(g_page){
+		case 1:
+			LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
+			LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
+			LCD_display_drive_state(g_lcd_data.drive_state);
+			LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
+			LCD_display_drive_mode(g_lcd_data.drive_mode);
+			break;
+
+		case 2:
+			LCD_display_temperature(g_lcd_data.temperature);
+			break;
+
+		default:
+			break;
 	}
 
 

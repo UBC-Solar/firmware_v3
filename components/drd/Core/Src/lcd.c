@@ -488,34 +488,33 @@ void LCD_display_drive_mode(volatile uint8_t drive_mode)
  * @param temperature The temperature of motor
  */
 void LCD_display_temperature(volatile uint8_t* temperature){
-    char temp_str[4];
 
-    lcd_clear_bounding_box(TEMP_X - TEMP_SPACING, TEMP_Y, old_bb_temp.x2, old_bb_temp.y2);
+	char temp_str[4];
+	lcd_clear_bounding_box(TEMP_X - TEMP_SPACING, TEMP_Y, old_bb_temp.x2, old_bb_temp.y2);
 
-    // Check
-    if (temperature == NULL) {  // temperature not read
-        sprintf(temp_str, "--");
-        old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
-    }
-    else if (*temperature < 10) { // Single digit temperature
-        sprintf(temp_str, "%01lu", (unsigned long)*temperature);
-        old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
-    }
-    else if(*temperature < 100){ // Double digit temperature
-        sprintf(temp_str, "%02lu", (unsigned long)*temperature);
-        old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
-    }
-    else{ // Triple digit
+	// Check
+	if (temperature == NULL) {  // temperature not read
+		sprintf(temp_str, "--");
+		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
+	}
+	else if (*temperature < 10) { // Single digit temperature
+		sprintf(temp_str, "%01lu", (unsigned long)*temperature);
+		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
+	}
+	else if(*temperature < 100){ // Double digit temperature
+		sprintf(temp_str, "%02lu", (unsigned long)*temperature);
+		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
+	}
+	else{ // Triple digit
 		sprintf(temp_str, "%03lu", (unsigned long)*temperature);
 		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
 	}
 
+	// Draws the Degrees Celsius symbol according to the position of the bounding box
+	draw_char(TEMP_DEGREES_SYMBOL, old_bb_temp.x2 + TEMP_DEGREES_SPACING, TEMP_Y - TEMP_DEGREES_SPACING, TEMP_DEGREES_FONT);
+	draw_char(TEMP_UNITS, old_bb_temp.x2 + TEMP_UNITS_SPACING, TEMP_Y, TEMP_UNITS_FONT);
 
-    // Draws the Degrees Celsius symbol according to the position of the bounding box
-    draw_char(TEMP_DEGREES_SYMBOL, old_bb_temp.x2 + TEMP_DEGREES_SPACING, TEMP_Y - TEMP_DEGREES_SPACING, TEMP_DEGREES_FONT);
-    draw_char(TEMP_UNITS, old_bb_temp.x2 + TEMP_UNITS_SPACING, TEMP_Y, TEMP_UNITS_FONT);
-
-    lcd_refresh();
+	lcd_refresh();
 }
 
 
@@ -612,23 +611,26 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
         
         osEventFlagsSet(calculate_soc_flagHandle, SOC_CALCULATE_ON);
 	}
+
     if(msg_id == STR_CAN_MSG_ID)
     {
     	uint8_t next_page = (data[0] & 1);
     	uint8_t previous_page = (data[0] >> 1 & 1);
     	if(next_page){
-    		g_page_change = 1;
     		if(g_page < MAXPAGES){
+    			g_page_change = 1;
     			g_page++;
 			}
     	}
     	else if(previous_page){
-    		g_page_change = 1;
-    		if(g_page > 0){
+    		if(g_page > 1){
+    			g_page_change = 1;
 				g_page--;
 			}
     	}
-
-
     }
+//    if(msg_id == CANMESSAGE){
+//    	uint8_t temperature = data[0];
+//    	set_cyclic_temperature(temperature);
+//    }
 }

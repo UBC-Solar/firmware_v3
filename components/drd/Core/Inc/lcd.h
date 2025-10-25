@@ -77,7 +77,6 @@
 #define TEMP_DEGREES_SPACING	2
 
 #define DIRTY_PAGE_CHANGE		255
-
 #define MAXPAGES				2
 
 #define SCREEN_HEIGHT                   64
