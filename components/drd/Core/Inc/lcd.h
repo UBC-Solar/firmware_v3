@@ -67,7 +67,7 @@
 
 #define TEMP_FONT            	(Verdana16)
 #define TEMP_X              	70
-#define TEMP_Y              	0
+#define TEMP_Y              	1
 #define TEMP_SPACING         	1
 #define TEMP_UNITS_FONT      	(Verdana8)
 #define TEMP_UNITS           	'C'

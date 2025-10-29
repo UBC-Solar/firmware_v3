@@ -267,7 +267,6 @@ void ExternalLights_task(void *argument)
     static uint32_t lcd_time_diff;
 #endif // DEBUG
 
-
 /* USER CODE END Header_LCDUpdatetask */
 void LCDUpdatetask(void *argument)
 {
@@ -280,7 +279,7 @@ void LCDUpdatetask(void *argument)
   
   for(;;)
   {
-    // When debugging we can check the duration of th-is function to measure performance.
+    // When debugging we can check the duration of this function to measure performance.
     #ifdef DEBUG
         lcd_time_start = HAL_GetTick();
     #endif // DEBUG
@@ -296,7 +295,6 @@ void LCDUpdatetask(void *argument)
 	if(g_page_change == 1){
 		LCD_change_screen();
 		g_page_change = 0;
-
 	}
 	switch(g_page){
 		case 1:

@@ -144,6 +144,6 @@ void MX_GPIO_Init(void)
  */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	Drive_State_interrupt_handler(GPIO_Pin);
+	//Drive_State_interrupt_handler(GPIO_Pin);
 }
 /* USER CODE END 2 */
