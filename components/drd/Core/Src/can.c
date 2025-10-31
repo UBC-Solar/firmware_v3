@@ -208,15 +208,15 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
    HAL_CAN_ConfigFilter(&hcan, can_filter);
 
    // ---- Filter Bank 2 ----
-   can_filter1.FilterIdHigh = (CAN_ID_MDI_TEMP << 5);
-   can_filter1.FilterMaskIdHigh = (CAN_ID_MDI_TEMP << 5);
-   can_filter1.FilterIdLow = (CAN_ID_MDI_TEMP << 5);
-   can_filter1.FilterMaskIdLow = (CAN_ID_MDI_TEMP << 5);
-   can_filter1.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-   can_filter1.FilterBank = 2;
-   can_filter1.FilterMode = CAN_FILTERMODE_IDLIST;
-   can_filter1.FilterScale = CAN_FILTERSCALE_16BIT;
-   can_filter1.FilterActivation = ENABLE;
+   can_filter3.FilterIdHigh = (CAN_ID_MDI_TEMP << 5);
+   can_filter3.FilterMaskIdHigh = (CAN_ID_MDI_TEMP << 5);
+   can_filter3.FilterIdLow = (CAN_ID_MDI_TEMP << 5);
+   can_filter3.FilterMaskIdLow = (CAN_ID_MDI_TEMP << 5);
+   can_filter3.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+   can_filter3.FilterBank = 2;
+   can_filter3.FilterMode = CAN_FILTERMODE_IDLIST;
+   can_filter3.FilterScale = CAN_FILTERSCALE_16BIT;
+   can_filter3.FilterActivation = ENABLE;
    HAL_CAN_ConfigFilter(&hcan, &can_filter3);
 
    // ---- Filter Bank 4 ----

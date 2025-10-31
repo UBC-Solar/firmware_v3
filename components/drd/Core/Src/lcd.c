@@ -490,7 +490,7 @@ void LCD_display_drive_mode(volatile uint8_t drive_mode)
  */
 void LCD_display_temperature(volatile uint8_t* temperature){
 	char temp_str[4];
-	lcd_clear_bounding_box(TEMP_X - TEMP_SPACING, TEMP_Y, old_bb_temp.x2, old_bb_temp.y2);
+	lcd_clear_bounding_box(TEMP_X, TEMP_Y, old_bb_temp.x2 + 13, old_bb_temp.y2);
 
 	// Check
 	if (temperature == NULL) {  // temperature not read
@@ -611,6 +611,7 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
         
         osEventFlagsSet(calculate_soc_flagHandle, SOC_CALCULATE_ON);
 	}
+
     if(msg_id == STR_CAN_MSG_ID)
     {
     	uint8_t next_page = (data[0] & 1);
@@ -628,10 +629,8 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
 				g_page--;
 			}
     	}
-    	else{
-    		g_page_change = 0;
-    	}
     }
+
     if(msg_id == CAN_ID_MDI_TEMP)
     {
     	uint8_t temperature = data[0];
