@@ -4,7 +4,7 @@
 #include "lcd.h"
 
 // CYCLIC_DATA(type, name, max_cycle_time)
-CYCLIC_DATA(uint32_t, cyclic_speed, MAX_CYCLE_TIME);               // Vehicle speed (km/h)
+CYCLIC_DATA(uint32_t, cyclic_speed, MAX_CYCLE_TIME);            // Vehicle speed (km/h)
 CYCLIC_DATA(int16_t, cyclic_pack_current, MAX_CYCLE_TIME);      // Battery pack current
 CYCLIC_DATA(uint16_t, cyclic_pack_voltage, MAX_CYCLE_TIME);     // Battery pack voltage
 CYCLIC_DATA(uint8_t, cyclic_drive_state, MAX_CYCLE_TIME);       // Current drive state (e.g., PARK, FORWARD)

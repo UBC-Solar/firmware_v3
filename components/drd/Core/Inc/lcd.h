@@ -15,11 +15,16 @@
 #define BOTTOM_RIGHT_X      127
 #define BOTTOM_RIGHT_Y      63
 
-#define SPEED_FONT          (Verdana32)
-#define SPEED_X             36
-#define SPEED_Y             29
-#define SPEED_SPACING       2
-#define WIDEST_NUM_LEN_VERDANA32           24      // pixels
+#define SPEED_FONT          (Verdana48_digits)
+#define SPEED_X             35
+#define SPEED_ONEDIGIT_X	87
+#define SPEED_TWODIGIT_X	58
+#define SPEED_THREEDIGIT_X	38
+#define SPEED_Y             5
+#define SPEED_SPACING       -2 //ChatGPT generated font has too much padding
+#define SPEED_UNIT_KPH_X	76
+#define SPEED_UNIT_MPH_X	72
+#define SPEED_UNIT_Y		1
 #define MPH                 0
 #define KPH                 1
 #define SPEED_UNITS_FONT    (Verdana8)
@@ -33,13 +38,13 @@
 #define REVERSE_STATE       0x04        
 #define REVERSE_SYMBOL      'R'    
 #define ERROR_SYMBOL        'X'    
-#define STATE_X             1
+#define STATE_X             18
 #define STATE_Y             47
 #define STATE_FONT          (Verdana16)
 #define STATE_SPACING       1
 
 #define SOC_FONT            (Verdana16)
-#define SOC_X               95
+#define SOC_X               18
 #define SOC_Y               46
 #define SOC_SPACING         1
 #define SOC_UNITS_FONT      (Verdana8)
@@ -50,11 +55,11 @@
 #define MAX_NEGATIVE_POWER              3000.0f   // use the absolute value for negative power
 #define BAR_LEFT                        1
 #define BAR_TOP                         1
-#define BAR_BOTTOM                      20
-#define BAR_RIGHT BOTTOM_RIGHT_X
-#define CENTER_X                        43
+#define BAR_BOTTOM                      63
+#define BAR_RIGHT						10
+#define CENTER_Y                        41
 
-#define ECO_MODE_X             3
+#define ECO_MODE_X             18
 #define ECO_MODE_Y             25
 #define POWER_MODE_X           2
 #define POWER_MODE_Y           20
@@ -73,10 +78,11 @@
 #define TEMP_UNITS           	'C'
 #define TEMP_UNITS_SPACING		7
 #define TEMP_DEGREES_FONT		(Custom)
-#define TEMP_DEGREES_SYMBOL 	0xB0
+#define TEMP_DEGREES_SYMBOL 	0xB0 // Hex ASCII value for °
 #define TEMP_DEGREES_SPACING	2
 
-#define DIRTY_PAGE_CHANGE		255
+#define LCD_PAGE_CHANGE_BIT  	(1 << 0)
+#define DIRTY_PAGE_CHANGE		0xFF
 #define MAXPAGES				2
 
 #define SCREEN_HEIGHT                   64
@@ -135,8 +141,8 @@
 
 /*	User Variables	*/
 extern lcd_data_t g_lcd_data;
-extern uint8_t g_page;
-extern uint8_t g_page_change;
+extern uint8_t g_LCD_page;
+extern uint8_t g_LCD_page_change;
 
 
 /*

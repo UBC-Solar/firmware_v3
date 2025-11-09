@@ -48,8 +48,8 @@ static uint8_t lcd_dirty_pages;
 #endif
 
 /* External variables to store page current state of the page */
-uint8_t g_page = 1;
-uint8_t g_page_change = 0;
+uint8_t g_LCD_page = 1;
+uint8_t g_LCD_page_change = 0;
 
 /*--------------------------------------------------------------------------
   Internal Helper Functions
@@ -64,7 +64,7 @@ uint8_t g_page_change = 0;
  * @param color 1 to set the pixel, 0 to clear it.
  */
 static void lcd_pixel(uint8_t x, uint8_t y, uint8_t colour) {
-
+	if (x < 1 || y < 1) return;
     if (x > SCREEN_WIDTH || y > SCREEN_HEIGHT) return;
 
     // Real screen coordinates are 0-63, not 1-64.
@@ -285,30 +285,34 @@ void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units)
     
     if (speed == NULL) {  // Stale speed data
         sprintf(speed_str, "--"); 
-        old_bb_speed = draw_text(speed_str, SPEED_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+        old_bb_speed = draw_text(speed_str, SPEED_ONEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
         g_diagnostics.cyclic_flags.speed_timeout = true; 
     } 
     else if (*speed < 10) { // Single digit speed
         sprintf(speed_str, "%01lu", (unsigned long)*speed);  
-        old_bb_speed = draw_text(speed_str, SPEED_X + 14, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+        old_bb_speed = draw_text(speed_str, SPEED_ONEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
         g_diagnostics.cyclic_flags.speed_timeout = false; 
-    } else {
+    } else if (*speed < 100){ // Double digit second
         sprintf(speed_str, "%02lu", (unsigned long)*speed);  
-        old_bb_speed = draw_text(speed_str, SPEED_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+        old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
         g_diagnostics.cyclic_flags.speed_timeout = false; 
+    } else{
+    	sprintf(speed_str, "%03lu", (unsigned long)*speed);
+		old_bb_speed = draw_text(speed_str, SPEED_THREEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+		g_diagnostics.cyclic_flags.speed_timeout = false;
     }
     
     /* Draw the speed units */
     
     switch (units) {
         case KPH:
-            old_bb_speed_units = draw_text("kph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+            old_bb_speed_units = draw_text("kph", SPEED_X + SPEED_UNIT_KPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
             break;
         case MPH:
-            old_bb_speed_units = draw_text("mph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+            old_bb_speed_units = draw_text("mph", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
             break;
         default:
-            old_bb_speed_units = draw_text("xxx", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+            old_bb_speed_units = draw_text("xxx", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
             break;
     }
     lcd_refresh();
@@ -357,7 +361,7 @@ void LCD_display_SOC(volatile uint32_t* soc)
 {
     char soc_str[12];
     bounding_box_t bb;
-    lcd_clear_bounding_box(SOC_X - SOC_SPACING, SOC_Y, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
+    lcd_clear_bounding_box(17, 46, 51, 63);
     
     // Check for stale data and display "--" if so.
     if (soc == NULL) {
@@ -369,10 +373,16 @@ void LCD_display_SOC(volatile uint32_t* soc)
         sprintf(soc_str, "%01lu", (unsigned long)* soc);
         bb = draw_text(soc_str, SOC_X + 10, SOC_Y, SOC_FONT, SOC_SPACING);
         g_diagnostics.cyclic_flags.soc_timeout = false;
-    } else {
+    }
+    else if (*soc < 100){
         sprintf(soc_str, "%02lu", (unsigned long)* soc);
         bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
         g_diagnostics.cyclic_flags.soc_timeout = false;
+    }
+    else {
+    	sprintf(soc_str, "%03lu", (unsigned long)* soc);
+		bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = false;
     }
 
     UNUSED(bb);     // remove warning
@@ -390,7 +400,7 @@ void LCD_display_SOC(volatile uint32_t* soc)
 void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* pack_voltage)
 {
     /* Clear the drawing area (including extra space for the center line) */
-    lcd_clear_bounding_box(BAR_LEFT, BAR_TOP, BAR_RIGHT, BAR_BOTTOM + 3);
+    lcd_clear_bounding_box(BAR_LEFT, BAR_TOP, BAR_RIGHT, BAR_BOTTOM);
 
     /* Draw the outline of the power bar */
     draw_rectangle(BAR_LEFT, BAR_TOP, BAR_RIGHT, BAR_BOTTOM, 1);
@@ -399,22 +409,22 @@ void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* p
     g_diagnostics.cyclic_flags.voltage_timeout = (pack_voltage == NULL) ? true : false;
 
     /* If either of voltage or current equals NULL, we display a cross over the bar*/
-    if (pack_current == NULL || pack_voltage == NULL) {
-        int bar_width = BAR_RIGHT - BAR_LEFT;
-        int bar_height = BAR_BOTTOM - BAR_TOP;
-        for (int i=0; i <= bar_width; i++) {
-            int x = BAR_LEFT + i;
-            int y = BAR_TOP + (i * bar_height) / bar_width;
-            lcd_pixel(x, y, 1);
-        }
-        for (int i = 0; i <= bar_width; i++) {
-            int x = BAR_RIGHT - i;
-            int y = BAR_TOP + (i * bar_height) / bar_width;
-            lcd_pixel(x, y, 1);
-        }
-        lcd_refresh();
-        return;
-    }
+	if (pack_current == NULL || pack_voltage == NULL) {
+		int bar_width = BAR_RIGHT - BAR_LEFT;
+		int bar_height = BAR_BOTTOM - BAR_TOP;
+		for (int i=0; i <= bar_height; i++) {
+			int x = BAR_LEFT + (i * bar_width) / bar_height;
+			int y = BAR_TOP + i;
+			lcd_pixel(x, y, 1);
+		}
+		for (int i = 0; i <= bar_height; i++) {
+			int x = BAR_LEFT + (i * bar_width) / bar_height;
+			int y = BAR_BOTTOM - i;
+			lcd_pixel(x, y, 1);
+		}
+		lcd_refresh();
+		return;
+	}
     else{
         float power = (float)*pack_current * (float)*pack_voltage;
         int fill_pixels = 0;
@@ -423,31 +433,44 @@ void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* p
             float ratio = power / MAX_POSITIVE_POWER;
             if (ratio > 1.0f)
                 ratio = 1.0f;
-            int total_pixels_right = BAR_RIGHT - CENTER_X;
-            fill_pixels = (int)(ratio * total_pixels_right);
-            for (int y = BAR_TOP + 1; y < BAR_BOTTOM; y++) {
-                for (int x = CENTER_X + 1; x <= CENTER_X + fill_pixels; x++) {
-                    lcd_pixel(x, y, 1);
-                }
-            }
-        } 
-        else if (power < 0) {
-            float ratio = (-power) / MAX_NEGATIVE_POWER;
-            if (ratio > 1.0f)
-                ratio = 1.0f;
-            int total_pixels_left = CENTER_X - BAR_LEFT;
-            fill_pixels = (int)(ratio * total_pixels_left);
-            for (int y = BAR_TOP + 1; y < BAR_BOTTOM; y++) {
-                for (int x = CENTER_X - 1; x >= CENTER_X - fill_pixels; x--) {
-                    lcd_pixel(x, y, 1);
-                }
+            int total_pixels_top = CENTER_Y - BAR_TOP;
+            fill_pixels = (int)(ratio * total_pixels_top);
+			for (int y = CENTER_Y; y > CENTER_Y - fill_pixels; y--) {
+				for (int x = BAR_LEFT; x < BAR_RIGHT; x++) {
+					lcd_pixel(x, y, 1);
+				}
             }
         }
+        if (power < 0) {
+			float ratio = (-power) / MAX_NEGATIVE_POWER;
+			if (ratio > 1.0f)
+				ratio = 1.0f;
+			int total_pixels_bottom = BAR_BOTTOM - CENTER_Y;
+			fill_pixels = (int)(ratio * total_pixels_bottom);
+			for (int y = CENTER_Y; y < CENTER_Y + fill_pixels; y++) {
+				for (int x = BAR_LEFT; x < BAR_RIGHT; x++) {
+					lcd_pixel(x, y, 1);
+				}
+			}
+		}
+//        else if (power < 0) {
+//            float ratio = (-power) / MAX_NEGATIVE_POWER;
+//            if (ratio > 1.0f)
+//                ratio = 1.0f;
+//            int total_pixels_bottom = CENTER_Y - BAR_BOTTOM;
+//            fill_pixels = (int)(ratio * total_pixels_left);
+//            for (int y = BAR_TOP + 1; y < BAR_BOTTOM; y++) {
+//                for (int x = CENTER_X - 1; x >= CENTER_X - fill_pixels; x--) {
+//                    lcd_pixel(x, y, 1);
+//                }
+//            }
+//        }
 
         /* Redraw the center line extending 3 pixels below the bar */
-        for (int y = BAR_TOP; y <= BAR_BOTTOM + 3; y++) {
-            lcd_pixel(CENTER_X, y, 1);
-        }
+        for (int x = BAR_LEFT; x < BAR_RIGHT + 3; x++) {
+			lcd_pixel(x, CENTER_Y, 1);
+		}
+
         lcd_refresh();
     }
 }
@@ -484,7 +507,7 @@ void LCD_display_drive_mode(volatile uint8_t drive_mode)
 
 
 /**
- * @brief Displays an Temperature on the LCD
+ * @brief Displays an Temperature on the LCD (0-255)
  *
  * @param temperature The temperature of motor
  */
@@ -492,7 +515,7 @@ void LCD_display_temperature(volatile uint8_t* temperature){
 	char temp_str[4];
 	lcd_clear_bounding_box(TEMP_X, TEMP_Y, old_bb_temp.x2 + 13, old_bb_temp.y2);
 
-	// Check
+	// Check digits in temperature data received
 	if (temperature == NULL) {  // temperature not read
 		sprintf(temp_str, "--");
 		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
@@ -615,18 +638,18 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
     if(msg_id == STR_CAN_MSG_ID)
     {
     	uint8_t next_page = (data[0] & 1);
-    	uint8_t previous_page = (data[0] >> 1 & 1);
+    	uint8_t previous_page = (data[0] >> 1) & 1;
 
     	if(next_page){
-    		if(g_page < MAXPAGES){
-    			g_page_change = 1;
-    			g_page++;
+    		if(g_LCD_page < MAXPAGES){
+    			g_LCD_page_change = 1;
+    			g_LCD_page++;
 			}
     	}
     	else if(previous_page){
-    		if(g_page > 1){
-    			g_page_change = 1;
-				g_page--;
+    		if(g_LCD_page > 1){
+    			g_LCD_page_change = 1;
+    			g_LCD_page--;
 			}
     	}
     }

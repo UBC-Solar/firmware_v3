@@ -273,9 +273,15 @@ void LCDUpdatetask(void *argument)
   /* USER CODE BEGIN LCDUpdatetask */
   /* Infinite loop */
 
-  LCD_init(&hspi1);
+    uint32_t speed =44;
+    int16_t current;
+    uint16_t voltage = 1;
+    volatile uint32_t soc;
 
-  g_lcd_data.speed_units = KPH;
+  LCD_init(&hspi1);
+  LCD_change_screen();
+
+  g_lcd_data.speed_units = MPH;
   
   for(;;)
   {
@@ -284,28 +290,46 @@ void LCDUpdatetask(void *argument)
         lcd_time_start = HAL_GetTick();
     #endif // DEBUG
 
-	g_lcd_data.speed            = get_cyclic_speed();
-	g_lcd_data.drive_state      = get_cyclic_drive_state();
-	g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;
-	g_lcd_data.pack_current     = get_cyclic_pack_current();
-	g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
-	g_lcd_data.soc              = get_cyclic_soc();
-	g_lcd_data.temperature		= get_cyclic_temperature();
-
-	if(g_page_change == 1){
+    // Handles clearing the screen
+	if(g_LCD_page_change == 1){
 		LCD_change_screen();
-		g_page_change = 0;
+		g_LCD_page_change = 0;
 	}
-	switch(g_page){
+
+//	for(speed = 0; speed<244; speed++){
+//		LCD_display_speed(&speed, g_lcd_data.speed_units);
+//		HAL_Delay(200);
+//	}
+
+//	for (current = -3000; current <= 5400; current+=100){
+//		LCD_display_power_bar(&current, &voltage);
+//		HAL_Delay(200);
+//	}
+	for(soc = 0; soc<100; soc++){
+		LCD_display_SOC(&soc);
+		HAL_Delay(200);
+	}
+
+	// Handles what is displayed
+	switch(g_LCD_page){
 		case 1:
-			LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
-			LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
-			LCD_display_drive_state(g_lcd_data.drive_state);
-			LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
-			LCD_display_drive_mode(g_lcd_data.drive_mode);
+			g_lcd_data.speed            = get_cyclic_speed();
+			g_lcd_data.drive_state      = get_cyclic_drive_state();
+			g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;
+			g_lcd_data.pack_current     = get_cyclic_pack_current();
+			g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
+			g_lcd_data.soc              = get_cyclic_soc();
+//
+			LCD_display_power_bar(&current, &voltage);
+			LCD_display_speed(&speed, g_lcd_data.speed_units);
+//			LCD_display_drive_state(g_lcd_data.drive_state);
+			LCD_display_SOC(&soc);
+//			LCD_display_drive_mode(g_lcd_data.drive_mode);
 			break;
 
 		case 2:
+			g_lcd_data.temperature		= get_cyclic_temperature();
+
 			LCD_display_temperature(g_lcd_data.temperature);
 			break;
 
