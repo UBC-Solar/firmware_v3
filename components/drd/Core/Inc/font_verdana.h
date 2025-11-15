@@ -11,5 +11,7 @@ extern const unsigned char Webdings14[];
 
 extern const unsigned char Custom[];
 extern const unsigned char Verdana48_digits[];
+extern const unsigned char Verdana56[];
+
 
 #endif

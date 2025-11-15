@@ -273,10 +273,12 @@ void LCDUpdatetask(void *argument)
   /* USER CODE BEGIN LCDUpdatetask */
   /* Infinite loop */
 
-    uint32_t speed =44;
-    int16_t current;
+    uint32_t speed = 100;
+    int16_t current = 100;
     uint16_t voltage = 1;
-    volatile uint32_t soc;
+    volatile uint32_t soc = 88;
+    volatile uint8_t state = 0x03; // 0x01, 0x03, 0x04
+    volatile uint8_t mode = 1;
 
   LCD_init(&hspi1);
   LCD_change_screen();
@@ -296,19 +298,16 @@ void LCDUpdatetask(void *argument)
 		g_LCD_page_change = 0;
 	}
 
-//	for(speed = 0; speed<244; speed++){
-//		LCD_display_speed(&speed, g_lcd_data.speed_units);
-//		HAL_Delay(200);
-//	}
+
 
 //	for (current = -3000; current <= 5400; current+=100){
 //		LCD_display_power_bar(&current, &voltage);
 //		HAL_Delay(200);
 //	}
-	for(soc = 0; soc<100; soc++){
-		LCD_display_SOC(&soc);
-		HAL_Delay(200);
-	}
+//	for(soc = 0; soc<100; soc++){
+//		LCD_display_SOC(&soc);
+//		HAL_Delay(200);
+//	}
 
 	// Handles what is displayed
 	switch(g_LCD_page){
@@ -322,9 +321,15 @@ void LCDUpdatetask(void *argument)
 //
 			LCD_display_power_bar(&current, &voltage);
 			LCD_display_speed(&speed, g_lcd_data.speed_units);
-//			LCD_display_drive_state(g_lcd_data.drive_state);
 			LCD_display_SOC(&soc);
-//			LCD_display_drive_mode(g_lcd_data.drive_mode);
+			LCD_display_drive_mode(mode);
+			LCD_display_drive_state(&state);
+
+//			for(speed = 0; speed<99; speed++){
+//				LCD_display_speed(&speed, g_lcd_data.speed_units);
+//				HAL_Delay(500);
+//			}
+
 			break;
 
 		case 2:

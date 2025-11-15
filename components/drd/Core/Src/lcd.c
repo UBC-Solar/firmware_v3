@@ -280,8 +280,7 @@ void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units)
 {
     char speed_str[12];
     /* Clear the previous speed and unit areas */
-    lcd_clear_bounding_box(SPEED_X - SPEED_SPACING, SPEED_Y, old_bb_speed.x2 + SPEED_SPACING, BOTTOM_RIGHT_Y);
-    lcd_clear_bounding_box(old_bb_speed.x2 - SPEED_SPACING, SPEED_Y, old_bb_speed_units.x2 + SPEED_UNITS_SPACING, SPEED_Y + 11);
+    lcd_clear_bounding_box(57, 5, 127, 53);
     
     if (speed == NULL) {  // Stale speed data
         sprintf(speed_str, "--"); 
@@ -326,7 +325,8 @@ void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units)
 void LCD_display_drive_state(volatile drive_state_t* state)
 {
     char state_str[2] = {ERROR_SYMBOL, '\0'};  // Default to error symbol.
-    lcd_clear_bounding_box(STATE_X, STATE_Y, old_bb_drive_state.x2, BOTTOM_RIGHT_Y);
+    lcd_clear_bounding_box(23, 47, 35, 68);
+
     if (state == NULL) {  // Stale data for drive state
         sprintf(state_str, "-");
         g_diagnostics.cyclic_flags.drive_state_timeout = true;
@@ -361,7 +361,7 @@ void LCD_display_SOC(volatile uint32_t* soc)
 {
     char soc_str[12];
     bounding_box_t bb;
-    lcd_clear_bounding_box(17, 46, 51, 63);
+    lcd_clear_bounding_box(23, 1, 45, 22);
     
     // Check for stale data and display "--" if so.
     if (soc == NULL) {
@@ -453,18 +453,6 @@ void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* p
 				}
 			}
 		}
-//        else if (power < 0) {
-//            float ratio = (-power) / MAX_NEGATIVE_POWER;
-//            if (ratio > 1.0f)
-//                ratio = 1.0f;
-//            int total_pixels_bottom = CENTER_Y - BAR_BOTTOM;
-//            fill_pixels = (int)(ratio * total_pixels_left);
-//            for (int y = BAR_TOP + 1; y < BAR_BOTTOM; y++) {
-//                for (int x = CENTER_X - 1; x >= CENTER_X - fill_pixels; x--) {
-//                    lcd_pixel(x, y, 1);
-//                }
-//            }
-//        }
 
         /* Redraw the center line extending 3 pixels below the bar */
         for (int x = BAR_LEFT; x < BAR_RIGHT + 3; x++) {
@@ -484,7 +472,7 @@ void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* p
 void LCD_display_drive_mode(volatile uint8_t drive_mode)
 {
     char drive_mode_c = ERROR_SYMBOL;   // Default to error symbol.
-    lcd_clear_bounding_box(0, old_bb_drive_mode.y1 + 7, old_bb_drive_mode.x2, old_bb_drive_mode.y2);
+    lcd_clear_bounding_box(23, 24, 37, 44);
     
     // Drive mode is valid, display the corresponding symbol.
     switch (drive_mode) {
@@ -501,6 +489,7 @@ void LCD_display_drive_mode(volatile uint8_t drive_mode)
             old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
             break;
     }
+    lcd_refresh();
     
     // With LCD Refresh the topbar gets cut into. This is because lighting bolt has unecesary white space :(.
 }

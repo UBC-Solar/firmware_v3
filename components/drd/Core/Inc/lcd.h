@@ -18,10 +18,10 @@
 #define SPEED_FONT          (Verdana48_digits)
 #define SPEED_X             35
 #define SPEED_ONEDIGIT_X	87
-#define SPEED_TWODIGIT_X	58
-#define SPEED_THREEDIGIT_X	38
+#define SPEED_TWODIGIT_X	57
+#define SPEED_THREEDIGIT_X	45
 #define SPEED_Y             5
-#define SPEED_SPACING       -2 //ChatGPT generated font has too much padding
+#define SPEED_SPACING       -3 // ChatGPT generated font has too much padding
 #define SPEED_UNIT_KPH_X	76
 #define SPEED_UNIT_MPH_X	72
 #define SPEED_UNIT_Y		1
@@ -38,14 +38,14 @@
 #define REVERSE_STATE       0x04        
 #define REVERSE_SYMBOL      'R'    
 #define ERROR_SYMBOL        'X'    
-#define STATE_X             18
+#define STATE_X             23
 #define STATE_Y             47
 #define STATE_FONT          (Verdana16)
 #define STATE_SPACING       1
 
 #define SOC_FONT            (Verdana16)
-#define SOC_X               18
-#define SOC_Y               46
+#define SOC_X               23
+#define SOC_Y               1
 #define SOC_SPACING         1
 #define SOC_UNITS_FONT      (Verdana8)
 #define SOC_UNITS           '%'
@@ -56,15 +56,15 @@
 #define BAR_LEFT                        1
 #define BAR_TOP                         1
 #define BAR_BOTTOM                      63
-#define BAR_RIGHT						10
+#define BAR_RIGHT						15
 #define CENTER_Y                        41
 
-#define ECO_MODE_X             18
-#define ECO_MODE_Y             25
-#define POWER_MODE_X           2
-#define POWER_MODE_Y           20
+#define ECO_MODE_X             23
+#define ECO_MODE_Y             23
+#define POWER_MODE_X           23
+#define POWER_MODE_Y           21
 #define POWER_MODE_FONT          (Webdings14)
-#define ECO_MODE_FONT          (Verdana12)
+#define ECO_MODE_FONT          (Verdana16)
 #define ECO_SYMBOL              'E'    
 #define POWER_SYMBOL            '~'    
 #define DRIVE_MODE_ECO          1       // ECO Mode is GPIO high (logic 1) for MDI to MC.
