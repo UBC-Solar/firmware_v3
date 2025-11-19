@@ -133,7 +133,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+    // HAL_UART_Transmit(&huart5, (uint8_t*)msg, sizeof(msg) - 1, HAL_MAX_DELAY);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

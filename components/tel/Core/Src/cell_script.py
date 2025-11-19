@@ -6,10 +6,9 @@ import serial
 import cantools
 from datetime import datetime, timezone
 from influxdb_client import InfluxDBClient, Point
-# from influxdb_client.client.write_api import SYNCHRONOUS            # <<< CHANGED (no longer used)
-from influxdb_client.client.write_api import WriteOptions             # <<< ADDED
-import signal, time                                                   # <<< ADDED
-import logging                                                        # <<< ADDED
+from influxdb_client.client.write_api import WriteOptions             # ADDED
+import signal, time                                                   # ADDED
+import logging                                                        # ADDED
 # ---------------- CONFIG ----------------
 DBC_FILE      = "/home/tonychen/brightside.dbc"
 SERIAL_PORT   = "/dev/ttyUSB0"
@@ -17,28 +16,28 @@ BAUDRATE      = 115200*2
 INFLUX_URL    = "http://100.120.214.69"
 INFLUX_ORG    = "UBC Solar"
 INFLUX_BUCKET = "CAN_test"
-INFLUX_TOKEN  = ""
+INFLUX_TOKEN  = "token"
 USE_NOW_TIME = True  # Use current time for Influx _time
 FRAME_LEN = 21       # 8 (ts) + 1 (filler?) + 4 (id) + 8 (data)
 # Batch settings
-BATCH_SIZE = 1000                                                    # <<< ADDED
-FLUSH_INTERVAL_S = 1.0                                               # <<< ADDED
+BATCH_SIZE = 1000                                                    # ADDED
+FLUSH_INTERVAL_S = 1.0                                               # ADDED
 # ---------------- SETUP ----------------
-logging.basicConfig(level=logging.INFO)                              # <<< ADDED
+logging.basicConfig(level=logging.INFO)                              # ADDED
 try:
     ser = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=1)
 except Exception as e:
     raise RuntimeError(f"Failed to open {SERIAL_PORT}: {e}")
 db = cantools.database.load_file(DBC_FILE)
 # Enable gzip + async batch writer
-client = InfluxDBClient(                                             # <<< CHANGED
+client = InfluxDBClient(                                             # CHANGED
     url=INFLUX_URL, org=INFLUX_ORG, token=INFLUX_TOKEN,
-    enable_gzip=True                                                 # <<< ADDED
+    enable_gzip=True                                                 # ADDED
 )
-write_api = client.write_api(                                        # <<< CHANGED
+write_api = client.write_api(                                        # CHANGED
     write_options=WriteOptions(
         batch_size=BATCH_SIZE,
-        flush_interval=int(FLUSH_INTERVAL_S * 1000),  # ms
+        flush_interval=int(FLUSH_INTERVAL_S * 1000),   # ms
         jitter_interval=100,                           # ms
         retry_interval=5000,                           # ms
         max_retries=5,
@@ -65,7 +64,7 @@ try:
              .field("value", 1.0)
              .time(datetime.now(timezone.utc)))
     write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=smoke)
-    write_api.flush()                                                # <<< ADDED (force flush so you can see it immediately)
+    write_api.flush()                                                # ADDED (force flush so it can be seen immediately)
     print("Wrote smoke_test point. Check Data Explorer → measurement=smoke_test (Last 15m).")
 except Exception as e:
     print(f"Smoke write failed: {e}")
@@ -113,6 +112,7 @@ def build_output_dict(source, message_obj, measurements, hex_id, ts_seconds, raw
             datetime.fromtimestamp(ts_seconds).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         )
     return data
+
 def try_decode_layout(raw21: bytes, layout: str):
     if layout == "with_filler":
         ts_bytes, id_bytes, data_bytes = raw21[0:8], raw21[9:13], raw21[13:21]
@@ -155,7 +155,7 @@ def _make_points(parsed: dict):                                      # <<< ADDED
              .time(ts_influx))
         points.append(p)
     return points
-def _flush_if_needed(force: bool = False):                           # <<< ADDED
+def _flush_if_needed(force: bool = False):                           # ADDED
     """Flush when batch is full or interval elapsed."""
     global _points_buf, _last_flush
     if force or len(_points_buf) >= BATCH_SIZE or (time.time() - _last_flush) >= FLUSH_INTERVAL_S:
@@ -167,7 +167,7 @@ def _flush_if_needed(force: bool = False):                           # <<< ADDED
                 logging.warning(f"Batch write failed (size={len(_points_buf)}): {e}")
             _points_buf = []
             _last_flush = time.time()
-def _shutdown(*_):                                                   # <<< ADDED
+def _shutdown(*_):                                                   # ADDED
     """Ensure buffers are flushed on exit."""
     try:
         _flush_if_needed(force=True)
@@ -182,10 +182,10 @@ def _shutdown(*_):                                                   # <<< ADDED
         except Exception:
             pass
         sys.exit(0)
-signal.signal(signal.SIGINT, _shutdown)                              # <<< ADDED
-signal.signal(signal.SIGTERM, _shutdown)                             # <<< ADDED
+signal.signal(signal.SIGINT, _shutdown)                              # ADDED
+signal.signal(signal.SIGTERM, _shutdown)                             # ADDED
 # ---------------- INFLUX WRITE (BATCHED) ----------------
-def write_to_influx(parsed: dict):                                   # <<< CHANGED (now buffers instead of per-point writes)
+def write_to_influx(parsed: dict):                                   # CHANGED (now buffers instead of per-point writes)
     global _points_buf
     pts = _make_points(parsed)                                       # build points for this CAN frame
     if pts:
@@ -221,20 +221,20 @@ def process_message(message: str, buffer: str = "") -> list:
     return  [bytes.fromhex(part) for part in parts] , buffer
 # ---------------- RESYNCING SERIAL LOOP ----------------
 CHUNK_SIZE = 24 * 21        # 21 CAN messages from serial at a time.
-# Optional: simple 1 Hz heartbeat for throughput visibility         # <<< ADDED
-_last_log = time.time()                                              # <<< ADDED
-_ingest = 0                                                          # <<< ADDED
+# Optional: simple 1 Hz heartbeat for throughput visibility         # ADDED
+_last_log = time.time()                                              # ADDED
+_ingest = 0                                                          # ADDED
 def run():
-    global _last_log, _ingest                                       # <<< ADDED
+    global _last_log, _ingest                                     
     buffer = ""
     buf = bytearray()
     while True:
         chunk = ser.read(CHUNK_SIZE)
         if not chunk:
-            _flush_if_needed()                                      # <<< ADDED (time-based flush even if idle)
+            _flush_if_needed()                               
             # heartbeat
-            now = time.time()                                       # <<< ADDED
-            if now - _last_log >= 1.0:                              # <<< ADDED
+            now = time.time()                               
+            if now - _last_log >= 1.0:                       
                 logging.info("ingest=%d buf=%d", _ingest, len(_points_buf))
                 _ingest = 0
                 _last_log = now
@@ -244,8 +244,8 @@ def run():
         for part in parts:
             try:
                 parsed = decode_frame(part)
-                _ingest += 1                                        # <<< ADDED
-                write_to_influx(parsed)                             # (batched)
+                _ingest += 1                                 
+                write_to_influx(parsed)            
             except Exception as e:
                 print("ERROR", e)
 if __name__ == "__main__":
@@ -253,4 +253,4 @@ if __name__ == "__main__":
         run()
     except KeyboardInterrupt:
         print("EXIT")
-        _shutdown()                                                 # <<< CHANGED (ensure flush/close)
+        _shutdown()                                                 # CHANGED (ensure flush/close)
