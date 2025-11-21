@@ -4,6 +4,7 @@
 extern const unsigned char Verdana8[];
 extern const unsigned char Verdana12[];
 extern const unsigned char Verdana22[];
+extern const unsigned char Verdana14[];
 extern const unsigned char Verdana16[];
 extern const unsigned char Verdana32[];
 

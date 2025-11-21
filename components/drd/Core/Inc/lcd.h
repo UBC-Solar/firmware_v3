@@ -15,6 +15,7 @@
 #define BOTTOM_RIGHT_X      127
 #define BOTTOM_RIGHT_Y      63
 
+/** Drive Page */
 #define SPEED_FONT          (Verdana48_digits)
 #define SPEED_X             35
 #define SPEED_ONEDIGIT_X	87
@@ -25,50 +26,50 @@
 #define SPEED_UNIT_KPH_X	76
 #define SPEED_UNIT_MPH_X	72
 #define SPEED_UNIT_Y		1
-#define MPH                 0
-#define KPH                 1
+#define MPH                 1
+#define KPH                 0
 #define SPEED_UNITS_FONT    (Verdana8)
 #define SPEED_UNITS_SPACING 1
 
-#define STATE_IDX           0
+#define SOC_FONT            (Verdana16)
+#define SOC_X               3
+#define SOC_Y               0
+#define SOC_SPACING         1
+#define SOC_UNITS_FONT      (Verdana8)
+#define SOC_UNITS           '%'
+#define WIDEST_NUM_LEN_VERDANA16        11  // pixels
+
+#define ECO_MODE_X              3
+#define ECO_MODE_Y              26
+#define ECO_MODE_FONT           (Verdana12)
+#define ECO_SYMBOL              "E"
+#define POWER_SYMBOL            '~'
+#define POWER_MODE_X            6
+#define POWER_MODE_Y            20
+#define POWER_MODE_FONT         (Webdings14)
+#define DRIVE_MODE_ECO          1       // ECO Mode is GPIO high (logic 1) for MDI to MC.
+#define DRIVE_MODE_POWER        0
+
+#define STATE_X             9
+#define STATE_Y             45
+#define STATE_FONT          (Verdana16)
 #define FORWARD_STATE       0x01    
 #define FORWARD_SYMBOL      'D'    
 #define PARK_STATE          0x03        
 #define PARK_SYMBOL         'P'    
 #define REVERSE_STATE       0x04        
 #define REVERSE_SYMBOL      'R'    
-#define ERROR_SYMBOL        'X'    
-#define STATE_X             23
-#define STATE_Y             47
-#define STATE_FONT          (Verdana16)
-#define STATE_SPACING       1
+#define ERROR_SYMBOL        'X'
+#define STATE_SPACING		1
 
-#define SOC_FONT            (Verdana16)
-#define SOC_X               23
-#define SOC_Y               1
-#define SOC_SPACING         1
-#define SOC_UNITS_FONT      (Verdana8)
-#define SOC_UNITS           '%'
-#define WIDEST_NUM_LEN_VERDANA16        11  // pixels
-
+/** Debug Page */
 #define MAX_POSITIVE_POWER              5400.0f
 #define MAX_NEGATIVE_POWER              3000.0f   // use the absolute value for negative power
 #define BAR_LEFT                        1
 #define BAR_TOP                         1
-#define BAR_BOTTOM                      63
-#define BAR_RIGHT						15
-#define CENTER_Y                        41
-
-#define ECO_MODE_X             23
-#define ECO_MODE_Y             23
-#define POWER_MODE_X           23
-#define POWER_MODE_Y           21
-#define POWER_MODE_FONT          (Webdings14)
-#define ECO_MODE_FONT          (Verdana16)
-#define ECO_SYMBOL              'E'    
-#define POWER_SYMBOL            '~'    
-#define DRIVE_MODE_ECO          1       // ECO Mode is GPIO high (logic 1) for MDI to MC.
-#define DRIVE_MODE_POWER        0
+#define BAR_BOTTOM                      20
+#define BAR_RIGHT BOTTOM_RIGHT_X
+#define CENTER_X                        43
 
 #define TEMP_FONT            	(Verdana16)
 #define TEMP_X              	70
@@ -81,7 +82,6 @@
 #define TEMP_DEGREES_SYMBOL 	0xB0 // Hex ASCII value for °
 #define TEMP_DEGREES_SPACING	2
 
-#define LCD_PAGE_CHANGE_BIT  	(1 << 0)
 #define DIRTY_PAGE_CHANGE		0xFF
 #define MAXPAGES				2
 
@@ -90,40 +90,7 @@
 
 #define ST7565_DIRTY_PAGES
 
-/* Font Parameters */
-#define FONT_HEADER_TYPE		0
-#define FONT_HEADER_ORIENTATION	1
-#define FONT_HEADER_START		2
-#define FONT_HEADER_LETTERS		3
-#define FONT_HEADER_HEIGHT		4
-
-#define FONT_TYPE_FIXED			0
-#define FONT_TYPE_PROPORTIONAL	1
-
-#define FONT_ORIENTATION_VERTICAL_CEILING	2
-
-/* LCD COMMAND PARAMS */
-#define CMD_SET_ADC_NORMAL          0xA0
-#define CMD_DISPLAY_OFF             0xAE
-#define CMD_SET_COM_NORMAL          0xC0
-#define CMD_SET_BIAS_9              0xA2 
-#define CMD_SET_POWER_CONTROL       0x28
-#define CMD_SET_RESISTOR_RATIO      0x20
-#define CMD_SET_VOLUME_FIRST        0x81
-#define CMD_SET_CONTRAST            0x11
-#define CMD_DISPLAY_ON              0xAF
-#define CMD_SET_ALLPTS_NORMAL       0xA4
- 
- /** Command: Set the current page (0..7). */
- #define CMD_SET_PAGE			0b10110000
- /** Command: set the least significant 4 bits of the column address. */
- #define CMD_COLUMN_LOWER		0b00000000
- /** Command: set the most significant 4 bits of the column address. */
- #define CMD_COLUMN_UPPER		0b00010000
- #define CMD_DISPLAY_START		0b01000000
-
- #define LCD_UPDATE_DELAY 200
-
+#define LCD_UPDATE_DELAY 		200
 
 
 /*	Datatypes */
@@ -138,20 +105,17 @@
     volatile uint8_t* temperature;
 } lcd_data_t;
 
+typedef struct {
+    uint8_t x1;
+    uint8_t y1;
+    uint8_t x2;
+    uint8_t y2;
+} bounding_box_t;
 
 /*	User Variables	*/
 extern lcd_data_t g_lcd_data;
 extern uint8_t g_LCD_page;
 extern uint8_t g_LCD_page_change;
-
-
-/*
- * @brief CAN rx function which parses message data needed by the LCD
- *
- * @param msg_id 	The id of the CAN message
- * @param data  	The data of the CAN message
- */
-void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data);
 
 /** 
  * @brief Displays the speed on the LCD.
@@ -202,34 +166,19 @@ void LCD_display_temperature(volatile uint8_t* temperature);
  */
 void LCD_change_screen();
 
+/*
+ * @brief CAN rx function which parses message data needed by the LCD
+ *
+ * @param msg_id 	The id of the CAN message
+ * @param data  	The data of the CAN message
+ */
+void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data);
+
 /**
  * @brief Initializes the LCD and SPI interface.
- * 
+ *
  * @param hspi Pointer to the SPI handle.
  */
 void LCD_init(SPI_HandleTypeDef* hspi);
-
-/**
- * @brief Prints a string to the LCD at the specified coordinates.
- * 
- * @param x The x-coordinate.
- * @param line The line number.
- * @param c Pointer to the string to print.
- */
-void LCD_print(uint8_t x, uint8_t line, char *c);
-
-/**
- * @brief Sends a command to the LCD via SPI.
- * 
- * @param cmd The command byte to send.
- */
-void LCD_write_command(uint8_t cmd);
-
-/**
- * @brief Sends data to the LCD via SPI.
- * 
- * @param data The data byte to send.
- */
-void LCD_write_data(uint8_t data);
 
 #endif // LCD_GRAPHICS_H

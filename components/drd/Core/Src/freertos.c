@@ -273,18 +273,19 @@ void LCDUpdatetask(void *argument)
   /* USER CODE BEGIN LCDUpdatetask */
   /* Infinite loop */
 
-    uint32_t speed = 100;
+    uint32_t speed = 4;
     int16_t current = 100;
     uint16_t voltage = 1;
     volatile uint32_t soc = 88;
     volatile uint8_t state = 0x03; // 0x01, 0x03, 0x04
-    volatile uint8_t mode = 1;
+    volatile uint8_t mode = 0;
 
   LCD_init(&hspi1);
   LCD_change_screen();
-
-  g_lcd_data.speed_units = MPH;
   
+  // KPH or MPH
+  g_lcd_data.speed_units = MPH;
+
   for(;;)
   {
     // When debugging we can check the duration of this function to measure performance.
@@ -315,11 +316,8 @@ void LCDUpdatetask(void *argument)
 			g_lcd_data.speed            = get_cyclic_speed();
 			g_lcd_data.drive_state      = get_cyclic_drive_state();
 			g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;
-			g_lcd_data.pack_current     = get_cyclic_pack_current();
-			g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
 			g_lcd_data.soc              = get_cyclic_soc();
 //
-			LCD_display_power_bar(&current, &voltage);
 			LCD_display_speed(&speed, g_lcd_data.speed_units);
 			LCD_display_SOC(&soc);
 			LCD_display_drive_mode(mode);
@@ -331,11 +329,16 @@ void LCDUpdatetask(void *argument)
 //			}
 
 			break;
-
 		case 2:
+
+			break;
+		case 3:
 			g_lcd_data.temperature		= get_cyclic_temperature();
+			g_lcd_data.pack_current     = get_cyclic_pack_current();
+			g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
 
 			LCD_display_temperature(g_lcd_data.temperature);
+			LCD_display_power_bar(&current, &voltage);
 			break;
 
 		default:
