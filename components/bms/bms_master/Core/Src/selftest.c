@@ -105,13 +105,19 @@ BTM_Status_t ST_checkLTCtemp(void)
 
     for (int board = 0; board < BTM_NUM_DEVICES; board++)
     {
-        // Combine 2 bytes of die temperature reading
+        // Combine 2 bytes of die temperature reading.
+        // We expect LTC to give us internal die temperature in the 3rd and 4th bytes of its reply.
         itmp[board] = (((uint16_t)registerSTATA[board][3]) << 8) | ((uint16_t) registerSTATA[board][2]);
     }
 
     itmpConversion(itmp, temp_celsius);
 
-    printf("Die temps: %.2f, %.2f\r\n", temp_celsius[0], temp_celsius[1]);
+    printf(
+        "Selftest -- Internal Temperature: finished with temperatures "
+        "%.2f°C and %.2f°C\r\n",
+        temp_celsius[0],
+        temp_celsius[1]
+    );
 
     for (int board = 0; board < BTM_NUM_DEVICES; board++)
     {
@@ -162,7 +168,7 @@ BTM_Status_t ST_checkVREF2(void)
         // Convert to volts and store
         converted_voltage = BTM_regValToVoltage(cell_voltage_raw);
 
-        printf("%.4f\r\n", converted_voltage);
+        printf("Selftest -- Vref2: %.4fV for board %d\r\n", converted_voltage, board);
 
         if (converted_voltage < VREF_LOWERBOUND ||
             converted_voltage > VREF_UPPERBOUND)
@@ -279,44 +285,49 @@ BTM_Status_t ST_checkOpenWire(void)
     if (status.error != BTM_OK)
         return status;
 
-    // Take the difference between pull-up and pull-down measurements for cells 2 to 18. If this difference
-    // is < -400mV at module = n, then module = n-1 is open.
-
+    // Take the difference between pull-up and pull-down measurements for pins C1 thru C17.
+    // If this difference is < -400mV at module = n, then module = n-1 is open.
     for (int board = 0; board < BTM_NUM_DEVICES; board++)
     {
-        for (int module = 1; module < BTM_NUM_CELL_INPUTS_PER_DEVICE; module++)
+        for (int module = 1; module < BTM_NUM_CELL_INPUTS_PER_DEVICE - 1; module++)
         {
             moduleVoltage_DELTA = moduleVoltage_PUP[board][module] - moduleVoltage_PDOWN[board][module];
             if (moduleVoltage_DELTA < OPEN_WIRE_VOLTAGE)
             {
                 status.error = BTM_ERROR_SELFTEST;
                 status.device_num = 100 * (board + 1) + module;
+                printf(
+                    "Selftest -- Open wire: pin C%d on device %d is open. Voltage difference = %.2fV\r\n",
+                    module,
+                    board,
+                    moduleVoltage_DELTA
+                );
                 return status;
             }
         }
     }
 
-    // Check for open wire at pin C0
     for (int board = 0; board < BTM_NUM_DEVICES; board++)
     {
+        // Check for open wire at pin C0
         if (moduleVoltage_PUP[board][0] == 0.0000)
         {
             status.error = BTM_ERROR_SELFTEST;
             status.device_num = 100 * (board + 1);
+            printf("Selftest -- Open wire: pin C0 on device %d is open.\r\n", board);
             return status;
         }
-    }
 
-    // Check for open wire at pin C18
-    for (int board = 0; board < BTM_NUM_DEVICES; board++)
-    {
+        // Check for open wire at pin C18
         if (moduleVoltage_PUP[board][BTM_NUM_CELL_INPUTS_PER_DEVICE - 1] == 0.0000)
         {
             status.error = BTM_ERROR_SELFTEST;
             status.device_num = 100 * (board + 1);
+            printf("Selftest -- Open wire: pin C18 on device %d is open.\r\n", board);
             return status;
         }
     }
+    printf("Selftest -- Open wire: finished\r\n");
 
     return status;
 }
@@ -388,9 +399,18 @@ BTM_Status_t ST_checkOverlapVoltage(void)
             {
                 status.error = BTM_ERROR_SELFTEST;
                 status.device_num = board + 1;
+                printf(
+                    "Selftest -- Overlap: ADCs reported big inconsistency for cell %d on board %d. "
+                    "Voltages were %.2fV vs %.2fV\r\n",
+                    (cell == 0) ? 7 : 13,
+                    board,
+                    ADC1_voltage,
+                    ADC2_voltage
+                );
             }
         }
     }
+    printf("Selftest -- Overlap: finished\r\n");
 
     return status;
 }
@@ -491,7 +511,7 @@ BTM_Status_t ST_verifyDischarge(Pack_t *pack)
  **/
 STATIC_TESTABLE void itmpConversion(uint16_t itmp[BTM_NUM_DEVICES], float temp_celsius[BTM_NUM_DEVICES])
 {
-    const float itmp_coefficient = 0.013158;
+    const float itmp_coefficient = 0.0131578947;
     const float conversion_const = 276.0;
 
     float raw_reading;
