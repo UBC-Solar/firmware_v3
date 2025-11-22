@@ -1,4 +1,3 @@
-#include "lcd.h"
 #include "lcd_driver.h"
 
 /* Internal buffer for pixel operations (assumes a 128x64 display) */
@@ -8,6 +7,11 @@ static uint8_t lcd_buffer[(128 * 64) / 8];
 static SPI_HandleTypeDef* sg_spi_handle = NULL;
 
 static uint8_t lcd_flipped = 0;
+
+#ifdef ST7565_DIRTY_PAGES
+static uint8_t lcd_dirty_pages;
+#endif
+
 
 /*--------------------------------------------------------------------------
   Internal Helper Functions
@@ -39,10 +43,10 @@ void lcd_pixel(uint8_t x, uint8_t y, uint8_t colour) {
 /**
  * @brief Clears a rectangular area in the internal display buffer.
  *
- * @param x1 Left coordinate (1-based).
- * @param y1 Top coordinate (1-based).
- * @param x2 Right coordinate (1-based).
- * @param y2 Bottom coordinate (1-based).
+ * @param x1 Left coordinate
+ * @param y1 Top coordinate
+ * @param x2 Right coordinate
+ * @param y2 Bottom coordinate
  */
 void lcd_clear_bounding_box(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2) {
     if (x1 >= SCREEN_WIDTH || x2 >= SCREEN_WIDTH || y1 >= SCREEN_HEIGHT || y2 >= SCREEN_HEIGHT || x1 > x2 || y1 > y2)
@@ -215,6 +219,15 @@ bounding_box_t draw_char(unsigned char c, unsigned char x, unsigned char y, cons
 	ret.y2 = ret.y1 + font[FONT_HEADER_HEIGHT];
 
 	return ret;
+}
+
+/**
+ * @brief Changes the screen
+ */
+void LCD_change_screen(){
+	lcd_dirty_pages = DIRTY_PAGE_CHANGE;
+	lcd_clear_bounding_box(0,0, BOTTOM_RIGHT_X ,BOTTOM_RIGHT_Y);
+	lcd_refresh();
 }
 
 /**

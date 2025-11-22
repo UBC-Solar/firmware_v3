@@ -12,19 +12,26 @@
 --------------------------------------------------------------------------*/
 
 /* Static variables to store old bounding boxes for updating text fields */
+
+// Page 1
 static bounding_box_t old_bb_speed          = {0, 0, 0, 0};
 static bounding_box_t old_bb_drive_state    = {0, 0, 0, 0};
 static bounding_box_t old_bb_drive_mode     = {0, 0, 0, 0};
 static bounding_box_t old_bb_soc            = {0, 0, 0, 0};
+static bounding_box_t old_bb_fault_indicator = {0, 0, 0, 0};
+
+
+// Page 4
 static bounding_box_t old_bb_temp			= {0, 0, 0, 0};
 
 /* External variables to store page current state of the page */
 lcd_data_t g_lcd_data = {0};
-uint8_t g_LCD_page = 1;
+uint8_t g_LCD_page = 3;
 uint8_t g_LCD_page_change = 0;
 
+
 /*--------------------------------------------------------------------------
-  Public Function Implementations
+  PAGE 1 (DRIVE PAGE) FUNCTIONS
 --------------------------------------------------------------------------*/
 
 /**
@@ -37,7 +44,7 @@ void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units)
 {
     char speed_str[12];
     /* Clear the previous speed and unit areas */
-    lcd_clear_bounding_box(57, 5, 127, 53);
+    lcd_clear_bounding_box(SPEED_THREEDIGIT_X, old_bb_speed.y1 + 10, BOTTOM_RIGHT_X, old_bb_speed.y2);
     
     if (speed == NULL) {  // Stale speed data
         sprintf(speed_str, "--"); 
@@ -71,42 +78,9 @@ void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units)
             draw_text("xxx", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
             break;
     }
-    lcd_refresh();
-}
 
-/**
- * @brief Displays the drive state on the LCD.
- * 
- * @param state The drive state (e.g., FORWARD_STATE, PARK_STATE, REVERSE_STATE).
- */
-void LCD_display_drive_state(volatile drive_state_t* state)
-{
-    char state_str[2] = {ERROR_SYMBOL, '\0'};  // Default to error symbol.
-    lcd_clear_bounding_box(23, 47, 35, 68);
-
-    if (state == NULL) {  // Stale data for drive state
-        sprintf(state_str, "-");
-        g_diagnostics.cyclic_flags.drive_state_timeout = true;
-    } 
-    else {
-        switch (*state) {
-            case FORWARD:
-                state_str[0] = FORWARD_SYMBOL;
-                break;
-            case PARK:
-                state_str[0] = PARK_SYMBOL;
-                break;
-            case REVERSE:
-                state_str[0] = REVERSE_SYMBOL;
-                break;
-            default:
-                state_str[0] = ERROR_SYMBOL;
-                break;
-        }
-        g_diagnostics.cyclic_flags.drive_state_timeout = false; 
-    }
-    old_bb_drive_state = draw_text(state_str, STATE_X, STATE_Y, STATE_FONT, STATE_SPACING);
     lcd_refresh();
+
 }
 
 /**
@@ -142,6 +116,66 @@ void LCD_display_SOC(volatile uint32_t* soc)
     }
 
     draw_char(SOC_UNITS, SOC_X + 2 * WIDEST_NUM_LEN_VERDANA16 + 2, SOC_Y, SOC_UNITS_FONT);
+    lcd_refresh();
+}
+
+/**
+ * @brief Displays an E for ECO mode and P for POWER mode
+ *
+ * @param drive_mode The drive mode
+ */
+void LCD_display_drive_mode(volatile uint8_t drive_mode)
+{
+    lcd_clear_bounding_box(old_bb_drive_mode.x1, old_bb_drive_mode.y1 + 4,
+    					   old_bb_drive_mode.x2, old_bb_drive_mode.y2);
+
+    // Drive mode is valid, display the corresponding symbol.
+    switch (drive_mode) {
+        case DRIVE_MODE_ECO:
+            old_bb_drive_mode = draw_char(ECO_SYMBOL, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
+            break;
+        case DRIVE_MODE_POWER:
+            old_bb_drive_mode = draw_char(POWER_SYMBOL, POWER_MODE_X, POWER_MODE_Y, POWER_MODE_FONT);
+            break;
+        default:
+            old_bb_drive_mode = draw_char(ERROR_SYMBOL, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
+            break;
+    }
+    lcd_refresh();
+}
+
+/**
+ * @brief Displays the drive state on the LCD.
+ *
+ * @param state The drive state (e.g., FORWARD_STATE, PARK_STATE, REVERSE_STATE).
+ */
+void LCD_display_drive_state(volatile drive_state_t* state)
+{
+    char state_str[2] = {ERROR_SYMBOL, '\0'};  // Default to error symbol.
+    lcd_clear_bounding_box(23, 47, 35, 68);
+
+    if (state == NULL) {  // Stale data for drive state
+        sprintf(state_str, "-");
+        g_diagnostics.cyclic_flags.drive_state_timeout = true;
+    }
+    else {
+        switch (*state) {
+            case FORWARD:
+                state_str[0] = FORWARD_SYMBOL;
+                break;
+            case PARK:
+                state_str[0] = PARK_SYMBOL;
+                break;
+            case REVERSE:
+                state_str[0] = REVERSE_SYMBOL;
+                break;
+            default:
+                state_str[0] = ERROR_SYMBOL;
+                break;
+        }
+        g_diagnostics.cyclic_flags.drive_state_timeout = false;
+    }
+    old_bb_drive_state = draw_text(state_str, STATE_X, STATE_Y, STATE_FONT, STATE_SPACING);
     lcd_refresh();
 }
 
@@ -217,31 +251,43 @@ void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* p
 }
 
 /**
- * @brief Displays an E for ECO mode and P for POWER mode
- * 
- * @param drive_mode The drive mode
+ * @brief Displays a motor faults on the LCD
+ *
+ * @param fault_indicator An indicator to see who
  */
-void LCD_display_drive_mode(volatile uint8_t drive_mode)
+void LCD_display_fault_indicator(volatile uint8_t* fault_indicator)
 {
-    char drive_mode_c = ERROR_SYMBOL;   // Default to error symbol.
-    lcd_clear_bounding_box(23, 24, 37, 44);
-    
-    // Drive mode is valid, display the corresponding symbol.
-    switch (drive_mode) {
-        case DRIVE_MODE_ECO:
-            old_bb_drive_mode = draw_text(ECO_SYMBOL, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT, 1);
-            break;
-        case DRIVE_MODE_POWER:
-            old_bb_drive_mode = draw_char(POWER_SYMBOL, POWER_MODE_X, POWER_MODE_Y, POWER_MODE_FONT);
-            break;
-        default:
-            drive_mode_c = ERROR_SYMBOL;  // Display error symbol for invalid mode.
-            old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
-            break;
-    }
-    lcd_refresh();
+	lcd_clear_bounding_box(old_bb_fault_indicator.x1, old_bb_fault_indicator.y1,
+			old_bb_fault_indicator.x2, old_bb_fault_indicator.y2);
+
+	if(*fault_indicator == 1){
+		old_bb_fault_indicator = draw_char(FAULT_SYMBOL, FAULT_X, FAULT_Y, FAULT_FONT);
+	}
+	lcd_refresh();
 }
 
+/*--------------------------------------------------------------------------
+  PAGE 2 (FAULT PAGE) FUNCTIONS
+--------------------------------------------------------------------------*/
+
+/**
+ * @brief Displays a motor faults on the LCD
+ *
+ * @param fault_indicator An indicator to see who
+ */
+void LCD_display_motor_faults(volatile uint8_t* fault_indicator)
+{
+	lcd_refresh();
+}
+
+/*--------------------------------------------------------------------------
+  PAGE 3 (WARNING PAGE) FUNCTIONS
+--------------------------------------------------------------------------*/
+
+
+/*--------------------------------------------------------------------------
+  PAGE 4 (DEBUG PAGE) FUNCTIONS
+--------------------------------------------------------------------------*/
 /**
  * @brief Displays an Temperature on the LCD (0-255)
  *
@@ -278,16 +324,6 @@ void LCD_display_temperature(volatile uint8_t* temperature){
 
 
 
-
-
-/**
- * @brief Changes the screen
- */
-void LCD_change_screen(){
-	lcd_dirty_pages = DIRTY_PAGE_CHANGE;
-	lcd_clear_bounding_box(0,0, BOTTOM_RIGHT_X ,BOTTOM_RIGHT_Y);
-	lcd_refresh();
-}
 
 /*
  * @brief CAN rx function which parses message data needed by the LCD

@@ -32,9 +32,6 @@
 #define CMD_COLUMN_UPPER		0b00010000
 #define CMD_DISPLAY_START		0b01000000
 
-#ifdef ST7565_DIRTY_PAGES
-static uint8_t lcd_dirty_pages;
-#endif
 
 /* LCD Drawing Functions */
 

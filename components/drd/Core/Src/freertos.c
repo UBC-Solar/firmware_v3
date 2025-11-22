@@ -273,12 +273,13 @@ void LCDUpdatetask(void *argument)
   /* USER CODE BEGIN LCDUpdatetask */
   /* Infinite loop */
 
-    uint32_t speed = 4;
+    uint32_t speed = 444;
     int16_t current = 100;
     uint16_t voltage = 1;
     volatile uint32_t soc = 88;
     volatile uint8_t state = 0x03; // 0x01, 0x03, 0x04
     volatile uint8_t mode = 0;
+    volatile uint8_t fault = 1;
 
   LCD_init(&hspi1);
   LCD_change_screen();
@@ -317,16 +318,17 @@ void LCDUpdatetask(void *argument)
 			g_lcd_data.drive_state      = get_cyclic_drive_state();
 			g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;
 			g_lcd_data.soc              = get_cyclic_soc();
-//
+
 			LCD_display_speed(&speed, g_lcd_data.speed_units);
 			LCD_display_SOC(&soc);
 			LCD_display_drive_mode(mode);
 			LCD_display_drive_state(&state);
+			LCD_display_fault_indicator(&fault);
 
-//			for(speed = 0; speed<99; speed++){
-//				LCD_display_speed(&speed, g_lcd_data.speed_units);
-//				HAL_Delay(500);
-//			}
+			for(speed = 0; speed<444; speed++){
+				LCD_display_speed(&speed, g_lcd_data.speed_units);
+				HAL_Delay(200);
+			}
 
 			break;
 		case 2:

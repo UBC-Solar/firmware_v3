@@ -18,10 +18,10 @@
 /** Drive Page */
 #define SPEED_FONT          (Verdana48_digits)
 #define SPEED_X             35
-#define SPEED_ONEDIGIT_X	87
-#define SPEED_TWODIGIT_X	57
-#define SPEED_THREEDIGIT_X	45
-#define SPEED_Y             5
+#define SPEED_ONEDIGIT_X	82
+#define SPEED_TWODIGIT_X	52
+#define SPEED_THREEDIGIT_X	40
+#define SPEED_Y             7
 #define SPEED_SPACING       -3 // ChatGPT generated font has too much padding
 #define SPEED_UNIT_KPH_X	76
 #define SPEED_UNIT_MPH_X	72
@@ -42,7 +42,7 @@
 #define ECO_MODE_X              3
 #define ECO_MODE_Y              26
 #define ECO_MODE_FONT           (Verdana12)
-#define ECO_SYMBOL              "E"
+#define ECO_SYMBOL              'E'
 #define POWER_SYMBOL            '~'
 #define POWER_MODE_X            6
 #define POWER_MODE_Y            20
@@ -62,12 +62,18 @@
 #define ERROR_SYMBOL        'X'
 #define STATE_SPACING		1
 
+#define FAULT_X             44
+#define FAULT_Y             0
+#define FAULT_FONT          (Wingdings)
+#define FAULT_SYMBOL		'N'
+
+
 /** Debug Page */
 #define MAX_POSITIVE_POWER              5400.0f
 #define MAX_NEGATIVE_POWER              3000.0f   // use the absolute value for negative power
 #define BAR_LEFT                        1
 #define BAR_TOP                         1
-#define BAR_BOTTOM                      20
+#define BAR_BOTTOM                      15
 #define BAR_RIGHT BOTTOM_RIGHT_X
 #define CENTER_X                        43
 
@@ -104,6 +110,28 @@
     volatile uint8_t drive_mode;
     volatile uint8_t* temperature;
 } lcd_data_t;
+
+typedef struct {
+   volatile uint8_t* battery_fault;
+   volatile uint8_t* supp_lo;
+   volatile uint8_t* charge_overcurrent_fault;
+   volatile uint8_t* discharge_overcurrent_fault;
+   volatile uint8_t* slave_board_comm_fault;
+   volatile uint8_t* overvolt_fault;
+   volatile uint8_t* undervolt_fault;
+   volatile uint8_t* overtemp_fault;
+   volatile uint8_t* reset_from_watchdog;
+   volatile uint8_t* voltage_high;
+   volatile uint8_t* voltage_low;
+} lcd_batt_faults_t;
+
+typedef struct {
+   volatile uint8_t* motor_fault;
+   volatile uint8_t* motor_overcurrent;
+   volatile uint8_t* motor_overvoltage;
+   volatile uint8_t* fet_thermistor_error;
+   volatile uint8_t* motor_comm_fault;
+} lcd_motor_faults_t;
 
 typedef struct {
     uint8_t x1;
@@ -160,6 +188,10 @@ void LCD_display_drive_mode(volatile uint8_t drive_mode);
  * @param temperature The temperature of moto
  */
 void LCD_display_temperature(volatile uint8_t* temperature);
+
+
+void LCD_display_fault_indicator(volatile uint8_t* fault_indicator);
+
 
 /**
  * @brief Changes the screen
