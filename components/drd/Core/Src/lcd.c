@@ -19,14 +19,19 @@ static bounding_box_t old_bb_drive_state    = {0, 0, 0, 0};
 static bounding_box_t old_bb_drive_mode     = {0, 0, 0, 0};
 static bounding_box_t old_bb_soc            = {0, 0, 0, 0};
 static bounding_box_t old_bb_fault_indicator = {0, 0, 0, 0};
-
+static bounding_box_t old_bb_warning_indicator = {0, 0, 0, 0};
 
 // Page 4
 static bounding_box_t old_bb_temp			= {0, 0, 0, 0};
 
-/* External variables to store page current state of the page */
+/* External variables*/
 lcd_data_t g_lcd_data = {0};
-uint8_t g_LCD_page = 3;
+lcd_batt_faults_t g_lcd_batt_faults = {0};
+lcd_motor_faults_t g_lcd_motor_faults = {0};
+lcd_warnings_t g_lcd_warnings = {0};
+temperature_data_t g_lcd_temperatures[8] = {0};
+
+uint8_t g_LCD_page = 4;
 uint8_t g_LCD_page_change = 0;
 
 
@@ -47,11 +52,10 @@ void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units)
     lcd_clear_bounding_box(SPEED_THREEDIGIT_X, old_bb_speed.y1 + 10, BOTTOM_RIGHT_X, old_bb_speed.y2);
     
     if (speed == NULL) {  // Stale speed data
-        sprintf(speed_str, "--"); 
-        old_bb_speed = draw_text(speed_str, SPEED_ONEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+        sprintf(speed_str, "XX");
+        old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X + 10, SPEED_Y + 10, SPEED_NULL_FONT, SPEED_SPACING + 10);
         g_diagnostics.cyclic_flags.speed_timeout = true; 
-    } 
-    else if (*speed < 10) { // Single digit speed
+    } else if (*speed < 10) { // Single digit speed
         sprintf(speed_str, "%01lu", (unsigned long)*speed);  
         old_bb_speed = draw_text(speed_str, SPEED_ONEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
         g_diagnostics.cyclic_flags.speed_timeout = false; 
@@ -91,31 +95,32 @@ void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units)
 void LCD_display_SOC(volatile uint32_t* soc)
 {
     char soc_str[12];
-    lcd_clear_bounding_box(23, 1, 45, 22);
+    lcd_clear_bounding_box(old_bb_soc.x1, old_bb_soc.y1, old_bb_soc.x2, old_bb_soc.y2);
+    //23, 1, 45, 22
     
     // Check for stale data and display "--" if so.
     if (soc == NULL) {
         sprintf(soc_str, "--");
-        old_bb_soc = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
+        old_bb_soc = draw_text(soc_str, SOC_TWODIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
         g_diagnostics.cyclic_flags.soc_timeout = true; 
     } 
     else if (*soc < 10) {
         sprintf(soc_str, "%01lu", (unsigned long)* soc);
-        old_bb_soc = draw_text(soc_str, SOC_X + 10, SOC_Y, SOC_FONT, SOC_SPACING);
+        old_bb_soc = draw_text(soc_str, SOC_ONEDIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
         g_diagnostics.cyclic_flags.soc_timeout = false;
     }
     else if (*soc < 100){
         sprintf(soc_str, "%02lu", (unsigned long)* soc);
-        old_bb_soc = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
+        old_bb_soc = draw_text(soc_str, SOC_TWODIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
         g_diagnostics.cyclic_flags.soc_timeout = false;
     }
     else {
     	sprintf(soc_str, "%03lu", (unsigned long)* soc);
-    	old_bb_soc = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
+    	old_bb_soc = draw_text(soc_str, SOC_THREEDIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
 		g_diagnostics.cyclic_flags.soc_timeout = false;
     }
 
-    draw_char(SOC_UNITS, SOC_X + 2 * WIDEST_NUM_LEN_VERDANA16 + 2, SOC_Y, SOC_UNITS_FONT);
+    draw_char(SOC_UNITS, old_bb_soc.x2 + 3, SOC_Y, SOC_UNITS_FONT);
     lcd_refresh();
 }
 
@@ -127,7 +132,7 @@ void LCD_display_SOC(volatile uint32_t* soc)
 void LCD_display_drive_mode(volatile uint8_t drive_mode)
 {
     lcd_clear_bounding_box(old_bb_drive_mode.x1, old_bb_drive_mode.y1 + 4,
-    					   old_bb_drive_mode.x2, old_bb_drive_mode.y2);
+    					   old_bb_drive_mode.x2, old_bb_drive_mode.y2 - 2);
 
     // Drive mode is valid, display the corresponding symbol.
     switch (drive_mode) {
@@ -152,8 +157,8 @@ void LCD_display_drive_mode(volatile uint8_t drive_mode)
 void LCD_display_drive_state(volatile drive_state_t* state)
 {
     char state_str[2] = {ERROR_SYMBOL, '\0'};  // Default to error symbol.
-    lcd_clear_bounding_box(23, 47, 35, 68);
-
+    lcd_clear_bounding_box(STATE_X, STATE_Y, 20, BOTTOM_RIGHT_Y);
+    //23, 47, 35, 68
     if (state == NULL) {  // Stale data for drive state
         sprintf(state_str, "-");
         g_diagnostics.cyclic_flags.drive_state_timeout = true;
@@ -178,6 +183,297 @@ void LCD_display_drive_state(volatile drive_state_t* state)
     old_bb_drive_state = draw_text(state_str, STATE_X, STATE_Y, STATE_FONT, STATE_SPACING);
     lcd_refresh();
 }
+
+
+/**
+ * @brief Displays a fault indicator on the LCD Drive Page
+ *
+ * @param fault_indicator A general indicator to signal a fault to prompt the driver to change pages
+ */
+void LCD_display_fault_indicator(lcd_batt_faults_t batt_faults)
+{
+	lcd_clear_bounding_box(old_bb_fault_indicator.x1, old_bb_fault_indicator.y1,
+			old_bb_fault_indicator.x2, old_bb_fault_indicator.y2);
+
+	if(batt_faults.battery_fault){
+		old_bb_fault_indicator = draw_char(FAULT_SYMBOL, FAULT_X, FAULT_Y, FAULT_SYMBOL_FONT);
+	}
+	lcd_refresh();
+}
+
+/**
+ * @brief Displays a warning indicator on the LCD Drive Page
+ *
+ * @param warning_indicator A general indicator to signal a warning to prompt the driver to change pages
+ */
+void LCD_display_warning_indicator(lcd_batt_faults_t batt_faults)
+{
+	lcd_clear_bounding_box(old_bb_warning_indicator.x1, old_bb_warning_indicator.y1,
+			old_bb_warning_indicator.x2, old_bb_warning_indicator.y2);
+
+	if(batt_faults.battery_fault){
+		old_bb_warning_indicator = draw_char(WARNING_SYMBOL, WARNING_X, WARNING_Y, WARNING_SYMBOL_FONT);
+	}
+	lcd_refresh();
+}
+
+/*--------------------------------------------------------------------------
+  PAGE 2 (FAULT PAGE) FUNCTIONS
+--------------------------------------------------------------------------*/
+
+/**
+ * @brief Dynamically displays battery and motor faults on the LCD
+ *
+ * @param batt_faults The battery faults to be displayed on the LCD
+ * @param motor_faults The motor faults to be displayed on the LCD
+ */
+void LCD_display_faults(lcd_batt_faults_t batt_faults, lcd_motor_faults_t motor_faults){
+
+	lcd_clear_bounding_box(0, FAULT_FOUR_Y1, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
+
+	uint8_t fault_count = 0;
+	char faults[10][9];
+
+	if (batt_faults.battery_fault) {
+		sprintf(faults[fault_count], "%s", BATT_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.supp_lo) {
+		sprintf(faults[fault_count], "%s", BATT_SUPPLO_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.voltage_high) {
+		sprintf(faults[fault_count], "%s", BATT_VOLTHIGH_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.voltage_low) {
+		sprintf(faults[fault_count], "%s", BATT_VOLTLOW_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.slave_board_comm_fault) {
+		sprintf(faults[fault_count], "%s", BATT_SLAVE_COMM_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.overvolt_fault) {
+		sprintf(faults[fault_count], "%s", BATT_OVERVOLT_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.undervolt_fault) {
+		sprintf(faults[fault_count], "%s", BATT_UNDERVOLT_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.overtemp_fault) {
+		sprintf(faults[fault_count], "%s", BATT_OVERTEMP_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.charge_overcurrent_fault) {
+		sprintf(faults[fault_count], "%s", BATT_CHARGE_OC_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.discharge_overcurrent_fault) {
+		sprintf(faults[fault_count], "%s", BATT_DISCHARGE_OC_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.reset_from_watchdog) {
+		sprintf(faults[fault_count], "%s", BATT_RST_FROM_WATCH_FLT_CHARS);
+		fault_count++;
+	}
+	if (motor_faults.motor_system_error) {
+		sprintf(faults[fault_count], "%s", BATT_VOLTHIGH_FLT_CHARS);
+		fault_count++;
+	}
+	if (motor_faults.overcurrent_fault) {
+		sprintf(faults[fault_count], "%s", BATT_VOLTHIGH_FLT_CHARS);
+		fault_count++;
+	}
+	if (motor_faults.overvoltage_fault) {
+		sprintf(faults[fault_count], "%s", BATT_VOLTHIGH_FLT_CHARS);
+		fault_count++;
+	}
+	if (motor_faults.fet_thermistor_error) {
+		sprintf(faults[fault_count], "%s", BATT_VOLTHIGH_FLT_CHARS);
+		fault_count++;
+	}
+	if (motor_faults.motor_comm_fault) {
+		sprintf(faults[fault_count], "%s", BATT_VOLTHIGH_FLT_CHARS);
+		fault_count++;
+	}
+	if (motor_faults.throttle_adc_outofrange) {
+		sprintf(faults[fault_count], "%s", BATT_VOLTHIGH_FLT_CHARS);
+		fault_count++;
+	}
+	if (motor_faults.throttle_adc_mismatch) {
+		sprintf(faults[fault_count], "%s",  BATT_VOLTHIGH_FLT_CHARS);
+		fault_count++;
+	}
+
+	draw_text(FAULT_LABEL_CHARS, FAULT_LABEL_X, FAULT_LABEL_Y, FAULT_LABEL_FONT, FAULT_SPACING);
+	if(fault_count <= 3) {
+		draw_text(faults[0], FAULT_FOUR_X1, FAULT_FOUR_Y1, FAULT_FOUR_FONT, FAULT_SPACING);
+		draw_text(faults[1], FAULT_FOUR_X2, FAULT_FOUR_Y2, FAULT_FOUR_FONT, FAULT_SPACING);
+		draw_text(faults[2], FAULT_FOUR_X3, FAULT_FOUR_Y3, FAULT_FOUR_FONT, FAULT_SPACING);
+	}
+	if(fault_count <= 8) {
+		draw_text(faults[0], FAULT_EIGHT_X1, FAULT_EIGHT_Y1, FAULT_EIGHT_FONT, FAULT_SPACING);
+		draw_text(faults[1], FAULT_EIGHT_X2, FAULT_EIGHT_Y2, FAULT_EIGHT_FONT, FAULT_SPACING);
+		draw_text(faults[2], FAULT_EIGHT_X3, FAULT_EIGHT_Y3, FAULT_EIGHT_FONT, FAULT_SPACING);
+		draw_text(faults[3], FAULT_EIGHT_X4, FAULT_EIGHT_Y4, FAULT_EIGHT_FONT, FAULT_SPACING);
+		draw_text(faults[4], FAULT_EIGHT_X5, FAULT_EIGHT_Y5, FAULT_EIGHT_FONT, FAULT_SPACING);
+		draw_text(faults[5], FAULT_EIGHT_X6, FAULT_EIGHT_Y6, FAULT_EIGHT_FONT, FAULT_SPACING);
+		draw_text(faults[6], FAULT_EIGHT_X7, FAULT_EIGHT_Y7, FAULT_EIGHT_FONT, FAULT_SPACING);
+		draw_text(faults[7], FAULT_EIGHT_X8, FAULT_EIGHT_Y8, FAULT_EIGHT_FONT, FAULT_SPACING);
+	}
+
+	lcd_refresh();
+
+}
+
+/*--------------------------------------------------------------------------
+  PAGE 3 (WARNING PAGE) FUNCTIONS
+--------------------------------------------------------------------------*/
+
+/**
+ * @brief Displays a motor faults on the LCD
+ *
+ * @param fault_indicator An indicator to see who
+ */
+void LCD_display_warnings(lcd_warnings_t warnings)
+{
+	lcd_clear_bounding_box(0, LOWVOLT_WARN_Y, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
+
+	draw_text(WARNING_LABEL_CHARS, WARNING_LABEL_X, WARNING_LABEL_Y, WARNING_LABEL_FONT, WARNING_SPACING);
+	if (warnings.low_volt_warning)
+		draw_text(LOWVOLT_WARN_CHARS, LOWVOLT_WARN_X, LOWVOLT_WARN_Y, WARNING_FONT, WARNING_SPACING);
+	if (warnings.high_volt_warning)
+		draw_text(HIGHVOLT_WARN_CHARS, HIGHVOLT_WARN_X, HIGHVOLT_WARN_Y, WARNING_FONT, WARNING_SPACING);
+	if (warnings.low_temp_warning)
+		draw_text(LOWTEMP_WARN_CHARS, LOWTEMP_WARN_X, LOWTEMP_WARN_Y, WARNING_FONT, WARNING_SPACING);
+	if (warnings.high_temp_warning)
+		draw_text(HIGHTEMP_WARN_CHARS, HIGHTEMP_WARN_X, HIGHTEMP_WARN_Y, WARNING_FONT, WARNING_SPACING);
+	if (warnings.no_ecu_message)
+		draw_text(NOMSG_WARN_CHARS, NOMSG_WARN_X, NOMSG_WARN_Y, WARNING_FONT, WARNING_SPACING);
+	if (warnings.pack_overdischarge)
+		draw_text(PACK_OD_WARN_CHARS, PACK_OD_WARN_X, PACK_OD_WARN_Y, WARNING_FONT, WARNING_SPACING);
+	if (warnings.pack_overcharge)
+		draw_text(PACK_OC_WARN_CHARS, PACK_OC_WARN_X, PACK_OC_WARN_Y, WARNING_FONT, WARNING_SPACING);
+
+	lcd_refresh();
+}
+
+/*--------------------------------------------------------------------------
+  PAGE 4 (TEMPERATURE PAGE) FUNCTIONS
+--------------------------------------------------------------------------*/
+
+/**
+ * @brief Displays an Temperature on the LCD (0-255)
+ *
+ * @param temperature The temperature of motor
+ */
+void LCD_display_temperature(temperature_data_t temperature_data){
+	// TODO: When assigning with CAN ensure that the name is set too
+
+	// Stores a Bounding Box used for changing temp symbol position
+	bounding_box_t bb = {0};
+
+	// Variables to hold values based on what temperature is being displayed
+	char temp_label[8];
+	char temp_str[4];
+	uint8_t temp_x;
+	uint8_t temp_y;
+	uint8_t temp_shift;
+
+	switch(temperature_data.temp_label){
+		case MPPT_A_LABEL:
+			sprintf(temp_label, "%s", MPPT_A_CHARS);
+			temp_x = MPPT_A_X;
+			temp_y = MPPT_A_Y;
+			temp_shift = TEMP_MPPT_OFFSET;
+			lcd_clear_bounding_box(TEMP_MPPT_OFFSET, MPPT_A_Y, BATT_MAX_X-2, MPPT_B_Y);
+			break;
+		case MPPT_B_LABEL:
+			sprintf(temp_label, "%s", MPPT_B_CHARS);
+			temp_x = MPPT_B_X;
+			temp_y = MPPT_B_Y;
+			temp_shift = TEMP_MPPT_OFFSET;
+			lcd_clear_bounding_box(TEMP_MPPT_OFFSET, MPPT_B_Y, BATT_MAX_X-2, MPPT_C_Y);
+			break;
+		case MPPT_C_LABEL:
+			sprintf(temp_label, "%s", MPPT_C_CHARS);
+			temp_x = MPPT_C_X;
+			temp_y = MPPT_C_Y;
+			temp_shift = TEMP_MPPT_OFFSET;
+			lcd_clear_bounding_box(TEMP_MPPT_OFFSET, MPPT_C_Y, BATT_MAX_X-2, MPPT_D_Y);
+			break;
+		case MPPT_D_LABEL:
+			sprintf(temp_label, "%s", MPPT_D_CHARS);
+			temp_x = MPPT_D_X;
+			temp_y = MPPT_D_Y;
+			temp_shift = TEMP_MPPT_OFFSET;
+			lcd_clear_bounding_box(TEMP_MPPT_OFFSET, MPPT_D_Y, BATT_MAX_X-2, BOTTOM_RIGHT_Y);
+			break;
+		case BATT_MAX_LABEL:
+			sprintf(temp_label, "%s", BATT_MAX_CHARS);
+			temp_x = BATT_MAX_X;
+			temp_y = BATT_MAX_Y;
+			temp_shift = TEMP_BATT_OFFSET;
+			lcd_clear_bounding_box(BATT_MAX_X + TEMP_BATT_OFFSET, 0, BOTTOM_RIGHT_X, BATT_MIN_Y);
+			break;
+		case BATT_MIN_LABEL:
+			sprintf(temp_label, "%s", BATT_MIN_CHARS);
+			temp_x = BATT_MIN_X;
+			temp_y = BATT_MIN_Y;
+			temp_shift = TEMP_BATT_OFFSET;
+			lcd_clear_bounding_box(BATT_MAX_X + TEMP_BATT_OFFSET, BATT_MIN_Y, BOTTOM_RIGHT_X, MTR_CONT_Y);
+			break;
+		case MTR_CONT_LABEL:
+			sprintf(temp_label, "%s", MTR_CONT_CHARS);
+			temp_x = MTR_CONT_X;
+			temp_y = MTR_CONT_Y;
+			temp_shift = TEMP_MTR_OFFSET;
+			lcd_clear_bounding_box(MTR_CONT_X + TEMP_MTR_OFFSET, MTR_CONT_Y, BOTTOM_RIGHT_X, MTR_THERM_Y);
+			break;
+		case MTR_THERM_LABEL:
+			sprintf(temp_label, "%s", MTR_THERM_CHARS);
+			temp_x = MTR_THERM_X;
+			temp_y = MTR_THERM_Y;
+			temp_shift = TEMP_MTR_OFFSET;
+			lcd_clear_bounding_box(MTR_CONT_X + TEMP_MTR_OFFSET, MTR_THERM_Y, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
+			break;
+		default:
+			break;
+	}
+
+	draw_text(temp_label, temp_x, temp_y, TEMP_LABEL_FONT, TEMP_SPACING);
+
+	// Check digits in temperature data received
+	if (temperature_data.temperature == NULL) {  // temperature not read
+		sprintf(temp_str, "--");
+		bb = old_bb_temp = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
+	}
+	else if (*temperature_data.temperature < 10) { // Single digit temperature
+		sprintf(temp_str, "%01lu", (unsigned long)*temperature_data.temperature);
+		bb = old_bb_temp = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
+	}
+	else if(*temperature_data.temperature < 100) { // Double digit temperature
+		sprintf(temp_str, "%02lu", (unsigned long)*temperature_data.temperature);
+		bb = old_bb_temp = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
+	}
+	else { // Triple digit
+		sprintf(temp_str, "%03lu", (unsigned long)*temperature_data.temperature);
+		bb = old_bb_temp = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
+	}
+
+	// Draws the Degrees Celsius symbol according to the position of the bounding box
+	draw_char(TEMP_DEGREES_SYMBOL, bb.x2 + TEMP_DEGREES_OFFSET_X, temp_y - TEMP_DEGREES_OFFSET_Y, TEMP_DEGREES_FONT);
+	draw_char(TEMP_UNITS, bb.x2 + TEMP_UNITS_OFFSET, temp_y, TEMP_UNITS_FONT);
+
+	lcd_refresh();
+}
+
+
+/*--------------------------------------------------------------------------
+  PAGE 5 (DEBUG PAGE) FUNCTIONS
+--------------------------------------------------------------------------*/
 
 /**
  * @brief Displays a battery power bar based on pack current and voltage.
@@ -249,81 +545,6 @@ void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* p
         lcd_refresh();
     }
 }
-
-/**
- * @brief Displays a motor faults on the LCD
- *
- * @param fault_indicator An indicator to see who
- */
-void LCD_display_fault_indicator(volatile uint8_t* fault_indicator)
-{
-	lcd_clear_bounding_box(old_bb_fault_indicator.x1, old_bb_fault_indicator.y1,
-			old_bb_fault_indicator.x2, old_bb_fault_indicator.y2);
-
-	if(*fault_indicator == 1){
-		old_bb_fault_indicator = draw_char(FAULT_SYMBOL, FAULT_X, FAULT_Y, FAULT_FONT);
-	}
-	lcd_refresh();
-}
-
-/*--------------------------------------------------------------------------
-  PAGE 2 (FAULT PAGE) FUNCTIONS
---------------------------------------------------------------------------*/
-
-/**
- * @brief Displays a motor faults on the LCD
- *
- * @param fault_indicator An indicator to see who
- */
-void LCD_display_motor_faults(volatile uint8_t* fault_indicator)
-{
-	lcd_refresh();
-}
-
-/*--------------------------------------------------------------------------
-  PAGE 3 (WARNING PAGE) FUNCTIONS
---------------------------------------------------------------------------*/
-
-
-/*--------------------------------------------------------------------------
-  PAGE 4 (DEBUG PAGE) FUNCTIONS
---------------------------------------------------------------------------*/
-/**
- * @brief Displays an Temperature on the LCD (0-255)
- *
- * @param temperature The temperature of motor
- */
-void LCD_display_temperature(volatile uint8_t* temperature){
-	char temp_str[4];
-	lcd_clear_bounding_box(TEMP_X, TEMP_Y, old_bb_temp.x2 + 13, old_bb_temp.y2);
-
-	// Check digits in temperature data received
-	if (temperature == NULL) {  // temperature not read
-		sprintf(temp_str, "--");
-		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
-	}
-	else if (*temperature < 10) { // Single digit temperature
-		sprintf(temp_str, "%01lu", (unsigned long)*temperature);
-		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
-	}
-	else if(*temperature < 100) { // Double digit temperature
-		sprintf(temp_str, "%02lu", (unsigned long)*temperature);
-		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
-	}
-	else { // Triple digit
-		sprintf(temp_str, "%03lu", (unsigned long)*temperature);
-		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
-	}
-
-	// Draws the Degrees Celsius symbol according to the position of the bounding box
-	draw_char(TEMP_DEGREES_SYMBOL, old_bb_temp.x2 + TEMP_DEGREES_SPACING, TEMP_Y - TEMP_DEGREES_SPACING, TEMP_DEGREES_FONT);
-	draw_char(TEMP_UNITS, old_bb_temp.x2 + TEMP_UNITS_SPACING, TEMP_Y, TEMP_UNITS_FONT);
-
-	lcd_refresh();
-}
-
-
-
 
 /*
  * @brief CAN rx function which parses message data needed by the LCD

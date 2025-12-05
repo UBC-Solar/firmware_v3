@@ -8,6 +8,7 @@
 #include "spi.h"
 #include <main.h>
 #include "stdint.h"
+#include "stdbool.h"
 #include "font_verdana.h"
 #include "drive_state.h"
 
@@ -17,6 +18,7 @@
 
 /** Drive Page */
 #define SPEED_FONT          (Verdana48_digits)
+#define SPEED_NULL_FONT		(Verdana32)
 #define SPEED_X             35
 #define SPEED_ONEDIGIT_X	82
 #define SPEED_TWODIGIT_X	52
@@ -32,19 +34,21 @@
 #define SPEED_UNITS_SPACING 1
 
 #define SOC_FONT            (Verdana16)
-#define SOC_X               3
+#define SOC_ONEDIGIT_X      13
+#define SOC_TWODIGIT_X      3
+#define SOC_THREEDIGIT_X    0
 #define SOC_Y               0
 #define SOC_SPACING         1
 #define SOC_UNITS_FONT      (Verdana8)
 #define SOC_UNITS           '%'
 #define WIDEST_NUM_LEN_VERDANA16        11  // pixels
 
-#define ECO_MODE_X              3
-#define ECO_MODE_Y              26
+#define ECO_MODE_X             	12
+#define ECO_MODE_Y              24
 #define ECO_MODE_FONT           (Verdana12)
 #define ECO_SYMBOL              'E'
 #define POWER_SYMBOL            '~'
-#define POWER_MODE_X            6
+#define POWER_MODE_X            9
 #define POWER_MODE_Y            20
 #define POWER_MODE_FONT         (Webdings14)
 #define DRIVE_MODE_ECO          1       // ECO Mode is GPIO high (logic 1) for MDI to MC.
@@ -52,7 +56,7 @@
 
 #define STATE_X             9
 #define STATE_Y             45
-#define STATE_FONT          (Verdana16)
+#define STATE_FONT          (Verdana10)
 #define FORWARD_STATE       0x01    
 #define FORWARD_SYMBOL      'D'    
 #define PARK_STATE          0x03        
@@ -62,11 +66,162 @@
 #define ERROR_SYMBOL        'X'
 #define STATE_SPACING		1
 
-#define FAULT_X             44
+#define FAULT_X             55
 #define FAULT_Y             0
-#define FAULT_FONT          (Wingdings)
+#define FAULT_SYMBOL_FONT   (Wingdings)
 #define FAULT_SYMBOL		'N'
 
+#define WARNING_X             79
+#define WARNING_Y             -4
+#define WARNING_SYMBOL_FONT   (Webdings14)
+#define WARNING_SYMBOL		  'x'
+
+
+/** Fault Page */
+#define FAULT_SPACING		1
+
+#define FAULT_LABEL_FONT		(Verdana12)
+#define FAULT_LABEL_X			0
+#define FAULT_LABEL_Y			0
+#define FAULT_LABEL_CHARS		"FAULTS"
+
+#define FAULT_FOUR_FONT         (Verdana12)
+#define FAULT_FOUR_X1			0
+#define FAULT_FOUR_Y1			16
+#define FAULT_FOUR_X2			0
+#define FAULT_FOUR_Y2			32
+#define FAULT_FOUR_X3			0
+#define FAULT_FOUR_Y3			48
+
+#define FAULT_EIGHT_FONT        (Verdana10)
+#define FAULT_EIGHT_X1			0
+#define FAULT_EIGHT_Y1			16
+#define FAULT_EIGHT_X2			70
+#define FAULT_EIGHT_Y2			16
+#define FAULT_EIGHT_X3			0
+#define FAULT_EIGHT_Y3			28
+#define FAULT_EIGHT_X4			70
+#define FAULT_EIGHT_Y4			28
+#define FAULT_EIGHT_X5			0
+#define FAULT_EIGHT_Y5			40
+#define FAULT_EIGHT_X6			70
+#define FAULT_EIGHT_Y6			40
+#define FAULT_EIGHT_X7			0
+#define FAULT_EIGHT_Y7			52
+#define FAULT_EIGHT_X8			70
+#define FAULT_EIGHT_Y8			52
+
+#define BATT_FLT_CHARS		   			"BATT_FLT"
+#define BATT_SUPPLO_FLT_CHARS		  	"SUPP_LO"
+#define BATT_VOLTHIGH_FLT_CHARS		  	"VOLT_HI"
+#define BATT_VOLTLOW_FLT_CHARS		 	"VOLT_LO"
+#define BATT_SLAVE_COMM_FLT_CHARS	 	"SLV_COMM"
+#define BATT_OVERVOLT_FLT_CHARS			"BATT_OV"
+#define BATT_UNDERVOLT_FLT_CHARS		"BATT_UV"
+#define BATT_OVERTEMP_FLT_CHARS			"BATT_OT"
+#define BATT_CHARGE_OC_FLT_CHARS	  	"BATT_COC"
+#define BATT_DISCHARGE_OC_FLT_CHARS		"BATT_DOC"
+#define BATT_RST_FROM_WATCH_FLT_CHARS	"BATT_RFW"
+
+#define MOTR_FLT_CHARS		  				"MTR_SYS"
+#define MTR_OVERCURR_FLT_CHARS				"MTR_OC"
+#define MTR_OVERVOLT_FLT_CHARS				"MTR_OV"
+#define MTR_OVERTEMP_FLT_CHARS				"MTR_OT"
+#define MTR_COMM_FLT_CHARS					"MTR_COMM"
+#define MTR_THROT_ADC_OOR_FLT_CHARS			"THRT_OOR"
+#define MTR_THROT_ADC_MISMATCH_FLT_CHARS	"THRT_MSM"
+
+/** Warning Page */
+#define WARNING_FONT          	(Verdana8)
+#define WARNING_SPACING		 	1
+
+#define WARNING_LABEL_FONT		(Verdana12)
+#define WARNING_LABEL_X			0
+#define WARNING_LABEL_Y			0
+#define WARNING_LABEL_CHARS		"WARNINGS"
+
+#define LOWVOLT_WARN_X			0
+#define LOWVOLT_WARN_Y			16
+#define LOWVOLT_WARN_CHARS		"LOW_VOLT"
+
+#define HIGHVOLT_WARN_X			0
+#define HIGHVOLT_WARN_Y			28
+#define HIGHVOLT_WARN_CHARS		"HIGH_VOLT"
+
+#define LOWTEMP_WARN_X			0
+#define LOWTEMP_WARN_Y			40
+#define LOWTEMP_WARN_CHARS		"LOW_TEMP"
+
+#define HIGHTEMP_WARN_X			0
+#define HIGHTEMP_WARN_Y			52
+#define HIGHTEMP_WARN_CHARS		"HIGH_TEMP"
+
+#define NOMSG_WARN_X			70
+#define NOMSG_WARN_Y			16
+#define NOMSG_WARN_CHARS		"NO_MSG"
+
+#define PACK_OC_WARN_X			70
+#define PACK_OC_WARN_Y			28
+#define PACK_OC_WARN_CHARS		"PACK_OC"
+
+#define PACK_OD_WARN_X			70
+#define PACK_OD_WARN_Y			40
+#define PACK_OD_WARN_CHARS		"PACK_ODC"
+
+/** Temperature Page */
+#define TEMP_FONT            	(Verdana12)
+#define TEMP_LABEL_FONT			(Verdana8)
+#define TEMP_SPACING         	1
+#define TEMP_MPPT_OFFSET		26
+#define TEMP_BATT_OFFSET		34
+#define TEMP_MTR_OFFSET			23
+#define TEMP_UNITS_FONT      	(Verdana8)
+#define TEMP_UNITS           	'C'
+#define TEMP_UNITS_OFFSET		7
+#define TEMP_DEGREES_FONT		(Custom)
+#define TEMP_DEGREES_SYMBOL 	0xB0 // Hex ASCII value for °
+#define TEMP_DEGREES_OFFSET_X	2
+#define TEMP_DEGREES_OFFSET_Y	2
+
+#define MPPT_A_LABEL			0x1
+#define MPPT_A_CHARS			"PTA:"
+#define MPPT_A_X				0
+#define MPPT_A_Y				0
+
+#define MPPT_B_LABEL			0x2
+#define MPPT_B_CHARS			"PTB:"
+#define MPPT_B_X				0
+#define MPPT_B_Y				16
+
+#define MPPT_C_LABEL			0x3
+#define MPPT_C_CHARS			"PTC:"
+#define MPPT_C_X				0
+#define MPPT_C_Y				32
+
+#define MPPT_D_LABEL			0x4
+#define MPPT_D_CHARS			"PTD:"
+#define MPPT_D_X				0
+#define MPPT_D_Y				48
+
+#define BATT_MAX_LABEL			0x5
+#define BATT_MAX_CHARS			"BMAX:"
+#define BATT_MAX_X				62
+#define BATT_MAX_Y				0
+
+#define BATT_MIN_LABEL			0x6
+#define BATT_MIN_CHARS			"BMIN:"
+#define BATT_MIN_X				62
+#define BATT_MIN_Y				16
+
+#define MTR_CONT_LABEL			0x7
+#define MTR_CONT_CHARS			"MC:"
+#define MTR_CONT_X				62
+#define MTR_CONT_Y				32
+
+#define MTR_THERM_LABEL			0x8
+#define MTR_THERM_CHARS			"MT:"
+#define MTR_THERM_X				62
+#define MTR_THERM_Y				48
 
 /** Debug Page */
 #define MAX_POSITIVE_POWER              5400.0f
@@ -76,17 +231,6 @@
 #define BAR_BOTTOM                      15
 #define BAR_RIGHT BOTTOM_RIGHT_X
 #define CENTER_X                        43
-
-#define TEMP_FONT            	(Verdana16)
-#define TEMP_X              	70
-#define TEMP_Y              	1
-#define TEMP_SPACING         	1
-#define TEMP_UNITS_FONT      	(Verdana8)
-#define TEMP_UNITS           	'C'
-#define TEMP_UNITS_SPACING		7
-#define TEMP_DEGREES_FONT		(Custom)
-#define TEMP_DEGREES_SYMBOL 	0xB0 // Hex ASCII value for °
-#define TEMP_DEGREES_SPACING	2
 
 #define DIRTY_PAGE_CHANGE		0xFF
 #define MAXPAGES				2
@@ -108,30 +252,46 @@
     volatile uint8_t* drive_state;
     volatile uint8_t* soc;
     volatile uint8_t drive_mode;
-    volatile uint8_t* temperature;
 } lcd_data_t;
 
 typedef struct {
-   volatile uint8_t* battery_fault;
-   volatile uint8_t* supp_lo;
-   volatile uint8_t* charge_overcurrent_fault;
-   volatile uint8_t* discharge_overcurrent_fault;
-   volatile uint8_t* slave_board_comm_fault;
-   volatile uint8_t* overvolt_fault;
-   volatile uint8_t* undervolt_fault;
-   volatile uint8_t* overtemp_fault;
-   volatile uint8_t* reset_from_watchdog;
-   volatile uint8_t* voltage_high;
-   volatile uint8_t* voltage_low;
+	volatile uint8_t* temperature;
+	uint8_t temp_label;
+} temperature_data_t;
+
+typedef struct {
+   volatile bool battery_fault;
+   volatile bool supp_lo;
+   volatile bool voltage_high;
+   volatile bool voltage_low;
+   volatile bool slave_board_comm_fault;
+   volatile bool overvolt_fault;
+   volatile bool undervolt_fault;
+   volatile bool overtemp_fault;
+   volatile bool charge_overcurrent_fault;
+   volatile bool discharge_overcurrent_fault;
+   volatile bool reset_from_watchdog;
 } lcd_batt_faults_t;
 
 typedef struct {
-   volatile uint8_t* motor_fault;
-   volatile uint8_t* motor_overcurrent;
-   volatile uint8_t* motor_overvoltage;
-   volatile uint8_t* fet_thermistor_error;
-   volatile uint8_t* motor_comm_fault;
+   volatile bool motor_system_error;
+   volatile bool overcurrent_fault;
+   volatile bool overvoltage_fault;
+   volatile bool fet_thermistor_error;
+   volatile bool motor_comm_fault;
+   volatile bool throttle_adc_outofrange;
+   volatile bool throttle_adc_mismatch;
 } lcd_motor_faults_t;
+
+typedef struct {
+	volatile bool low_volt_warning;
+	volatile bool high_volt_warning;
+	volatile bool low_temp_warning;
+	volatile bool high_temp_warning;
+	volatile bool no_ecu_message;
+	volatile bool pack_overdischarge;
+	volatile bool pack_overcharge;
+} lcd_warnings_t;
 
 typedef struct {
     uint8_t x1;
@@ -142,6 +302,10 @@ typedef struct {
 
 /*	User Variables	*/
 extern lcd_data_t g_lcd_data;
+extern lcd_batt_faults_t g_lcd_batt_faults;
+extern lcd_motor_faults_t g_lcd_motor_faults;
+extern lcd_warnings_t g_lcd_warnings;
+extern temperature_data_t g_lcd_temperatures[8];
 extern uint8_t g_LCD_page;
 extern uint8_t g_LCD_page_change;
 
@@ -182,15 +346,19 @@ void LCD_display_power_bar(volatile int16_t* pack_current, volatile uint16_t* pa
  */
 void LCD_display_drive_mode(volatile uint8_t drive_mode);
 
-/**
- * @brief Displays an Temperature on the LCD
- *
- * @param temperature The temperature of moto
- */
-void LCD_display_temperature(volatile uint8_t* temperature);
 
 
-void LCD_display_fault_indicator(volatile uint8_t* fault_indicator);
+void LCD_display_temperature(temperature_data_t temperature_data);
+
+
+void LCD_display_fault_indicator(lcd_batt_faults_t batt_faults);
+void LCD_display_warning_indicator(lcd_batt_faults_t batt_faults);
+
+void LCD_display_faults(lcd_batt_faults_t batt_faults, lcd_motor_faults_t motor_faults);
+
+
+void LCD_display_warnings(lcd_warnings_t warnings);
+
 
 
 /**

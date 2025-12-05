@@ -8,6 +8,7 @@ static SPI_HandleTypeDef* sg_spi_handle = NULL;
 
 static uint8_t lcd_flipped = 0;
 
+// DIRTY PAGES optimization variable
 #ifdef ST7565_DIRTY_PAGES
 static uint8_t lcd_dirty_pages;
 #endif
