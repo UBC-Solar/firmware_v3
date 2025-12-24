@@ -21,8 +21,6 @@ static bounding_box_t old_bb_soc            = {0, 0, 0, 0};
 static bounding_box_t old_bb_fault_indicator = {0, 0, 0, 0};
 static bounding_box_t old_bb_warning_indicator = {0, 0, 0, 0};
 
-// Page 4
-static bounding_box_t old_bb_temp			= {0, 0, 0, 0};
 
 /* External variables*/
 lcd_data_t g_lcd_data = {0};
@@ -31,7 +29,7 @@ lcd_motor_faults_t g_lcd_motor_faults = {0};
 lcd_warnings_t g_lcd_warnings = {0};
 temperature_data_t g_lcd_temperatures[8] = {0};
 
-uint8_t g_LCD_page = 4;
+uint8_t g_LCD_page = 3;
 uint8_t g_LCD_page_change = 0;
 
 
@@ -48,40 +46,79 @@ uint8_t g_LCD_page_change = 0;
 void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units)
 {
     char speed_str[12];
-    /* Clear the previous speed and unit areas */
-    lcd_clear_bounding_box(SPEED_THREEDIGIT_X, old_bb_speed.y1 + 10, BOTTOM_RIGHT_X, old_bb_speed.y2);
     
-    if (speed == NULL) {  // Stale speed data
-        sprintf(speed_str, "XX");
-        old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X + 10, SPEED_Y + 10, SPEED_NULL_FONT, SPEED_SPACING + 10);
-        g_diagnostics.cyclic_flags.speed_timeout = true; 
-    } else if (*speed < 10) { // Single digit speed
-        sprintf(speed_str, "%01lu", (unsigned long)*speed);  
-        old_bb_speed = draw_text(speed_str, SPEED_ONEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
-        g_diagnostics.cyclic_flags.speed_timeout = false; 
-    } else if (*speed < 100){ // Double digit second
-        sprintf(speed_str, "%02lu", (unsigned long)*speed);  
-        old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
-        g_diagnostics.cyclic_flags.speed_timeout = false; 
-    } else{
-    	sprintf(speed_str, "%03lu", (unsigned long)*speed);
-		old_bb_speed = draw_text(speed_str, SPEED_THREEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
-		g_diagnostics.cyclic_flags.speed_timeout = false;
+    if(g_LCD_page == 1) {
+        /* Clear the previous speed and unit areas */
+        lcd_clear_bounding_box(SPEED_THREEDIGIT_X, old_bb_speed.y1 + 10, BOTTOM_RIGHT_X, old_bb_speed.y2);
+
+        if (speed == NULL) {  // Stale speed data
+            sprintf(speed_str, "XX");
+            old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X + 10, SPEED_Y + 10, SPEED_NULL_FONT, SPEED_SPACING + 10);
+            g_diagnostics.cyclic_flags.speed_timeout = true;
+        } else if (*speed < 10) { // Single digit speed
+            sprintf(speed_str, "%01lu", (unsigned long)*speed);
+            old_bb_speed = draw_text(speed_str, SPEED_ONEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+            g_diagnostics.cyclic_flags.speed_timeout = false;
+        } else if (*speed < 100){ // Double digit second
+            sprintf(speed_str, "%02lu", (unsigned long)*speed);
+            old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+            g_diagnostics.cyclic_flags.speed_timeout = false;
+        } else{
+        	sprintf(speed_str, "%03lu", (unsigned long)*speed);
+    		old_bb_speed = draw_text(speed_str, SPEED_THREEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+    		g_diagnostics.cyclic_flags.speed_timeout = false;
+        }
+
+        /* Draw the speed units */
+
+        switch (units) {
+            case KPH:
+                draw_text("kph", SPEED_X + SPEED_UNIT_KPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+                break;
+            case MPH:
+                draw_text("mph", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+                break;
+            default:
+                draw_text("xxx", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+                break;
+        }
+    } else if(g_LCD_page == 5) {
+        /* Clear the previous speed and unit areas */
+        lcd_clear_bounding_box(SPEED_THREEDIGIT_X, old_bb_speed.y1 + 10, BOTTOM_RIGHT_X, old_bb_speed.y2);
+
+        if (speed == NULL) {  // Stale speed data
+            sprintf(speed_str, "XX");
+            old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X + 10, SPEED_Y + 10, SPEED_NULL_FONT, SPEED_SPACING + 10);
+            g_diagnostics.cyclic_flags.speed_timeout = true;
+        } else if (*speed < 10) { // Single digit speed
+            sprintf(speed_str, "%01lu", (unsigned long)*speed);
+            old_bb_speed = draw_text(speed_str, SPEED_ONEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+            g_diagnostics.cyclic_flags.speed_timeout = false;
+        } else if (*speed < 100){ // Double digit second
+            sprintf(speed_str, "%02lu", (unsigned long)*speed);
+            old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+            g_diagnostics.cyclic_flags.speed_timeout = false;
+        } else{
+        	sprintf(speed_str, "%03lu", (unsigned long)*speed);
+    		old_bb_speed = draw_text(speed_str, SPEED_THREEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+    		g_diagnostics.cyclic_flags.speed_timeout = false;
+        }
+
+        /* Draw the speed units */
+
+        switch (units) {
+            case KPH:
+                draw_text("kph", SPEED_X + SPEED_UNIT_KPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+                break;
+            case MPH:
+                draw_text("mph", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+                break;
+            default:
+                draw_text("xxx", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+                break;
+        }
     }
-    
-    /* Draw the speed units */
-    
-    switch (units) {
-        case KPH:
-            draw_text("kph", SPEED_X + SPEED_UNIT_KPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
-            break;
-        case MPH:
-            draw_text("mph", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
-            break;
-        default:
-            draw_text("xxx", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
-            break;
-    }
+
 
     lcd_refresh();
 
@@ -232,7 +269,7 @@ void LCD_display_faults(lcd_batt_faults_t batt_faults, lcd_motor_faults_t motor_
 	lcd_clear_bounding_box(0, FAULT_FOUR_Y1, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
 
 	uint8_t fault_count = 0;
-	char faults[10][9];
+	char faults[8][10];
 
 	if (batt_faults.battery_fault) {
 		sprintf(faults[fault_count], "%s", BATT_FLT_CHARS);
@@ -279,41 +316,44 @@ void LCD_display_faults(lcd_batt_faults_t batt_faults, lcd_motor_faults_t motor_
 		fault_count++;
 	}
 	if (motor_faults.motor_system_error) {
-		sprintf(faults[fault_count], "%s", BATT_VOLTHIGH_FLT_CHARS);
+		sprintf(faults[fault_count], "%s", MTR_SYSTEM_FLT_CHARS);
 		fault_count++;
 	}
 	if (motor_faults.overcurrent_fault) {
-		sprintf(faults[fault_count], "%s", BATT_VOLTHIGH_FLT_CHARS);
+		sprintf(faults[fault_count], "%s", MTR_OVERCURR_FLT_CHARS);
 		fault_count++;
 	}
 	if (motor_faults.overvoltage_fault) {
-		sprintf(faults[fault_count], "%s", BATT_VOLTHIGH_FLT_CHARS);
+		sprintf(faults[fault_count], "%s", MTR_OVERVOLT_FLT_CHARS);
 		fault_count++;
 	}
 	if (motor_faults.fet_thermistor_error) {
-		sprintf(faults[fault_count], "%s", BATT_VOLTHIGH_FLT_CHARS);
+		sprintf(faults[fault_count], "%s", MTR_OVERTEMP_FLT_CHARS);
 		fault_count++;
 	}
 	if (motor_faults.motor_comm_fault) {
-		sprintf(faults[fault_count], "%s", BATT_VOLTHIGH_FLT_CHARS);
+		sprintf(faults[fault_count], "%s", MTR_COMM_FLT_CHARS);
 		fault_count++;
 	}
 	if (motor_faults.throttle_adc_outofrange) {
-		sprintf(faults[fault_count], "%s", BATT_VOLTHIGH_FLT_CHARS);
+		sprintf(faults[fault_count], "%s", MTR_THROT_ADC_OOR_FLT_CHARS);
 		fault_count++;
 	}
 	if (motor_faults.throttle_adc_mismatch) {
-		sprintf(faults[fault_count], "%s",  BATT_VOLTHIGH_FLT_CHARS);
+		sprintf(faults[fault_count], "%s",  MTR_THROT_ADC_MISMATCH_FLT_CHARS);
 		fault_count++;
 	}
 
 	draw_text(FAULT_LABEL_CHARS, FAULT_LABEL_X, FAULT_LABEL_Y, FAULT_LABEL_FONT, FAULT_SPACING);
+	for(uint8_t i = 0; i < FAULT_LABEL_UNDERLINE_X; i++){
+		lcd_pixel(i, FAULT_LABEL_UNDERLINE_Y, 1);
+	}
 	if(fault_count <= 3) {
 		draw_text(faults[0], FAULT_FOUR_X1, FAULT_FOUR_Y1, FAULT_FOUR_FONT, FAULT_SPACING);
 		draw_text(faults[1], FAULT_FOUR_X2, FAULT_FOUR_Y2, FAULT_FOUR_FONT, FAULT_SPACING);
 		draw_text(faults[2], FAULT_FOUR_X3, FAULT_FOUR_Y3, FAULT_FOUR_FONT, FAULT_SPACING);
 	}
-	if(fault_count <= 8) {
+	else if(fault_count <= 8) {
 		draw_text(faults[0], FAULT_EIGHT_X1, FAULT_EIGHT_Y1, FAULT_EIGHT_FONT, FAULT_SPACING);
 		draw_text(faults[1], FAULT_EIGHT_X2, FAULT_EIGHT_Y2, FAULT_EIGHT_FONT, FAULT_SPACING);
 		draw_text(faults[2], FAULT_EIGHT_X3, FAULT_EIGHT_Y3, FAULT_EIGHT_FONT, FAULT_SPACING);
@@ -339,23 +379,59 @@ void LCD_display_faults(lcd_batt_faults_t batt_faults, lcd_motor_faults_t motor_
  */
 void LCD_display_warnings(lcd_warnings_t warnings)
 {
-	lcd_clear_bounding_box(0, LOWVOLT_WARN_Y, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
+	lcd_clear_bounding_box(0, WARNING_FOUR_Y1, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
+
+	uint8_t warning_count = 0;
+	char warning_char[8][10];
+
+	if (warnings.high_temp_warning) {
+		sprintf(warning_char[warning_count], "%s", HIGHTEMP_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.high_volt_warning) {
+		sprintf(warning_char[warning_count], "%s", HIGHVOLT_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.low_temp_warning) {
+		sprintf(warning_char[warning_count], "%s", LOWTEMP_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.low_volt_warning) {
+		sprintf(warning_char[warning_count], "%s", LOWVOLT_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.no_ecu_message) {
+		sprintf(warning_char[warning_count], "%s", NOMSG_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.pack_overcharge) {
+		sprintf(warning_char[warning_count], "%s", PACK_OC_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.pack_overdischarge) {
+		sprintf(warning_char[warning_count], "%s", PACK_OD_WARN_CHARS);
+		warning_count++;
+	}
 
 	draw_text(WARNING_LABEL_CHARS, WARNING_LABEL_X, WARNING_LABEL_Y, WARNING_LABEL_FONT, WARNING_SPACING);
-	if (warnings.low_volt_warning)
-		draw_text(LOWVOLT_WARN_CHARS, LOWVOLT_WARN_X, LOWVOLT_WARN_Y, WARNING_FONT, WARNING_SPACING);
-	if (warnings.high_volt_warning)
-		draw_text(HIGHVOLT_WARN_CHARS, HIGHVOLT_WARN_X, HIGHVOLT_WARN_Y, WARNING_FONT, WARNING_SPACING);
-	if (warnings.low_temp_warning)
-		draw_text(LOWTEMP_WARN_CHARS, LOWTEMP_WARN_X, LOWTEMP_WARN_Y, WARNING_FONT, WARNING_SPACING);
-	if (warnings.high_temp_warning)
-		draw_text(HIGHTEMP_WARN_CHARS, HIGHTEMP_WARN_X, HIGHTEMP_WARN_Y, WARNING_FONT, WARNING_SPACING);
-	if (warnings.no_ecu_message)
-		draw_text(NOMSG_WARN_CHARS, NOMSG_WARN_X, NOMSG_WARN_Y, WARNING_FONT, WARNING_SPACING);
-	if (warnings.pack_overdischarge)
-		draw_text(PACK_OD_WARN_CHARS, PACK_OD_WARN_X, PACK_OD_WARN_Y, WARNING_FONT, WARNING_SPACING);
-	if (warnings.pack_overcharge)
-		draw_text(PACK_OC_WARN_CHARS, PACK_OC_WARN_X, PACK_OC_WARN_Y, WARNING_FONT, WARNING_SPACING);
+	for(uint8_t i = 0; i < WARNING_LABEL_UNDERLINE_X; i++){
+		lcd_pixel(i, WARNING_LABEL_UNDERLINE_Y, 1);
+	}
+	if(warning_count <= 3) {
+		draw_text(warning_char[0], WARNING_FOUR_X1, WARNING_FOUR_Y1, WARNING_FOUR_FONT, WARNING_SPACING);
+		draw_text(warning_char[1], WARNING_FOUR_X2, WARNING_FOUR_Y2, WARNING_FOUR_FONT, WARNING_SPACING);
+		draw_text(warning_char[2], WARNING_FOUR_X3, WARNING_FOUR_Y3, WARNING_FOUR_FONT, WARNING_SPACING);
+	}
+	else if(warning_count <= 8) {
+		draw_text(warning_char[0], WARNING_EIGHT_X1, WARNING_EIGHT_Y1, WARNING_EIGHT_FONT, WARNING_SPACING);
+		draw_text(warning_char[1], WARNING_EIGHT_X2, WARNING_EIGHT_Y2, WARNING_EIGHT_FONT, WARNING_SPACING);
+		draw_text(warning_char[2], WARNING_EIGHT_X3, WARNING_EIGHT_Y3, WARNING_EIGHT_FONT, WARNING_SPACING);
+		draw_text(warning_char[3], WARNING_EIGHT_X4, WARNING_EIGHT_Y4, WARNING_EIGHT_FONT, WARNING_SPACING);
+		draw_text(warning_char[4], WARNING_EIGHT_X5, WARNING_EIGHT_Y5, WARNING_EIGHT_FONT, WARNING_SPACING);
+		draw_text(warning_char[5], WARNING_EIGHT_X6, WARNING_EIGHT_Y6, WARNING_EIGHT_FONT, WARNING_SPACING);
+		draw_text(warning_char[6], WARNING_EIGHT_X7, WARNING_EIGHT_Y7, WARNING_EIGHT_FONT, WARNING_SPACING);
+		draw_text(warning_char[7], WARNING_EIGHT_X8, WARNING_EIGHT_Y8, WARNING_EIGHT_FONT, WARNING_SPACING);
+	}
 
 	lcd_refresh();
 }
@@ -370,6 +446,7 @@ void LCD_display_warnings(lcd_warnings_t warnings)
  * @param temperature The temperature of motor
  */
 void LCD_display_temperature(temperature_data_t temperature_data){
+
 	// TODO: When assigning with CAN ensure that the name is set too
 
 	// Stores a Bounding Box used for changing temp symbol position
@@ -448,19 +525,19 @@ void LCD_display_temperature(temperature_data_t temperature_data){
 	// Check digits in temperature data received
 	if (temperature_data.temperature == NULL) {  // temperature not read
 		sprintf(temp_str, "--");
-		bb = old_bb_temp = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
+		bb = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
 	}
 	else if (*temperature_data.temperature < 10) { // Single digit temperature
 		sprintf(temp_str, "%01lu", (unsigned long)*temperature_data.temperature);
-		bb = old_bb_temp = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
+		bb = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
 	}
 	else if(*temperature_data.temperature < 100) { // Double digit temperature
 		sprintf(temp_str, "%02lu", (unsigned long)*temperature_data.temperature);
-		bb = old_bb_temp = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
+		bb = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
 	}
 	else { // Triple digit
 		sprintf(temp_str, "%03lu", (unsigned long)*temperature_data.temperature);
-		bb = old_bb_temp = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
+		bb = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
 	}
 
 	// Draws the Degrees Celsius symbol according to the position of the bounding box
@@ -468,6 +545,10 @@ void LCD_display_temperature(temperature_data_t temperature_data){
 	draw_char(TEMP_UNITS, bb.x2 + TEMP_UNITS_OFFSET, temp_y, TEMP_UNITS_FONT);
 
 	lcd_refresh();
+}
+
+void LCD_display_all_temperatures(temperature_data_t temperature_data){
+
 }
 
 

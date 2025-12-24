@@ -56,7 +56,7 @@
 
 #define STATE_X             9
 #define STATE_Y             45
-#define STATE_FONT          (Verdana10)
+#define STATE_FONT          (Verdana16)
 #define FORWARD_STATE       0x01    
 #define FORWARD_SYMBOL      'D'    
 #define PARK_STATE          0x03        
@@ -85,87 +85,99 @@
 #define FAULT_LABEL_Y			0
 #define FAULT_LABEL_CHARS		"FAULTS"
 
+#define FAULT_LABEL_UNDERLINE_X 57
+#define FAULT_LABEL_UNDERLINE_Y 14
+
 #define FAULT_FOUR_FONT         (Verdana12)
 #define FAULT_FOUR_X1			0
-#define FAULT_FOUR_Y1			16
+#define FAULT_FOUR_Y1			18
 #define FAULT_FOUR_X2			0
-#define FAULT_FOUR_Y2			32
+#define FAULT_FOUR_Y2			34
 #define FAULT_FOUR_X3			0
-#define FAULT_FOUR_Y3			48
+#define FAULT_FOUR_Y3			49
 
-#define FAULT_EIGHT_FONT        (Verdana10)
+#define FAULT_EIGHT_FONT        (Verdana8)
 #define FAULT_EIGHT_X1			0
 #define FAULT_EIGHT_Y1			16
-#define FAULT_EIGHT_X2			70
+#define FAULT_EIGHT_X2			64
 #define FAULT_EIGHT_Y2			16
 #define FAULT_EIGHT_X3			0
 #define FAULT_EIGHT_Y3			28
-#define FAULT_EIGHT_X4			70
+#define FAULT_EIGHT_X4			64
 #define FAULT_EIGHT_Y4			28
 #define FAULT_EIGHT_X5			0
 #define FAULT_EIGHT_Y5			40
-#define FAULT_EIGHT_X6			70
+#define FAULT_EIGHT_X6			64
 #define FAULT_EIGHT_Y6			40
 #define FAULT_EIGHT_X7			0
 #define FAULT_EIGHT_Y7			52
-#define FAULT_EIGHT_X8			70
+#define FAULT_EIGHT_X8			64
 #define FAULT_EIGHT_Y8			52
 
-#define BATT_FLT_CHARS		   			"BATT_FLT"
-#define BATT_SUPPLO_FLT_CHARS		  	"SUPP_LO"
-#define BATT_VOLTHIGH_FLT_CHARS		  	"VOLT_HI"
-#define BATT_VOLTLOW_FLT_CHARS		 	"VOLT_LO"
+#define BATT_FLT_CHARS		   			"BAT_FLT"
+#define BATT_SUPPLO_FLT_CHARS		  	"SUPP_LOW"
+#define BATT_VOLTHIGH_FLT_CHARS		  	"VOLT_HIGH"
+#define BATT_VOLTLOW_FLT_CHARS		 	"VOLT_LOW"
 #define BATT_SLAVE_COMM_FLT_CHARS	 	"SLV_COMM"
-#define BATT_OVERVOLT_FLT_CHARS			"BATT_OV"
-#define BATT_UNDERVOLT_FLT_CHARS		"BATT_UV"
-#define BATT_OVERTEMP_FLT_CHARS			"BATT_OT"
-#define BATT_CHARGE_OC_FLT_CHARS	  	"BATT_COC"
-#define BATT_DISCHARGE_OC_FLT_CHARS		"BATT_DOC"
-#define BATT_RST_FROM_WATCH_FLT_CHARS	"BATT_RFW"
+#define BATT_OVERVOLT_FLT_CHARS			"BAT_OVLT"
+#define BATT_UNDERVOLT_FLT_CHARS		"BAT_UVLT"
+#define BATT_OVERTEMP_FLT_CHARS			"BAT_OTMP"
+#define BATT_CHARGE_OC_FLT_CHARS	  	"BAT_COC"
+#define BATT_DISCHARGE_OC_FLT_CHARS		"BAT_DCOC"
+#define BATT_RST_FROM_WATCH_FLT_CHARS	"BAT_RFW"
 
-#define MOTR_FLT_CHARS		  				"MTR_SYS"
-#define MTR_OVERCURR_FLT_CHARS				"MTR_OC"
-#define MTR_OVERVOLT_FLT_CHARS				"MTR_OV"
-#define MTR_OVERTEMP_FLT_CHARS				"MTR_OT"
+#define MTR_SYSTEM_FLT_CHARS		  		"MTR_SYS"
+#define MTR_OVERCURR_FLT_CHARS				"MTR_OCUR"
+#define MTR_OVERVOLT_FLT_CHARS				"MTR_OVLT"
+#define MTR_OVERTEMP_FLT_CHARS				"MTR_OTMP"
 #define MTR_COMM_FLT_CHARS					"MTR_COMM"
 #define MTR_THROT_ADC_OOR_FLT_CHARS			"THRT_OOR"
 #define MTR_THROT_ADC_MISMATCH_FLT_CHARS	"THRT_MSM"
 
 /** Warning Page */
-#define WARNING_FONT          	(Verdana8)
-#define WARNING_SPACING		 	1
+#define WARNING_SPACING			1
+
 
 #define WARNING_LABEL_FONT		(Verdana12)
 #define WARNING_LABEL_X			0
 #define WARNING_LABEL_Y			0
 #define WARNING_LABEL_CHARS		"WARNINGS"
 
-#define LOWVOLT_WARN_X			0
-#define LOWVOLT_WARN_Y			16
+#define WARNING_LABEL_UNDERLINE_X 85
+#define WARNING_LABEL_UNDERLINE_Y 14
+
+#define WARNING_FOUR_FONT         (Verdana12)
+#define WARNING_FOUR_X1			0
+#define WARNING_FOUR_Y1			18
+#define WARNING_FOUR_X2			0
+#define WARNING_FOUR_Y2			34
+#define WARNING_FOUR_X3			0
+#define WARNING_FOUR_Y3			49
+
+#define WARNING_EIGHT_FONT          (Verdana8)
+#define WARNING_EIGHT_X1			0
+#define WARNING_EIGHT_Y1			16
+#define WARNING_EIGHT_X2			64
+#define WARNING_EIGHT_Y2			16
+#define WARNING_EIGHT_X3			0
+#define WARNING_EIGHT_Y3			28
+#define WARNING_EIGHT_X4			64
+#define WARNING_EIGHT_Y4			28
+#define WARNING_EIGHT_X5			0
+#define WARNING_EIGHT_Y5			40
+#define WARNING_EIGHT_X6			64
+#define WARNING_EIGHT_Y6			40
+#define WARNING_EIGHT_X7			0
+#define WARNING_EIGHT_Y7			52
+#define WARNING_EIGHT_X8			64
+#define WARNING_EIGHT_Y8			52
+
 #define LOWVOLT_WARN_CHARS		"LOW_VOLT"
-
-#define HIGHVOLT_WARN_X			0
-#define HIGHVOLT_WARN_Y			28
 #define HIGHVOLT_WARN_CHARS		"HIGH_VOLT"
-
-#define LOWTEMP_WARN_X			0
-#define LOWTEMP_WARN_Y			40
 #define LOWTEMP_WARN_CHARS		"LOW_TEMP"
-
-#define HIGHTEMP_WARN_X			0
-#define HIGHTEMP_WARN_Y			52
 #define HIGHTEMP_WARN_CHARS		"HIGH_TEMP"
-
-#define NOMSG_WARN_X			70
-#define NOMSG_WARN_Y			16
 #define NOMSG_WARN_CHARS		"NO_MSG"
-
-#define PACK_OC_WARN_X			70
-#define PACK_OC_WARN_Y			28
 #define PACK_OC_WARN_CHARS		"PACK_OC"
-
-#define PACK_OD_WARN_X			70
-#define PACK_OD_WARN_Y			40
 #define PACK_OD_WARN_CHARS		"PACK_ODC"
 
 /** Temperature Page */
@@ -258,6 +270,17 @@ typedef struct {
 	volatile uint8_t* temperature;
 	uint8_t temp_label;
 } temperature_data_t;
+
+//typedef struct {
+//	volatile uint8_t* mppt_a_temperature;
+//	volatile uint8_t* mppt_b_temperature;
+//	volatile uint8_t* mppt_c_temperature;
+//	volatile uint8_t* mppt_d_temperature;
+//	volatile uint8_t* batt_min_temperature;
+//	volatile uint8_t* batt_max_temperature;
+//	volatile uint8_t* motor_cont_temperature;
+//	volatile uint8_t* motor_therm_temperature;
+//}; temperature_data_t;
 
 typedef struct {
    volatile bool battery_fault;
