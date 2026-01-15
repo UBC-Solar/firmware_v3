@@ -274,7 +274,6 @@ void LCDUpdatetask(void *argument)
   /* USER CODE BEGIN LCDUpdatetask */
   /* Infinite loop */
 
-
   LCD_init(&hspi1);
   LCD_change_screen();
   
@@ -296,9 +295,9 @@ void LCDUpdatetask(void *argument)
 	}
 
 	// Constantly gets faults
-	g_lcd_batt_faults.battery_fault = true;
-	g_lcd_batt_faults.charge_overcurrent_fault = true;
-	g_lcd_batt_faults.discharge_overcurrent_fault = true;
+	g_lcd_batt_faults.battery_fault = false;
+	g_lcd_batt_faults.charge_overcurrent_fault = false;
+	g_lcd_batt_faults.discharge_overcurrent_fault = false;
 	g_lcd_batt_faults.overtemp_fault = false;
 	g_lcd_batt_faults.overvolt_fault = false;
 	g_lcd_batt_faults.reset_from_watchdog = false;
@@ -316,38 +315,40 @@ void LCDUpdatetask(void *argument)
 	g_lcd_motor_faults.throttle_adc_mismatch = false;
 	g_lcd_motor_faults.throttle_adc_outofrange = false;
 
-	g_lcd_warnings.high_temp_warning = true;
-	g_lcd_warnings.high_volt_warning = true;
-	g_lcd_warnings.low_temp_warning = true;
-	g_lcd_warnings.low_volt_warning = true;
-	g_lcd_warnings.no_ecu_message = true;
-	g_lcd_warnings.pack_overcharge = true;
-	g_lcd_warnings.pack_overdischarge = true;
+	g_lcd_warnings.high_temp_warning = false;
+	g_lcd_warnings.high_volt_warning = false;
+	g_lcd_warnings.low_temp_warning = false;
+	g_lcd_warnings.low_volt_warning = false;
+	g_lcd_warnings.no_ecu_message = false;
+	g_lcd_warnings.pack_overcharge = false;
+	g_lcd_warnings.pack_overdischarge = false;
 
-	uint8_t temp = 44;
-	uint8_t temp2 = 144;
+//	uint8_t temp = 44;
+//	uint8_t temp2 = 144;
 
 
 	uint32_t speed = 44;
-	uint32_t soc = 444;
+	uint32_t soc = 44;
 	uint8_t state = 0x01;
-
 
 	// Handles what is displayed
 	switch(g_LCD_page){
 		case 1:
-			g_lcd_data.speed            = &speed;
-			g_lcd_data.drive_state      = &state;//get_cyclic_drive_state();
-			g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;
-		    g_lcd_data.soc              = &soc;
+			for(soc = 0; soc < 444; soc ++) {
+				g_lcd_data.speed            = &speed;
+				g_lcd_data.drive_state      = &state;//get_cyclic_drive_state();
+				g_lcd_data.drive_mode       = 0;//(volatile uint8_t) g_input_flags.eco_mode_on;
+				g_lcd_data.soc              = &soc;
 
-			LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
-		    LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
-			LCD_display_drive_mode(g_lcd_data.drive_mode);
-			LCD_display_drive_state(g_lcd_data.drive_state);
-			LCD_display_fault_indicator(g_lcd_batt_faults);
-			LCD_display_warning_indicator(g_lcd_batt_faults);
+				LCD_display_speed_drive_page(g_lcd_data.speed, g_lcd_data.speed_units);
+				LCD_display_drive_mode(g_lcd_data.drive_mode);
+				LCD_display_drive_state_drive_page(g_lcd_data.drive_state);
+				LCD_display_SOC_drive_page((volatile uint32_t*) g_lcd_data.soc);
+				LCD_display_fault_indicator(g_lcd_batt_faults, g_lcd_motor_faults);
+				LCD_display_warning_indicator(g_lcd_warnings);
+			}
 			break;
+
 		case 2:
 			LCD_display_faults(g_lcd_batt_faults, g_lcd_motor_faults);
 			break;
@@ -426,22 +427,18 @@ void LCDUpdatetask(void *argument)
 		case 5:
 			g_lcd_data.speed            = &speed;
 			g_lcd_data.drive_state      = &state;//get_cyclic_drive_state();
-			g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;
 			g_lcd_data.soc              = &soc;
 			g_lcd_data.pack_current     = get_cyclic_pack_current();
 			g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
-
-//			LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
-//			LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
-//			LCD_display_drive_mode(g_lcd_data.drive_mode);
-//			LCD_display_drive_state(g_lcd_data.drive_state);
+			LCD_display_speed_debug_page(g_lcd_data.speed, g_lcd_data.speed_units);
+			LCD_display_SOC_debug_page((volatile uint32_t*) g_lcd_data.soc);
+			LCD_display_drive_state_debug_page(g_lcd_data.drive_state);
 			LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
-			break;
 
 		default:
 			break;
-	}
 
+	}
 
     #ifdef DEBUG
         lcd_time_diff = HAL_GetTick() - lcd_time_start;

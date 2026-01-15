@@ -12,8 +12,6 @@
 --------------------------------------------------------------------------*/
 
 /* Static variables to store old bounding boxes for updating text fields */
-
-// Page 1
 static bounding_box_t old_bb_speed          = {0, 0, 0, 0};
 static bounding_box_t old_bb_drive_state    = {0, 0, 0, 0};
 static bounding_box_t old_bb_drive_mode     = {0, 0, 0, 0};
@@ -21,6 +19,8 @@ static bounding_box_t old_bb_soc            = {0, 0, 0, 0};
 static bounding_box_t old_bb_fault_indicator = {0, 0, 0, 0};
 static bounding_box_t old_bb_warning_indicator = {0, 0, 0, 0};
 
+static char faults[8][10] = {0};
+static char warning_char[8][10] = {0};
 
 /* External variables*/
 lcd_data_t g_lcd_data = {0};
@@ -29,247 +29,22 @@ lcd_motor_faults_t g_lcd_motor_faults = {0};
 lcd_warnings_t g_lcd_warnings = {0};
 temperature_data_t g_lcd_temperatures[8] = {0};
 
-uint8_t g_LCD_page = 3;
+uint8_t g_LCD_page = 1;
 uint8_t g_LCD_page_change = 0;
 
-
 /*--------------------------------------------------------------------------
-  PAGE 1 (DRIVE PAGE) FUNCTIONS
+  HELPER FUNCTIONS
 --------------------------------------------------------------------------*/
 
 /**
- * @brief Displays the speed on the LCD.
- * 
- * @param speed The speed value to display.
- * @param units The speed units (LCD_SPEED_UNITS_MPH or LCD_SPEED_UNITS_KPH).
- */
-void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units)
-{
-    char speed_str[12];
-    
-    if(g_LCD_page == 1) {
-        /* Clear the previous speed and unit areas */
-        lcd_clear_bounding_box(SPEED_THREEDIGIT_X, old_bb_speed.y1 + 10, BOTTOM_RIGHT_X, old_bb_speed.y2);
-
-        if (speed == NULL) {  // Stale speed data
-            sprintf(speed_str, "XX");
-            old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X + 10, SPEED_Y + 10, SPEED_NULL_FONT, SPEED_SPACING + 10);
-            g_diagnostics.cyclic_flags.speed_timeout = true;
-        } else if (*speed < 10) { // Single digit speed
-            sprintf(speed_str, "%01lu", (unsigned long)*speed);
-            old_bb_speed = draw_text(speed_str, SPEED_ONEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
-            g_diagnostics.cyclic_flags.speed_timeout = false;
-        } else if (*speed < 100){ // Double digit second
-            sprintf(speed_str, "%02lu", (unsigned long)*speed);
-            old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
-            g_diagnostics.cyclic_flags.speed_timeout = false;
-        } else{
-        	sprintf(speed_str, "%03lu", (unsigned long)*speed);
-    		old_bb_speed = draw_text(speed_str, SPEED_THREEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
-    		g_diagnostics.cyclic_flags.speed_timeout = false;
-        }
-
-        /* Draw the speed units */
-
-        switch (units) {
-            case KPH:
-                draw_text("kph", SPEED_X + SPEED_UNIT_KPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
-                break;
-            case MPH:
-                draw_text("mph", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
-                break;
-            default:
-                draw_text("xxx", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
-                break;
-        }
-    } else if(g_LCD_page == 5) {
-        /* Clear the previous speed and unit areas */
-        lcd_clear_bounding_box(SPEED_THREEDIGIT_X, old_bb_speed.y1 + 10, BOTTOM_RIGHT_X, old_bb_speed.y2);
-
-        if (speed == NULL) {  // Stale speed data
-            sprintf(speed_str, "XX");
-            old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X + 10, SPEED_Y + 10, SPEED_NULL_FONT, SPEED_SPACING + 10);
-            g_diagnostics.cyclic_flags.speed_timeout = true;
-        } else if (*speed < 10) { // Single digit speed
-            sprintf(speed_str, "%01lu", (unsigned long)*speed);
-            old_bb_speed = draw_text(speed_str, SPEED_ONEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
-            g_diagnostics.cyclic_flags.speed_timeout = false;
-        } else if (*speed < 100){ // Double digit second
-            sprintf(speed_str, "%02lu", (unsigned long)*speed);
-            old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
-            g_diagnostics.cyclic_flags.speed_timeout = false;
-        } else{
-        	sprintf(speed_str, "%03lu", (unsigned long)*speed);
-    		old_bb_speed = draw_text(speed_str, SPEED_THREEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
-    		g_diagnostics.cyclic_flags.speed_timeout = false;
-        }
-
-        /* Draw the speed units */
-
-        switch (units) {
-            case KPH:
-                draw_text("kph", SPEED_X + SPEED_UNIT_KPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
-                break;
-            case MPH:
-                draw_text("mph", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
-                break;
-            default:
-                draw_text("xxx", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
-                break;
-        }
-    }
-
-
-    lcd_refresh();
-
-}
-
-/**
- * @brief Displays the state of charge (SOC) on the LCD.
- * 
- * @param soc The state of charge (in percent).
- */
-void LCD_display_SOC(volatile uint32_t* soc)
-{
-    char soc_str[12];
-    lcd_clear_bounding_box(old_bb_soc.x1, old_bb_soc.y1, old_bb_soc.x2, old_bb_soc.y2);
-    //23, 1, 45, 22
-    
-    // Check for stale data and display "--" if so.
-    if (soc == NULL) {
-        sprintf(soc_str, "--");
-        old_bb_soc = draw_text(soc_str, SOC_TWODIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
-        g_diagnostics.cyclic_flags.soc_timeout = true; 
-    } 
-    else if (*soc < 10) {
-        sprintf(soc_str, "%01lu", (unsigned long)* soc);
-        old_bb_soc = draw_text(soc_str, SOC_ONEDIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
-        g_diagnostics.cyclic_flags.soc_timeout = false;
-    }
-    else if (*soc < 100){
-        sprintf(soc_str, "%02lu", (unsigned long)* soc);
-        old_bb_soc = draw_text(soc_str, SOC_TWODIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
-        g_diagnostics.cyclic_flags.soc_timeout = false;
-    }
-    else {
-    	sprintf(soc_str, "%03lu", (unsigned long)* soc);
-    	old_bb_soc = draw_text(soc_str, SOC_THREEDIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
-		g_diagnostics.cyclic_flags.soc_timeout = false;
-    }
-
-    draw_char(SOC_UNITS, old_bb_soc.x2 + 3, SOC_Y, SOC_UNITS_FONT);
-    lcd_refresh();
-}
-
-/**
- * @brief Displays an E for ECO mode and P for POWER mode
+ * @brief Checks and updates the faults.
  *
- * @param drive_mode The drive mode
+ * @param batt_faults A struct containing the battery faults.
+ * @param motor_faults A struct containing the motor faults.
+ * @return The count of faults.
  */
-void LCD_display_drive_mode(volatile uint8_t drive_mode)
-{
-    lcd_clear_bounding_box(old_bb_drive_mode.x1, old_bb_drive_mode.y1 + 4,
-    					   old_bb_drive_mode.x2, old_bb_drive_mode.y2 - 2);
-
-    // Drive mode is valid, display the corresponding symbol.
-    switch (drive_mode) {
-        case DRIVE_MODE_ECO:
-            old_bb_drive_mode = draw_char(ECO_SYMBOL, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
-            break;
-        case DRIVE_MODE_POWER:
-            old_bb_drive_mode = draw_char(POWER_SYMBOL, POWER_MODE_X, POWER_MODE_Y, POWER_MODE_FONT);
-            break;
-        default:
-            old_bb_drive_mode = draw_char(ERROR_SYMBOL, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
-            break;
-    }
-    lcd_refresh();
-}
-
-/**
- * @brief Displays the drive state on the LCD.
- *
- * @param state The drive state (e.g., FORWARD_STATE, PARK_STATE, REVERSE_STATE).
- */
-void LCD_display_drive_state(volatile drive_state_t* state)
-{
-    char state_str[2] = {ERROR_SYMBOL, '\0'};  // Default to error symbol.
-    lcd_clear_bounding_box(STATE_X, STATE_Y, 20, BOTTOM_RIGHT_Y);
-    //23, 47, 35, 68
-    if (state == NULL) {  // Stale data for drive state
-        sprintf(state_str, "-");
-        g_diagnostics.cyclic_flags.drive_state_timeout = true;
-    }
-    else {
-        switch (*state) {
-            case FORWARD:
-                state_str[0] = FORWARD_SYMBOL;
-                break;
-            case PARK:
-                state_str[0] = PARK_SYMBOL;
-                break;
-            case REVERSE:
-                state_str[0] = REVERSE_SYMBOL;
-                break;
-            default:
-                state_str[0] = ERROR_SYMBOL;
-                break;
-        }
-        g_diagnostics.cyclic_flags.drive_state_timeout = false;
-    }
-    old_bb_drive_state = draw_text(state_str, STATE_X, STATE_Y, STATE_FONT, STATE_SPACING);
-    lcd_refresh();
-}
-
-
-/**
- * @brief Displays a fault indicator on the LCD Drive Page
- *
- * @param fault_indicator A general indicator to signal a fault to prompt the driver to change pages
- */
-void LCD_display_fault_indicator(lcd_batt_faults_t batt_faults)
-{
-	lcd_clear_bounding_box(old_bb_fault_indicator.x1, old_bb_fault_indicator.y1,
-			old_bb_fault_indicator.x2, old_bb_fault_indicator.y2);
-
-	if(batt_faults.battery_fault){
-		old_bb_fault_indicator = draw_char(FAULT_SYMBOL, FAULT_X, FAULT_Y, FAULT_SYMBOL_FONT);
-	}
-	lcd_refresh();
-}
-
-/**
- * @brief Displays a warning indicator on the LCD Drive Page
- *
- * @param warning_indicator A general indicator to signal a warning to prompt the driver to change pages
- */
-void LCD_display_warning_indicator(lcd_batt_faults_t batt_faults)
-{
-	lcd_clear_bounding_box(old_bb_warning_indicator.x1, old_bb_warning_indicator.y1,
-			old_bb_warning_indicator.x2, old_bb_warning_indicator.y2);
-
-	if(batt_faults.battery_fault){
-		old_bb_warning_indicator = draw_char(WARNING_SYMBOL, WARNING_X, WARNING_Y, WARNING_SYMBOL_FONT);
-	}
-	lcd_refresh();
-}
-
-/*--------------------------------------------------------------------------
-  PAGE 2 (FAULT PAGE) FUNCTIONS
---------------------------------------------------------------------------*/
-
-/**
- * @brief Dynamically displays battery and motor faults on the LCD
- *
- * @param batt_faults The battery faults to be displayed on the LCD
- * @param motor_faults The motor faults to be displayed on the LCD
- */
-void LCD_display_faults(lcd_batt_faults_t batt_faults, lcd_motor_faults_t motor_faults){
-
-	lcd_clear_bounding_box(0, FAULT_FOUR_Y1, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
-
+uint8_t check_faults(lcd_batt_faults_t batt_faults, lcd_motor_faults_t motor_faults){
 	uint8_t fault_count = 0;
-	char faults[8][10];
 
 	if (batt_faults.battery_fault) {
 		sprintf(faults[fault_count], "%s", BATT_FLT_CHARS);
@@ -344,6 +119,260 @@ void LCD_display_faults(lcd_batt_faults_t batt_faults, lcd_motor_faults_t motor_
 		fault_count++;
 	}
 
+	return fault_count;
+}
+
+/**
+ * @brief Checks and updates the warnings.
+ *
+ * @param warnings A struct containing the warnings
+ *
+ * @return The count of warnings.
+ */
+uint8_t check_warnings(lcd_warnings_t warnings){
+	uint8_t warning_count = 0;
+
+	if (warnings.high_temp_warning) {
+		sprintf(warning_char[warning_count], "%s", HIGHTEMP_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.high_volt_warning) {
+		sprintf(warning_char[warning_count], "%s", HIGHVOLT_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.low_temp_warning) {
+		sprintf(warning_char[warning_count], "%s", LOWTEMP_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.low_volt_warning) {
+		sprintf(warning_char[warning_count], "%s", LOWVOLT_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.no_ecu_message) {
+		sprintf(warning_char[warning_count], "%s", NOMSG_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.pack_overcharge) {
+		sprintf(warning_char[warning_count], "%s", PACK_OC_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.pack_overdischarge) {
+		sprintf(warning_char[warning_count], "%s", PACK_OD_WARN_CHARS);
+		warning_count++;
+	}
+
+	return warning_count;
+}
+
+/*--------------------------------------------------------------------------
+  PAGE 1 (DRIVE PAGE) FUNCTIONS
+--------------------------------------------------------------------------*/
+
+/**
+ * @brief Displays the speed on the LCD drive page.
+ * 
+ * @param speed The speed value to display.
+ * @param units The speed units (LCD_SPEED_UNITS_MPH or LCD_SPEED_UNITS_KPH).
+ */
+void LCD_display_speed_drive_page(volatile uint32_t* speed, volatile uint8_t units)
+{
+    char speed_str[12];
+    
+	/* Clear the previous speed and unit areas */
+	lcd_clear_bounding_box(SPEED_THREEDIGIT_X, old_bb_speed.y1 + 10, BOTTOM_RIGHT_X, old_bb_speed.y2);
+
+	if (speed == NULL) {  // Stale speed data
+		sprintf(speed_str, "XX");
+		old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X + 10, SPEED_Y + 10, SPEED_NULL_FONT, SPEED_SPACING + 10);
+		g_diagnostics.cyclic_flags.speed_timeout = true;
+	} else if (*speed < 10) { // Single digit speed
+		sprintf(speed_str, "%01lu", (unsigned long)*speed);
+		old_bb_speed = draw_text(speed_str, SPEED_ONEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+		g_diagnostics.cyclic_flags.speed_timeout = false;
+	} else if (*speed < 100){ // Double digit second
+		sprintf(speed_str, "%02lu", (unsigned long)*speed);
+		old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+		g_diagnostics.cyclic_flags.speed_timeout = false;
+	} else{
+		sprintf(speed_str, "%03lu", (unsigned long)*speed);
+		old_bb_speed = draw_text(speed_str, SPEED_THREEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+		g_diagnostics.cyclic_flags.speed_timeout = false;
+	}
+
+	/* Draw the speed units */
+	switch (units) {
+		case KPH:
+			draw_text("kph", SPEED_X + SPEED_UNIT_KPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+			break;
+		case MPH:
+			draw_text("mph", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+			break;
+		default:
+			draw_text("xxx", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+			break;
+	}
+
+    lcd_refresh();
+
+}
+
+/**
+ * @brief Displays the state of charge (SOC) on the LCD drive page.
+ * 
+ * @param soc The state of charge (in percent).
+ */
+void LCD_display_SOC_drive_page(volatile uint32_t* soc)
+{
+    char soc_str[12];
+    
+	lcd_clear_bounding_box(old_bb_soc.x1, old_bb_soc.y1, old_bb_soc.x2, old_bb_soc.y2 - SOC_SPACING);
+
+	// Check for stale data and display "--" if so.
+	if (soc == NULL) {
+		sprintf(soc_str, "--");
+		old_bb_soc = draw_text(soc_str, SOC_TWODIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = true;
+	}
+	else if (*soc < 10) {
+		sprintf(soc_str, "%01lu", (unsigned long)* soc);
+		old_bb_soc = draw_text(soc_str, SOC_ONEDIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = false;
+	}
+	else if (*soc < 100){
+		sprintf(soc_str, "%02lu", (unsigned long)* soc);
+		old_bb_soc = draw_text(soc_str, SOC_TWODIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = false;
+	}
+	else {
+		sprintf(soc_str, "%03lu", (unsigned long)* soc);
+		old_bb_soc = draw_text(soc_str, SOC_THREEDIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = false;
+	}
+
+	draw_char(SOC_UNITS, SOC_UNITS_X, SOC_Y, SOC_UNITS_FONT);
+
+    lcd_refresh();
+}
+
+/**
+ * @brief Displays an E for ECO mode and P for POWER mode
+ *
+ * @param drive_mode The drive mode
+ */
+void LCD_display_drive_mode(volatile uint8_t drive_mode)
+{
+	lcd_clear_bounding_box(old_bb_drive_mode.x1, old_bb_drive_mode.y1 + 4,
+							   old_bb_drive_mode.x2, old_bb_drive_mode.y2 - 2);
+
+	// Drive mode is valid, display the corresponding symbol.
+	switch (drive_mode) {
+		case DRIVE_MODE_ECO:
+			old_bb_drive_mode = draw_char(ECO_SYMBOL, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
+			break;
+		case DRIVE_MODE_POWER:
+			old_bb_drive_mode = draw_char(POWER_SYMBOL, POWER_MODE_X, POWER_MODE_Y, POWER_MODE_FONT);
+			break;
+		default:
+			old_bb_drive_mode = draw_char(ERROR_SYMBOL, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
+			break;
+	}
+
+    lcd_refresh();
+}
+
+/**
+ * @brief Displays the drive state on the LCD drive page.
+ *
+ * @param state The drive state (e.g., FORWARD_STATE, PARK_STATE, REVERSE_STATE).
+ */
+void LCD_display_drive_state_drive_page(volatile drive_state_t* state)
+{
+    char state_str[2] = {ERROR_SYMBOL, '\0'};  // Default to error symbol.
+
+    if (state == NULL) {  // Stale data for drive state
+        sprintf(state_str, "-");
+        g_diagnostics.cyclic_flags.drive_state_timeout = true;
+    }
+    else {
+        switch (*state) {
+            case FORWARD:
+                state_str[0] = FORWARD_SYMBOL;
+                break;
+            case PARK:
+                state_str[0] = PARK_SYMBOL;
+                break;
+            case REVERSE:
+                state_str[0] = REVERSE_SYMBOL;
+                break;
+            default:
+                state_str[0] = ERROR_SYMBOL;
+                break;
+        }
+        g_diagnostics.cyclic_flags.drive_state_timeout = false;
+    }
+
+    lcd_clear_bounding_box(STATE_X, STATE_Y, old_bb_drive_state.x2, BOTTOM_RIGHT_Y);
+	old_bb_drive_state = draw_text(state_str, STATE_X, STATE_Y, STATE_FONT, STATE_SPACING);
+
+    lcd_refresh();
+}
+
+
+/**
+ * @brief Displays a fault indicator on the LCD Drive Page
+ *
+ * @param fault_indicator A general indicator to signal a fault to prompt the driver to change pages
+ */
+void LCD_display_fault_indicator(lcd_batt_faults_t batt_faults, lcd_motor_faults_t motor_faults)
+{
+	lcd_clear_bounding_box(old_bb_fault_indicator.x1, old_bb_fault_indicator.y1,
+			old_bb_fault_indicator.x2, old_bb_fault_indicator.y2);
+
+
+	uint8_t fault_count = check_faults(batt_faults, motor_faults);
+
+	// Check if there is an existing fault
+	if(fault_count > 0) {
+		old_bb_fault_indicator = draw_char(FAULT_SYMBOL, FAULT_X, FAULT_Y, FAULT_SYMBOL_FONT);
+	}
+	lcd_refresh();
+}
+
+/**
+ * @brief Displays a warning indicator on the LCD Drive Page
+ *
+ * @param warning_indicator A general indicator to signal a warning to prompt the driver to change pages
+ */
+void LCD_display_warning_indicator(lcd_warnings_t warnings)
+{
+	lcd_clear_bounding_box(old_bb_warning_indicator.x1, old_bb_warning_indicator.y1,
+			old_bb_warning_indicator.x2, old_bb_warning_indicator.y2);
+
+	uint8_t warning_count = check_warnings(warnings);
+
+	// Check if there is an existing warning
+	if(warning_count > 0){
+		old_bb_warning_indicator = draw_char(WARNING_SYMBOL, WARNING_X, WARNING_Y, WARNING_SYMBOL_FONT);
+	}
+	lcd_refresh();
+}
+
+/*--------------------------------------------------------------------------
+  PAGE 2 (FAULT PAGE) FUNCTIONS
+--------------------------------------------------------------------------*/
+
+/**
+ * @brief Dynamically displays battery and motor faults on the LCD
+ *
+ * @param batt_faults The battery faults to be displayed on the LCD
+ * @param motor_faults The motor faults to be displayed on the LCD
+ */
+void LCD_display_faults(lcd_batt_faults_t batt_faults, lcd_motor_faults_t motor_faults){
+
+	lcd_clear_bounding_box(0, FAULT_FOUR_Y1, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
+
+	uint8_t fault_count = check_faults(batt_faults, motor_faults);
+
 	draw_text(FAULT_LABEL_CHARS, FAULT_LABEL_X, FAULT_LABEL_Y, FAULT_LABEL_FONT, FAULT_SPACING);
 	for(uint8_t i = 0; i < FAULT_LABEL_UNDERLINE_X; i++){
 		lcd_pixel(i, FAULT_LABEL_UNDERLINE_Y, 1);
@@ -381,37 +410,7 @@ void LCD_display_warnings(lcd_warnings_t warnings)
 {
 	lcd_clear_bounding_box(0, WARNING_FOUR_Y1, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
 
-	uint8_t warning_count = 0;
-	char warning_char[8][10];
-
-	if (warnings.high_temp_warning) {
-		sprintf(warning_char[warning_count], "%s", HIGHTEMP_WARN_CHARS);
-		warning_count++;
-	}
-	if (warnings.high_volt_warning) {
-		sprintf(warning_char[warning_count], "%s", HIGHVOLT_WARN_CHARS);
-		warning_count++;
-	}
-	if (warnings.low_temp_warning) {
-		sprintf(warning_char[warning_count], "%s", LOWTEMP_WARN_CHARS);
-		warning_count++;
-	}
-	if (warnings.low_volt_warning) {
-		sprintf(warning_char[warning_count], "%s", LOWVOLT_WARN_CHARS);
-		warning_count++;
-	}
-	if (warnings.no_ecu_message) {
-		sprintf(warning_char[warning_count], "%s", NOMSG_WARN_CHARS);
-		warning_count++;
-	}
-	if (warnings.pack_overcharge) {
-		sprintf(warning_char[warning_count], "%s", PACK_OC_WARN_CHARS);
-		warning_count++;
-	}
-	if (warnings.pack_overdischarge) {
-		sprintf(warning_char[warning_count], "%s", PACK_OD_WARN_CHARS);
-		warning_count++;
-	}
+	uint8_t warning_count = check_warnings(warnings);
 
 	draw_text(WARNING_LABEL_CHARS, WARNING_LABEL_X, WARNING_LABEL_Y, WARNING_LABEL_FONT, WARNING_SPACING);
 	for(uint8_t i = 0; i < WARNING_LABEL_UNDERLINE_X; i++){
@@ -441,9 +440,9 @@ void LCD_display_warnings(lcd_warnings_t warnings)
 --------------------------------------------------------------------------*/
 
 /**
- * @brief Displays an Temperature on the LCD (0-255)
+ * @brief Displays a Temperature on the LCD (0-255)
  *
- * @param temperature The temperature of motor
+ * @param temperature A struct containing the temperature and id of the temperature.
  */
 void LCD_display_temperature(temperature_data_t temperature_data){
 
@@ -547,10 +546,6 @@ void LCD_display_temperature(temperature_data_t temperature_data){
 	lcd_refresh();
 }
 
-void LCD_display_all_temperatures(temperature_data_t temperature_data){
-
-}
-
 
 /*--------------------------------------------------------------------------
   PAGE 5 (DEBUG PAGE) FUNCTIONS
@@ -627,6 +622,129 @@ void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* p
     }
 }
 
+/**
+ * @brief Displays the speed on the LCD debug page.
+ *
+ * @param speed The speed value to display.
+ * @param units The speed units (LCD_SPEED_UNITS_MPH or LCD_SPEED_UNITS_KPH).
+ */
+void LCD_display_speed_debug_page(volatile uint32_t* speed, volatile uint8_t units)
+{
+    char speed_str[12];
+
+	/* Clear the previous speed and unit areas */
+	lcd_clear_bounding_box(DEBUG_SPEED_THREEDIGIT_X, old_bb_speed.y1, BOTTOM_RIGHT_X, old_bb_speed.y2 - 3);
+
+	if (speed == NULL) {  // Stale speed data
+		sprintf(speed_str, "XX");
+		old_bb_speed = draw_text(speed_str, DEBUG_SPEED_TWODIGIT_X + 10, DEBUG_SPEED_Y + 10, DEBUG_SPEED_FONT, DEBUG_SPEED_SPACING + 10);
+		g_diagnostics.cyclic_flags.speed_timeout = true;
+	} else if (*speed < 10) { // Single digit speed
+		sprintf(speed_str, "%01lu", (unsigned long)*speed);
+		old_bb_speed = draw_text(speed_str, DEBUG_SPEED_ONEDIGIT_X, DEBUG_SPEED_Y, DEBUG_SPEED_FONT, DEBUG_SPEED_SPACING);
+		g_diagnostics.cyclic_flags.speed_timeout = false;
+	} else if (*speed < 100){ // Double digit second
+		sprintf(speed_str, "%02lu", (unsigned long)*speed);
+		old_bb_speed = draw_text(speed_str, DEBUG_SPEED_TWODIGIT_X, DEBUG_SPEED_Y, DEBUG_SPEED_FONT, DEBUG_SPEED_SPACING);
+		g_diagnostics.cyclic_flags.speed_timeout = false;
+	} else{
+		sprintf(speed_str, "%03lu", (unsigned long)*speed);
+		old_bb_speed = draw_text(speed_str, DEBUG_SPEED_THREEDIGIT_X, DEBUG_SPEED_Y, DEBUG_SPEED_FONT, DEBUG_SPEED_SPACING);
+		g_diagnostics.cyclic_flags.speed_timeout = false;
+	}
+
+	/* Draw the speed units */
+	switch (units) {
+		case KPH:
+			draw_text("kph", DEBUG_SPEED_X + DEBUG_SPEED_UNIT_KPH_X, DEBUG_SPEED_UNIT_Y, DEBUG_SPEED_UNITS_FONT, DEBUG_SPEED_UNITS_SPACING);
+			break;
+		case MPH:
+			draw_text("mph", DEBUG_SPEED_X + DEBUG_SPEED_UNIT_MPH_X, DEBUG_SPEED_UNIT_Y, DEBUG_SPEED_UNITS_FONT, DEBUG_SPEED_UNITS_SPACING);
+			break;
+		default:
+			draw_text("xxx", DEBUG_SPEED_X + DEBUG_SPEED_UNIT_MPH_X, DEBUG_SPEED_UNIT_Y, DEBUG_SPEED_UNITS_FONT, DEBUG_SPEED_UNITS_SPACING);
+			break;
+	}
+
+    lcd_refresh();
+
+}
+
+/**
+ * @brief Displays the state of charge (SOC) on the LCD debug page.
+ *
+ * @param soc The state of charge (in percent).
+ */
+void LCD_display_SOC_debug_page(volatile uint32_t* soc)
+{
+    char soc_str[12];
+
+	lcd_clear_bounding_box(old_bb_soc.x1, old_bb_soc.y1, old_bb_soc.x2, old_bb_soc.y2 - 5);
+
+	// Check for stale data and display "--" if so.
+	if (soc == NULL) {
+		sprintf(soc_str, "--");
+		old_bb_soc = draw_text(soc_str, DEBUG_SOC_TWODIGIT_X, SOC_Y, DEBUG_SOC_FONT, DEBUG_SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = true;
+	}
+	else if (*soc < 10) {
+		sprintf(soc_str, "%01lu", (unsigned long)* soc);
+		old_bb_soc = draw_text(soc_str, DEBUG_SOC_ONEDIGIT_X, DEBUG_SOC_Y, DEBUG_SOC_FONT, DEBUG_SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = false;
+	}
+	else if (*soc < 100){
+		sprintf(soc_str, "%02lu", (unsigned long)* soc);
+		old_bb_soc = draw_text(soc_str, DEBUG_SOC_TWODIGIT_X, DEBUG_SOC_Y, DEBUG_SOC_FONT, DEBUG_SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = false;
+	}
+	else {
+		sprintf(soc_str, "%03lu", (unsigned long)* soc);
+		old_bb_soc = draw_text(soc_str, DEBUG_SOC_THREEDIGIT_X, DEBUG_SOC_Y, DEBUG_SOC_FONT, DEBUG_SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = false;
+	}
+
+	draw_char(SOC_UNITS, DEBUG_SOC_UNITS_X, DEBUG_SOC_Y, DEBUG_SOC_UNITS_FONT);
+
+    lcd_refresh();
+}
+
+/**
+ * @brief Displays the drive state on the LCD debug page.
+ *
+ * @param state The drive state (e.g., FORWARD_STATE, PARK_STATE, REVERSE_STATE).
+ */
+void LCD_display_drive_state_debug_page(volatile drive_state_t* state)
+{
+    char state_str[2] = {ERROR_SYMBOL, '\0'};  // Default to error symbol.
+
+    if (state == NULL) {  // Stale data for drive state
+        sprintf(state_str, "-");
+        g_diagnostics.cyclic_flags.drive_state_timeout = true;
+    }
+    else {
+        switch (*state) {
+            case FORWARD:
+                state_str[0] = FORWARD_SYMBOL;
+                break;
+            case PARK:
+                state_str[0] = PARK_SYMBOL;
+                break;
+            case REVERSE:
+                state_str[0] = REVERSE_SYMBOL;
+                break;
+            default:
+                state_str[0] = ERROR_SYMBOL;
+                break;
+        }
+        g_diagnostics.cyclic_flags.drive_state_timeout = false;
+    }
+
+	lcd_clear_bounding_box(DEBUG_STATE_X, DEBUG_STATE_Y, 20, BOTTOM_RIGHT_Y);
+	old_bb_drive_state = draw_text(state_str, DEBUG_STATE_X, DEBUG_STATE_Y, DEBUG_STATE_FONT, DEBUG_STATE_SPACING);
+
+    lcd_refresh();
+}
+
 /*
  * @brief CAN rx function which parses message data needed by the LCD
  *
@@ -658,20 +776,22 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
     if(msg_id == STR_CAN_MSG_ID)
     {
     	uint8_t next_page = (data[0] & 1);
-    	uint8_t previous_page = (data[0] >> 1) & 1;
 
     	if(next_page){
     		if(g_LCD_page < MAXPAGES){
     			g_LCD_page_change = 1;
     			g_LCD_page++;
+			} else {
+				g_LCD_page_change = 1;
+				g_LCD_page = 1;
 			}
     	}
-    	else if(previous_page){
-    		if(g_LCD_page > 1){
-    			g_LCD_page_change = 1;
-    			g_LCD_page--;
-			}
-    	}
+//    	else if(previous_page){
+//    		if(g_LCD_page > 1){
+//    			g_LCD_page_change = 1;
+//    			g_LCD_page--;
+//			}
+//    	}
     }
 
     if(msg_id == CAN_ID_MDI_TEMP)

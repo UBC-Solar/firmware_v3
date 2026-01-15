@@ -40,8 +40,8 @@
 #define SOC_Y               0
 #define SOC_SPACING         1
 #define SOC_UNITS_FONT      (Verdana8)
+#define SOC_UNITS_X			27
 #define SOC_UNITS           '%'
-#define WIDEST_NUM_LEN_VERDANA16        11  // pixels
 
 #define ECO_MODE_X             	12
 #define ECO_MODE_Y              24
@@ -55,7 +55,7 @@
 #define DRIVE_MODE_POWER        0
 
 #define STATE_X             9
-#define STATE_Y             45
+#define STATE_Y             46
 #define STATE_FONT          (Verdana16)
 #define FORWARD_STATE       0x01    
 #define FORWARD_SYMBOL      'D'    
@@ -238,14 +238,50 @@
 /** Debug Page */
 #define MAX_POSITIVE_POWER              5400.0f
 #define MAX_NEGATIVE_POWER              3000.0f   // use the absolute value for negative power
-#define BAR_LEFT                        1
-#define BAR_TOP                         1
+#define BAR_LEFT                        0
+#define BAR_TOP                         0
 #define BAR_BOTTOM                      15
-#define BAR_RIGHT BOTTOM_RIGHT_X
+#define BAR_RIGHT 						BOTTOM_RIGHT_X
 #define CENTER_X                        43
 
+#define DEBUG_SPEED_FONT          	(Verdana32)
+#define DEBUG_SPEED_X             	35
+#define DEBUG_SPEED_ONEDIGIT_X		84
+#define DEBUG_SPEED_TWODIGIT_X		57
+#define DEBUG_SPEED_THREEDIGIT_X	42
+#define DEBUG_SPEED_Y             	22
+#define DEBUG_SPEED_SPACING       	1
+#define DEBUG_SPEED_UNIT_KPH_X		76
+#define DEBUG_SPEED_UNIT_MPH_X		72
+#define DEBUG_SPEED_UNIT_Y			22
+#define DEBUG_SPEED_UNITS_FONT    	(Verdana8)
+#define DEBUG_SPEED_UNITS_SPACING 	1
+
+#define DEBUG_SOC_FONT            (Verdana16)
+#define DEBUG_SOC_ONEDIGIT_X      13
+#define DEBUG_SOC_TWODIGIT_X      3
+#define DEBUG_SOC_THREEDIGIT_X    0
+#define DEBUG_SOC_Y               23
+#define DEBUG_SOC_SPACING         1
+#define DEBUG_SOC_UNITS_X		  27
+#define DEBUG_SOC_UNITS_FONT      (Verdana8)
+
+#define DEBUG_ECO_MODE_X              12
+#define DEBUG_ECO_MODE_Y              24
+#define DEBUG_ECO_MODE_FONT           (Verdana12)
+#define DEBUG_POWER_MODE_X            9
+#define DEBUG_POWER_MODE_Y            20
+#define DEBUG_POWER_MODE_FONT         (Webdings14)
+
+#define DEBUG_STATE_X             9
+#define DEBUG_STATE_Y             45
+#define DEBUG_STATE_FONT          (Verdana16)
+#define DEBUG_STATE_SPACING		1
+
+
+/** LCD Screen Constants */
 #define DIRTY_PAGE_CHANGE		0xFF
-#define MAXPAGES				2
+#define MAXPAGES				5
 
 #define SCREEN_HEIGHT                   64
 #define SCREEN_WIDTH                    128
@@ -338,21 +374,21 @@ extern uint8_t g_LCD_page_change;
  * @param speed The speed value to display.
  * @param units The speed units (LCD_SPEED_UNITS_MPH or LCD_SPEED_UNITS_KPH).
  */
-void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units);
+void LCD_display_speed_drive_page(volatile uint32_t* speed, volatile uint8_t units);
 
 /**
  * @brief Displays the drive state on the LCD.
  * 
  * @param state The drive state (e.g., FORWARD_STATE, PARK_STATE, REVERSE_STATE).
  */
-void LCD_display_drive_state(volatile drive_state_t* state);
+void LCD_display_drive_state_drive_page(volatile drive_state_t* state);
 
 /**
  * @brief Displays the state of charge (SOC) on the LCD.
  * 
  * @param soc The state of charge (in percent).
  */
-void LCD_display_SOC(volatile uint32_t* soc);
+void LCD_display_SOC_drive_page(volatile uint32_t* soc);
 
 /**
  * @brief Displays a battery power bar based on pack current and voltage.
@@ -370,17 +406,63 @@ void LCD_display_power_bar(volatile int16_t* pack_current, volatile uint16_t* pa
 void LCD_display_drive_mode(volatile uint8_t drive_mode);
 
 
-
+/**
+ * @brief Displays a Temperature on the LCD (0-255)
+ *
+ * @param temperature A struct containing the temperature and id of the temperature.
+ */
 void LCD_display_temperature(temperature_data_t temperature_data);
 
+/**
+ * @brief Displays a fault indicator on the LCD Drive Page
+ *
+ * @param fault_indicator A general indicator to signal a fault to prompt the driver to change pages
+ */
+void LCD_display_fault_indicator(lcd_batt_faults_t batt_faults, lcd_motor_faults_t motor_faults);
 
-void LCD_display_fault_indicator(lcd_batt_faults_t batt_faults);
-void LCD_display_warning_indicator(lcd_batt_faults_t batt_faults);
+/**
+ * @brief Displays a warning indicator on the LCD Drive Page
+ *
+ * @param warning_indicator A general indicator to signal a warning to prompt the driver to change pages
+ */
+void LCD_display_warning_indicator(lcd_warnings_t warnings);
 
+/**
+ * @brief Dynamically displays battery and motor faults on the LCD
+ *
+ * @param batt_faults The battery faults to be displayed on the LCD
+ * @param motor_faults The motor faults to be displayed on the LCD
+ */
 void LCD_display_faults(lcd_batt_faults_t batt_faults, lcd_motor_faults_t motor_faults);
 
-
+/**
+ * @brief Displays a motor faults on the LCD
+ *
+ * @param fault_indicator An indicator to see who
+ */
 void LCD_display_warnings(lcd_warnings_t warnings);
+
+/**
+ * @brief Displays the speed on the LCD.
+ *
+ * @param speed The speed value to display.
+ * @param units The speed units (LCD_SPEED_UNITS_MPH or LCD_SPEED_UNITS_KPH).
+ */
+void LCD_display_speed_debug_page(volatile uint32_t* speed, volatile uint8_t units);
+
+/**
+ * @brief Displays the drive state on the LCD.
+ *
+ * @param state The drive state (e.g., FORWARD_STATE, PARK_STATE, REVERSE_STATE).
+ */
+void LCD_display_drive_state_debug_page(volatile drive_state_t* state);
+
+/**
+ * @brief Displays the state of charge (SOC) on the LCD.
+ *
+ * @param soc The state of charge (in percent).
+ */
+void LCD_display_SOC_debug_page(volatile uint32_t* soc);
 
 
 
