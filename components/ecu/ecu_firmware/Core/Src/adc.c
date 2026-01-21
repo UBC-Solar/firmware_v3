@@ -74,6 +74,14 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
     ecu_data.adc_data.ADC_oc_ref = 0;
     break;
 
+  case MPPT_PC__ADC1_IN10: //Added by Chris D as part of MPPT PC voltage reading branch
+    ecu_data.adc_data.ADC_MPPTPC_voltage = (uint16_t)(adc_voltage*MPPT_PC_VOLT_DIVIDER_SCALING);
+    break;
+
+  case MC_PC__ADC1_IN11: //Added by Chris D as part of MPPT PC voltage reading branch
+    ecu_data.adc_data.ADC_MCPC_voltage = (uint16_t)(adc_voltage*MC_PC_VOLT_DIVIDER_SCALING);
+    break;
+
   default:
     break;
   }

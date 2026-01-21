@@ -303,7 +303,19 @@ void check_LLIM()
  */
 void PC_wait()
 {
-    if (timer_check(MDU_PC_INTERVAL, &(ticks.last_generic_tick) ))
+    // Edits made to this on this branch 2026-01-17 by Chris D as part of PC voltage reading branch
+    uint16_t dataArray[1000000];
+    static int index = 0;
+    dataArray[index] = ecu_data.adc_data.ADC_MPPC_voltage;
+
+    if (ecu_data.adc_data.ADC_MCPC_voltage>=133000) //133V in mV
+    {
+        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
+        ticks.last_generic_tick = HAL_GetTick();
+        FSM_state = LLIM_CLOSED;
+    }
+
+   else if (timer_check(PRECHARGE_INTERVAL, &(ticks.last_generic_tick) ))
     {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
         last_LLIM_status = CONTACTOR_CLOSED;

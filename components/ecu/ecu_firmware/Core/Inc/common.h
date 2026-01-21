@@ -48,6 +48,9 @@ typedef struct{
     uint16_t ADC_lvs_current; //stores current for the LVS system (mA), max value 30A,
     uint16_t ADC_lvs_current_sense_offset; //stores low voltage system current offset
 
+    uint16_t ADC_MPPTPC_voltage; //Added by Chris D as part of MPPT PC voltage reading branch (mV)
+    uint16_t ADC_MCPC_voltage;   //Added by Chris D as part of MPPT PC voltage reading branch (mV)
+
 } ECU_ADC_Data_t;
 
 typedef struct{

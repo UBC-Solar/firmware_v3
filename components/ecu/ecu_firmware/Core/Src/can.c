@@ -100,6 +100,7 @@ void CAN_SendMessage450()
     txMessage.data[5] = (uint8_t)ecu_data.status.raw;
     txMessage.data[6] = (int8_t)ecu_data.adc_data.ADC_temp_ambient_sense;
 
+
     do
     {
         status = HAL_CAN_AddTxMessage(CAN_data.can_handle, &txMessage.tx_header, txMessage.data, &tx_mailbox);

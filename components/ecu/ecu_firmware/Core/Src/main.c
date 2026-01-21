@@ -701,6 +701,8 @@ void averageAndSaveValues_ADC1(int adc_half)
     ADC_setReading(result[5], PACK_CURRENT_SENSE__ADC1_IN14);
     ADC_setReading(result[6], T_AMBIENT_SENSE__ADC1_IN15);
     ADC_setReading(result[7], OC_REF_SENSE__ADC1_IN13);
+    ADC_setReading(result[8], MPPT_PC__ADC1_IN10); //Added by Chris D as part of MPPT PC voltage reading branch
+    ADC_setReading(result[9], MC_PC__ADC1_IN11);   //Added by Chris D as part of MPPT PC voltage reading branch
 
     ADC1_setBusyStatus(0);
   }
