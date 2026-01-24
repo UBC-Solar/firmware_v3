@@ -15,6 +15,8 @@
 /*============================================================================*/
 /* DEFINITIONS */
 
+// hheeee haaaa haaa
+
 #define CAN_TIMEOUT 50 // (ms)
 
 #define MAX_CHARGING_CURRENT 137U  // Max outlet current is 15A, power bar breaker tripped at ~15A. 
