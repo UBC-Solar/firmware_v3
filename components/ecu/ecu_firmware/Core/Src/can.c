@@ -35,6 +35,8 @@ typedef struct
     CAN_HandleTypeDef *can_handle;
     CAN_RxMessage_t rx_message;
     bool new_charger_msg_received;
+    bool new_pack_msg_received;
+    volatile CAN_RxMessage_t rx_message_0x623;
 } CAN_Data_t;
 
 /*============================================================================*/
@@ -46,6 +48,7 @@ static CAN_Data_t CAN_data;
 /* PRIVATE FUNCTION PROTOTYPES */
 
 static void initFilter0x18FF50E5(void);
+static void initFilter0x623(void);
 
 /*============================================================================*/
 /* PUBLIC FUNCTIONS */
@@ -63,6 +66,7 @@ void CAN_Init(CAN_HandleTypeDef *hcan)
     CAN_data.can_handle = hcan;
 
     initFilter0x18FF50E5();
+    initFilter0x623();
 
     // any additional filter configuration functions should go here
 
@@ -99,8 +103,6 @@ void CAN_SendMessage450()
     txMessage.data[4] = (uint8_t)lvs_current_rescaled;
     txMessage.data[5] = (uint8_t)ecu_data.status.raw;
     txMessage.data[6] = (int8_t)ecu_data.adc_data.ADC_temp_ambient_sense;
-
-
     do
     {
         status = HAL_CAN_AddTxMessage(CAN_data.can_handle, &txMessage.tx_header, txMessage.data, &tx_mailbox);
@@ -161,7 +163,7 @@ void CAN_CheckRxMessages(uint32_t rx_fifo)
     uint8_t rx_fifo_fill_level;
 
     // Get number of pending messages
-    rx_fifo_fill_level = HAL_CAN_GetRxFifoFillLevel(CAN_data.can_handle, rx_fifo);
+    rx_fifo_fill_level = HAL_CAN_GetRxFifoFillLevel(CAN_data.can_handle, rx_fifo); // HAL_CAN_GetRxFifoFillLevel gives the number of messages pending in the specified rx fifo
     if (rx_fifo_fill_level > 0)
     {
         for (int i = 0; i < rx_fifo_fill_level; i++)
@@ -176,6 +178,11 @@ void CAN_CheckRxMessages(uint32_t rx_fifo)
             if (CAN_data.rx_message.rx_header.ExtId == CHARGER_STATUS_MESSAGE_ID)
             {
                 CAN_data.new_charger_msg_received = true;
+            }
+            // If data is from pack message 0x623, store it for later use as uint16_t
+            if (CAN_data.rx_message.rx_header.StdId == 0x623U)
+            {
+                packVoltage = (uint16_t)(CAN_data.rx_message.data[0]) | ((uint16_t)(CAN_data.rx_message.data[1]) << 8); // store pack voltage for later use
             }
         }
     }
@@ -197,6 +204,7 @@ bool CAN_CheckRxChargerMessage()
     CAN_data.new_charger_msg_received = false;
     return false;
 }
+
 
 /*============================================================================*/
 /* PRIVATE FUNCTIONS */
@@ -237,6 +245,44 @@ static void initFilter0x18FF50E5(void)
     filter_config.FilterMaskIdLow = 0xFFFC;                                      // ID lower 16 bits (not using mask), all 0 means standard ID, RTR mode = data
     filter_config.FilterIdHigh = (CHARGER_STATUS_MESSAGE_ID >> 13) & 0xFFFF;     // filter ID upper 16 bits (list mode, mask = ID)
     filter_config.FilterIdLow = ((CHARGER_STATUS_MESSAGE_ID << 3) & 0xFFF8) | 4; // filter ID lower 16 bits, all 0 means standard ID, RTR mode = data
+
+    if (HAL_CAN_ConfigFilter(CAN_data.can_handle, &filter_config) != HAL_OK)
+    {
+        Error_Handler();
+    }
+}
+
+static void initFilter0x623(void)
+{
+    /*
+    Filter Information (see page 644 onward of stm32f103 reference manual)
+
+        In ARM, CAN subsystem known as bxCAN (basic-extended)
+        14 configurable filter banks (STM32F103C8 has only one CAN interface)
+        Each filter bank consists of two, 32-bit registers, CAN_FxR0 and CAN_FxR1
+        Depending on filter scale, filter bank provides one 32-bit filter for mask and id, or two 16 bit filters (each) for id
+
+    Mask mode: Use mask to enable/disable the bits of the filter you want to check the CAN ID against
+    Identifier list mode: mask registers used as identifier registers (incoming ID must match exactly)
+
+    For 32 bit filter, [31:21] map to STID [10:0], other bits we don't care about
+
+    Good explanation on mask mode: https://www.microchip.com/forums/m456043.aspx
+    What I followed for filter config: https://controllerstech.com/can-protocol-in-stm32/
+    */
+
+    CAN_FilterTypeDef filter_config;
+
+    filter_config.FilterActivation = CAN_FILTER_ENABLE;             // enable filters
+    filter_config.SlaveStartFilterBank = 0;                        // only one CAN interface, parameter meaningless (all filter banks for the one controller)
+    filter_config.FilterBank = 1;                                   // settings applied for filterbank 1
+    filter_config.FilterFIFOAssignment = CAN_FILTER_FIFO0;          // rx'd message will be placed into this FIFO (if data with 0x623 ID is received it is placed in FIFO0)
+    filter_config.FilterMode = CAN_FILTERMODE_IDLIST;               // identifier list mode
+    filter_config.FilterScale = CAN_FILTERSCALE_32BIT;              // don't need double layer of filters, not using EXTID, 32bit fine (if rx'ing many messages with diff ID's, could use double layer of filters)
+    filter_config.FilterMaskIdHigh =  0x623 << 5;   // ID upper 16 bits (not using mask), bit shift per bit order (see large comment above)
+    filter_config.FilterMaskIdLow = 0;                              // ID lower 16 bits (not using mask), all 0 means standard ID, RTR mode = data
+    filter_config.FilterIdHigh = 0x623 << 5;       // filter ID upper 16 bits (list mode, mask = ID)
+    filter_config.FilterIdLow = 0;                                  // filter ID lower 16 bits, all 0 means standard ID, RTR mode = data
 
     if (HAL_CAN_ConfigFilter(CAN_data.can_handle, &filter_config) != HAL_OK)
     {

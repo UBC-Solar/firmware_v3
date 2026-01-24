@@ -304,11 +304,37 @@ void check_LLIM()
 void PC_wait()
 {
     // Edits made to this on this branch 2026-01-17 by Chris D as part of PC voltage reading branch
-    uint16_t dataArray[1000000];
-    static int index = 0;
-    dataArray[index] = ecu_data.adc_data.ADC_MPPC_voltage;
+    uint32_t start_time = HAL_GetTick();
 
-    if (ecu_data.adc_data.ADC_MCPC_voltage>=133000) //133V in mV
+    uint16_t highSlopeData[25]; uint16_t midSlopeData[50];  uint16_t lowSlopeData[100];
+    uint16_t highSlopeTime[25]; uint16_t midSlopeTime[50];  uint16_t lowSlopeTime[100];
+    int highSlopeIndex = 0; int midSlopeIndex = 0;  int lowSlopeIndex = 0;
+    
+    int highSlopeIndex = 0;
+    // This code seperates the high slope, mid slope and low slope data of the capacitance charging curve data into 
+    while (ecu_data.adc_data.ADC_MCPC_voltage<50000 || HAL_GetTick() - start_time > 2.0) //50V in mv
+    {
+        highSlopeData[highSlopeIndex] = ecu_data.adc_data.ADC_MCPC_voltage;
+        highSlopeTime[highSlopeIndex] = HAL_GetTick() - start_time;
+        highSlopeIndex++;
+    }
+    while (ecu_data.adc_data.ADC_MCPC_voltage>=50000 && ecu_data.adc_data.ADC_MCPC_voltage<100000 || HAL_GetTick() - start_time > 2.0) //50-100V in mV
+    {
+        midSlopeData[midSlopeIndex] = ecu_data.adc_data.ADC_MCPC_voltage;
+        midSlopeTime[midSlopeIndex] = HAL_GetTick() - start_time;
+        midSlopeIndex++;
+    }
+    while ((ecu_data.adc_data.ADC_MCPC_voltage>=100000 && ecu_data.adc_data.ADC_MCPC_voltage<133000) || HAL_GetTick() - start_time > 2.0) //100-133V in mV. 
+    {
+        lowSlopeData[lowSlopeIndex] = ecu_data.adc_data.ADC_MCPC_voltage;
+        lowSlopeTime[lowSlopeIndex] = HAL_GetTick() - start_time;
+        lowSlopeIndex++;
+    }
+
+    CAN_CheckRxMessages(CAN_RX_FIFO0); // Fills packVolage with the latest value from the CAN message 0x623, which is pack voltage
+
+   
+    if (ecu_data.adc_data.ADC_MCPC_voltage>=packVoltage) //133V in mV
     {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
         ticks.last_generic_tick = HAL_GetTick();
