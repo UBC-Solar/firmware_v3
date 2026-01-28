@@ -35,8 +35,8 @@
 #define ADC_VOLTAGE_SCALING 1000.0 // millivolts
 
 //Added by Chris D as part of MPPT PC voltage reading branch
-#define MPPT_PC_VOLT_DIVIDER_SCALING  64306.2200957 // (134.4/2.09) * 1000 in mV. 2.09V comes from the voltage divider
-#define MC_PC_VOLT_DIVIDER_SCALING    64306.2200957 // (134.4/2.09) * 1000 in mV. 2.09V comes from the voltage divider
+#define MPPT_PC_VOLT_DIVIDER_SCALING  64.3062200957 // (134.4/2.09). 2.09V comes from the voltage divider
+#define MC_PC_VOLT_DIVIDER_SCALING    64.3062200957 // (134.4/2.09). 2.09V comes from the voltage divider
 
 /*============================================================================*/
 /* PUBLIC VARIABLES */

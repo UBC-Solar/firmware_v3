@@ -10,6 +10,8 @@
 /* FILE IMPORTS */
 
 #include "fsm.h"
+#include "common.h"
+#include "can.h"
 
 /*============================================================================*/
 /* PRIVATE FUNCTION PROTOTYPES */
@@ -104,7 +106,7 @@ void FSM_reset()
     // Read supplemental battery
     check_supp_voltage();
 
-    FSM_state = WAIT_FOR_BMS_POWERUP;
+    FSM_state = WAIT_FOR_PC;
 
     ticks.last_generic_tick = HAL_GetTick();
 
@@ -290,7 +292,6 @@ void check_LLIM()
     }
 
     printf("Bottom of check LLIM\r\n");
-
     return;
 }
 
@@ -304,6 +305,7 @@ void check_LLIM()
 void PC_wait()
 {
     // Edits made to this on this branch 2026-01-17 by Chris D as part of PC voltage reading branch
+    /*
     uint32_t start_time = HAL_GetTick();
 
     uint16_t highSlopeData[25]; uint16_t midSlopeData[50];  uint16_t lowSlopeData[100];
@@ -330,24 +332,32 @@ void PC_wait()
         lowSlopeTime[lowSlopeIndex] = HAL_GetTick() - start_time;
         lowSlopeIndex++;
     }
+    */
+    CAN_CheckRxMessages(CAN_RX_FIFO0);
 
-    CAN_CheckRxMessages(CAN_RX_FIFO0); // Fills packVolage with the latest value from the CAN message 0x623, which is pack voltage
-
-   
-    if (ecu_data.adc_data.ADC_MCPC_voltage>=packVoltage) //133V in mV
+    if (timer_check(BMS_STARTUP_INTERVAL, & (ticks.last_generic_tick) ))
+    {
+        FSM_state = FAULT;
+    }
+     // Fills packVolage with the latest value from the CAN message 0x623, which is pack voltage
+    else if (ecu_data.adc_data.ADC_MCPC_voltage>=packVoltage) //133V in mV
     {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
         ticks.last_generic_tick = HAL_GetTick();
+        ecu_data.status.bits.PC_SUCCSESS = true;
+        //printf("ADC Raw: %f \r\n" adc_reading);
+        printf ("Pre-charge successful\r\n");
+        printf("Pack voltage: %d, ADC value: %d, Safe bit: %d\r\n", packVoltage, ecu_data.adc_data.ADC_MCPC_voltage,  ecu_data.status.bits.PC_SUCCSESS);
         FSM_state = LLIM_CLOSED;
     }
 
-   else if (timer_check(PRECHARGE_INTERVAL, &(ticks.last_generic_tick) ))
-    {
-        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
-        last_LLIM_status = CONTACTOR_CLOSED;
-        ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = LLIM_CLOSED;
-    }
+//    else if (timer_check(PRECHARGE_INTERVAL, &(ticks.last_generic_tick) ))
+//    {
+//        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
+//        last_LLIM_status = CONTACTOR_CLOSED;
+//        ticks.last_generic_tick = HAL_GetTick();
+//        FSM_state = LLIM_CLOSED;
+//    }
 
     printf("Bottom of PC wait\r\n");
 
@@ -386,15 +396,24 @@ void LLIM_closed()
  */
 void MPPT_PC_wait()
 {
-    if (timer_check(MPPT_PC_INTERVAL, &(ticks.last_generic_tick) ))
-    {
-        HAL_GPIO_WritePin(MPPT_PC_CTRL_GPIO_Port, MPPT_PC_CTRL_Pin, CONTACTOR_OPEN);
-        ticks.last_generic_tick = HAL_GetTick();
-        FSM_state = CHECK_HLIM;
-        ecu_data.status.bits.mppt_pc_relay_closed = LOW;
-        CAN_SendMessage450();
 
+    if (ecu_data.adc_data.ADC_MCPC_voltage>=packVoltage) //133V in mV
+    {
+        HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
+        ticks.last_generic_tick = HAL_GetTick();
+        ecu_data.status.bits.PC_SUCCSESS = true;
+        FSM_state = LLIM_CLOSED;
     }
+
+   // if (timer_check(MPPT_PC_INTERVAL, &(ticks.last_generic_tick) ))
+   // {
+   //     HAL_GPIO_WritePin(MPPT_PC_CTRL_GPIO_Port, MPPT_PC_CTRL_Pin, CONTACTOR_OPEN);
+   //     ticks.last_generic_tick = HAL_GetTick();
+   //     FSM_state = CHECK_HLIM;
+   //     ecu_data.status.bits.mppt_pc_relay_closed = LOW;
+   //     CAN_SendMessage450();
+
+   // }
 
     printf("Bottom of MPPT PC wait\r\n");
 
@@ -699,13 +718,13 @@ void FSM_ADC_LevelOutOfWindowCallback()
 
 void FSM_ESTOPActivedCallback()
 {
-    ecu_data.status.bits.estop = true;
-    HAL_GPIO_WritePin(ESTOP_LED_GPIO_Port, ESTOP_LED_Pin, HIGH);
+    // ecu_data.status.bits.estop = true;
+    // HAL_GPIO_WritePin(ESTOP_LED_GPIO_Port, ESTOP_LED_Pin, HIGH);
 
-    HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, HIGH);
+    // HAL_GPIO_WritePin(PACK_FANS_CTRL_GPIO_Port, PACK_FANS_CTRL_Pin, HIGH);
     
-    FSM_state = FAULT;
-    FSM_run(); // Immediately transition to fault state 
+    // FSM_state = FAULT;
+    // FSM_run(); // Immediately transition to fault state 
 }
 
 /*============================================================================*/

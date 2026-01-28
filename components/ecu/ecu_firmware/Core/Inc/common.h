@@ -28,7 +28,7 @@ typedef union {
 
         bool mppt_pc_relay_closed : 1;
 
-        uint8_t _reserved : 1;
+        bool PC_SUCCSESS : 1;
     } bits;
     uint8_t raw;
 

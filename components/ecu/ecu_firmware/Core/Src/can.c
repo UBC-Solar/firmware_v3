@@ -182,7 +182,7 @@ void CAN_CheckRxMessages(uint32_t rx_fifo)
             // If data is from pack message 0x623, store it for later use as uint16_t
             if (CAN_data.rx_message.rx_header.StdId == 0x623U)
             {
-                packVoltage = (uint16_t)(CAN_data.rx_message.data[0]) | ((uint16_t)(CAN_data.rx_message.data[1]) << 8); // store pack voltage for later use
+                packVoltage = 1000*(uint16_t)(CAN_data.rx_message.data[0]) | ((uint16_t)(CAN_data.rx_message.data[1]) << 8); // store pack voltage for later use -- scaled to mV
             }
         }
     }
