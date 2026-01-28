@@ -333,6 +333,7 @@ void PC_wait()
         lowSlopeIndex++;
     }
     */
+    HAL_Delay(90);
     CAN_CheckRxMessages(CAN_RX_FIFO0);
 
     if (timer_check(BMS_STARTUP_INTERVAL, & (ticks.last_generic_tick) ))
@@ -340,7 +341,7 @@ void PC_wait()
         FSM_state = FAULT;
     }
      // Fills packVolage with the latest value from the CAN message 0x623, which is pack voltage
-    else if (ecu_data.adc_data.ADC_MCPC_voltage>=packVoltage) //133V in mV
+    else if (ecu_data.adc_data.ADC_MCPC_voltage>packVoltage) //133V in mV
     {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
         ticks.last_generic_tick = HAL_GetTick();
@@ -397,14 +398,24 @@ void LLIM_closed()
 void MPPT_PC_wait()
 {
 
-    if (ecu_data.adc_data.ADC_MCPC_voltage>=packVoltage) //133V in mV
+    HAL_Delay(90);
+    CAN_CheckRxMessages(CAN_RX_FIFO0);
+
+    if (timer_check(BMS_STARTUP_INTERVAL, & (ticks.last_generic_tick) ))
+    {
+        FSM_state = FAULT;
+    }
+     // Fills packVolage with the latest value from the CAN message 0x623, which is pack voltage
+    else if (ecu_data.adc_data.ADC_MCPC_voltage>packVoltage) //133V in mV
     {
         HAL_GPIO_WritePin(LLIM_CTRL_GPIO_Port, LLIM_CTRL_Pin, CONTACTOR_CLOSED);
         ticks.last_generic_tick = HAL_GetTick();
         ecu_data.status.bits.PC_SUCCSESS = true;
+        //printf("ADC Raw: %f \r\n" adc_reading);
+        printf ("Pre-charge MPPT successful\r\n");
+        printf(" MPPT Pack voltage: %d, ADC value: %d, Safe bit: %d\r\n", packVoltage, ecu_data.adc_data.ADC_MCPC_voltage,  ecu_data.status.bits.PC_SUCCSESS);
         FSM_state = LLIM_CLOSED;
     }
-
    // if (timer_check(MPPT_PC_INTERVAL, &(ticks.last_generic_tick) ))
    // {
    //     HAL_GPIO_WritePin(MPPT_PC_CTRL_GPIO_Port, MPPT_PC_CTRL_Pin, CONTACTOR_OPEN);
