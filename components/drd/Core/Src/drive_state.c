@@ -44,7 +44,8 @@ static uint16_t convert_to_dac(uint16_t adc);
     void state_request_CAN_msg_handle(uint8_t* data);
 #endif
 
-
+//Temporary variable remove later
+volatile uint32_t day_lights = 0;
 /*	Global Variables	*/
 volatile uint32_t g_velocity_kmh = 0;
 volatile bool g_lcd_eco_mode_on = true;
@@ -105,7 +106,12 @@ motor_command_t forward_state_handle()
 
 	if (g_input_flags.regen_enabled)
 	{
-		return get_motor_command(g_throttle_DAC, REGEN_DAC_ON);
+		if(day_lights == 1){
+			return get_motor_command(g_throttle_DAC, REGEN_DAC_OFF);
+		}
+		else{
+			return get_motor_command(g_throttle_DAC, REGEN_DAC_ON);
+		}
 	}
 	else
 	{
