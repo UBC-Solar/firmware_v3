@@ -95,7 +95,7 @@ void BMS_MAIN_startupChecks(Pack_t *pack)
     BTM_Status_t comm_status = {BTM_OK, 0};
     BTM_Status_t ltc_temp_status = {BTM_OK, 0};
     BTM_Status_t ltc_vref2_status = {BTM_OK, 0};
-    BTM_Status_t shorted_cells_status = {BTM_OK, 0};
+    // BTM_Status_t shorted_cells_status = {BTM_OK, 0};
     BTM_Status_t open_wire_status = {BTM_OK, 0};
     BTM_Status_t overlap_measurement_status = {BTM_OK, 0};
     // BTM_Status_t discharge_test_status = {BTM_OK, 0};
@@ -105,7 +105,7 @@ void BMS_MAIN_startupChecks(Pack_t *pack)
     comm_status = BTM_readRegisterGroup(CMD_RDCOMM, test_data_rx);
     reg_group_match = doesRegGroupMatch(test_data, test_data_rx);
 
-    printf("reg group match: %d\r\n", reg_group_match);
+    printf("Selftest -- Comms: reg group match? %d\r\n", reg_group_match);
 
     // checks for comms error
     // note: a lack of comms is different than the self-tests failing
@@ -119,24 +119,30 @@ void BMS_MAIN_startupChecks(Pack_t *pack)
         pack->status.bits.fault_self_test = true;
     }
 
-    // ltc_temp_status = ST_checkLTCtemp();
-    // processSelfTestStatus(pack, &ltc_temp_status);
+    ltc_temp_status = ST_checkLTCtemp();
+    processSelfTestStatus(pack, &ltc_temp_status);
 
-    // ltc_vref2_status = ST_checkVREF2();
-    // processSelfTestStatus(pack, &ltc_vref2_status);
+    ltc_vref2_status = ST_checkVREF2();
+    processSelfTestStatus(pack, &ltc_vref2_status);
 
+    /**
+     * This test will not work. The check validates that C12 and C18 are shorted to ground
+     * but that is not the case with our current implementation. 
+     */
     // shorted_cells_status = ST_shortedCells();
     // processSelfTestStatus(pack, &shorted_cells_status);
 
-    // open_wire_status = ST_checkOpenWire();
-    // processSelfTestStatus(pack, &open_wire_status);
+    open_wire_status = ST_checkOpenWire();
+    processSelfTestStatus(pack, &open_wire_status);
 
-    // overlap_measurement_status = ST_checkOverlapVoltage();
-    // processSelfTestStatus(pack, &overlap_measurement_status);
+    overlap_measurement_status = ST_checkOverlapVoltage();
+    processSelfTestStatus(pack, &overlap_measurement_status);
 
-    // TODO: check if this works once BMS is connected to real batteries
-    // It works based on voltage drop due to resistance in the voltage tap leads when discharge is on... not sure if
-    // that will be sufficient to produce measureable difference in voltage between discharge on and discharge off
+    /**
+     * TODO: check if this works once BMS is connected to real batteries
+     * It works based on voltage drop due to resistance in the voltage tap leads when discharge is on... not sure if
+     * that will be sufficient to produce measureable difference in voltage between discharge on and discharge off
+     */
     // discharge_test_status = ST_verifyDischarge();
     // processSelfTestStatus(pack, &discharge_test_status);
 
