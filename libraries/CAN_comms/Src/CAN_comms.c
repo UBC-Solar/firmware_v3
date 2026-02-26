@@ -134,6 +134,7 @@ void CAN_comms_Add_Tx_message(CAN_comms_Tx_msg_t* CAN_comms_Tx_msg)
 		else
 		{
 			CAN_comms_diagnostic.hal_failure_tx++;
+            HAL_NVIC_SystemReset();
 		}
 		taskEXIT_CRITICAL();
 
