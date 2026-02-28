@@ -274,7 +274,7 @@ static void MX_ADC1_Init(void)
   */
   AnalogWDGConfig.WatchdogMode = ADC_ANALOGWATCHDOG_SINGLE_REG;
   AnalogWDGConfig.HighThreshold = 2729;
-  AnalogWDGConfig.LowThreshold = 2099;
+  AnalogWDGConfig.LowThreshold = 2097;
   AnalogWDGConfig.Channel = ADC_CHANNEL_14;
   AnalogWDGConfig.ITMode = ENABLE;
   if (HAL_ADC_AnalogWDGConfig(&hadc1, &AnalogWDGConfig) != HAL_OK)
@@ -383,16 +383,16 @@ static void MX_CAN_Init(void)
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
   hcan.Init.Prescaler = 4;
-  hcan.Init.Mode = CAN_MODE_NORMAL;
+  hcan.Init.Mode = CAN_MODE_LOOPBACK;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan.Init.TimeSeg1 = CAN_BS1_15TQ;
   hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
-  hcan.Init.AutoBusOff = DISABLE;
+  hcan.Init.AutoBusOff = ENABLE;
   hcan.Init.AutoWakeUp = DISABLE;
-  hcan.Init.AutoRetransmission = DISABLE;
+  hcan.Init.AutoRetransmission = ENABLE;
   hcan.Init.ReceiveFifoLocked = DISABLE;
-  hcan.Init.TransmitFifoPriority = DISABLE;
+  hcan.Init.TransmitFifoPriority = ENABLE;
   if (HAL_CAN_Init(&hcan) != HAL_OK)
   {
     Error_Handler();
@@ -701,6 +701,8 @@ void averageAndSaveValues_ADC1(int adc_half)
     ADC_setReading(result[5], PACK_CURRENT_SENSE__ADC1_IN14);
     ADC_setReading(result[6], T_AMBIENT_SENSE__ADC1_IN15);
     ADC_setReading(result[7], OC_REF_SENSE__ADC1_IN13);
+    ADC_setReading(result[8], MPPT_PC__ADC1_IN10); //Added by Chris D as part of MPPT PC voltage reading branch
+    ADC_setReading(result[9], MC_PC__ADC1_IN11);   //Added by Chris D as part of MPPT PC voltage reading branch
 
     ADC1_setBusyStatus(0);
   }

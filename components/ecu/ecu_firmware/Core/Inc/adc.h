@@ -14,7 +14,7 @@
 #include <stdint.h>
 /*============================================================================*/
 /* CONFIGURATION */
-#define ADC1_NUM_ANALOG_CHANNELS 8
+#define ADC1_NUM_ANALOG_CHANNELS 10
 #define ADC1_BUF_LENGTH_PER_CHANNEL 200
 #define ADC1_BUF_LENGTH (ADC1_BUF_LENGTH_PER_CHANNEL * ADC1_NUM_ANALOG_CHANNELS)
 
@@ -34,6 +34,10 @@
 #define SUPP_BATT_VOLTAGE_DIVIDER 11.0
 #define ADC_VOLTAGE_SCALING 1000.0 // millivolts
 
+//Added by Chris D as part of MPPT PC voltage reading branch
+#define MPPT_PC_VOLT_DIVIDER_SCALING  64.3062200957 // (134.4/2.09). 2.09V comes from the voltage divider
+#define MC_PC_VOLT_DIVIDER_SCALING    64.3062200957 // (134.4/2.09). 2.09V comes from the voltage divider
+
 /*============================================================================*/
 /* PUBLIC VARIABLES */
 
@@ -52,7 +56,9 @@ typedef enum {
   LVS_CURRENT_SENSE__ADC1_IN9,
   PACK_CURRENT_SENSE__ADC1_IN14,
   T_AMBIENT_SENSE__ADC1_IN15,
-  OC_REF_SENSE__ADC1_IN13
+  OC_REF_SENSE__ADC1_IN13,
+  MPPT_PC__ADC1_IN10, //Added by Chris D as part of MPPT PC voltage reading branch. IN10 and IN11 chosen abitraily for just setting up.
+  MC_PC__ADC1_IN11   //Added by Chris D as part of MPPT PC voltage reading branch
 }adc_channel_list;
 
 

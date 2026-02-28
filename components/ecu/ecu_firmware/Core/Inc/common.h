@@ -28,7 +28,7 @@ typedef union {
 
         bool mppt_pc_relay_closed : 1;
 
-        uint8_t _reserved : 1;
+        bool PC_SUCCSESS : 1;
     } bits;
     uint8_t raw;
 
@@ -47,6 +47,9 @@ typedef struct{
     
     uint16_t ADC_lvs_current; //stores current for the LVS system (mA), max value 30A,
     uint16_t ADC_lvs_current_sense_offset; //stores low voltage system current offset
+
+    uint16_t ADC_MPPTPC_voltage; //Added by Chris D as part of MPPT PC voltage reading branch (mV)
+    uint16_t ADC_MCPC_voltage;   //Added by Chris D as part of MPPT PC voltage reading branch (mV)
 
 } ECU_ADC_Data_t;
 

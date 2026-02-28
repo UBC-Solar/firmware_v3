@@ -11,6 +11,8 @@
 #include "adc.h"
 #include "stm32f1xx_hal.h"
 #include "common.h"
+#include "can.h"
+#include"common.h"
 #include <math.h>
 
 /*============================================================================*/
@@ -45,7 +47,7 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
     break;
   
   case SUPP_SENSE__ADC1_IN6: // Supplemental battery voltage (mV)
-    ecu_data.adc_data.ADC_supp_batt_volt = (uint16_t)(adc_voltage/SUPP_VOLT_DIVIDER_SCALING);
+    //ecu_data.adc_data.ADC_supp_batt_volt = (uint16_t)(adc_voltage/SUPP_VOLT_DIVIDER_SCALING);
     break;
 
   case PACK_CURRENT_OFFSET_SENSE__ADC1_IN7: // Pack current sensor offset voltage (mV)
@@ -58,12 +60,16 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
   
   case LVS_CURRENT_SENSE__ADC1_IN9: // LVS current supplied to HVDCDC (mA)
     // -1mV is from characterization (https://ubcsolar26.monday.com/boards/7524367629/pulses/8628510380), /25 is sensitivity value from datasheet, *1000 is A to mA
-    ecu_data.adc_data.ADC_lvs_current = (uint16_t)((adc_voltage-ecu_data.adc_data.ADC_lvs_current_sense_offset-1)/25*1000); // See datasheet: https://www.melexis.com/-/media/files/documents/datasheets/mlx91221-datasheet-melexis.pdf
+    //ecu_data.adc_data.ADC_lvs_current = (uint16_t)((adc_voltage-ecu_data.adc_data.ADC_lvs_current_sense_offset-1)/25*1000); // See datasheet: https://www.melexis.com/-/media/files/documents/datasheets/mlx91221-datasheet-melexis.pdf
     break;
   
   case PACK_CURRENT_SENSE__ADC1_IN14: // Pack current sense (mA)
-    curr_voltage_error = HASS100S_VOLTAGE_ERROR_TERM_CONSTANT + (HASS100S_VOLTAGE_ERROR_TERM_MULTIPLE * adc_voltage); // Error Polynomial, See https://ubcsolar26.monday.com/boards/7524367629/pulses/7524367868/posts/3902002110
-    ecu_data.adc_data.ADC_pack_current = (int32_t)(HASS100S_STD_DEV + HASS100S_INTERNAL_OFFSET + 100*(adc_voltage + curr_voltage_error - ecu_data.adc_data.ADC_pack_current_offset) / 0.625); //see HASS100-S datasheet
+    // curr_voltage_error = HASS100S_VOLTAGE_ERROR_TERM_CONSTANT + (HASS100S_VOLTAGE_ERROR_TERM_MULTIPLE * adc_voltage); // Error Polynomial, See https://ubcsolar26.monday.com/boards/7524367629/pulses/7524367868/posts/3902002110
+    // ecu_data.adc_data.ADC_pack_current = (int32_t)(HASS100S_STD_DEV + HASS100S_INTERNAL_OFFSET + 100*(adc_voltage + curr_voltage_error - ecu_data.adc_data.ADC_pack_current_offset) / 0.625); //see HASS100-S datasheet
+    CAN_CheckRxMessages(CAN_RX_FIFO0);
+    //printf("CHECK CHECK %u\r\n", packVoltage);
+    ecu_data.adc_data.ADC_MCPC_voltage =(uint16_t)(adc_voltage);
+    //printf("I AM HERE: %d\r\n",adc_voltage);
     break;
 
   case T_AMBIENT_SENSE__ADC1_IN15: // Ambient controlboard temperature (deg C)
@@ -72,6 +78,14 @@ void ADC_setReading(float adc_reading, adc_channel_list adc_channel)
 
   case OC_REF_SENSE__ADC1_IN13: // Overcharge current threshold (mV)
     ecu_data.adc_data.ADC_oc_ref = 0;
+    break;
+
+  case MPPT_PC__ADC1_IN10: // MPPT PC voltage (mV)
+    //ecu_data.adc_data.ADC_MPPTPC_voltage = (uint16_t)(adc_voltage*MPPT_PC_VOLT_DIVIDER_SCALING);
+    break;
+
+  case MC_PC__ADC1_IN11: // MC PC voltage (mV)
+    //ecu_data.adc_data.ADC_MCPC_voltage = (uint16_t)(adc_voltage*MC_PC_VOLT_DIVIDER_SCALING);
     break;
 
   default:

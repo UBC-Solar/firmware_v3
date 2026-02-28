@@ -15,6 +15,8 @@
 /*============================================================================*/
 /* DEFINITIONS */
 
+// hheeee haaaa haaa
+
 #define CAN_TIMEOUT 50 // (ms)
 
 #define MAX_CHARGING_CURRENT 137U  // Max outlet current is 15A, power bar breaker tripped at ~15A. 
@@ -41,5 +43,8 @@ void CAN_SendMessage450();
 void CAN_SendMessage1806E5F4();
 void CAN_CheckRxMessages(uint32_t rx_fifo);
 bool CAN_CheckRxChargerMessage();
+
+uint16_t packVoltage;
+uint32_t CAN_GetMessage0x622Data(uint32_t *rx_timestamp, ECU_Data_t *ecu_data);
 
 #endif /* __CAN_H */
