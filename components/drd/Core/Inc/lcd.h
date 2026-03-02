@@ -65,6 +65,20 @@
 #define DRIVE_MODE_ECO          1       // ECO Mode is GPIO high (logic 1) for MDI to MC.
 #define DRIVE_MODE_POWER        0
 
+#define TEMP_FONT            	(Verdana16)
+#define TEMP_X              	70
+#define TEMP_Y              	1
+#define TEMP_SPACING         	1
+#define TEMP_UNITS_FONT      	(Verdana8)
+#define TEMP_UNITS           	'C'
+#define TEMP_UNITS_SPACING		7
+#define TEMP_DEGREES_FONT		(Custom)
+#define TEMP_DEGREES_SYMBOL 	0xB0
+#define TEMP_DEGREES_SPACING	2
+
+#define DIRTY_PAGE_CHANGE		255
+#define MAXPAGES				2
+
 #define SCREEN_HEIGHT                   64
 #define SCREEN_WIDTH                    128
 
@@ -115,12 +129,14 @@
     volatile uint8_t* drive_state;
     volatile uint8_t* soc;
     volatile uint8_t drive_mode;
+    volatile uint8_t* temperature;
 } lcd_data_t;
 
 
 /*	User Variables	*/
 extern lcd_data_t g_lcd_data;
-
+extern uint8_t g_page;
+extern uint8_t g_page_change;
 
 
 /*
@@ -167,6 +183,18 @@ void LCD_display_power_bar(volatile int16_t* pack_current, volatile uint16_t* pa
  * @param drive_mode The drive mode
  */
 void LCD_display_drive_mode(volatile uint8_t drive_mode);
+
+/**
+ * @brief Displays an Temperature on the LCD
+ *
+ * @param temperature The temperature of moto
+ */
+void LCD_display_temperature(volatile uint8_t* temperature);
+
+/**
+ * @brief Changes the screen
+ */
+void LCD_change_screen();
 
 /**
  * @brief Initializes the LCD and SPI interface.

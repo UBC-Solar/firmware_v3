@@ -283,20 +283,37 @@ void LCDUpdatetask(void *argument)
     #ifdef DEBUG
         lcd_time_start = HAL_GetTick();
     #endif // DEBUG
-        
-    g_lcd_data.speed            = get_cyclic_speed();
-    g_lcd_data.drive_state      = get_cyclic_drive_state();
-    g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;    
-    g_lcd_data.pack_current     = get_cyclic_pack_current();
-    g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
-    g_lcd_data.soc              = get_cyclic_soc();
 
-    LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
-    LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
-    LCD_display_drive_state(g_lcd_data.drive_state);
-    LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
-    LCD_display_drive_mode(g_lcd_data.drive_mode);
-    
+	g_lcd_data.speed            = get_cyclic_speed();
+	g_lcd_data.drive_state      = get_cyclic_drive_state();
+	g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;
+	g_lcd_data.pack_current     = get_cyclic_pack_current();
+	g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
+	g_lcd_data.soc              = get_cyclic_soc();
+	g_lcd_data.temperature		= get_cyclic_temperature();
+
+	if(g_page_change == 1){
+		LCD_change_screen();
+		g_page_change = 0;
+	}
+	switch(g_page){
+		case 1:
+			LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
+			LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
+			LCD_display_drive_state(g_lcd_data.drive_state);
+			LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
+			LCD_display_drive_mode(g_lcd_data.drive_mode);
+			break;
+
+		case 2:
+			LCD_display_temperature(g_lcd_data.temperature);
+			break;
+
+		default:
+			break;
+	}
+
+
     #ifdef DEBUG
         lcd_time_diff = HAL_GetTick() - lcd_time_start;
     #endif // DEBUG

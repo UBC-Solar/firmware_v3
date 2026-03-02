@@ -38,6 +38,7 @@ static bounding_box_t old_bb_speed_units    = {0, 0, 0, 0};
 static bounding_box_t old_bb_drive_state    = {0, 0, 0, 0};
 static bounding_box_t old_bb_drive_mode    = {0, 0, 0, 0};
 static bounding_box_t old_bb_soc            = {0, 0, 0, 0};
+static bounding_box_t old_bb_temp			= {0, 0, 0, 0};
 
 static uint8_t lcd_flipped = 0;
 lcd_data_t g_lcd_data = {0};
@@ -46,9 +47,14 @@ lcd_data_t g_lcd_data = {0};
 static uint8_t lcd_dirty_pages;
 #endif
 
+/* External variables to store page current state of the page */
+uint8_t g_page = 1;
+uint8_t g_page_change = 0;
+
 /*--------------------------------------------------------------------------
   Internal Helper Functions
 --------------------------------------------------------------------------*/
+
 
 /**
  * @brief Sets or clears a single pixel in the internal display buffer.
@@ -101,7 +107,7 @@ static void lcd_clear_bounding_box(unsigned char x1, unsigned char y1, unsigned 
 /**
  * @brief Refreshes the LCD display by calling the ST7565 display update.
  */
-static void lcd_refresh() 
+static void lcd_refresh()
 {
     for (int y = 0; y < 8; y++) {
 
@@ -476,6 +482,51 @@ void LCD_display_drive_mode(volatile uint8_t drive_mode)
     // With LCD Refresh the topbar gets cut into. This is because lighting bolt has unecesary white space :(.
 }
 
+
+/**
+ * @brief Displays an Temperature on the LCD
+ *
+ * @param temperature The temperature of motor
+ */
+void LCD_display_temperature(volatile uint8_t* temperature){
+	char temp_str[4];
+	lcd_clear_bounding_box(TEMP_X, TEMP_Y, old_bb_temp.x2 + 13, old_bb_temp.y2);
+
+	// Check
+	if (temperature == NULL) {  // temperature not read
+		sprintf(temp_str, "--");
+		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
+	}
+	else if (*temperature < 10) { // Single digit temperature
+		sprintf(temp_str, "%01lu", (unsigned long)*temperature);
+		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
+	}
+	else if(*temperature < 100) { // Double digit temperature
+		sprintf(temp_str, "%02lu", (unsigned long)*temperature);
+		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
+	}
+	else { // Triple digit
+		sprintf(temp_str, "%03lu", (unsigned long)*temperature);
+		old_bb_temp = draw_text(temp_str, TEMP_X, TEMP_Y, TEMP_FONT, TEMP_SPACING);
+	}
+
+	// Draws the Degrees Celsius symbol according to the position of the bounding box
+	draw_char(TEMP_DEGREES_SYMBOL, old_bb_temp.x2 + TEMP_DEGREES_SPACING, TEMP_Y - TEMP_DEGREES_SPACING, TEMP_DEGREES_FONT);
+	draw_char(TEMP_UNITS, old_bb_temp.x2 + TEMP_UNITS_SPACING, TEMP_Y, TEMP_UNITS_FONT);
+
+	lcd_refresh();
+}
+
+
+/**
+ * @brief Changes the screen
+ */
+void LCD_change_screen(){
+	lcd_dirty_pages = DIRTY_PAGE_CHANGE;
+	lcd_clear_bounding_box(0,0, BOTTOM_RIGHT_X ,BOTTOM_RIGHT_Y);
+	lcd_refresh();
+}
+
 /**
  * @brief Sends a command to the LCD via SPI.
  * 
@@ -560,4 +611,29 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
         
         osEventFlagsSet(calculate_soc_flagHandle, SOC_CALCULATE_ON);
 	}
+
+    if(msg_id == STR_CAN_MSG_ID)
+    {
+    	uint8_t next_page = (data[0] & 1);
+    	uint8_t previous_page = (data[0] >> 1 & 1);
+
+    	if(next_page){
+    		if(g_page < MAXPAGES){
+    			g_page_change = 1;
+    			g_page++;
+			}
+    	}
+    	else if(previous_page){
+    		if(g_page > 1){
+    			g_page_change = 1;
+				g_page--;
+			}
+    	}
+    }
+
+    if(msg_id == CAN_ID_MDI_TEMP)
+    {
+    	uint8_t temperature = data[0];
+    	set_cyclic_temperature(temperature);
+    }
 }

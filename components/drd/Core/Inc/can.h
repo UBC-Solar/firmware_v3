@@ -53,6 +53,7 @@ extern const CAN_TxHeaderTypeDef time_since_bootup_can_header;
 #define CAN_ID_MTR_FAULTS         			0x08A50225
 #define CAN_ID_MTR_DATA_REQUEST     		0x08F89540 //DRD sends data request to the MCU
 #define STR_CAN_MSG_ID						0x580
+#define CAN_ID_MDI_TEMP						0x502
 #define MDU_REQUEST_COMMAND_ID 				0x08F89540
 #define FRAME0 								0x08850225
 #define TIME_SINCE_BOOTUP_CAN_ID			0x404

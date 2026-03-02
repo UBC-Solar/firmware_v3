@@ -21,6 +21,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "gpio.h"
 
+#include "lcd.h"
+
 /* USER CODE BEGIN 0 */
 #include "drive_state.h"
 /* USER CODE END 0 */
@@ -142,6 +144,6 @@ void MX_GPIO_Init(void)
  */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	Drive_State_interrupt_handler(GPIO_Pin);
+	//Drive_State_interrupt_handler(GPIO_Pin);
 }
 /* USER CODE END 2 */
