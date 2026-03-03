@@ -4,11 +4,12 @@
 #include "lcd.h"
 
 // CYCLIC_DATA(type, name, max_cycle_time)
-CYCLIC_DATA(uint32_t, cyclic_speed, MAX_CYCLE_TIME);               // Vehicle speed (km/h)
+CYCLIC_DATA(uint32_t, cyclic_speed, MAX_CYCLE_TIME);            // Vehicle speed (km/h)
 CYCLIC_DATA(int16_t, cyclic_pack_current, MAX_CYCLE_TIME);      // Battery pack current
 CYCLIC_DATA(uint16_t, cyclic_pack_voltage, MAX_CYCLE_TIME);     // Battery pack voltage
 CYCLIC_DATA(uint8_t, cyclic_drive_state, MAX_CYCLE_TIME);       // Current drive state (e.g., PARK, FORWARD)
 CYCLIC_DATA(uint8_t, cyclic_soc, MAX_CYCLE_TIME);               // State of Charge (SOC %)
+CYCLIC_DATA(uint8_t, cyclic_temperature, MAX_CYCLE_TIME);		// Motor Temperature (°C)
 
 // Create functions that update the cyclic data.
 void set_cyclic_speed(uint32_t speed) {
@@ -29,6 +30,10 @@ void set_cyclic_drive_state(uint8_t state) {
 
 void set_cyclic_soc(uint8_t soc) {
    CYCLIC_DATA_SET(cyclic_soc, soc);
+}
+
+void set_cyclic_temperature(uint8_t temperature){
+   CYCLIC_DATA_SET(cyclic_temperature, temperature);
 }
 
 // Create functions that get the cyclic_data
@@ -62,4 +67,8 @@ uint8_t* get_cyclic_soc(void) {
     else{
         return CYCLIC_DATA_GET(cyclic_soc);
     }
+}
+
+uint8_t* get_cyclic_temperature(void) {
+   return CYCLIC_DATA_GET(cyclic_temperature);
 }

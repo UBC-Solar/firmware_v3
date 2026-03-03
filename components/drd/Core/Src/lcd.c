@@ -1,3 +1,4 @@
+#include "lcd_driver.h"
 #include "lcd.h"
 #include "fault_lights.h"
 #include <stdio.h>
@@ -10,317 +11,288 @@
   Internal Types & Variables
 --------------------------------------------------------------------------*/
 
-/* A simple bounding box structure used internally to track text regions */
-typedef struct {
-    uint8_t x1;
-    uint8_t y1;
-    uint8_t x2;
-    uint8_t y2;
-} bounding_box_t;
-
-/* Function Declarations */
-static void lcd_pixel(uint8_t x, uint8_t y, uint8_t colour);
-static void lcd_clear_bounding_box(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
-static void lcd_refresh();
-static void draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t color);
-static bounding_box_t draw_text(char *string, unsigned char x, unsigned char y, const unsigned char *font, unsigned char spacing);
-static bounding_box_t draw_char(unsigned char c, unsigned char x, unsigned char y, const unsigned char *font);
-
-/* Internal buffer for pixel operations (assumes a 128x64 display) */
-static uint8_t lcd_buffer[(128 * 64) / 8];
-
-/* Internal SPI handle for LCD communication */
-static SPI_HandleTypeDef* sg_spi_handle = NULL;
-
 /* Static variables to store old bounding boxes for updating text fields */
 static bounding_box_t old_bb_speed          = {0, 0, 0, 0};
-static bounding_box_t old_bb_speed_units    = {0, 0, 0, 0};
 static bounding_box_t old_bb_drive_state    = {0, 0, 0, 0};
-static bounding_box_t old_bb_drive_mode    = {0, 0, 0, 0};
+static bounding_box_t old_bb_drive_mode     = {0, 0, 0, 0};
 static bounding_box_t old_bb_soc            = {0, 0, 0, 0};
+static bounding_box_t old_bb_fault_indicator = {0, 0, 0, 0};
+static bounding_box_t old_bb_warning_indicator = {0, 0, 0, 0};
 
-static uint8_t lcd_flipped = 0;
+static char faults[8][10] = {0};
+static char warning_char[8][10] = {0};
+
+/* External variables*/
 lcd_data_t g_lcd_data = {0};
+lcd_batt_faults_t g_lcd_batt_faults = {0};
+lcd_motor_faults_t g_lcd_motor_faults = {0};
+lcd_warnings_t g_lcd_warnings = {0};
+temperature_data_t g_lcd_temperatures[8] = {0};
 
-#ifdef ST7565_DIRTY_PAGES
-static uint8_t lcd_dirty_pages;
-#endif
+uint8_t g_LCD_page = 1;
+uint8_t g_LCD_page_change = 0;
 
 /*--------------------------------------------------------------------------
-  Internal Helper Functions
+  HELPER FUNCTIONS
 --------------------------------------------------------------------------*/
 
 /**
- * @brief Sets or clears a single pixel in the internal display buffer.
- * 
- * @param x The x coordinate (1-based).
- * @param y The y coordinate (1-based).
- * @param color 1 to set the pixel, 0 to clear it.
+ * @brief Checks and updates the faults.
+ *
+ * @param batt_faults A struct containing the battery faults.
+ * @param motor_faults A struct containing the motor faults.
+ * @return The count of faults.
  */
-static void lcd_pixel(uint8_t x, uint8_t y, uint8_t colour) {
+uint8_t check_faults(lcd_batt_faults_t batt_faults, lcd_motor_faults_t motor_faults){
+	uint8_t fault_count = 0;
 
-    if (x > SCREEN_WIDTH || y > SCREEN_HEIGHT) return;
-
-    // Real screen coordinates are 0-63, not 1-64.
-    x -= 1;
-    y -= 1;
-
-    unsigned short array_pos = x + ((y / 8) * 128);
-
-    #ifdef ST7565_DIRTY_PAGES
-        lcd_dirty_pages |= 1 << (array_pos / 128);
-    #endif
-
-    if (colour) {
-        lcd_buffer[array_pos] |= 1 << (y % 8);
-    } else {
-        lcd_buffer[array_pos] &= 0xFF ^ 1 << (y % 8);
-    }
-}
-
-/**
- * @brief Clears a rectangular area in the internal display buffer.
- * 
- * @param x1 Left coordinate (1-based).
- * @param y1 Top coordinate (1-based).
- * @param x2 Right coordinate (1-based).
- * @param y2 Bottom coordinate (1-based).
- */
-static void lcd_clear_bounding_box(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2) {
-    if (x1 >= SCREEN_WIDTH || x2 >= SCREEN_WIDTH || y1 >= SCREEN_HEIGHT || y2 >= SCREEN_HEIGHT || x1 > x2 || y1 > y2)
-        return;
-
-    for (unsigned char y = y1; y <= y2; y++) {
-        for (unsigned char x = x1; x <= x2; x++) {
-            unsigned short array_pos = x + ((y / 8) * 128);
-            lcd_buffer[array_pos] = 0;
-        }
-    }
-}
-
-/**
- * @brief Refreshes the LCD display by calling the ST7565 display update.
- */
-static void lcd_refresh() 
-{
-    for (int y = 0; y < 8; y++) {
-
-    #ifdef ST7565_DIRTY_PAGES
-            // Only copy this page if it is marked as "dirty"
-            if (!(lcd_dirty_pages & (1 << y))) continue;
-    #endif
-
-        LCD_write_command(CMD_SET_PAGE | y);
-
-        // Reset column to the left side.  The internal memory of the
-        // screen is 132*64, we need to account for this if the display
-        // is flipped.
-        //
-        // Some screens seem to map the internal memory to the screen
-        // pixels differently, the ST7565_REVERSE define allows this to
-        // be controlled if necessary.
-#ifdef ST7565_REVERSE
-        if (!lcd_flipped) {
-#else
-        if (lcd_flipped) {
-#endif
-            LCD_write_command(CMD_COLUMN_LOWER | 4);
-        } else {
-            LCD_write_command(CMD_COLUMN_LOWER);
-        }
-        LCD_write_command(CMD_COLUMN_UPPER);
-
-        for (int x = 0; x < 128; x++) {
-            LCD_write_data(lcd_buffer[y * 128 + x]);
-        }
-    }
-
-    #ifdef ST7565_DIRTY_PAGES
-        // All pages have now been updated, reset the indicator.
-        lcd_dirty_pages = 0;
-    #endif
-}
-
-/**
- * @brief Draws a rectangle outline using the internal pixel function.
- * 
- * @param x1 Left coordinate (1-based).
- * @param y1 Top coordinate (1-based).
- * @param x2 Right coordinate (1-based).
- * @param y2 Bottom coordinate (1-based).
- * @param color 1 to draw pixel.
- */
-static void draw_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t color)
-{
-    for(uint8_t x = x1; x <= x2; x++) {
-        lcd_pixel(x, y1, color);
-        lcd_pixel(x, y2, color);
-    }
-    for(uint8_t y = y1; y <= y2; y++) {
-        lcd_pixel(x1, y, color);
-        lcd_pixel(x2, y, color);
-    }
-}
-
-/**
- * @brief Draws a text string using an external graphics library.
- * 
- * @param str The null-terminated string to draw.
- * @param x Starting x coordinate.
- * @param y Starting y coordinate.
- * @param font Pointer to the font to use.
- * @param spacing Spacing between characters.
- * @return bounding_box_t The bounding box of the drawn text.
- */
-static bounding_box_t draw_text(char *string, unsigned char x, unsigned char y, const unsigned char *font, unsigned char spacing) {
-	bounding_box_t ret;
-	bounding_box_t tmp = {0};
-
-	ret.x1 = x;
-	ret.y1 = y;
-
-	spacing += 1;
-
-	// BUG: As we move right between chars we don't actually wipe the space
-	while (*string != 0) {
-		tmp = draw_char(*string++, x, y, font);
-
-		// Leave a single space between characters
-		x = tmp.x2 + spacing;
+	if (batt_faults.battery_fault) {
+		sprintf(faults[fault_count], "%s", BATT_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.supp_lo) {
+		sprintf(faults[fault_count], "%s", BATT_SUPPLO_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.voltage_high) {
+		sprintf(faults[fault_count], "%s", BATT_VOLTHIGH_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.voltage_low) {
+		sprintf(faults[fault_count], "%s", BATT_VOLTLOW_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.slave_board_comm_fault) {
+		sprintf(faults[fault_count], "%s", BATT_SLAVE_COMM_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.overvolt_fault) {
+		sprintf(faults[fault_count], "%s", BATT_OVERVOLT_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.undervolt_fault) {
+		sprintf(faults[fault_count], "%s", BATT_UNDERVOLT_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.overtemp_fault) {
+		sprintf(faults[fault_count], "%s", BATT_OVERTEMP_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.charge_overcurrent_fault) {
+		sprintf(faults[fault_count], "%s", BATT_CHARGE_OC_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.discharge_overcurrent_fault) {
+		sprintf(faults[fault_count], "%s", BATT_DISCHARGE_OC_FLT_CHARS);
+		fault_count++;
+	}
+	if (batt_faults.reset_from_watchdog) {
+		sprintf(faults[fault_count], "%s", BATT_RST_FROM_WATCH_FLT_CHARS);
+		fault_count++;
+	}
+	if (motor_faults.motor_system_error) {
+		sprintf(faults[fault_count], "%s", MTR_SYSTEM_FLT_CHARS);
+		fault_count++;
+	}
+	if (motor_faults.overcurrent_fault) {
+		sprintf(faults[fault_count], "%s", MTR_OVERCURR_FLT_CHARS);
+		fault_count++;
+	}
+	if (motor_faults.overvoltage_fault) {
+		sprintf(faults[fault_count], "%s", MTR_OVERVOLT_FLT_CHARS);
+		fault_count++;
+	}
+	if (motor_faults.fet_thermistor_error) {
+		sprintf(faults[fault_count], "%s", MTR_OVERTEMP_FLT_CHARS);
+		fault_count++;
+	}
+	if (motor_faults.motor_comm_fault) {
+		sprintf(faults[fault_count], "%s", MTR_COMM_FLT_CHARS);
+		fault_count++;
+	}
+	if (motor_faults.throttle_adc_outofrange) {
+		sprintf(faults[fault_count], "%s", MTR_THROT_ADC_OOR_FLT_CHARS);
+		fault_count++;
+	}
+	if (motor_faults.throttle_adc_mismatch) {
+		sprintf(faults[fault_count], "%s",  MTR_THROT_ADC_MISMATCH_FLT_CHARS);
+		fault_count++;
 	}
 
-	ret.x2 = tmp.x2;
-	ret.y2 = tmp.y2;
-
-	return ret;
+	return fault_count;
 }
 
 /**
- * @brief Draws a single character using an external graphics library.
- * 
- * @param c The character to draw.
- * @param x Starting x coordinate.
- * @param y Starting y coordinate.
- * @param font Pointer to the font to use.
- * @return bounding_box_t The bounding box of the drawn character.
+ * @brief Checks and updates the warnings.
+ *
+ * @param warnings A struct containing the warnings
+ *
+ * @return The count of warnings.
  */
-static bounding_box_t draw_char(unsigned char c, unsigned char x, unsigned char y, const unsigned char *font) {
-	unsigned short pos;
-	uint8_t width;
-	bounding_box_t ret;
+uint8_t check_warnings(lcd_warnings_t warnings){
+	uint8_t warning_count = 0;
 
-	ret.x1 = x;
-	ret.y1 = y;
-	ret.x2 = x;
-	ret.y2 = y;
-
-	// Read first byte, should be 0x01 for proportional
-	if (font[FONT_HEADER_TYPE] != FONT_TYPE_PROPORTIONAL) return ret;
-
-	// Check second byte, should be 0x02 for "vertical ceiling"
-	if (font[FONT_HEADER_ORIENTATION] != FONT_ORIENTATION_VERTICAL_CEILING) return ret;
-
-	// Check that font start + number of bitmaps contains c
-	if (!(c >= font[FONT_HEADER_START] && c <= font[FONT_HEADER_START] + font[FONT_HEADER_LETTERS])) return ret;
-
-	// Adjust for start position of font vs. the char passed
-	c -= font[FONT_HEADER_START];
-
-	// Work out where in the array the character is
-	pos = font[c * FONT_HEADER_START + 5];
-	pos <<= 8;
-	pos |= font[c * FONT_HEADER_START + 6];
-
-	// Read first byte from this position, this gives letter width
-	width = font[pos];
-
-	// Draw left to right
-	uint8_t i;
-	for (i = 0; i < width; i++) {
-
-		// Draw top to bottom
-		for (uint8_t j = 0; j < font[FONT_HEADER_HEIGHT]; j++) {
-			// Increment one data byte every 8 bits, or
-			// at the start of a new column  HiTech optimizes
-			// the modulo, so no need to try and avoid it.
-			if (j % 8 == 0) pos++;
-
-			if (font[pos] & 1 << (j % 8)) {
-				lcd_pixel(x + i, y + j, 1);
-			} else {
-				lcd_pixel(x + i, y + j, 0);
-			}
-		}
+	if (warnings.high_temp_warning) {
+		sprintf(warning_char[warning_count], "%s", HIGHTEMP_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.high_volt_warning) {
+		sprintf(warning_char[warning_count], "%s", HIGHVOLT_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.low_temp_warning) {
+		sprintf(warning_char[warning_count], "%s", LOWTEMP_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.low_volt_warning) {
+		sprintf(warning_char[warning_count], "%s", LOWVOLT_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.no_ecu_message) {
+		sprintf(warning_char[warning_count], "%s", NOMSG_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.pack_overcharge) {
+		sprintf(warning_char[warning_count], "%s", PACK_OC_WARN_CHARS);
+		warning_count++;
+	}
+	if (warnings.pack_overdischarge) {
+		sprintf(warning_char[warning_count], "%s", PACK_OD_WARN_CHARS);
+		warning_count++;
 	}
 
-	ret.x2 = ret.x1 + width - 1;
-	ret.y2 = ret.y1 + font[FONT_HEADER_HEIGHT];
-
-	return ret;
+	return warning_count;
 }
-
 
 /*--------------------------------------------------------------------------
-  Public Function Implementations
+  PAGE 1 (DRIVE PAGE) FUNCTIONS
 --------------------------------------------------------------------------*/
 
 /**
- * @brief Displays the speed on the LCD.
+ * @brief Displays the speed on the LCD drive page.
  * 
  * @param speed The speed value to display.
  * @param units The speed units (LCD_SPEED_UNITS_MPH or LCD_SPEED_UNITS_KPH).
  */
-void LCD_display_speed(volatile uint32_t* speed, volatile uint8_t units)
+void LCD_display_speed_drive_page(volatile uint32_t* speed, volatile uint8_t units)
 {
     char speed_str[12];
-    /* Clear the previous speed and unit areas */
-    lcd_clear_bounding_box(SPEED_X - SPEED_SPACING, SPEED_Y, old_bb_speed.x2 + SPEED_SPACING, BOTTOM_RIGHT_Y);
-    lcd_clear_bounding_box(old_bb_speed.x2 - SPEED_SPACING, SPEED_Y, old_bb_speed_units.x2 + SPEED_UNITS_SPACING, SPEED_Y + 11);
     
-    if (speed == NULL) {  // Stale speed data
-        sprintf(speed_str, "--"); 
-        old_bb_speed = draw_text(speed_str, SPEED_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
-        g_diagnostics.cyclic_flags.speed_timeout = true; 
-    } 
-    else if (*speed < 10) { // Single digit speed
-        sprintf(speed_str, "%01lu", (unsigned long)*speed);  
-        old_bb_speed = draw_text(speed_str, SPEED_X + 14, SPEED_Y, SPEED_FONT, SPEED_SPACING);
-        g_diagnostics.cyclic_flags.speed_timeout = false; 
-    } else {
-        sprintf(speed_str, "%02lu", (unsigned long)*speed);  
-        old_bb_speed = draw_text(speed_str, SPEED_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
-        g_diagnostics.cyclic_flags.speed_timeout = false; 
-    }
+	/* Clear the previous speed and unit areas */
+	lcd_clear_bounding_box(SPEED_THREEDIGIT_X, old_bb_speed.y1 + 10, BOTTOM_RIGHT_X, old_bb_speed.y2);
+
+	if (speed == NULL) {  // Stale speed data
+		sprintf(speed_str, "XX");
+		old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X + 10, SPEED_Y + 10, SPEED_NULL_FONT, SPEED_SPACING + 10);
+		g_diagnostics.cyclic_flags.speed_timeout = true;
+	} else if (*speed < 10) { // Single digit speed
+		sprintf(speed_str, "%01lu", (unsigned long)*speed);
+		old_bb_speed = draw_text(speed_str, SPEED_ONEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+		g_diagnostics.cyclic_flags.speed_timeout = false;
+	} else if (*speed < 100){ // Double digit second
+		sprintf(speed_str, "%02lu", (unsigned long)*speed);
+		old_bb_speed = draw_text(speed_str, SPEED_TWODIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+		g_diagnostics.cyclic_flags.speed_timeout = false;
+	} else{
+		sprintf(speed_str, "%03lu", (unsigned long)*speed);
+		old_bb_speed = draw_text(speed_str, SPEED_THREEDIGIT_X, SPEED_Y, SPEED_FONT, SPEED_SPACING);
+		g_diagnostics.cyclic_flags.speed_timeout = false;
+	}
+
+	/* Draw the speed units */
+	switch (units) {
+		case KPH:
+			draw_text("kph", SPEED_X + SPEED_UNIT_KPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+			break;
+		case MPH:
+			draw_text("mph", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+			break;
+		default:
+			draw_text("xxx", SPEED_X + SPEED_UNIT_MPH_X, SPEED_UNIT_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
+			break;
+	}
+
+    lcd_refresh();
+
+}
+
+/**
+ * @brief Displays the state of charge (SOC) on the LCD drive page.
+ * 
+ * @param soc The state of charge (in percent).
+ */
+void LCD_display_SOC_drive_page(volatile uint32_t* soc)
+{
+    char soc_str[12];
     
-    /* Draw the speed units */
-    
-    switch (units) {
-        case KPH:
-            old_bb_speed_units = draw_text("kph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
-            break;
-        case MPH:
-            old_bb_speed_units = draw_text("mph", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
-            break;
-        default:
-            old_bb_speed_units = draw_text("xxx", SPEED_X + 2 * WIDEST_NUM_LEN_VERDANA32, SPEED_Y, SPEED_UNITS_FONT, SPEED_UNITS_SPACING);
-            break;
-    }
+	lcd_clear_bounding_box(old_bb_soc.x1, old_bb_soc.y1, old_bb_soc.x2, old_bb_soc.y2 - SOC_SPACING);
+
+	// Check for stale data and display "--" if so.
+	if (soc == NULL) {
+		sprintf(soc_str, "--");
+		old_bb_soc = draw_text(soc_str, SOC_TWODIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = true;
+	}
+	else if (*soc < 10) {
+		sprintf(soc_str, "%01lu", (unsigned long)* soc);
+		old_bb_soc = draw_text(soc_str, SOC_ONEDIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = false;
+	}
+	else if (*soc < 100){
+		sprintf(soc_str, "%02lu", (unsigned long)* soc);
+		old_bb_soc = draw_text(soc_str, SOC_TWODIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = false;
+	}
+	else {
+		sprintf(soc_str, "%03lu", (unsigned long)* soc);
+		old_bb_soc = draw_text(soc_str, SOC_THREEDIGIT_X, SOC_Y, SOC_FONT, SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = false;
+	}
+
+	draw_char(SOC_UNITS, SOC_UNITS_X, SOC_Y, SOC_UNITS_FONT);
+
     lcd_refresh();
 }
 
 /**
- * @brief Displays the drive state on the LCD.
- * 
+ * @brief Displays an E for ECO mode and P for POWER mode
+ *
+ * @param drive_mode The drive mode
+ */
+void LCD_display_drive_mode(volatile uint8_t drive_mode)
+{
+	lcd_clear_bounding_box(old_bb_drive_mode.x1, old_bb_drive_mode.y1 + 4,
+							   old_bb_drive_mode.x2, old_bb_drive_mode.y2 - 2);
+
+	// Drive mode is valid, display the corresponding symbol.
+	switch (drive_mode) {
+		case DRIVE_MODE_ECO:
+			old_bb_drive_mode = draw_char(ECO_SYMBOL, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
+			break;
+		case DRIVE_MODE_POWER:
+			old_bb_drive_mode = draw_char(POWER_SYMBOL, POWER_MODE_X, POWER_MODE_Y, POWER_MODE_FONT);
+			break;
+		default:
+			old_bb_drive_mode = draw_char(ERROR_SYMBOL, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
+			break;
+	}
+
+    lcd_refresh();
+}
+
+/**
+ * @brief Displays the drive state on the LCD drive page.
+ *
  * @param state The drive state (e.g., FORWARD_STATE, PARK_STATE, REVERSE_STATE).
  */
-void LCD_display_drive_state(volatile drive_state_t* state)
+void LCD_display_drive_state_drive_page(volatile drive_state_t* state)
 {
     char state_str[2] = {ERROR_SYMBOL, '\0'};  // Default to error symbol.
-    lcd_clear_bounding_box(STATE_X, STATE_Y, old_bb_drive_state.x2, BOTTOM_RIGHT_Y);
+
     if (state == NULL) {  // Stale data for drive state
         sprintf(state_str, "-");
         g_diagnostics.cyclic_flags.drive_state_timeout = true;
-    } 
+    }
     else {
         switch (*state) {
             case FORWARD:
@@ -336,44 +308,248 @@ void LCD_display_drive_state(volatile drive_state_t* state)
                 state_str[0] = ERROR_SYMBOL;
                 break;
         }
-        g_diagnostics.cyclic_flags.drive_state_timeout = false; 
+        g_diagnostics.cyclic_flags.drive_state_timeout = false;
     }
-    old_bb_drive_state = draw_text(state_str, STATE_X, STATE_Y, STATE_FONT, STATE_SPACING);
+
+    lcd_clear_bounding_box(STATE_X, STATE_Y, old_bb_drive_state.x2, BOTTOM_RIGHT_Y);
+	old_bb_drive_state = draw_text(state_str, STATE_X, STATE_Y, STATE_FONT, STATE_SPACING);
+
     lcd_refresh();
+}
+
+
+/**
+ * @brief Displays a fault indicator on the LCD Drive Page
+ *
+ * @param fault_indicator A general indicator to signal a fault to prompt the driver to change pages
+ */
+void LCD_display_fault_indicator(lcd_batt_faults_t batt_faults, lcd_motor_faults_t motor_faults)
+{
+	lcd_clear_bounding_box(old_bb_fault_indicator.x1, old_bb_fault_indicator.y1,
+			old_bb_fault_indicator.x2, old_bb_fault_indicator.y2);
+
+
+	uint8_t fault_count = check_faults(batt_faults, motor_faults);
+
+	// Check if there is an existing fault
+	if(fault_count > 0) {
+		old_bb_fault_indicator = draw_char(FAULT_SYMBOL, FAULT_X, FAULT_Y, FAULT_SYMBOL_FONT);
+	}
+	lcd_refresh();
 }
 
 /**
- * @brief Displays the state of charge (SOC) on the LCD.
- * 
- * @param soc The state of charge (in percent).
+ * @brief Displays a warning indicator on the LCD Drive Page
+ *
+ * @param warning_indicator A general indicator to signal a warning to prompt the driver to change pages
  */
-void LCD_display_SOC(volatile uint32_t* soc)
+void LCD_display_warning_indicator(lcd_warnings_t warnings)
 {
-    char soc_str[12];
-    bounding_box_t bb;
-    lcd_clear_bounding_box(SOC_X - SOC_SPACING, SOC_Y, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
-    
-    // Check for stale data and display "--" if so.
-    if (soc == NULL) {
-        sprintf(soc_str, "--");
-        bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
-        g_diagnostics.cyclic_flags.soc_timeout = true; 
-    } 
-    else if (*soc < 10) {
-        sprintf(soc_str, "%01lu", (unsigned long)* soc);
-        bb = draw_text(soc_str, SOC_X + 10, SOC_Y, SOC_FONT, SOC_SPACING);
-        g_diagnostics.cyclic_flags.soc_timeout = false;
-    } else {
-        sprintf(soc_str, "%02lu", (unsigned long)* soc);
-        bb = draw_text(soc_str, SOC_X, SOC_Y, SOC_FONT, SOC_SPACING);
-        g_diagnostics.cyclic_flags.soc_timeout = false;
-    }
+	lcd_clear_bounding_box(old_bb_warning_indicator.x1, old_bb_warning_indicator.y1,
+			old_bb_warning_indicator.x2, old_bb_warning_indicator.y2);
 
-    UNUSED(bb);     // remove warning
+	uint8_t warning_count = check_warnings(warnings);
 
-    old_bb_soc = draw_char(SOC_UNITS, SOC_X + 2 * WIDEST_NUM_LEN_VERDANA16 + 2, SOC_Y, SOC_UNITS_FONT);
-    lcd_refresh();
+	// Check if there is an existing warning
+	if(warning_count > 0){
+		old_bb_warning_indicator = draw_char(WARNING_SYMBOL, WARNING_X, WARNING_Y, WARNING_SYMBOL_FONT);
+	}
+	lcd_refresh();
 }
+
+/*--------------------------------------------------------------------------
+  PAGE 2 (FAULT PAGE) FUNCTIONS
+--------------------------------------------------------------------------*/
+
+/**
+ * @brief Dynamically displays battery and motor faults on the LCD
+ *
+ * @param batt_faults The battery faults to be displayed on the LCD
+ * @param motor_faults The motor faults to be displayed on the LCD
+ */
+void LCD_display_faults(lcd_batt_faults_t batt_faults, lcd_motor_faults_t motor_faults){
+
+	lcd_clear_bounding_box(0, FAULT_FOUR_Y1, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
+
+	uint8_t fault_count = check_faults(batt_faults, motor_faults);
+
+	draw_text(FAULT_LABEL_CHARS, FAULT_LABEL_X, FAULT_LABEL_Y, FAULT_LABEL_FONT, FAULT_SPACING);
+	for(uint8_t i = 0; i < FAULT_LABEL_UNDERLINE_X; i++){
+		lcd_pixel(i, FAULT_LABEL_UNDERLINE_Y, 1);
+	}
+	if(fault_count <= 3) {
+		draw_text(faults[0], FAULT_FOUR_X1, FAULT_FOUR_Y1, FAULT_FOUR_FONT, FAULT_SPACING);
+		draw_text(faults[1], FAULT_FOUR_X2, FAULT_FOUR_Y2, FAULT_FOUR_FONT, FAULT_SPACING);
+		draw_text(faults[2], FAULT_FOUR_X3, FAULT_FOUR_Y3, FAULT_FOUR_FONT, FAULT_SPACING);
+	}
+	else if(fault_count <= 8) {
+		draw_text(faults[0], FAULT_EIGHT_X1, FAULT_EIGHT_Y1, FAULT_EIGHT_FONT, FAULT_SPACING);
+		draw_text(faults[1], FAULT_EIGHT_X2, FAULT_EIGHT_Y2, FAULT_EIGHT_FONT, FAULT_SPACING);
+		draw_text(faults[2], FAULT_EIGHT_X3, FAULT_EIGHT_Y3, FAULT_EIGHT_FONT, FAULT_SPACING);
+		draw_text(faults[3], FAULT_EIGHT_X4, FAULT_EIGHT_Y4, FAULT_EIGHT_FONT, FAULT_SPACING);
+		draw_text(faults[4], FAULT_EIGHT_X5, FAULT_EIGHT_Y5, FAULT_EIGHT_FONT, FAULT_SPACING);
+		draw_text(faults[5], FAULT_EIGHT_X6, FAULT_EIGHT_Y6, FAULT_EIGHT_FONT, FAULT_SPACING);
+		draw_text(faults[6], FAULT_EIGHT_X7, FAULT_EIGHT_Y7, FAULT_EIGHT_FONT, FAULT_SPACING);
+		draw_text(faults[7], FAULT_EIGHT_X8, FAULT_EIGHT_Y8, FAULT_EIGHT_FONT, FAULT_SPACING);
+	}
+
+	lcd_refresh();
+
+}
+
+/*--------------------------------------------------------------------------
+  PAGE 3 (WARNING PAGE) FUNCTIONS
+--------------------------------------------------------------------------*/
+
+/**
+ * @brief Displays a motor faults on the LCD
+ *
+ * @param fault_indicator An indicator to see who
+ */
+void LCD_display_warnings(lcd_warnings_t warnings)
+{
+	lcd_clear_bounding_box(0, WARNING_FOUR_Y1, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
+
+	uint8_t warning_count = check_warnings(warnings);
+
+	draw_text(WARNING_LABEL_CHARS, WARNING_LABEL_X, WARNING_LABEL_Y, WARNING_LABEL_FONT, WARNING_SPACING);
+	for(uint8_t i = 0; i < WARNING_LABEL_UNDERLINE_X; i++){
+		lcd_pixel(i, WARNING_LABEL_UNDERLINE_Y, 1);
+	}
+	if(warning_count <= 3) {
+		draw_text(warning_char[0], WARNING_FOUR_X1, WARNING_FOUR_Y1, WARNING_FOUR_FONT, WARNING_SPACING);
+		draw_text(warning_char[1], WARNING_FOUR_X2, WARNING_FOUR_Y2, WARNING_FOUR_FONT, WARNING_SPACING);
+		draw_text(warning_char[2], WARNING_FOUR_X3, WARNING_FOUR_Y3, WARNING_FOUR_FONT, WARNING_SPACING);
+	}
+	else if(warning_count <= 8) {
+		draw_text(warning_char[0], WARNING_EIGHT_X1, WARNING_EIGHT_Y1, WARNING_EIGHT_FONT, WARNING_SPACING);
+		draw_text(warning_char[1], WARNING_EIGHT_X2, WARNING_EIGHT_Y2, WARNING_EIGHT_FONT, WARNING_SPACING);
+		draw_text(warning_char[2], WARNING_EIGHT_X3, WARNING_EIGHT_Y3, WARNING_EIGHT_FONT, WARNING_SPACING);
+		draw_text(warning_char[3], WARNING_EIGHT_X4, WARNING_EIGHT_Y4, WARNING_EIGHT_FONT, WARNING_SPACING);
+		draw_text(warning_char[4], WARNING_EIGHT_X5, WARNING_EIGHT_Y5, WARNING_EIGHT_FONT, WARNING_SPACING);
+		draw_text(warning_char[5], WARNING_EIGHT_X6, WARNING_EIGHT_Y6, WARNING_EIGHT_FONT, WARNING_SPACING);
+		draw_text(warning_char[6], WARNING_EIGHT_X7, WARNING_EIGHT_Y7, WARNING_EIGHT_FONT, WARNING_SPACING);
+		draw_text(warning_char[7], WARNING_EIGHT_X8, WARNING_EIGHT_Y8, WARNING_EIGHT_FONT, WARNING_SPACING);
+	}
+
+	lcd_refresh();
+}
+
+/*--------------------------------------------------------------------------
+  PAGE 4 (TEMPERATURE PAGE) FUNCTIONS
+--------------------------------------------------------------------------*/
+
+/**
+ * @brief Displays a Temperature on the LCD (0-255)
+ *
+ * @param temperature A struct containing the temperature and id of the temperature.
+ */
+void LCD_display_temperature(temperature_data_t temperature_data){
+
+	// TODO: When assigning with CAN ensure that the name is set too
+
+	// Stores a Bounding Box used for changing temp symbol position
+	bounding_box_t bb = {0};
+
+	// Variables to hold values based on what temperature is being displayed
+	char temp_label[8];
+	char temp_str[4];
+	uint8_t temp_x;
+	uint8_t temp_y;
+	uint8_t temp_shift;
+
+	switch(temperature_data.temp_label){
+		case MPPT_A_LABEL:
+			sprintf(temp_label, "%s", MPPT_A_CHARS);
+			temp_x = MPPT_A_X;
+			temp_y = MPPT_A_Y;
+			temp_shift = TEMP_MPPT_OFFSET;
+			lcd_clear_bounding_box(TEMP_MPPT_OFFSET, MPPT_A_Y, BATT_MAX_X-2, MPPT_B_Y);
+			break;
+		case MPPT_B_LABEL:
+			sprintf(temp_label, "%s", MPPT_B_CHARS);
+			temp_x = MPPT_B_X;
+			temp_y = MPPT_B_Y;
+			temp_shift = TEMP_MPPT_OFFSET;
+			lcd_clear_bounding_box(TEMP_MPPT_OFFSET, MPPT_B_Y, BATT_MAX_X-2, MPPT_C_Y);
+			break;
+		case MPPT_C_LABEL:
+			sprintf(temp_label, "%s", MPPT_C_CHARS);
+			temp_x = MPPT_C_X;
+			temp_y = MPPT_C_Y;
+			temp_shift = TEMP_MPPT_OFFSET;
+			lcd_clear_bounding_box(TEMP_MPPT_OFFSET, MPPT_C_Y, BATT_MAX_X-2, MPPT_D_Y);
+			break;
+		case MPPT_D_LABEL:
+			sprintf(temp_label, "%s", MPPT_D_CHARS);
+			temp_x = MPPT_D_X;
+			temp_y = MPPT_D_Y;
+			temp_shift = TEMP_MPPT_OFFSET;
+			lcd_clear_bounding_box(TEMP_MPPT_OFFSET, MPPT_D_Y, BATT_MAX_X-2, BOTTOM_RIGHT_Y);
+			break;
+		case BATT_MAX_LABEL:
+			sprintf(temp_label, "%s", BATT_MAX_CHARS);
+			temp_x = BATT_MAX_X;
+			temp_y = BATT_MAX_Y;
+			temp_shift = TEMP_BATT_OFFSET;
+			lcd_clear_bounding_box(BATT_MAX_X + TEMP_BATT_OFFSET, 0, BOTTOM_RIGHT_X, BATT_MIN_Y);
+			break;
+		case BATT_MIN_LABEL:
+			sprintf(temp_label, "%s", BATT_MIN_CHARS);
+			temp_x = BATT_MIN_X;
+			temp_y = BATT_MIN_Y;
+			temp_shift = TEMP_BATT_OFFSET;
+			lcd_clear_bounding_box(BATT_MAX_X + TEMP_BATT_OFFSET, BATT_MIN_Y, BOTTOM_RIGHT_X, MTR_CONT_Y);
+			break;
+		case MTR_CONT_LABEL:
+			sprintf(temp_label, "%s", MTR_CONT_CHARS);
+			temp_x = MTR_CONT_X;
+			temp_y = MTR_CONT_Y;
+			temp_shift = TEMP_MTR_OFFSET;
+			lcd_clear_bounding_box(MTR_CONT_X + TEMP_MTR_OFFSET, MTR_CONT_Y, BOTTOM_RIGHT_X, MTR_THERM_Y);
+			break;
+		case MTR_THERM_LABEL:
+			sprintf(temp_label, "%s", MTR_THERM_CHARS);
+			temp_x = MTR_THERM_X;
+			temp_y = MTR_THERM_Y;
+			temp_shift = TEMP_MTR_OFFSET;
+			lcd_clear_bounding_box(MTR_CONT_X + TEMP_MTR_OFFSET, MTR_THERM_Y, BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y);
+			break;
+		default:
+			break;
+	}
+
+	draw_text(temp_label, temp_x, temp_y, TEMP_LABEL_FONT, TEMP_SPACING);
+
+	// Check digits in temperature data received
+	if (temperature_data.temperature == NULL) {  // temperature not read
+		sprintf(temp_str, "--");
+		bb = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
+	}
+	else if (*temperature_data.temperature < 10) { // Single digit temperature
+		sprintf(temp_str, "%01lu", (unsigned long)*temperature_data.temperature);
+		bb = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
+	}
+	else if(*temperature_data.temperature < 100) { // Double digit temperature
+		sprintf(temp_str, "%02lu", (unsigned long)*temperature_data.temperature);
+		bb = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
+	}
+	else { // Triple digit
+		sprintf(temp_str, "%03lu", (unsigned long)*temperature_data.temperature);
+		bb = draw_text(temp_str, temp_x + temp_shift, temp_y, TEMP_FONT, TEMP_SPACING);
+	}
+
+	// Draws the Degrees Celsius symbol according to the position of the bounding box
+	draw_char(TEMP_DEGREES_SYMBOL, bb.x2 + TEMP_DEGREES_OFFSET_X, temp_y - TEMP_DEGREES_OFFSET_Y, TEMP_DEGREES_FONT);
+	draw_char(TEMP_UNITS, bb.x2 + TEMP_UNITS_OFFSET, temp_y, TEMP_UNITS_FONT);
+
+	lcd_refresh();
+}
+
+
+/*--------------------------------------------------------------------------
+  PAGE 5 (DEBUG PAGE) FUNCTIONS
+--------------------------------------------------------------------------*/
 
 /**
  * @brief Displays a battery power bar based on pack current and voltage.
@@ -424,7 +600,7 @@ void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* p
                     lcd_pixel(x, y, 1);
                 }
             }
-        } 
+        }
         else if (power < 0) {
             float ratio = (-power) / MAX_NEGATIVE_POWER;
             if (ratio > 1.0f)
@@ -446,92 +622,128 @@ void LCD_display_power_bar(volatile int16_t*  pack_current, volatile uint16_t* p
     }
 }
 
+/**
+ * @brief Displays the speed on the LCD debug page.
+ *
+ * @param speed The speed value to display.
+ * @param units The speed units (LCD_SPEED_UNITS_MPH or LCD_SPEED_UNITS_KPH).
+ */
+void LCD_display_speed_debug_page(volatile uint32_t* speed, volatile uint8_t units)
+{
+    char speed_str[12];
+
+	/* Clear the previous speed and unit areas */
+	lcd_clear_bounding_box(DEBUG_SPEED_THREEDIGIT_X, old_bb_speed.y1, BOTTOM_RIGHT_X, old_bb_speed.y2 - 3);
+
+	if (speed == NULL) {  // Stale speed data
+		sprintf(speed_str, "XX");
+		old_bb_speed = draw_text(speed_str, DEBUG_SPEED_TWODIGIT_X + 10, DEBUG_SPEED_Y + 10, DEBUG_SPEED_FONT, DEBUG_SPEED_SPACING + 10);
+		g_diagnostics.cyclic_flags.speed_timeout = true;
+	} else if (*speed < 10) { // Single digit speed
+		sprintf(speed_str, "%01lu", (unsigned long)*speed);
+		old_bb_speed = draw_text(speed_str, DEBUG_SPEED_ONEDIGIT_X, DEBUG_SPEED_Y, DEBUG_SPEED_FONT, DEBUG_SPEED_SPACING);
+		g_diagnostics.cyclic_flags.speed_timeout = false;
+	} else if (*speed < 100){ // Double digit second
+		sprintf(speed_str, "%02lu", (unsigned long)*speed);
+		old_bb_speed = draw_text(speed_str, DEBUG_SPEED_TWODIGIT_X, DEBUG_SPEED_Y, DEBUG_SPEED_FONT, DEBUG_SPEED_SPACING);
+		g_diagnostics.cyclic_flags.speed_timeout = false;
+	} else{
+		sprintf(speed_str, "%03lu", (unsigned long)*speed);
+		old_bb_speed = draw_text(speed_str, DEBUG_SPEED_THREEDIGIT_X, DEBUG_SPEED_Y, DEBUG_SPEED_FONT, DEBUG_SPEED_SPACING);
+		g_diagnostics.cyclic_flags.speed_timeout = false;
+	}
+
+	/* Draw the speed units */
+	switch (units) {
+		case KPH:
+			draw_text("kph", DEBUG_SPEED_X + DEBUG_SPEED_UNIT_KPH_X, DEBUG_SPEED_UNIT_Y, DEBUG_SPEED_UNITS_FONT, DEBUG_SPEED_UNITS_SPACING);
+			break;
+		case MPH:
+			draw_text("mph", DEBUG_SPEED_X + DEBUG_SPEED_UNIT_MPH_X, DEBUG_SPEED_UNIT_Y, DEBUG_SPEED_UNITS_FONT, DEBUG_SPEED_UNITS_SPACING);
+			break;
+		default:
+			draw_text("xxx", DEBUG_SPEED_X + DEBUG_SPEED_UNIT_MPH_X, DEBUG_SPEED_UNIT_Y, DEBUG_SPEED_UNITS_FONT, DEBUG_SPEED_UNITS_SPACING);
+			break;
+	}
+
+    lcd_refresh();
+
+}
 
 /**
- * @brief Displays an E for ECO mode and P for POWER mode
- * 
- * @param drive_mode The drive mode
+ * @brief Displays the state of charge (SOC) on the LCD debug page.
+ *
+ * @param soc The state of charge (in percent).
  */
-void LCD_display_drive_mode(volatile uint8_t drive_mode)
+void LCD_display_SOC_debug_page(volatile uint32_t* soc)
 {
-    char drive_mode_c = ERROR_SYMBOL;   // Default to error symbol.
-    lcd_clear_bounding_box(0, old_bb_drive_mode.y1 + 7, old_bb_drive_mode.x2, old_bb_drive_mode.y2);
-    
-    // Drive mode is valid, display the corresponding symbol.
-    switch (drive_mode) {
-        case DRIVE_MODE_ECO:
-            drive_mode_c = ECO_SYMBOL;
-            old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
-            break;
-        case DRIVE_MODE_POWER:
-            drive_mode_c = POWER_SYMBOL; 
-            old_bb_drive_mode = draw_char(drive_mode_c, POWER_MODE_X, POWER_MODE_Y, POWER_MODE_FONT);
-            break;
-        default:
-            drive_mode_c = ERROR_SYMBOL;  // Display error symbol for invalid mode.
-            old_bb_drive_mode = draw_char(drive_mode_c, ECO_MODE_X, ECO_MODE_Y, ECO_MODE_FONT);
-            break;
+    char soc_str[12];
+
+	lcd_clear_bounding_box(old_bb_soc.x1, old_bb_soc.y1, old_bb_soc.x2, old_bb_soc.y2 - 5);
+
+	// Check for stale data and display "--" if so.
+	if (soc == NULL) {
+		sprintf(soc_str, "--");
+		old_bb_soc = draw_text(soc_str, DEBUG_SOC_TWODIGIT_X, SOC_Y, DEBUG_SOC_FONT, DEBUG_SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = true;
+	}
+	else if (*soc < 10) {
+		sprintf(soc_str, "%01lu", (unsigned long)* soc);
+		old_bb_soc = draw_text(soc_str, DEBUG_SOC_ONEDIGIT_X, DEBUG_SOC_Y, DEBUG_SOC_FONT, DEBUG_SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = false;
+	}
+	else if (*soc < 100){
+		sprintf(soc_str, "%02lu", (unsigned long)* soc);
+		old_bb_soc = draw_text(soc_str, DEBUG_SOC_TWODIGIT_X, DEBUG_SOC_Y, DEBUG_SOC_FONT, DEBUG_SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = false;
+	}
+	else {
+		sprintf(soc_str, "%03lu", (unsigned long)* soc);
+		old_bb_soc = draw_text(soc_str, DEBUG_SOC_THREEDIGIT_X, DEBUG_SOC_Y, DEBUG_SOC_FONT, DEBUG_SOC_SPACING);
+		g_diagnostics.cyclic_flags.soc_timeout = false;
+	}
+
+	draw_char(SOC_UNITS, DEBUG_SOC_UNITS_X, DEBUG_SOC_Y, DEBUG_SOC_UNITS_FONT);
+
+    lcd_refresh();
+}
+
+/**
+ * @brief Displays the drive state on the LCD debug page.
+ *
+ * @param state The drive state (e.g., FORWARD_STATE, PARK_STATE, REVERSE_STATE).
+ */
+void LCD_display_drive_state_debug_page(volatile drive_state_t* state)
+{
+    char state_str[2] = {ERROR_SYMBOL, '\0'};  // Default to error symbol.
+
+    if (state == NULL) {  // Stale data for drive state
+        sprintf(state_str, "-");
+        g_diagnostics.cyclic_flags.drive_state_timeout = true;
     }
-    
-    // With LCD Refresh the topbar gets cut into. This is because lighting bolt has unecesary white space :(.
+    else {
+        switch (*state) {
+            case FORWARD:
+                state_str[0] = FORWARD_SYMBOL;
+                break;
+            case PARK:
+                state_str[0] = PARK_SYMBOL;
+                break;
+            case REVERSE:
+                state_str[0] = REVERSE_SYMBOL;
+                break;
+            default:
+                state_str[0] = ERROR_SYMBOL;
+                break;
+        }
+        g_diagnostics.cyclic_flags.drive_state_timeout = false;
+    }
+
+	lcd_clear_bounding_box(DEBUG_STATE_X, DEBUG_STATE_Y, 20, BOTTOM_RIGHT_Y);
+	old_bb_drive_state = draw_text(state_str, DEBUG_STATE_X, DEBUG_STATE_Y, DEBUG_STATE_FONT, DEBUG_STATE_SPACING);
+
+    lcd_refresh();
 }
-
-/**
- * @brief Sends a command to the LCD via SPI.
- * 
- * @param cmd The command byte to send.
- */
-void LCD_write_command(uint8_t cmd)
-{
-    /* Set A0 low for command */
-    HAL_GPIO_WritePin(DISPLAY_A0_GPIO_Port, DISPLAY_A0_Pin, GPIO_PIN_RESET);
-    
-    uint8_t cmd_arr[1] = {cmd};
-    HAL_SPI_Transmit(sg_spi_handle, cmd_arr, 1, 10);
-}
-
-/**
- * @brief Sends data to the LCD via SPI so that the specified pixels turn black (or white).
- * 
- * @param data The data byte to send.
- */
-void LCD_write_data(uint8_t data)
-{
-    /* Set A0 high for data */
-    HAL_GPIO_WritePin(DISPLAY_A0_GPIO_Port, DISPLAY_A0_Pin, GPIO_PIN_SET);
-    
-    uint8_t data_arr[1] = {data};
-    HAL_SPI_Transmit(sg_spi_handle, data_arr, 1, 10);
-}
-
-/**
- * @brief Initializes the LCD based on the ST7565 library and prints the field names.
- * 
- * @param hspi Pointer to the SPI handle.
- */
-void LCD_init(SPI_HandleTypeDef* hspi)
-{
-    HAL_GPIO_WritePin(DISPLAY_RESET_GPIO_Port, DISPLAY_RESET_Pin, GPIO_PIN_RESET); 
-    HAL_Delay(30);
-    HAL_GPIO_WritePin(DISPLAY_RESET_GPIO_Port, DISPLAY_RESET_Pin, GPIO_PIN_SET); 
-    HAL_Delay(30);
-
-    sg_spi_handle = hspi;
-
-    LCD_write_command(CMD_SET_ADC_NORMAL);          
-    LCD_write_command(CMD_DISPLAY_OFF);
-    LCD_write_command(CMD_SET_COM_NORMAL + 8);        // This makes the drawing flipped
-    LCD_write_command(CMD_SET_BIAS_9);
-    LCD_write_command(CMD_SET_POWER_CONTROL | 0x7);
-    LCD_write_command(CMD_SET_RESISTOR_RATIO | 0x6);    // set lcd operating voltage (regulator resistor, ref voltage resistor)
-    LCD_write_command(CMD_SET_VOLUME_FIRST);
-    LCD_write_command(CMD_SET_CONTRAST - 5);
-    LCD_write_command(CMD_DISPLAY_START);
-    LCD_write_command(CMD_DISPLAY_ON);
-    LCD_write_command(CMD_SET_ALLPTS_NORMAL);
-}
-
-
 
 /*
  * @brief CAN rx function which parses message data needed by the LCD
@@ -560,4 +772,31 @@ void LCD_CAN_rx_handle(uint32_t msg_id, uint8_t* data)
         
         osEventFlagsSet(calculate_soc_flagHandle, SOC_CALCULATE_ON);
 	}
+
+    if(msg_id == STR_CAN_MSG_ID)
+    {
+    	uint8_t next_page = (data[0] & 1);
+
+    	if(next_page){
+    		if(g_LCD_page < MAXPAGES){
+    			g_LCD_page_change = 1;
+    			g_LCD_page++;
+			} else {
+				g_LCD_page_change = 1;
+				g_LCD_page = 1;
+			}
+    	}
+//    	else if(previous_page){
+//    		if(g_LCD_page > 1){
+//    			g_LCD_page_change = 1;
+//    			g_LCD_page--;
+//			}
+//    	}
+    }
+
+    if(msg_id == CAN_ID_MDI_TEMP)
+    {
+    	uint8_t temperature = data[0];
+    	set_cyclic_temperature(temperature);
+    }
 }

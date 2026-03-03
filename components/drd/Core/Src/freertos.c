@@ -25,6 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stdbool.h"
 #include "can.h"
 #include "external_lights.h"
 #include "lcd.h"
@@ -274,29 +275,171 @@ void LCDUpdatetask(void *argument)
   /* Infinite loop */
 
   LCD_init(&hspi1);
-
-  g_lcd_data.speed_units = KPH;
+  LCD_change_screen();
   
+  // KPH or MPH
+  g_lcd_data.speed_units = MPH;
+
+
   for(;;)
   {
     // When debugging we can check the duration of this function to measure performance.
     #ifdef DEBUG
         lcd_time_start = HAL_GetTick();
     #endif // DEBUG
-        
-    g_lcd_data.speed            = get_cyclic_speed();
-    g_lcd_data.drive_state      = get_cyclic_drive_state();
-    g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;    
-    g_lcd_data.pack_current     = get_cyclic_pack_current();
-    g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
-    g_lcd_data.soc              = get_cyclic_soc();
 
-    LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
-    LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
-    LCD_display_drive_state(g_lcd_data.drive_state);
-    LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
-    LCD_display_drive_mode(g_lcd_data.drive_mode);
-    
+    // Handles clearing the screen
+	if(g_LCD_page_change == 1){
+		LCD_change_screen();
+		g_LCD_page_change = 0;
+	}
+
+	// Constantly gets faults
+	g_lcd_batt_faults.battery_fault = false;
+	g_lcd_batt_faults.charge_overcurrent_fault = false;
+	g_lcd_batt_faults.discharge_overcurrent_fault = false;
+	g_lcd_batt_faults.overtemp_fault = false;
+	g_lcd_batt_faults.overvolt_fault = false;
+	g_lcd_batt_faults.reset_from_watchdog = false;
+	g_lcd_batt_faults.slave_board_comm_fault = false;
+	g_lcd_batt_faults.supp_lo = false;
+	g_lcd_batt_faults.undervolt_fault = false;
+	g_lcd_batt_faults.voltage_high = false;
+	g_lcd_batt_faults.voltage_low = false;
+
+	g_lcd_motor_faults.fet_thermistor_error = false;
+	g_lcd_motor_faults.motor_comm_fault = false;
+	g_lcd_motor_faults.motor_system_error = false;
+	g_lcd_motor_faults.overcurrent_fault = false;
+	g_lcd_motor_faults.overvoltage_fault = false;
+	g_lcd_motor_faults.throttle_adc_mismatch = false;
+	g_lcd_motor_faults.throttle_adc_outofrange = false;
+
+	g_lcd_warnings.high_temp_warning = false;
+	g_lcd_warnings.high_volt_warning = false;
+	g_lcd_warnings.low_temp_warning = false;
+	g_lcd_warnings.low_volt_warning = false;
+	g_lcd_warnings.no_ecu_message = false;
+	g_lcd_warnings.pack_overcharge = false;
+	g_lcd_warnings.pack_overdischarge = false;
+
+//	uint8_t temp = 44;
+//	uint8_t temp2 = 144;
+
+
+	uint32_t speed = 44;
+	uint32_t soc = 44;
+	uint8_t state = 0x01;
+
+	// Handles what is displayed
+	switch(g_LCD_page){
+		case 1:
+			for(soc = 0; soc < 444; soc ++) {
+				g_lcd_data.speed            = &speed;
+				g_lcd_data.drive_state      = &state;//get_cyclic_drive_state();
+				g_lcd_data.drive_mode       = 0;//(volatile uint8_t) g_input_flags.eco_mode_on;
+				g_lcd_data.soc              = &soc;
+
+				LCD_display_speed_drive_page(g_lcd_data.speed, g_lcd_data.speed_units);
+				LCD_display_drive_mode(g_lcd_data.drive_mode);
+				LCD_display_drive_state_drive_page(g_lcd_data.drive_state);
+				LCD_display_SOC_drive_page((volatile uint32_t*) g_lcd_data.soc);
+				LCD_display_fault_indicator(g_lcd_batt_faults, g_lcd_motor_faults);
+				LCD_display_warning_indicator(g_lcd_warnings);
+			}
+			break;
+
+		case 2:
+			LCD_display_faults(g_lcd_batt_faults, g_lcd_motor_faults);
+			break;
+		case 3:
+			LCD_display_warnings(g_lcd_warnings);
+			break;
+		case 4:
+			g_lcd_temperatures[0].temp_label = 0x1;
+			g_lcd_temperatures[1].temp_label = 0x2;
+			g_lcd_temperatures[2].temp_label = 0x3;
+			g_lcd_temperatures[3].temp_label = 0x4;
+			g_lcd_temperatures[4].temp_label = 0x5;
+			g_lcd_temperatures[5].temp_label = 0x6;
+			g_lcd_temperatures[6].temp_label = 0x7;
+			g_lcd_temperatures[7].temp_label = 0x8;
+
+			g_lcd_temperatures[0].temperature = NULL;
+			g_lcd_temperatures[1].temperature = NULL;
+			g_lcd_temperatures[2].temperature = NULL;
+			g_lcd_temperatures[3].temperature = NULL;
+			g_lcd_temperatures[4].temperature = NULL;
+			g_lcd_temperatures[5].temperature = NULL;
+			g_lcd_temperatures[6].temperature = NULL;
+			g_lcd_temperatures[7].temperature = NULL;
+
+			LCD_display_temperature(g_lcd_temperatures[0]);
+			LCD_display_temperature(g_lcd_temperatures[1]);
+			LCD_display_temperature(g_lcd_temperatures[2]);
+			LCD_display_temperature(g_lcd_temperatures[3]);
+			LCD_display_temperature(g_lcd_temperatures[4]);
+			LCD_display_temperature(g_lcd_temperatures[5]);
+			LCD_display_temperature(g_lcd_temperatures[6]);
+			LCD_display_temperature(g_lcd_temperatures[7]);
+
+//			for(temp = 0; temp < 99; temp++){
+//				g_lcd_temperatures[0].temperature = &temp;
+//				g_lcd_temperatures[1].temperature = &temp;
+//				g_lcd_temperatures[2].temperature = &temp;
+//				g_lcd_temperatures[3].temperature = &temp;
+//				g_lcd_temperatures[4].temperature = &temp;
+//				g_lcd_temperatures[5].temperature = &temp;
+//				g_lcd_temperatures[6].temperature = &temp2;
+//				g_lcd_temperatures[7].temperature = &temp2;
+//
+//				LCD_display_temperature(g_lcd_temperatures[0]);
+//				LCD_display_temperature(g_lcd_temperatures[1]);
+//				LCD_display_temperature(g_lcd_temperatures[2]);
+//				LCD_display_temperature(g_lcd_temperatures[3]);
+//				LCD_display_temperature(g_lcd_temperatures[4]);
+//				LCD_display_temperature(g_lcd_temperatures[5]);
+//				LCD_display_temperature(g_lcd_temperatures[6]);
+//				LCD_display_temperature(g_lcd_temperatures[7]);
+//				HAL_Delay(400);
+//			}
+//			for(temp2 = 0; temp2 < 145; temp2++){
+//				g_lcd_temperatures[0].temperature = &temp;
+//				g_lcd_temperatures[1].temperature = &temp;
+//				g_lcd_temperatures[2].temperature = &temp;
+//				g_lcd_temperatures[3].temperature = &temp;
+//				g_lcd_temperatures[4].temperature = &temp;
+//				g_lcd_temperatures[5].temperature = &temp;
+//				g_lcd_temperatures[6].temperature = &temp2;
+//				g_lcd_temperatures[7].temperature = &temp2;
+//
+//				LCD_display_temperature(g_lcd_temperatures[0]);
+//				LCD_display_temperature(g_lcd_temperatures[1]);
+//				LCD_display_temperature(g_lcd_temperatures[2]);
+//				LCD_display_temperature(g_lcd_temperatures[3]);
+//				LCD_display_temperature(g_lcd_temperatures[4]);
+//				LCD_display_temperature(g_lcd_temperatures[5]);
+//				LCD_display_temperature(g_lcd_temperatures[6]);
+//				LCD_display_temperature(g_lcd_temperatures[7]);
+//				HAL_Delay(400);
+//			}
+			break;
+		case 5:
+			g_lcd_data.speed            = &speed;
+			g_lcd_data.drive_state      = &state;//get_cyclic_drive_state();
+			g_lcd_data.soc              = &soc;
+			g_lcd_data.pack_current     = get_cyclic_pack_current();
+			g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
+			LCD_display_speed_debug_page(g_lcd_data.speed, g_lcd_data.speed_units);
+			LCD_display_SOC_debug_page((volatile uint32_t*) g_lcd_data.soc);
+			LCD_display_drive_state_debug_page(g_lcd_data.drive_state);
+			LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
+
+		default:
+			break;
+
+	}
+
     #ifdef DEBUG
         lcd_time_diff = HAL_GetTick() - lcd_time_start;
     #endif // DEBUG
