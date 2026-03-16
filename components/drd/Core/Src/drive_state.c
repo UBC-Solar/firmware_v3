@@ -359,12 +359,12 @@ void normalize_adc_values(uint16_t adc1, uint16_t adc2)
 {
     // Clamp upper bound
     if (adc1 >= HIGHEST) {
-        g_throttle_DAC = 0;
+        g_throttle_DAC = 1023;
         return;
     }
     // Clamp lower bound
     if (adc1 <= LOWEST) {
-        g_throttle_DAC = 1023;
+        g_throttle_DAC = 0;
         return;
     }
 
@@ -373,13 +373,13 @@ void normalize_adc_values(uint16_t adc1, uint16_t adc2)
     uint32_t value = adc1 - LOWEST;
     uint32_t scaled = (value * 1023) / range;
 
-    int temp = (int)1023 - (int)scaled;
-    if (temp < 0)
-    {
-        temp = 0;
-    }
+//    int temp = (int)scaled;//(int)1023 - (int)scaled;
+//    if (temp < 0)
+//    {
+//        temp = 0;
+//    }
 
-    g_throttle_DAC = (uint16_t)temp;
+    g_throttle_DAC = (uint16_t)scaled;//temp;
 }
 
 
