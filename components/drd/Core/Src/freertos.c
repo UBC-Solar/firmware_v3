@@ -277,6 +277,9 @@ void LCDUpdatetask(void *argument)
 
   g_lcd_data.speed_units = KPH;
   
+  // VARIABLE FOR TEST!!!
+  uint8_t lcd_temp = 50;
+
   for(;;)
   {
     // When debugging we can check the duration of this function to measure performance.
@@ -284,19 +287,29 @@ void LCDUpdatetask(void *argument)
         lcd_time_start = HAL_GetTick();
     #endif // DEBUG
         
-    g_lcd_data.speed            = get_cyclic_speed();
-    g_lcd_data.drive_state      = get_cyclic_drive_state();
-    g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;    
-    g_lcd_data.pack_current     = get_cyclic_pack_current();
-    g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
-    g_lcd_data.soc              = get_cyclic_soc();
-
-    LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
-    LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
-    LCD_display_drive_state(g_lcd_data.drive_state);
-    LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
-    LCD_display_drive_mode(g_lcd_data.drive_mode);
+//    g_lcd_data.speed            = get_cyclic_speed();
+//    g_lcd_data.drive_state      = get_cyclic_drive_state();
+//    g_lcd_data.drive_mode       = (volatile uint8_t) g_input_flags.eco_mode_on;
+//    g_lcd_data.pack_current     = get_cyclic_pack_current();
+//    g_lcd_data.pack_voltage     = get_cyclic_pack_voltage();
+//    g_lcd_data.soc              = get_cyclic_soc();
+//
+//    LCD_display_power_bar(g_lcd_data.pack_current, g_lcd_data.pack_voltage);
+//    LCD_display_speed(g_lcd_data.speed, g_lcd_data.speed_units);
+//    LCD_display_drive_state(g_lcd_data.drive_state);
+//    LCD_display_SOC((volatile uint32_t*) g_lcd_data.soc);
+//    LCD_display_drive_mode(g_lcd_data.drive_mode);
     
+//     Greg's Test code
+//    for(lcd_temp = 0; lcd_temp<200; lcd_temp+=10){
+//    	LCD_display_temperature(&lcd_temp);
+//    	HAL_Delay(1000);
+//    }
+
+      LCD_clear_screen();
+      LCD_display_temperature(&lcd_temp);
+
+
     #ifdef DEBUG
         lcd_time_diff = HAL_GetTick() - lcd_time_start;
     #endif // DEBUG
